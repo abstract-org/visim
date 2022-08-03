@@ -1,0 +1,12 @@
+.agoraCard > [class~="p-card-body"] {
+    padding: 0.1rem;
+    line-height: 1.0rem;
+}
+
+.agoraCard [class~="p-card-content"] {
+    padding: 0.5rem;
+}
+
+.agoraCard {
+    margin: 1rem 0.5rem;
+}
