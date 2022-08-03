@@ -1,0 +1,6 @@
+.agoraDt [class~="p-datatable-header"] {
+    border: none;
+    background: none;
+    font-size: 1.17rem;
+    margin: 0.3rem 0;
+}

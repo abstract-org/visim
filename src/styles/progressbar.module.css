@@ -1,0 +1,16 @@
+.agoraPbar [class~="p-progressbar"] {
+    width: 10rem;
+}
+
+.agoraPbar {
+    float: left;
+    margin: 0.5rem;
+}
+
+.agoraPbar [class~="p-progressbar-value"] {
+    background-color: #6366F1;
+}
+
+.agoraPbar [class~="p-progressbar-value"] {
+    background-color: #6bcac2;
+}
