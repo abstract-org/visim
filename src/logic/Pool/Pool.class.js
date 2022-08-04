@@ -9,7 +9,8 @@ export default class Pool {
     currentTick = this.sqrtPriceToTick(Math.sqrt(globalConfig.PRICE_MIN));
     liquidity = 0;
     ticks = new Array(((globalConfig.TICK_MAX * 2) / globalConfig.TICK_SPACING) + 1).fill(0);
-            //TODO: change ticks array from numbers to Array of {liq,nextLiqTick,prevLiqTick} structs
+            // empty: ticks[i]=0
+            // liquid: ticks[i]={liq:50000,nextLiqTick=90100,prevLiqTick:80900}
     tickSpacing = globalConfig.TICK_SPACING;
 
     constructor(token0, token1) {
