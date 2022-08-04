@@ -22,7 +22,7 @@ export default class Pool {
     }
 
     tickToSqrtPrice(tick) {    // sqrt is x^1/2
-        return 1.0001 ** tick/2; 
+        return Math.sqrt(1.0001 ** tick); 
     }
 
     sqrtPriceToTick(sqrtPrice) {    // ln(x^2)/ln(1.0001) = ln(x)*2/ln(1.0001) = ln(x) * 2 * 10000.5 = ln(x)*20001
