@@ -4,14 +4,10 @@
     "TICK_ZERO": 300000,
     "TICK_MIN": 300000,
     "TICK_SPACING": 100,
-    "TOKENS": {
-        "token0": 20000,
-        "token1": 0
-    },
-    "LIQUIDITY": [
-        [1, 10000, 5000, 0],
-        [10, 10000, 5000, 0],
-        [50, 10000, 5000, 0],
-        [200, 10000, 5000, 0]
+    "INITIAL_LIQUIDITY": [
+        {"minPrice": 1, "maxPrice": 10000, "token0Amount": 5000, "token1Amount": 0},
+        {"minPrice": 20, "maxPrice": 10000, "token0Amount": 5000, "token1Amount": 0},
+        {"minPrice": 50, "maxPrice": 10000, "token0Amount": 5000, "token1Amount": 0},
+        {"minPrice": 200, "maxPrice": 10000, "token0Amount": 5000, "token1Amount": 0}
     ]
 }

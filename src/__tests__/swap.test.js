@@ -6,19 +6,9 @@ it('gets initial liquidity for token0', () => {
     const token1 = new Token('USDC', '0xUSDC')
     const pool = new Pool(token0, token1)
 
-    const liquidity = pool.getLiquidityForAmounts(5000, 0, Math.sqrt(1), Math.sqrt(10000))
+    const liquidity = pool.getLiquidityForAmounts(5000, 0, Math.sqrt(1), Math.sqrt(10000),pool.getCurrentPrice())
     expect(liquidity).toBeCloseTo(5050.50505050505)
 });
-
-it('gets prices for liquidity', () => {
-    const token0 = new Token('RP1', '0xBoris')
-    const token1 = new Token('USDC', '0xUSDC')
-    const pool = new Pool(token0, token1)
-    pool.setSqrtPrice(7.063228605387372)
-    pool.setLiquidity(38001.33950191804)
-    pool.setTick(pool.squarePriceToTick(pool.sqrtCurrentPrice))
-
-})
 
 it('generates correct ticks for price range', () => {
     const token0 = new Token('RP1', '0xBoris')
