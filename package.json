@@ -8,6 +8,8 @@
     "@testing-library/user-event": "^13.2.1",
     "chart.js": "^3.8.2",
     "crypto-js": "^4.1.1",
+    "dbly-linked-list": "^0.3.5",
+    "hashmap": "^2.4.0",
     "primeflex": "^3.2.1",
     "primeicons": "^5.0.0",
     "primereact": "^8.3.0",
