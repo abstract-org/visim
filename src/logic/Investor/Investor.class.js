@@ -4,7 +4,7 @@ export default class Investor {
     id;
     hash;
     type;
-    balances = {'USDC': 0};
+    balances = {'USDC': 0}; // not like solidity, what's better -> balances here or in tokens
     injectedUSDC = 0;
     withdrawnUSDC = 0;
     positions = new Map();
