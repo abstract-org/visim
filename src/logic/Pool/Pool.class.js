@@ -7,7 +7,7 @@ export default class Pool {
     token1;
     currentPrice = globalConfig.PRICE_MIN;
     sqrtCurrentPrice = Math.sqrt(globalConfig.PRICE_MIN);
-    currentTick = this.squarePriceToTick(Math.sqrt(globalConfig.PRICE_MIN));
+    currentTick = this.sqrtPriceToTick(Math.sqrt(globalConfig.PRICE_MIN));
     liquidity = 0;
     ticks = new HashMap();
     tickSpacing = globalConfig.TICK_SPACING;
@@ -50,8 +50,8 @@ export default class Pool {
         return this.ticks.get(tickLower);
     }
 
-    squareTickToPrice(sqrtTick) {
-        return Math.sqrt(Math.pow(1.0001, sqrtTick));
+    tickToSqrtPrice(tick) {    // sqrt is x^1/2
+        return Math.sqrt(1.0001 ** tick); 
     }
 
     squarePriceToTick(sqrtPrice) {
@@ -102,19 +102,14 @@ export default class Pool {
         return liquidity1;
     }
 
-    getAmountsForLiquidity(sqrtPriceMin, sqrtPriceMax) {
-        const sqrtPrice0 = Math.max(Math.min(this.sqrtCurrentPrice, sqrtPriceMax), sqrtPriceMin);
-        const sqrtPrice1 = Math.max(Math.min(this.sqrtCurrentPrice, sqrtPriceMin), sqrtPriceMax);
-        const amount0 = this.liquidity * (1 / sqrtPrice0) - (1 / sqrtPriceMax);
-        const amount1 = this.liquidity * (sqrtPrice1 - sqrtPriceMin);
+    getAmountsForLiquidity(liquidity, tickMin, tickMax, curSqrtPrice) { // changed parameters to ticks, not prices, added liq and curprice
+        sqrtPriceMax=tickToSqrtPrice(tickMax);
+        sqrtPriceMin=tickToSqrtPrice(tickMin);
+        clampedPrice = Math.max(Math.min(curSqrtPrice, sqrtPriceMax), sqrtPriceMin) // clamps cur to [min..max] range 
+        const amountRight = liquidity * (1/clampedPrice - 1/sqrtPriceMax);
+        const amountLeft  = liquidity * (clampedPrice - sqrtPriceMin);
 
-        if (this.sqrtCurrentPrice <= sqrtPriceMin) {
-            return [amount0];
-        } else if (this.sqrtCurrentPrice < sqrtPriceMax) {
-            return [amount0, amount1];
-        }
-
-        return [amount1];
+        return [amountLeft, amountRight]; // one can be zero if current price outside the range
     }
 
     getLiquidity() {
