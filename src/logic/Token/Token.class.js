@@ -1,35 +1,56 @@
-import sha256 from 'crypto-js/sha256';
+import HashMap from 'hashmap';
 
-// per figma mockup with octahedrons, no authors, just investors
+import Pool from "../Pool/Pool.class";
+
+import globalConfig from '../config.global.json'; // make it a hash map
 
 export default class Token {
-    name;// potentially hashing to hash
-    //pools[tokenid] including initial usdc pool (using usdc tokenid)
-    //LP_positions[] all LP positions created by this token
-    authorHash;
-    currentPrice;
-    sqrtCurrentPrice;
+    id; // make uuid 
+    name;
+    pools = [];
+    positions = [];
 
     constructor(name) {
         this.name = name;
-        
     }
 
-    setPrice(price) {
-        this.currentPrice = price;
-        this.sqrtCurrentPrice = Math.sqrt(this.currentPrice)
+    createPool(token0, startingPrice = 0) {
+        return new Pool(token0, this, startingPrice);
     }
 
-    setSqrtPrice(sqrtPrice) {
-        this.sqrtCurrentPrice = sqrtPrice;
-        this.price = this.sqrtCurrentPrice ** 2;
+    addToPool(pool) {
+        this.pools.push(pool);
     }
 
-    getPrice() {
-        return this.currentPrice;
+    initializePoolPositions(pool) {
+        const initial = globalConfig.INITIAL_LIQUIDITY; 
+        const liquidityForLeft = [];
+
+        initial.forEach(position => {
+            let liquidity = pool.getLiquidityForAmounts(
+                position.token0Amount,
+                position.token1Amount,
+                Math.sqrt(position.priceMin),
+                Math.sqrt(position.priceMax),
+                Math.sqrt(pool.currentPrice)
+            );
+
+            pool.setPositionSingle(position.priceMin, liquidity);
+            liquidityForLeft.push({priceMax: position.priceMax, liquidity});
+            
+            // this.positions.push({poolName: pool.name, ...initializedPosition});
+        });
+
+        liquidityForLeft.forEach(liqItem => {
+            pool.setPositionSingle(liqItem.priceMax, -liqItem.liquidity);
+        });
+
+        pool.pricePoints.forEach((value, key) => {
+            console.log(value);
+        })
     }
 
-    getSqrtPrice() {
-        return this.sqrtCurrentPrice;
+    setPoolPosition(amount0, amount1, priceMin, priceMax, currentPrice) {
+
     }
 }

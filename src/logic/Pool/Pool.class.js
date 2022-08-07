@@ -3,15 +3,18 @@ import globalConfig from '../config.global.json'; // make it a hash map
 import HashMap from 'hashmap';
 
 export default class Pool {
-    token0;
-    token1;
+    name;
+
+    tokenLeft;
+    tokenRight;
+
+    currentLeft = -Infinity;
+    currentRight = Infinity;
     currentPrice = globalConfig.PRICE_MIN;
-    sqrtCurrentPrice = Math.sqrt(globalConfig.PRICE_MIN);
-    currentTick = this.sqrtPriceToTick(Math.sqrt(globalConfig.PRICE_MIN));
-    liquidity = 0;
-    ticks = new HashMap();
+    currentPricePoint = 0;
+    currentLiquidity = 0;
+
     pricePoints = new HashMap();
-    tickSpacing = globalConfig.TICK_SPACING;
 
     /*
     price = $1M/token -> 0.000001
@@ -31,16 +34,138 @@ export default class Pool {
             *[50]={...,right=1000,...}
             [1000]={liq=-4000,left=50,right=10000}
             *[10000]={....,left=1000,...}
+            */
 
-            if new price point was between cur_price and it's old left or right neighbor, update the prev/next and the old prev's next and old next's prev
+    constructor(tokenLeft, tokenRight, startingPrice) {
+        if (tokenLeft.name === tokenRight.name) throw 'Tokens should not match';
 
+        this.tokenLeft = tokenLeft;
+        this.tokenRight = tokenRight;
 
-        updatepos(p_lo,p_hi,liq,poolid?)
+        this.name = '0x'+sha256(tokenLeft+tokenRight);
+
+        if (startingPrice > 0) {
+            this.setPrice(startingPrice);
+        }
+
+        this.initializePoolBoundaries();
+    }
+
+    initializePoolBoundaries() {
+        // Define default price boundaries 
+        this.pricePoints.set(globalConfig.PRICE_MIN, {
+            liquidity: 0,
+            left: -Infinity,
+            right: globalConfig.PRICE_MAX
+        });
+
+        this.pricePoints.set(globalConfig.PRICE_MAX, {
+            liquidity: 0,
+            left: globalConfig.PRICE_MIN,
+            right: Infinity
+        });
+
+        this.currentPricePoint = globalConfig.PRICE_MIN;
+        this.currentLeft = -Infinity;
+        this.currentRight = Infinity
+    }
+
+    setPositionSingle(price, liquidity) {
+        this.pricePoints.forEach((position, point) => {
+            if (point < price && price < position.right && liquidity > 0) {
+                let newPosition = {
+                    liquidity,
+                    left: point,
+                    right: position.right
+                };
+
+                this.pricePoints.set(price, newPosition);
+
+                if (this.pricePoints.get(position.right) !== Infinity) {
+                    const next = this.pricePoints.get(position.right);
+                    next.left = price;
+                    this.pricePoints.set(position.right, next);
+                }
+
+                position.right = price;
+                this.pricePoints.set(point, position);
+            } else if (point > price && position.left <= price && liquidity < 0) {
+                let newPosition = {};
+
+                if (this.pricePoints.has(price)) {
+                    newPosition = this.pricePoints.get(price);
+                    newPosition.liquidity += liquidity;
+                } else {
+                    newPosition = {
+                        liquidity,
+                        left: position.left,
+                        right: point
+                    };
+
+                    const next = this.pricePoints.get(point);
+                    const prev = this.pricePoints.get(next.left);
+
+                    prev.right = price;
+                    this.pricePoints.set(next.left, prev);
+
+                    next.left = price;
+                    this.pricePoints.set(point, next);
+                }
+
+                this.pricePoints.set(price, newPosition);
+            }
+        });
+    }
+
+    setPosition(priceMin, priceMax, liquidity) {
+        const nearestLeft = this.findNearest('left', priceMin);
+        const nearestRight = this.findNearest('right', priceMax);
+
+        if (
+            this.currentPricePoint < priceMin && 
+            this.currentPricePoint < priceMax &&
+            this.currentLeft < priceMin &&
+            this.currentRight > priceMax
+            ) {
+                this.pricePoints.set(priceMin, {
+                    liquidity,
+                    left: nearestLeft,
+                    right: priceMax
+                });
+
+                this.pricePoints.set(priceMax, {
+                    liquidity: -liquidity,
+                    left: priceMin,
+                    right: nearestRight
+                });
+
+                return [this.pricePoints.get(priceMin), this.pricePoints.get(priceMax)];
+        }
+
+        if (this.currentPricePoint >= priceMin && this.currentPricePoint <= priceMax) {
+            this.setLiquidity(this.activeLiquidity += liquidity)
+        }
+
+        return;
+
+        if (this.currentPrice >= priceMin && this.currentPrice <= priceMax) {
+            this.setLiquidity(this.activeLiquidity += liquidity)
+            // TBD: Is it the right way? change to caching left and right
+            this.currentPricePoint = priceMin;
+        }
+
+        /*
+            if new price point was between cur_price and it's old left/right neighbor, 
+            update the:
+            - prev/next
+            - old prev's next
+            - old next's prev
+
             price_point[p_lo].liq=liq
             price_point[p_hi].liq=-liq
             if pool[pool_id].cur_price in range [p_lo..p_hi]
-                pool[pool_id].cur_liq+=liq
-            
+            pool[pool_id].cur_liq+=liq
+
             //update prev/next
             if pool[pool_id].left > p_hi
                pool[pool_id].left = p_hi
@@ -49,94 +174,7 @@ export default class Pool {
 
             THEN WHILE() LOOP STARTING WITH POOL.LEFT -> RIGHTWARDS TO FIND WHERE TO PUT THE NEW P_HI .. AND 
             SAME LOOP LEFTWARDS FROM POOL.RIGHT TO FIND WHERE TO PUT THE NEW P_LO AND UPDATE PREV/NEXT OF IT, AND PREV/NEXT TO THE LEFT AND RIGHT OF IT
-
-            in liq math use sqrt in math
-            */
-
-    constructor(token0, token1) {
-        if (token0.name === token1.name) throw 'Tokens should not match';
-
-        this.token0 = token0;
-        this.token1 = token1;
-        this.hash = '0x'+sha256(`${token0} + ${token1}`);
-
-        this.initialize();
-    }
-
-    initialize() {
-        globalConfig.INITIAL_LIQUIDITY.forEach((liquidityItem, idx) => {
-            this.addLiquidity(
-                liquidityItem.priceMin,
-                liquidityItem.priceMax,
-                liquidityItem.token0Amount,
-                liquidityItem.token1Amount
-            )
-        })
-    }
-
-    initialize2() {
-        globalConfig.LIQUIDITY.forEach((liqItem, idx) => {
-            let next = (globalConfig.LIQUIDITY[idx+1] !== 'undefined') ? globalConfig.LIQUIDITY[idx+1] : null
-            let prev = (globalConfig.LIQUIDITY[idx-1] !== 'undefined') ? globalConfig.LIQUIDITY[idx-1] : null
-            let currentTickIteration = this.defineTicksHashMap(liqItem[0], liqItem[1], prev, next);
-            this.addLiquidity(currentTickIteration.tickLower, liqItem[2], liqItem[3]);
-        })
-    }
-
-    defineTicksHashMap(priceMin, priceMax, prev, next) {
-        // [1...10000] => [0...92100]
-        const {tickLower, tickUpper} = this.getTicksByPriceRange(priceMin, priceMax);
-        const prevTicks = prev ? this.getTicksByPriceRange(prev[0], prev[1]) : null;
-        const nextTicks = next ? this.getTicksByPriceRange(next[0], next[1]) : null;
-
-        this.ticks.set(tickLower, 
-            {
-                prev: prevTicks ? prevTicks.tickLower : null, 
-                next: nextTicks ? nextTicks.tickLower : null, 
-                tickLower, 
-                tickUpper,
-                liquidity: 0
-            }
-        );
-
-        return this.ticks.get(tickLower);
-    }
-
-    // sqrt is x^1/2
-    tickToSqrtPrice(tick) {    
-        Math.sqrt(1.0001 ** tick); 
-    }
-
-    // ln(x^2)/ln(1.0001) = ln(x)*2/ln(1.0001) = ln(x) * 2 * 10000.5 = ln(x)*20001
-    sqrtPriceToTick(sqrtPrice) {    
-        return ~~(Math.log(sqrtPrice)*20001 / this.tickSpacing) * this.tickSpacing;
-    }
-
-    getTicksByPriceRange(priceMin, priceMax) {
-        const tickLower = this.sqrtPriceToTick(Math.sqrt(priceMin))
-        const tickUpper = this.sqrtPriceToTick(Math.sqrt(priceMax))
-
-        return {tickLower, tickUpper}
-    }
-
-    addLiquidity(priceMin, priceMax, token0Amount, token1Amount) {
-
-    }
-
-    addLiquidity2(tickLower, token0Amount, token1Amount) {
-        
-        const currentTickIteration = this.ticks.get(tickLower);
-
-        const liquidity = this.getLiquidityForAmounts(
-            token0Amount,
-            token1Amount,
-            currentTickIteration.tickLower,
-            currentTickIteration.tickUpper,
-        );
-
-        currentTickIteration.liquidity = liquidity;
-
-        this.ticks.set(tickLower, currentTickIteration);
+        */
     }
 
     getLiquidityForAmounts(amount0, amount1, sqrtPriceMin, sqrtPriceMax, currentSqrtPrice) { 
@@ -152,50 +190,129 @@ export default class Pool {
         return liquidity1;
     }
 
-    // changed parameters to ticks, not prices, added liq and curprice
-    getAmountsForLiquidity(liquidity, tickMin, tickMax, curSqrtPrice) {
-        sqrtPriceMax=tickToSqrtPrice(tickMax);
-        sqrtPriceMin=tickToSqrtPrice(tickMin);
-        clampedPrice = Math.max(Math.min(curSqrtPrice, sqrtPriceMax), sqrtPriceMin) // clamps cur to [min..max] range 
-        const amountRight = liquidity * (1/clampedPrice - 1/sqrtPriceMax);
-        const amountLeft  = liquidity * (clampedPrice - sqrtPriceMin);
+    getAmountsForLiquidity(liquidity, sqrtPriceMin, sqrtPriceMax, curSqrtPrice) {
+        const clampedPrice = Math.max(Math.min(curSqrtPrice, sqrtPriceMax), sqrtPriceMin);
+        // TBD: Are we sure of the order? amountLeft === amount0, e.g 5000 TK?
+        const amountLeft = liquidity * (1/clampedPrice - 1/sqrtPriceMax);
+        const amountRight  = liquidity * (clampedPrice - sqrtPriceMin);
 
         return [amountLeft, amountRight]; // one can be zero if current price outside the range
     }
 
-    getLiquidity() {
-        return this.liquidity;
+    swap(goingRight, amount, sqrtPriceLimit = 0) {
+        let currentLiquidity = this.getLiquidity();
+        let currentPrice = this.getCurrentPrice();
+        let sqrtCurrentPrice = this.getSqrtCurrentPrice();
+        let currentLeft = this.pricePoints.get(this.currentPricePoint).left;
+        let currentRight = this.pricePoints.get(this.currentPricePoint).right;
+        let isPositionMaxed = false;
+        let amountRemaining = amount;
+
+        // TBD: PRICE_MAX is highest in position with liquidity or beyond?
+        // TODO: How to implement the actual limit?
+        sqrtPriceLimit = goingRight ? globalConfig.PRICE_MAX : globalConfig.PRICE_MIN; 
+
+        let nextPrice = goingRight ? currentRight : currentLeft;
+        let nextSqrtPrice = Math.sqrt(nextPrice);
+
+        // Each iteration is a position in this.pricePoints
+        while(amountRemaining > 0 && sqrtCurrentPrice != sqrtPriceLimit) {
+            // TODO: Implement limit here
+            // if there's an actual tick available next, it will be "below" the MAX/MIN limit, so keep the limit
+            // if there is no more tick with liquidity, then "next_price"=MAX/MIN limit, so it will be equal to LIMIT
+            
+            let amount0UntilNextPrice = currentLiquidity * (nextSqrtPrice - sqrtCurrentPrice);
+            let amount1UntilNextPrice = currentLiquidity * (1 / sqrtCurrentPrice - 1 / nextSqrtPrice);
+
+            // console.log(currentRight, nextSqrtPrice, amount0UntilNextPrice, amount1UntilNextPrice);
+
+            let amountIn = goingRight ? Math.floor(amount0UntilNextPrice) : Math.ceil(amount1UntilNextPrice);;
+            let amountOut = 0;
+            let arrivedAtSqrtPrice = 0;
+
+            if (goingRight) {
+                arrivedAtSqrtPrice = sqrtCurrentPrice + amountRemaining / currentLiquidity;
+            } else {
+                arrivedAtSqrtPrice = currentLiquidity / (currentLiquidity / sqrtCurrentPrice + amountRemaining);
+            }
+
+            // If we arrived at the next sqrt price or higher, cap at next sqrt price or leave as is
+            arrivedAtSqrtPrice = arrivedAtSqrtPrice > nextSqrtPrice ? nextSqrtPrice : arrivedAtSqrtPrice;
+
+            // Guaranteed arrived at the next sqrt price
+            isPositionMaxed = arrivedAtSqrtPrice === nextSqrtPrice;
+
+            /*
+            // TBD: JUNK?
+            if (goingRight) {
+                amountIn = (isPositionMaxed && (amount > 0)) ? amountIn : (-1) * amount1UntilNextPrice;
+                amountOut = (isPositionMaxed && (amount <= 0)) ? amountOut : (-1) * amount0UntilNextPrice;
+            } else {
+                amountIn = (isPositionMaxed && (amount > 0)) ? amountIn : amount0UntilNextPrice;
+                amountOut = (isPositionMaxed && (amount <= 0)) ? amountOut : amount1UntilNextPrice;
+            }*/
+
+            // TBD: Possibly above code is required for proper amount deduction
+            amountRemaining += goingRight ? -amount1UntilNextPrice : amount0UntilNextPrice;
+
+            sqrtCurrentPrice = arrivedAtSqrtPrice;
+
+            let nextPriceLiquidity = this.pricePoints.get(currentRight).liquidity;
+
+            if (isPositionMaxed) {
+                // TBD: Reached the end - exit. Should be at the beginning of the loop?
+                if (
+                        (!goingRight && this.pricePoints.get(currentLeft).left <= -Infinity) || 
+                        (goingRight && this.pricePoints.get(currentRight).right >= Infinity)
+                 ) {
+                    break;
+                }
+
+                currentLiquidity += this.goingRight ? nextPriceLiquidity : (-1 * nextPriceLiquidity);
+                currentLeft = this.pricePoints.get(nextPrice).left;
+                currentRight = this.pricePoints.get(nextPrice).right;
+                currentPrice = goingRight ? nextPrice : currentLeft;
+                sqrtCurrentPrice = Math.sqrt(nextPrice);
+            } else {
+                currentPrice = arrivedAtSqrtPrice;
+            }
+
+            this.setLiquidity(currentLiquidity);
+            this.setPrice(currentPrice);
+        }
     }
 
-    getCurrentTick() {
-        return this.currentTick;
+    getLiquidity() {
+        return this.activeLiquidity;
     }
 
     getCurrentPrice() {
         return this.currentPrice;
     }
 
+    getSqrtCurrentPrice() {
+        return this.sqrtCurrentPrice;
+    }
+
     calculateLowerPrice(amount1) {
-        return (this.sqrtCurrentPrice - amount1 / this.liquidity) ** 2;
+        return (this.sqrtCurrentPrice - amount1 / this.activeLiquidity) ** 2;
     }
 
     calculateUpperPrice(amount0) {
-        return ((this.liquidity * this.sqrtCurrentPrice) / (this.liquidity - this.sqrtCurrentPrice * amount0)) ** 2;
-    }
-
-    setTick(tick) {
-        this.currentTick = tick;
+        return ((this.activeLiquidity * this.sqrtCurrentPrice) / (this.activeLiquidity - this.sqrtCurrentPrice * amount0)) ** 2;
     }
 
     setPrice(price) {
         this.currentPrice = price;
+        this.sqrtCurrentPrice = Math.sqrt(price);
     }
 
     setSqrtPrice(sqrtPrice) {
         this.sqrtCurrentPrice = sqrtPrice;
+        this.currentPrice = sqrtPrice ** 2;
     }
 
     setLiquidity(liquidity) {
-        this.liquidity = liquidity;
+        this.activeLiquidity = liquidity;
     }
 }
