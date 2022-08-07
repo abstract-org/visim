@@ -1,13 +1,10 @@
 {
-    "PRICE_MIN": 1,
-    "TICK_MAX": 300000,
-    "TICK_ZERO": 300000,
-    "TICK_MIN": 300000,
-    "TICK_SPACING": 100,
+    "PRICE_MIN": 0,
+    "PRICE_MAX": 1000000,
     "INITIAL_LIQUIDITY": [
-        {"minPrice": 1, "maxPrice": 10000, "token0Amount": 5000, "token1Amount": 0},
-        {"minPrice": 20, "maxPrice": 10000, "token0Amount": 5000, "token1Amount": 0},
-        {"minPrice": 50, "maxPrice": 10000, "token0Amount": 5000, "token1Amount": 0},
-        {"minPrice": 200, "maxPrice": 10000, "token0Amount": 5000, "token1Amount": 0}
+        {"priceMin": 1, "priceMax": 10000, "token0Amount": 5000, "token1Amount": 0},
+        {"priceMin": 10, "priceMax": 10000, "token0Amount": 5000, "token1Amount": 0},
+        {"priceMin": 50, "priceMax": 10000, "token0Amount": 5000, "token1Amount": 0},
+        {"priceMin": 200, "priceMax": 10000, "token0Amount": 5000, "token1Amount": 0}
     ]
 }
