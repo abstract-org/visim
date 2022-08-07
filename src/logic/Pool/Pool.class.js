@@ -117,66 +117,6 @@ export default class Pool {
         });
     }
 
-    setPosition(priceMin, priceMax, liquidity) {
-        const nearestLeft = this.findNearest('left', priceMin);
-        const nearestRight = this.findNearest('right', priceMax);
-
-        if (
-            this.currentPricePoint < priceMin && 
-            this.currentPricePoint < priceMax &&
-            this.currentLeft < priceMin &&
-            this.currentRight > priceMax
-            ) {
-                this.pricePoints.set(priceMin, {
-                    liquidity,
-                    left: nearestLeft,
-                    right: priceMax
-                });
-
-                this.pricePoints.set(priceMax, {
-                    liquidity: -liquidity,
-                    left: priceMin,
-                    right: nearestRight
-                });
-
-                return [this.pricePoints.get(priceMin), this.pricePoints.get(priceMax)];
-        }
-
-        if (this.currentPricePoint >= priceMin && this.currentPricePoint <= priceMax) {
-            this.setLiquidity(this.activeLiquidity += liquidity)
-        }
-
-        return;
-
-        if (this.currentPrice >= priceMin && this.currentPrice <= priceMax) {
-            this.setLiquidity(this.activeLiquidity += liquidity)
-            // TBD: Is it the right way? change to caching left and right
-            this.currentPricePoint = priceMin;
-        }
-
-        /*
-            if new price point was between cur_price and it's old left/right neighbor, 
-            update the:
-            - prev/next
-            - old prev's next
-            - old next's prev
-
-            price_point[p_lo].liq=liq
-            price_point[p_hi].liq=-liq
-            if pool[pool_id].cur_price in range [p_lo..p_hi]
-            pool[pool_id].cur_liq+=liq
-
-            //update prev/next
-            if pool[pool_id].left > p_hi
-               pool[pool_id].left = p_hi
-            else if pool[pool_id].LEFT > P_LO -> LEFT=P_LO
-            ... SAME WITH POOL.RIGHT
-
-            THEN WHILE() LOOP STARTING WITH POOL.LEFT -> RIGHTWARDS TO FIND WHERE TO PUT THE NEW P_HI .. AND 
-            SAME LOOP LEFTWARDS FROM POOL.RIGHT TO FIND WHERE TO PUT THE NEW P_LO AND UPDATE PREV/NEXT OF IT, AND PREV/NEXT TO THE LEFT AND RIGHT OF IT
-        */
-    }
-
     getLiquidityForAmounts(amount0, amount1, sqrtPriceMin, sqrtPriceMax, currentSqrtPrice) { 
         const liquidity0 = amount0 / (1 / sqrtPriceMin - 1 / sqrtPriceMax);
         const liquidity1 = amount1 / (currentSqrtPrice - sqrtPriceMin);

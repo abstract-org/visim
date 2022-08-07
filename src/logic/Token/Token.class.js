@@ -8,7 +8,7 @@ export default class Token {
     id; // make uuid 
     name;
     pools = [];
-    positions = [];
+    positions = new HashMap();
 
     constructor(name) {
         this.name = name;
@@ -37,17 +37,13 @@ export default class Token {
 
             pool.setPositionSingle(position.priceMin, liquidity);
             liquidityForLeft.push({priceMax: position.priceMax, liquidity});
-            
-            // this.positions.push({poolName: pool.name, ...initializedPosition});
         });
 
         liquidityForLeft.forEach(liqItem => {
             pool.setPositionSingle(liqItem.priceMax, -liqItem.liquidity);
         });
 
-        pool.pricePoints.forEach((value, key) => {
-            console.log(value);
-        })
+        this.positions.set(pool.name, pool.pricePoints.values());
     }
 
     setPoolPosition(amount0, amount1, priceMin, priceMax, currentPrice) {
