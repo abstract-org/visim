@@ -1,9 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 import { Card } from 'primereact/card';
-import { Dropdown } from 'primereact/dropdown';
-import { InputNumber } from 'primereact/inputnumber';
-import { Button } from 'primereact/button';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 
@@ -17,52 +14,13 @@ import 'primeflex/primeflex.css'
 import 'primeicons/primeicons.css';
 
 import agoraCard from './styles/card.module.css';
-import buttonFactory from './styles/button.module.css';
-import agoraInput from './styles/input.module.css';
 import agoraDt from './styles/datatable.module.css';
 
-import generatePool from './logic/Pool/Pool.generator';
-import generateToken from './logic/Token/Token.generator';
-
-import { InvestorModule, InvestorTokenBalance, InvestorSelector } from './logic/Investor/Investor.components';
-import { QuestManager, CitingQuestList } from './logic/Token/Quest.components';
-
-
-const token0 = generateToken('Research Paper 1');
-const token1 = generateToken('USDC');
-const pool = generatePool(token0, token1);
-
-const papers = [
-  { label: 'Research Paper 1', value: 'PR1' },
-  { label: 'Research Paper 2', value: 'PR2' },
-  { label: 'Research Paper 3', value: 'PR3' },
-  { label: 'Research Paper 4', value: 'PR4' },
-]
-
-const numericValuePair = (value) => {
-  return (
-    <React.Fragment>
-      {value}
-    </React.Fragment>
-  )
-}
+import { InvestorModule, InvestorPoolBalance, InvestorSelector } from './logic/Investor/Investor.components';
+import { QuestSelector, QuestManager } from './logic/Token/Quest.components';
+import { PoolSelector, PoolChartStats, SwapModule } from './logic/Pool/Pool.components';
 
 export default function Home() {
-  const [paper, setPaper] = useState(null);
-  const [rightPairValue, setRightPairValue] = useState(50);
-  const [cities, setCities] = useState([]);
-
-  const onPaperChange = (e) => {
-      let selectedPapers = [...papers];
-
-      if (e.checked)
-      selectedPapers.push(e.value);
-      else
-      selectedPapers.splice(selectedPapers.indexOf(e.value), 1);
-
-      setPaper(selectedPapers);
-  }
-
   const logs = [
     {"id": 1, "block": "Test", "event": "UYDHFIUHSD"},
     {"id": 1, "block": "Test", "event": "UYDHFIUHSD"},
@@ -72,51 +30,36 @@ export default function Home() {
   ]
 
   return (
-    <div className="grid grid-nogutter">
+    <div>
+      <div className="grid">
         <div className="col-8">
-            <Card className={agoraCard.agoraCard}>
-              <Dropdown className="flex-none" value="RP1" options={[{label:'Research Paper/USDC', value:'RP1'}]} />
-              
-              <div className="flex">
-                <div className="flex-grow-1 flex align-items-center">
-                  <div>Current Price:</div>
-                  <div>2,180.768</div>
-                </div>
-                <div className="flex-grow-1 flex align-items-center justify-content-center">
-                  <p className="block">Pool's Locked Value (USDC):</p>
-                  <h4 className="block">8,620,000.398</h4>
-                </div>
-                <div className="flex-grow-1 flex align-items-center justify-content-center">
-                  <div>Total Tokens Locked:</div>
-                  <Card style={{backgroundColor: '#f2f2f2'}}>
-                    <p>Research Paper: 1,605</p>
-                    <p>USDC: 5,252,453</p>
-                  </Card>
+          <Card className={agoraCard.agoraCard}>
+            <PoolSelector />
+            <PoolChartStats />
+            <PoolChart height={215} />
+          </Card>
+        </div>
+        <div className="col-4" style={{minHeight: '400px'}}>
+          <Card className={`${agoraCard.agoraCard}`}>
+            <div>
+              <div className="grid">
+                <div className="col-12">
+                  <InvestorModule>
+                    <InvestorSelector />
+                  </InvestorModule>
                 </div>
               </div>
-
-              <PoolChart height={215} />
-            </Card>
-          </div>
-          <div className="col-4">
-            <Card className={agoraCard.agoraCard} style={{height:'215px'}}>
-              <InvestorModule>
-                <InvestorSelector />
-              </InvestorModule>
-              <InvestorTokenBalance tokenKey="token0" displayValueTemplate={numericValuePair} />
-              <InvestorTokenBalance tokenKey="token1" displayValueTemplate={numericValuePair} />
-              <div>
-              <Dropdown value={paper} options={papers} onChange={(e) => setPaper(e.value)} placeholder='Choose Paper' />
+              <div className="grid">
+                <div className="col-12">
+                  <InvestorPoolBalance />
+                </div>
               </div>
-              <div className={agoraInput.agoraSell} prefix="USDC">
-                <InputNumber value={0} />
-              </div>
-              <div className={buttonFactory.buttonFactory}>
-                <Button label="Buy (in USDC)" />
-                <Button className="p-button-danger" label="Sell Tokens" />
-              </div>
-            </Card> 
-          </div>
+              <SwapModule />
+            </div>
+          </Card> 
+        </div>
+      </div>
+      <div className="grid grid-nogutter">
           <div className="col-8">
             {/*<Card className={agoraCard.agoraCard}>
               <h2>Knowledge Graph</h2>
@@ -169,6 +112,7 @@ export default function Home() {
               Token Manager
             </Card>
           </div>*/}
-    </div>    
+    </div>   
+    </div> 
   )
 }

@@ -15,7 +15,7 @@ state.tokens.set('USDC', new UsdcToken());
 
 fit('swaps USDC for RP1 and updates current price', () => {
     const investorCreator = new Investor(1, 10000, 'creator', true);
-    const token1 = investorCreator.createToken('RP1');
+    const token1 = investorCreator.createQuest('RP1');
     const pool = token1.createPool(state.tokens.get('USDC'));
 
     token1.addToPool(pool);
@@ -25,21 +25,28 @@ fit('swaps USDC for RP1 and updates current price', () => {
     state.investors.set(investorCreator.name, investorCreator);
     state.pools.set(pool.name, pool);
     state.tokens.set(token1.name, token1);
+    
+    pool.buy(5000, investorCreator);
+    expect(pool.currentPrice).toBeCloseTo(3.960);
 
-    for(const position of pool.pricePoints) {
-        // console.log(position.value);
-    }
-    // pool.swap(true, 50000)
+    pool.buy(10000, investorCreator);
+    expect(pool.currentPrice).toBeCloseTo(8.88)
+
+    expect(investorCreator.balances[pool.tokenLeft.name]).toBe(0)
+    expect(investorCreator.balances[pool.tokenRight.name]).toBeCloseTo(3355.7046)
 });
 
 it('calculates initial liquidity for token0', () => {
-    const token0 = new Token('RP1', '0xBoris')
-    const token1 = new Token('USDC', '0xUSDC')
-    const pool = new Pool(token0, token1)
+    const investorCreator = new Investor(1, 10000, 'creator', true);
+    const token1 = investorCreator.createQuest('RP1');
+    const pool = token1.createPool(state.tokens.get('USDC'));
+
+    token1.addToPool(pool);
+    token1.initializePoolPositions(pool);
 
     const liquidity = pool.getLiquidityForAmounts(5000, 0, Math.sqrt(1), Math.sqrt(10000),pool.getCurrentPrice())
     expect(liquidity).toBeCloseTo(5050.50505050505)
-    expect(pool.getLiquidity()).toBeCloseTo(5050.50505050505)
+    expect(pool.currentLiquidity).toBeCloseTo(5050.50505050505)
 });
 
 it('sets initial liquidity positions', () => {

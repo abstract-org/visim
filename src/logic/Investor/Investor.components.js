@@ -1,21 +1,24 @@
 import React from 'react';
 import {ProgressBar} from 'primereact/progressbar';
 import {Dropdown} from 'primereact/dropdown';
-import agoraPbar from '../../styles/progressbar.module.css';
 
-import generateInvestors from './Investor.generator';
-import useInvestorStore from '../../state/investor.store';
-
+import {numericValue} from '../Utils';
+import {generateDefaultInvestors} from './Investor.generator';
+import useInvestorStore from './investor.store';
+import usePoolStore from '../Pool/pool.store';
+import globalState from '../GlobalState';
 
 const addInvestorsSelector = state => state.addInvestors
 const setActiveSelector = state => state.setActive
-const getByHashSelector = state => state.getByHash
 
 export function InvestorModule({children}) {
-  const investors = generateInvestors(10);
   const addInvestors = useInvestorStore(addInvestorsSelector)
+  const investors = generateDefaultInvestors();
 
-  addInvestors(investors)
+  investors.forEach(investor => {
+    globalState.investors.set(investor.hash, investor)
+  })
+  addInvestors(investors.map(investor => investor.hash))
 
   return(
     <div>{children}</div>
@@ -23,33 +26,43 @@ export function InvestorModule({children}) {
 }
 
 export function InvestorSelector() {
-  const investors = useInvestorStore((state) => state.investors)
+  const investors = useInvestorStore(state => state.investors)
   const setActive = useInvestorStore(setActiveSelector)
   let activeInvestor = useInvestorStore((state) => state.active)
 
-  const investorsValues = investors.map((investor) => ({label: `${investor.type} (${investor.id})`, value: investor.hash}))
-  return (
+  const investorsValues = investors.map((investorHash) => 
+    ({
+      label: `${globalState.investors.get(investorHash).type} (${globalState.investors.get(investorHash).id})`, 
+      value: globalState.investors.get(investorHash).hash
+    }))
+  
+    return (
     <Dropdown value={activeInvestor} options={investorsValues} onChange={(e) => setActive(e.value)} placeholder='Choose Investor' />
   )
 }
 
-export function InvestorTokenBalance({displayValueTemplate}) {
-  const activeInvestorHash = useInvestorStore((state) => state.active)
-  const getByHash = useInvestorStore(getByHashSelector)
-  const currentInvestor = getByHash(activeInvestorHash)
+export function InvestorPoolBalance() {
+  const activePool = usePoolStore((state) => state.active)
+  const activeInvestor = useInvestorStore((state) => state.active)
+  const swaps = usePoolStore(state => state.swaps)
 
-  let progressBar
-  
-  if (currentInvestor) {
-    progressBar = <ProgressBar value={currentInvestor.balances.USDC} displayValueTemplate={displayValueTemplate}></ProgressBar>
-  } else {
-    progressBar = <ProgressBar value={0} displayValueTemplate={displayValueTemplate}></ProgressBar>
+  let balanceContent = <p>Choose Pool to see balances</p>
+
+  if (activePool && activeInvestor) {
+    const pool = globalState.pools.get(activePool)
+    const investor = globalState.investors.get(activeInvestor)
+
+    balanceContent = <div className="grid">
+      <div className="col-6">
+        <p><b>{(investor && pool.tokenLeft.name)}</b>&nbsp;Balance</p>
+        <ProgressBar value={investor && investor.balances[pool.tokenLeft.name]} displayValueTemplate={numericValue}></ProgressBar>
+      </div>
+      <div className="col-6">
+        <p><b>{(pool && pool.tokenRight.name)}</b>&nbsp;Balance</p>
+        <ProgressBar value={investor && investor.balances[pool.tokenRight.name] | 0} displayValueTemplate={numericValue}></ProgressBar>
+      </div>
+    </div>
   }
 
-  return(
-    <div className={agoraPbar.agoraPbar}>
-      <p>{(currentInvestor ? Object.keys(currentInvestor.balances)[0] : '') + ' Balance'}</p>
-      {progressBar}
-    </div>
-  )
+  return(balanceContent)
 }

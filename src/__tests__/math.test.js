@@ -1,18 +1,3 @@
-import Pool from "../logic/Pool/Pool.class";
-import Token from "../logic/Token/Token.class";
-
-it('returns tick for a price', () => {
-    const token0 = new Token('ETH', '0xETH')
-    const token1 = new Token('USDC', '0xUSDC')
-    const pool = new Pool(token0, token1)
-
-    pool.setPrice(3000);
-
-    const tick = parseInt(Math.log(Math.sqrt(pool.getCurrentPrice())) / Math.log(Math.sqrt(1.0001)))
-
-    expect(tick).toBe(80067)
-});
-
 it('constant product value is maintained when trading', () => {
     const x = 2000
     const y = 300

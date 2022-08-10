@@ -3,6 +3,7 @@ import HashMap from 'hashmap';
 import Pool from "../Pool/Pool.class";
 
 import globalConfig from '../config.global.json'; // make it a hash map
+import UsdcToken from './UsdcToken.class';
 
 export default class Token {
     id; // make uuid 
@@ -14,7 +15,11 @@ export default class Token {
         this.name = name;
     }
 
-    createPool(token0, startingPrice = 0) {
+    createPool(token0 = null, startingPrice) {
+        if (token0 === null) {
+            token0 = new UsdcToken();
+        }
+        
         return new Pool(token0, this, startingPrice);
     }
 
@@ -44,9 +49,5 @@ export default class Token {
         });
 
         this.positions.set(pool.name, pool.pricePoints.values());
-    }
-
-    setPoolPosition(amount0, amount1, priceMin, priceMax, currentPrice) {
-
     }
 }

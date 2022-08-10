@@ -11,30 +11,10 @@ export default class Pool {
     currentLeft = -Infinity;
     currentRight = Infinity;
     currentPrice = globalConfig.PRICE_MIN;
-    currentPricePoint = 0;
+    currentPricePoint = globalConfig.PRICE_MIN;
     currentLiquidity = 0;
 
     pricePoints = new HashMap();
-
-    /*
-    price = $1M/token -> 0.000001
-        price_points =
-            [PRICE_MIN]={liq=0,left=Num.neginf,right=1} //right=PRICE_MAX when pool first created, only PRICE_MIN and PRICE_MAX points exist 
-            ["1"]={liq=5050,left=0,right=10}
-            [10]={liq=16000,left=1,right=50}
-            [50]={liq=50000,left=10,right=10000}
-            [10000]={liq=-71050,left=50,right=PRICE_MAX}
-            [PRICE_MAX]={liq=0,left=10000,right=Num.infinite}
-
-            position change if someone adds 4000 liq from $2 to $1000
-            *[1]={...,right=2,...}
-            [2]={liq=4000,left=1,right=10}
-            *[10]={...left=2...}
-            
-            *[50]={...,right=1000,...}
-            [1000]={liq=-4000,left=50,right=10000}
-            *[10000]={....,left=1000,...}
-            */
 
     constructor(tokenLeft, tokenRight, startingPrice) {
         if (tokenLeft.name === tokenRight.name) throw 'Tokens should not match';
@@ -44,8 +24,8 @@ export default class Pool {
 
         this.name = '0x'+sha256(tokenLeft+tokenRight);
 
-        if (startingPrice > 0) {
-            this.setPrice(startingPrice);
+        if (startingPrice) {
+            this.currentPrice = startingPrice;
         }
 
         this.initializePoolBoundaries();
@@ -72,6 +52,7 @@ export default class Pool {
 
     setPositionSingle(price, liquidity) {
         this.pricePoints.forEach((position, point) => {
+            // setting priceMin liquidity positions
             if (point < price && price < position.right && liquidity > 0) {
                 let newPosition = {
                     liquidity,
@@ -89,6 +70,8 @@ export default class Pool {
 
                 position.right = price;
                 this.pricePoints.set(point, position);
+
+            // setting priceMax liquidity positions
             } else if (point > price && position.left <= price && liquidity < 0) {
                 let newPosition = {};
 
@@ -113,6 +96,14 @@ export default class Pool {
                 }
 
                 this.pricePoints.set(price, newPosition);
+            }
+
+            if (price > this.currentLeft && price < this.currentPricePoint) {
+                this.currentLeft = price;
+            }
+            
+            if (price > this.currentPricePoint && price < this.currentRight) {
+                this.currentRight = price;
             }
         });
     }
@@ -139,120 +130,72 @@ export default class Pool {
         return [amountLeft, amountRight]; // one can be zero if current price outside the range
     }
 
-    swap(goingRight, amount, sqrtPriceLimit = 0) {
-        let currentLiquidity = this.getLiquidity();
-        let currentPrice = this.getCurrentPrice();
-        let sqrtCurrentPrice = this.getSqrtCurrentPrice();
-        let currentLeft = this.pricePoints.get(this.currentPricePoint).left;
-        let currentRight = this.pricePoints.get(this.currentPricePoint).right;
-        let isPositionMaxed = false;
-        let amountRemaining = amount;
+    buy(amount, investor) {
+        let nextPricePoint = this.currentPricePoint;
+        let arrivedAtSqrtPrice = Math.sqrt(nextPricePoint);
+        let currentLiquidity = this.currentLiquidity;
 
-        // TBD: PRICE_MAX is highest in position with liquidity or beyond?
-        // TODO: How to implement the actual limit?
-        sqrtPriceLimit = goingRight ? globalConfig.PRICE_MAX : globalConfig.PRICE_MIN; 
+        let journal = [];
+        let i = 0;
 
-        let nextPrice = goingRight ? currentRight : currentLeft;
-        let nextSqrtPrice = Math.sqrt(nextPrice);
+        // while have stuff to sell, and not out of bounds and arrived at next price point to calculate next chunk of swap
+        while (amount > 0 && 
+            arrivedAtSqrtPrice === Math.sqrt(nextPricePoint) &&  
+            this.currentRight < globalConfig.PRICE_MAX)
+        {
+            journal[i] = [];
 
-        // Each iteration is a position in this.pricePoints
-        while(amountRemaining > 0 && sqrtCurrentPrice != sqrtPriceLimit) {
-            // TODO: Implement limit here
-            // if there's an actual tick available next, it will be "below" the MAX/MIN limit, so keep the limit
-            // if there is no more tick with liquidity, then "next_price"=MAX/MIN limit, so it will be equal to LIMIT
+            nextPricePoint = this.currentRight;
+            arrivedAtSqrtPrice += amount / this.currentLiquidity;
+            currentLiquidity = this.currentLiquidity;
             
-            let amount0UntilNextPrice = currentLiquidity * (nextSqrtPrice - sqrtCurrentPrice);
-            let amount1UntilNextPrice = currentLiquidity * (1 / sqrtCurrentPrice - 1 / nextSqrtPrice);
+            journal[i].push(`Current price: ${this.currentPrice}`);
+            journal[i].push(`Current left/right: ${this.currentLeft}/${this.currentRight}`);
+            journal[i].push(`Next price point: ${nextPricePoint}`);
+            journal[i].push(`Current liquidity: ${this.currentLiquidity}`);
 
-            // console.log(currentRight, nextSqrtPrice, amount0UntilNextPrice, amount1UntilNextPrice);
-
-            let amountIn = goingRight ? Math.floor(amount0UntilNextPrice) : Math.ceil(amount1UntilNextPrice);;
-            let amountOut = 0;
-            let arrivedAtSqrtPrice = 0;
-
-            if (goingRight) {
-                arrivedAtSqrtPrice = sqrtCurrentPrice + amountRemaining / currentLiquidity;
-            } else {
-                arrivedAtSqrtPrice = currentLiquidity / (currentLiquidity / sqrtCurrentPrice + amountRemaining);
+            if (arrivedAtSqrtPrice >= Math.sqrt(nextPricePoint)) {
+                arrivedAtSqrtPrice = Math.sqrt(nextPricePoint);
+                journal[i].push(`Arrived price is higher/equal than nextPricePoint, capping at ${arrivedAtSqrtPrice}`);
+                this.currentLiquidity += this.pricePoints.get(nextPricePoint).liquidity * 1;
+                this.currentRight = this.pricePoints.get(nextPricePoint).right;
+                this.currentLeft = this.pricePoints.get(nextPricePoint).left;
+                this.currentPricePoint = nextPricePoint;
+                journal[i].push(`Next liquidity: ${this.currentLiquidity}`);
+                journal[i].push(`Next left/right: ${this.currentLeft}/${this.currentRight}`);
+                journal[i].push(`WILL MOVE TO NEXT POSITION: ${nextPricePoint}`);
             }
 
-            // If we arrived at the next sqrt price or higher, cap at next sqrt price or leave as is
-            arrivedAtSqrtPrice = arrivedAtSqrtPrice > nextSqrtPrice ? nextSqrtPrice : arrivedAtSqrtPrice;
+            journal[i].push(`Calculating amount0: ${currentLiquidity} * ${arrivedAtSqrtPrice} - ${Math.sqrt(this.currentPrice)}`);
+            let amount0UntilNextPrice = currentLiquidity * (arrivedAtSqrtPrice - Math.sqrt(this.currentPrice));
+            journal[i].push(`Calculating amount1: ${currentLiquidity} * 1/${arrivedAtSqrtPrice} - 1/${Math.sqrt(this.currentPrice)}`);
+            let amount1UntilNextPrice = currentLiquidity * (1 / arrivedAtSqrtPrice - 1 / Math.sqrt(this.currentPrice));
 
-            // Guaranteed arrived at the next sqrt price
-            isPositionMaxed = arrivedAtSqrtPrice === nextSqrtPrice;
+            amount0UntilNextPrice = parseFloat(amount0UntilNextPrice.toFixed(9))
+            amount1UntilNextPrice = parseFloat(amount1UntilNextPrice.toFixed(9))
 
-            /*
-            // TBD: JUNK?
-            if (goingRight) {
-                amountIn = (isPositionMaxed && (amount > 0)) ? amountIn : (-1) * amount1UntilNextPrice;
-                amountOut = (isPositionMaxed && (amount <= 0)) ? amountOut : (-1) * amount0UntilNextPrice;
-            } else {
-                amountIn = (isPositionMaxed && (amount > 0)) ? amountIn : amount0UntilNextPrice;
-                amountOut = (isPositionMaxed && (amount <= 0)) ? amountOut : amount1UntilNextPrice;
-            }*/
+            journal[i].push(`Amount0 untilNextPrice (curLiq * (arrived - sqrt(curPrice)): ${amount0UntilNextPrice}`);
+            journal[i].push(`Amount1 untilNextPrice (curLiq * (1/arrivedAtSqrtPrice - 1/sqrt(curPrice))): ${amount1UntilNextPrice}`);
 
-            // TBD: Possibly above code is required for proper amount deduction
-            amountRemaining += goingRight ? -amount1UntilNextPrice : amount0UntilNextPrice;
-
-            sqrtCurrentPrice = arrivedAtSqrtPrice;
-
-            let nextPriceLiquidity = this.pricePoints.get(currentRight).liquidity;
-
-            if (isPositionMaxed) {
-                // TBD: Reached the end - exit. Should be at the beginning of the loop?
-                if (
-                        (!goingRight && this.pricePoints.get(currentLeft).left <= -Infinity) || 
-                        (goingRight && this.pricePoints.get(currentRight).right >= Infinity)
-                 ) {
-                    break;
-                }
-
-                currentLiquidity += this.goingRight ? nextPriceLiquidity : (-1 * nextPriceLiquidity);
-                currentLeft = this.pricePoints.get(nextPrice).left;
-                currentRight = this.pricePoints.get(nextPrice).right;
-                currentPrice = goingRight ? nextPrice : currentLeft;
-                sqrtCurrentPrice = Math.sqrt(nextPrice);
-            } else {
-                currentPrice = arrivedAtSqrtPrice;
+            this.currentPrice = arrivedAtSqrtPrice ** 2;
+            journal[i].push(`Arrived at price (not sqrt): ${this.currentPrice}`);
+            
+            if (amount1UntilNextPrice === -Infinity || isNaN(amount1UntilNextPrice)) {
+                i += 1;
+                continue;
             }
+            
+            amount += -amount0UntilNextPrice;
+            investor.balances[this.tokenLeft.name] += -amount0UntilNextPrice;
+            if (!investor.balances[this.tokenRight.name]) investor.balances[this.tokenRight.name] = 0;
+            investor.balances[this.tokenRight.name] += Math.abs(amount1UntilNextPrice);
 
-            this.setLiquidity(currentLiquidity);
-            this.setPrice(currentPrice);
+            journal[i].push(`Remaining amount after adding ${amount1UntilNextPrice}: ${amount}`);
+            i += 1;
         }
-    }
 
-    getLiquidity() {
-        return this.activeLiquidity;
-    }
-
-    getCurrentPrice() {
-        return this.currentPrice;
-    }
-
-    getSqrtCurrentPrice() {
-        return this.sqrtCurrentPrice;
-    }
-
-    calculateLowerPrice(amount1) {
-        return (this.sqrtCurrentPrice - amount1 / this.activeLiquidity) ** 2;
-    }
-
-    calculateUpperPrice(amount0) {
-        return ((this.activeLiquidity * this.sqrtCurrentPrice) / (this.activeLiquidity - this.sqrtCurrentPrice * amount0)) ** 2;
-    }
-
-    setPrice(price) {
-        this.currentPrice = price;
-        this.sqrtCurrentPrice = Math.sqrt(price);
-    }
-
-    setSqrtPrice(sqrtPrice) {
-        this.sqrtCurrentPrice = sqrtPrice;
-        this.currentPrice = sqrtPrice ** 2;
-    }
-
-    setLiquidity(liquidity) {
-        this.activeLiquidity = liquidity;
+        journal.forEach(iteration => {
+            console.log(iteration.join('\n'));
+        })
     }
 }
