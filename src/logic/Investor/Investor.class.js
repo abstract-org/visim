@@ -9,21 +9,14 @@ export default class Investor {
     balances = {'USDC': 0}; // not like solidity, what's better -> balances here or in tokens
     positions = [];
 
-    #canBuy = true;
-    #canSell = true;
-    #canCreate = true;
-
-    constructor(id, usdcBalance = 10000, type = 'creator', canCreate) {
+    constructor(id, usdcBalance = 10000, type = 'creator') {
         this.id = id;
         this.hash = '0x'+sha256(`${id.toString()} + ${type}`);
         this.balances.USDC = usdcBalance;
         this.type = type;
-        this.#canCreate = canCreate;
     }
 
-    createToken(name) {
-        if (!this.#canCreate) return undefined;
-
+    createQuest(name) {
         return new Token(name);
     }
 }

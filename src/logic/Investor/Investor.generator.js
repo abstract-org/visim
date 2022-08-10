@@ -2,7 +2,7 @@
 import InvestorTypes from './Investor.types';
 import Investor from './Investor.class';
 
-export default function generateInvestors(amount) {
+export function generateRandomInvestors(amount) {
     const investors = [];
 
     if (amount <= 0) {
@@ -16,12 +16,27 @@ export default function generateInvestors(amount) {
         let newInvestor = new Investor(
             i+1,
             randomInvestorType.usdcBalance,
-            randomInvestorType.type,
-            randomInvestorType.canCreate
+            randomInvestorType.type
         )
 
         investors.push(newInvestor)
     }
+
+    return investors;
+}
+
+export function generateDefaultInvestors() {
+    const investors = [];
+
+    InvestorTypes.forEach((investorType, i) => {
+        let newInvestor = new Investor(
+            i+1,
+            investorType.usdcBalance,
+            investorType.type
+        )
+
+        investors.push(newInvestor);
+    });
 
     return investors;
 }
