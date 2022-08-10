@@ -28,7 +28,7 @@ export function InvestorModule({children}) {
 export function InvestorSelector() {
   const investors = useInvestorStore(state => state.investors)
   const setActive = useInvestorStore(setActiveSelector)
-  let activeInvestor = useInvestorStore((state) => state.active)
+  const activeInvestor = useInvestorStore((state) => state.active)
 
   const investorsValues = investors.map((investorHash) => 
     ({
@@ -37,8 +37,9 @@ export function InvestorSelector() {
     }))
   
     return (
-    <Dropdown value={activeInvestor} options={investorsValues} onChange={(e) => setActive(e.value)} placeholder='Choose Investor' />
-  )
+    <div>
+      <Dropdown className="w-6" value={activeInvestor} options={investorsValues} onChange={(e) => setActive(e.value)} placeholder='Choose Investor' />
+    </div>)
 }
 
 export function InvestorPoolBalance() {
@@ -55,11 +56,11 @@ export function InvestorPoolBalance() {
     balanceContent = <div className="grid">
       <div className="col-6">
         <p><b>{(investor && pool.tokenLeft.name)}</b>&nbsp;Balance</p>
-        <ProgressBar value={investor && investor.balances[pool.tokenLeft.name]} displayValueTemplate={numericValue}></ProgressBar>
+        <ProgressBar value={investor && Math.floor(investor.balances[pool.tokenLeft.name]) || 0} displayValueTemplate={numericValue}></ProgressBar>
       </div>
       <div className="col-6">
         <p><b>{(pool && pool.tokenRight.name)}</b>&nbsp;Balance</p>
-        <ProgressBar value={investor && investor.balances[pool.tokenRight.name] | 0} displayValueTemplate={numericValue}></ProgressBar>
+        <ProgressBar value={investor && Math.floor(investor.balances[pool.tokenRight.name]) || 0} displayValueTemplate={numericValue}></ProgressBar>
       </div>
     </div>
   }

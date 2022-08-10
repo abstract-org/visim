@@ -13,34 +13,25 @@ import 'primereact/resources/primereact.min.css';
 import 'primeflex/primeflex.css'
 import 'primeicons/primeicons.css';
 
-import agoraCard from './styles/card.module.css';
 import agoraDt from './styles/datatable.module.css';
 
 import { InvestorModule, InvestorPoolBalance, InvestorSelector } from './logic/Investor/Investor.components';
-import { QuestSelector, QuestManager } from './logic/Token/Quest.components';
+import { QuestManager } from './logic/Token/Quest.components';
 import { PoolSelector, PoolChartStats, SwapModule } from './logic/Pool/Pool.components';
 
 export default function Home() {
-  const logs = [
-    {"id": 1, "block": "Test", "event": "UYDHFIUHSD"},
-    {"id": 1, "block": "Test", "event": "UYDHFIUHSD"},
-    {"id": 1, "block": "Test", "event": "UYDHFIUHSD"},
-    {"id": 1, "block": "Test", "event": "UYDHFIUHSD"},
-    {"id": 1, "block": "Test", "event": "UYDHFIUHSD"}
-  ]
-
   return (
     <div>
       <div className="grid">
         <div className="col-8">
-          <Card className={agoraCard.agoraCard}>
+          <Card className="h-full">
             <PoolSelector />
             <PoolChartStats />
             <PoolChart height={215} />
           </Card>
         </div>
-        <div className="col-4" style={{minHeight: '400px'}}>
-          <Card className={`${agoraCard.agoraCard}`}>
+        <div className="col-4">
+          <Card className="h-full">
             <div>
               <div className="grid">
                 <div className="col-12">
@@ -49,17 +40,21 @@ export default function Home() {
                   </InvestorModule>
                 </div>
               </div>
-              <div className="grid">
+              <div className="grid h-10rem">
                 <div className="col-12">
                   <InvestorPoolBalance />
                 </div>
               </div>
-              <SwapModule />
+              <div className="grid mt-10">
+                <div className="col-12">
+                  <SwapModule />
+                </div>
+              </div>
             </div>
           </Card> 
         </div>
       </div>
-      <div className="grid grid-nogutter">
+      <div className="grid mt-3">
           <div className="col-8">
             {/*<Card className={agoraCard.agoraCard}>
               <h2>Knowledge Graph</h2>
@@ -83,8 +78,12 @@ export default function Home() {
             </Card>*/}
           </div>
           <div className="col-4">
-            <Card className={agoraCard.agoraCard}>
-              <QuestManager />
+            <Card>
+              <div className="grid">
+                <div className="col-8 col-offset-2">
+                  <QuestManager />
+                </div>
+              </div>
             </Card>
           </div>
           {/*<div className="col-8">

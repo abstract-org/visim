@@ -1,6 +1,7 @@
 import sha256 from 'crypto-js/sha256';
 import globalConfig from '../config.global.json'; // make it a hash map
 import HashMap from 'hashmap';
+import BigNumber from 'bignumber.js';
 
 export default class Pool {
     name;
@@ -14,6 +15,8 @@ export default class Pool {
     currentPricePoint = globalConfig.PRICE_MIN;
     currentLiquidity = 0;
 
+    totalSold = 0;
+
     pricePoints = new HashMap();
 
     constructor(tokenLeft, tokenRight, startingPrice) {
@@ -22,7 +25,7 @@ export default class Pool {
         this.tokenLeft = tokenLeft;
         this.tokenRight = tokenRight;
 
-        this.name = '0x'+sha256(tokenLeft+tokenRight);
+        this.name = '0x'+sha256(tokenLeft.name+tokenRight.name);
 
         if (startingPrice) {
             this.currentPrice = startingPrice;
@@ -131,28 +134,31 @@ export default class Pool {
     }
 
     buy(amount, investor) {
-        let nextPricePoint = this.currentPricePoint;
-        let arrivedAtSqrtPrice = Math.sqrt(nextPricePoint);
-        let currentLiquidity = this.currentLiquidity;
+        if (!investor) {
+            console.error('You are trying to swap without providing reference to investor');
+            return;
+        }
 
+        let nextPricePoint
+        let currentLiquidity
+        let arrivedAtSqrtPrice = Math.sqrt(this.currentPrice);
+        
         let journal = [];
         let i = 0;
 
         // while have stuff to sell, and not out of bounds and arrived at next price point to calculate next chunk of swap
-        while (amount > 0 && 
-            arrivedAtSqrtPrice === Math.sqrt(nextPricePoint) &&  
-            this.currentRight < globalConfig.PRICE_MAX)
-        {
+        do {
             journal[i] = [];
 
             nextPricePoint = this.currentRight;
-            arrivedAtSqrtPrice += amount / this.currentLiquidity;
             currentLiquidity = this.currentLiquidity;
+            arrivedAtSqrtPrice += amount / currentLiquidity;
             
             journal[i].push(`Current price: ${this.currentPrice}`);
             journal[i].push(`Current left/right: ${this.currentLeft}/${this.currentRight}`);
             journal[i].push(`Next price point: ${nextPricePoint}`);
-            journal[i].push(`Current liquidity: ${this.currentLiquidity}`);
+            journal[i].push(`Current liquidity: ${currentLiquidity}`);
+            journal[i].push(`New arrived b4 cap at ${i}: ${arrivedAtSqrtPrice}`);
 
             if (arrivedAtSqrtPrice >= Math.sqrt(nextPricePoint)) {
                 arrivedAtSqrtPrice = Math.sqrt(nextPricePoint);
@@ -171,8 +177,8 @@ export default class Pool {
             journal[i].push(`Calculating amount1: ${currentLiquidity} * 1/${arrivedAtSqrtPrice} - 1/${Math.sqrt(this.currentPrice)}`);
             let amount1UntilNextPrice = currentLiquidity * (1 / arrivedAtSqrtPrice - 1 / Math.sqrt(this.currentPrice));
 
-            amount0UntilNextPrice = parseFloat(amount0UntilNextPrice.toFixed(9))
-            amount1UntilNextPrice = parseFloat(amount1UntilNextPrice.toFixed(9))
+            amount0UntilNextPrice = amount0UntilNextPrice
+            amount1UntilNextPrice = amount1UntilNextPrice
 
             journal[i].push(`Amount0 untilNextPrice (curLiq * (arrived - sqrt(curPrice)): ${amount0UntilNextPrice}`);
             journal[i].push(`Amount1 untilNextPrice (curLiq * (1/arrivedAtSqrtPrice - 1/sqrt(curPrice))): ${amount1UntilNextPrice}`);
@@ -185,17 +191,73 @@ export default class Pool {
                 continue;
             }
             
-            amount += -amount0UntilNextPrice;
-            investor.balances[this.tokenLeft.name] += -amount0UntilNextPrice;
-            if (!investor.balances[this.tokenRight.name]) investor.balances[this.tokenRight.name] = 0;
-            investor.balances[this.tokenRight.name] += Math.abs(amount1UntilNextPrice);
-
+            amount += -amount0UntilNextPrice
             journal[i].push(`Remaining amount after adding ${amount1UntilNextPrice}: ${amount}`);
+
+            investor.addBalance(this.tokenLeft.name, -amount0UntilNextPrice)
+            investor.addBalance(this.tokenRight.name, Math.abs(amount1UntilNextPrice))
+            
+            this.totalSold += Math.abs(amount1UntilNextPrice)
+
             i += 1;
-        }
+        } while(amount > 0 && 
+            arrivedAtSqrtPrice === Math.sqrt(nextPricePoint) &&  
+            this.currentRight < globalConfig.PRICE_MAX)
 
         journal.forEach(iteration => {
-            console.log(iteration.join('\n'));
+            // console.log(iteration.join('\n'));
+        })
+    }
+
+    sell(amount, investor) {
+        if (!investor) {
+            console.error('You are trying to swap without providing reference to investor');
+            return;
+        }
+
+        let prevPricePoint
+        let currentLiquidity
+        let arrivedAtSqrtPrice = 1 / Math.sqrt(this.currentPrice)
+        
+        let journal = []
+        let i = 0
+
+        do {
+            journal[i] = [];
+
+            prevPricePoint = this.currentLeft
+            currentLiquidity = this.currentLiquidity
+            arrivedAtSqrtPrice += amount / currentLiquidity
+
+            if (arrivedAtSqrtPrice <= Math.sqrt(prevPricePoint)) {
+                arrivedAtSqrtPrice = Math.sqrt(prevPricePoint)
+
+                this.currentLiquidity -= this.pricePoints.get(prevPricePoint).liquidity * 1
+                this.currentRight = this.pricePoints.get(prevPricePoint).right
+                this.currentLeft = this.pricePoints.get(prevPricePoint).left
+                this.currentPricePoint = prevPricePoint
+            }
+            
+            let amount0UntilNextPrice = currentLiquidity * (1 / arrivedAtSqrtPrice - 1 / Math.sqrt(this.currentPrice));
+            let amount1UntilNextPrice = currentLiquidity * (arrivedAtSqrtPrice.toFixed(9) - Math.sqrt(this.currentPrice.toFixed(9)));
+            
+            console.log(amount0UntilNextPrice, amount1UntilNextPrice)
+
+            const tempNewPrice = arrivedAtSqrtPrice ** 2
+            this.currentPrice = tempNewPrice < this.currentPricePoint ? this.currentPricePoint : tempNewPrice
+
+            amount += -amount0UntilNextPrice
+
+            investor.addBalance(this.tokenLeft.name, Math.abs(amount1UntilNextPrice))
+            investor.addBalance(this.tokenRight.name, -amount0UntilNextPrice)
+            this.totalSold -= Math.abs(-1 * parseFloat((amount0UntilNextPrice).toFixed(2)))
+
+        } while(amount > 0 && 
+            arrivedAtSqrtPrice === Math.sqrt(prevPricePoint) &&  
+            this.currentLeft > globalConfig.PRICE_MIN)
+
+        journal.forEach(iteration => {
+            // console.log(iteration.join('\n'));
         })
     }
 }
