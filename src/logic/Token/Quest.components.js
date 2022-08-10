@@ -26,6 +26,7 @@ export const QuestSelector = () => {
 
   return (
     <Dropdown 
+      className="w-6"
       value={quest && quest.name} 
       options={quests.map(questName => globalState.quests.get(questName).name)} 
       onChange={(e => setActive(quests.find(questName => questName === e.value)))}
@@ -38,14 +39,20 @@ export const QuestManager = () => {
     const addPool = usePoolStore(addPoolSelector)
     const addQuest = useQuestStore(addQuestSelector)
     const activeInvestor = useInvestorStore((state) => state.active)
+    const quests = useQuestStore(state => state.quests)
 
     const handleQuestName = e => {
       setQuestName(e.target.value)
     }
 
     const handleCreateQuest = () => {
-      if (questName.length <= 0 && activeInvestor === null) {
+      if (questName.length <= 0 || activeInvestor === null) {
         console.log('Cannot create quest without selecting investor')
+        return
+      }
+
+      if (quests.find(quest => quest === questName)) {
+        console.log('Cannot create quest with the same title')
         return
       }
 
@@ -64,19 +71,18 @@ export const QuestManager = () => {
     return (
       <div>
         <h3>Create Quest</h3>
-        <InvestorSelector />
-        <div>
+        <div className="mt-5">
           <div className="field">
               <label htmlFor="questName" className="block">Name</label>
-              <InputText id="questName" aria-describedby="questName-help" className="block" value={questName} onChange={handleQuestName} autoComplete="off" />
+              <InputText id="questName" aria-describedby="questName-help" className="w-full" value={questName} onChange={handleQuestName} autoComplete="off" />
           </div>
         </div>
         <h3>Citing Quests</h3>
-        <ScrollPanel className={agoraCheck.agoraCheck} style={{width: '100%', height: '8rem'}}>
+        <ScrollPanel className="w-full h-10rem border-1 border-solid border-500 p-3">
           <CitingQuestList />
         </ScrollPanel>
         <div className="flex justify-content-center">
-          <Button className="p-button-success" style={{margin: '0.375rem 0'}} onClick={handleCreateQuest}>Create new Quest</Button>  
+          <Button className="p-button-success w-10 mt-5 justify-content-center" style={{margin: '0.375rem 0'}} onClick={handleCreateQuest}>Create new Quest</Button>  
         </div>
       </div>
     )

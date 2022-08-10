@@ -19,4 +19,18 @@ export default class Investor {
     createQuest(name) {
         return new Token(name);
     }
+
+    addBalance(tokenName, balance) {
+        if (!this.balances[tokenName]) {
+            this.balances[tokenName] = 0
+        }
+        
+        const preResult = parseFloat((this.balances[tokenName] + balance).toFixed(9))
+
+        if (preResult === 0) {
+            this.balances[tokenName] = 0
+        } else {
+            this.balances[tokenName] += balance
+        }
+    }
 }
