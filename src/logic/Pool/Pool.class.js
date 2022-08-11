@@ -229,10 +229,14 @@ export default class Pool {
             
             nextPricePoint = this.currentPricePoint
             currentLiquidity = this.currentLiquidity
-            arrivedAtSqrtPrice = currentLiquidity * arrivedAtSqrtPrice / (amount * this.currentPrice + currentLiquidity)
+            console.log('b4 loop', {arrived: arrivedAtSqrtPrice})
+            // arrived=liq/(amt+liq/cursqrtprice)
+            arrivedAtSqrtPrice = currentLiquidity / (amount + currentLiquidity / Math.sqrt(this.currentPrice))
             
+            console.log({next: nextPricePoint, nextSqrt: Math.sqrt(nextPricePoint), amount, liq: currentLiquidity, cur: this.currentPrice, left: this.currentLeft, arrived: arrivedAtSqrtPrice, right: this.currentRight})
             if (arrivedAtSqrtPrice <= Math.sqrt(nextPricePoint)) {
                 arrivedAtSqrtPrice = Math.sqrt(nextPricePoint)
+                console.log({arrivedAtInIf: arrivedAtSqrtPrice})
                 this.currentLiquidity -= this.pricePoints.get(nextPricePoint).liquidity
                 this.currentRight = this.pricePoints.get(nextPricePoint).right
                 this.currentLeft = this.pricePoints.get(nextPricePoint).left
@@ -244,12 +248,18 @@ export default class Pool {
             let amount1UntilNextPrice = currentLiquidity * 
                 (Math.sqrt(this.currentPrice) - arrivedAtSqrtPrice)
             
-            this.currentPrice = arrivedAtSqrtPrice ** 2
+            this.currentPrice = arrivedAtSqrtPrice ** 2 // tempNewPrice < this.currentPricePoint ? this.currentPricePoint : tempNewPrice
             
-            console.log({amount, amount0: amount0UntilNextPrice, amount1: amount1UntilNextPrice})
             amount += amount0UntilNextPrice
-            console.log({newAmount: amount})
-
+            
+            console.log(
+                {currentPrice: this.currentPrice},
+                {arrived: arrivedAtSqrtPrice},
+                {liquidity: currentLiquidity}, 
+                {amount0: amount0UntilNextPrice}, 
+                {amount1: amount1UntilNextPrice}, 
+                {remaining: amount},
+            )
 
             investor.addBalance(this.tokenLeft.name, Math.abs(amount1UntilNextPrice))
             investor.addBalance(this.tokenRight.name, amount0UntilNextPrice)
