@@ -67,7 +67,45 @@ it('Three investors buy, one during tick shift', () => {
     expect(fomo.balances[pool.tokenRight.name]).toBeCloseTo(105.621)
 })
 
-fit('Swaps RP1 for USDC and updates current price', () => {
+fit('Buy all the way to the right', () => {
+    const creator = new Investor(1, 1000000000000000, 'creator', true)
+
+    const token1 = creator.createQuest('RP1')
+    const pool = token1.createPool(state.tokens.get('USDC'))
+
+    token1.addToPool(pool)
+    token1.initializePoolPositions(pool)
+
+    pool.buy(1000000000000000, creator)
+
+    expect(pool.currentPrice).toBeLessThanOrEqual(globalConfig.PRICE_MAX)
+    expect(pool.totalSold).toBe(20000)
+    expect(pool.currentLiquidity).toBe(0)
+})
+
+fit('Sell all the way to the left', () => {
+    const creator = new Investor(1, 100000000, 'creator', true)
+
+    const token1 = creator.createQuest('RP1')
+    const pool = token1.createPool(state.tokens.get('USDC'))
+
+    token1.addToPool(pool)
+    token1.initializePoolPositions(pool)
+
+    pool.buy(100000000, creator)
+
+    console.log(creator)
+
+    pool.sell(20000, creator)
+
+    console.log(creator)
+
+    expect(pool.currentPrice).toBeLessThanOrEqual(globalConfig.PRICE_MAX)
+    expect(pool.totalSold).toBe(20000)
+    expect(pool.currentLiquidity).toBe(0)
+})
+
+it('Swaps RP1 for USDC and updates current price', () => {
     const creator = new Investor(1, 12000, 'creator', true)
     const longTerm = new Investor(1, 1000000, 'long-term', true)
 

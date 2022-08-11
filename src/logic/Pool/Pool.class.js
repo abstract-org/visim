@@ -140,6 +140,7 @@ export default class Pool {
         }
 
         let nextPricePoint
+
         let currentLiquidity
         let arrivedAtSqrtPrice = Math.sqrt(this.currentPrice);
         
@@ -151,6 +152,7 @@ export default class Pool {
             journal[i] = [];
 
             nextPricePoint = this.currentRight;
+            // sets local variable from global variable (global changes on each cycle)
             currentLiquidity = this.currentLiquidity;
             arrivedAtSqrtPrice += amount / currentLiquidity;
             
@@ -215,46 +217,47 @@ export default class Pool {
             return;
         }
 
-        let prevPricePoint
+        let nextPricePoint
         let currentLiquidity
-        let arrivedAtSqrtPrice = 1 / Math.sqrt(this.currentPrice)
+        let arrivedAtSqrtPrice = Math.sqrt(this.currentPrice)
         
         let journal = []
         let i = 0
-
+        
         do {
             journal[i] = [];
-
-            prevPricePoint = this.currentLeft
+            
+            nextPricePoint = this.currentPricePoint
             currentLiquidity = this.currentLiquidity
-            arrivedAtSqrtPrice += amount / currentLiquidity
-
-            if (arrivedAtSqrtPrice <= Math.sqrt(prevPricePoint)) {
-                arrivedAtSqrtPrice = Math.sqrt(prevPricePoint)
-
-                this.currentLiquidity -= this.pricePoints.get(prevPricePoint).liquidity * 1
-                this.currentRight = this.pricePoints.get(prevPricePoint).right
-                this.currentLeft = this.pricePoints.get(prevPricePoint).left
-                this.currentPricePoint = prevPricePoint
+            arrivedAtSqrtPrice = currentLiquidity * arrivedAtSqrtPrice / (amount * this.currentPrice + currentLiquidity)
+            
+            if (arrivedAtSqrtPrice <= Math.sqrt(nextPricePoint)) {
+                arrivedAtSqrtPrice = Math.sqrt(nextPricePoint)
+                this.currentLiquidity -= this.pricePoints.get(nextPricePoint).liquidity
+                this.currentRight = this.pricePoints.get(nextPricePoint).right
+                this.currentLeft = this.pricePoints.get(nextPricePoint).left
+                this.currentPricePoint = this.pricePoints.get(nextPricePoint).left
             }
-            
-            let amount0UntilNextPrice = currentLiquidity * (1 / arrivedAtSqrtPrice - 1 / Math.sqrt(this.currentPrice));
-            let amount1UntilNextPrice = currentLiquidity * (arrivedAtSqrtPrice.toFixed(9) - Math.sqrt(this.currentPrice.toFixed(9)));
-            
-            console.log(amount0UntilNextPrice, amount1UntilNextPrice)
 
-            const tempNewPrice = arrivedAtSqrtPrice ** 2
-            this.currentPrice = tempNewPrice < this.currentPricePoint ? this.currentPricePoint : tempNewPrice
+            let amount0UntilNextPrice = currentLiquidity * 
+                (1 / Math.sqrt(this.currentPrice) - 1 / arrivedAtSqrtPrice)
+            let amount1UntilNextPrice = currentLiquidity * 
+                (Math.sqrt(this.currentPrice) - arrivedAtSqrtPrice)
+            
+            this.currentPrice = arrivedAtSqrtPrice ** 2
+            
+            console.log({amount, amount0: amount0UntilNextPrice, amount1: amount1UntilNextPrice})
+            amount += amount0UntilNextPrice
+            console.log({newAmount: amount})
 
-            amount += -amount0UntilNextPrice
 
             investor.addBalance(this.tokenLeft.name, Math.abs(amount1UntilNextPrice))
-            investor.addBalance(this.tokenRight.name, -amount0UntilNextPrice)
-            this.totalSold -= Math.abs(-1 * parseFloat((amount0UntilNextPrice).toFixed(2)))
+            investor.addBalance(this.tokenRight.name, amount0UntilNextPrice)
+            this.totalSold += Math.abs(-1 * parseFloat((amount1UntilNextPrice).toFixed(2)))
 
-        } while(amount > 0 && 
-            arrivedAtSqrtPrice === Math.sqrt(prevPricePoint) &&  
-            this.currentLeft > globalConfig.PRICE_MIN)
+        } while(amount > 0.01 && 
+            arrivedAtSqrtPrice === Math.sqrt(nextPricePoint) &&  
+            this.currentLeft >= globalConfig.PRICE_MIN)
 
         journal.forEach(iteration => {
             // console.log(iteration.join('\n'));
