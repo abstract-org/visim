@@ -1,7 +1,6 @@
 import sha256 from 'crypto-js/sha256';
 import globalConfig from '../config.global.json'; // make it a hash map
 import HashMap from 'hashmap';
-import BigNumber from 'bignumber.js';
 
 export default class Pool {
     name;

@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { Dropdown } from 'primereact/dropdown';
 import { InputNumber } from 'primereact/inputnumber';
 import { Button } from 'primereact/button';
+import { Messages } from 'primereact/messages';
 
 import usePoolStore from './pool.store';
 import useInvestorStore from '../Investor/investor.store';
@@ -65,6 +66,7 @@ export const PoolChartStats = () => {
 }
 
 export const SwapModule = () => {
+    const msgs = useRef(null)
     const [amount, setAmount] = useState(0)
     const activeInvestor = useInvestorStore((state) => state.active)
     const activePool = usePoolStore((state) => state.active)
@@ -76,6 +78,32 @@ export const SwapModule = () => {
     const handleBuy = () => {
         if (amount <= 0) {
             console.log('Cannot buy with amount 0')
+            msgs.current.show({
+                severity: 'warn',
+                detail: 'Cannot buy with amount 0'
+            })
+            return
+        }
+
+        if (!activePool) {
+            msgs.current.show({
+                severity: 'warn',
+                detail: 'Please select the pool first'
+            })
+            return
+        }
+        if (!activeInvestor) {
+            msgs.current.show({
+                severity: 'warn',
+                detail: 'Please select the investor first'
+            })
+            return
+        }
+        if (investor.balances[pool.tokenLeft.name] < amount) {
+            msgs.current.show({
+                severity: 'warn',
+                detail: `Not enough ${pool.tokenLeft.name} to purchase ${amount} of ${pool.tokenRight.name}`
+            })
             return
         }
 
@@ -94,6 +122,32 @@ export const SwapModule = () => {
     const handleSell = () => {
         if (amount <= 0) {
             console.log('Cannot sell with amount 0')
+            msgs.current.show({
+                severity: 'warn',
+                detail: 'Cannot sell with amount 0'
+            })
+            return
+        }
+
+        if (!activePool) {
+            msgs.current.show({
+                severity: 'warn',
+                detail: 'Please select the pool first'
+            })
+            return
+        }
+        if (!activeInvestor) {
+            msgs.current.show({
+                severity: 'warn',
+                detail: 'Please select the investor first'
+            })
+            return
+        }
+        if (!investor.balances[pool.tokenRight.name] || investor.balances[pool.tokenRight.name] < amount) {
+            msgs.current.show({
+                severity: 'warn',
+                detail: `Not enough ${pool.tokenRight.name} to purchase ${amount} of ${pool.tokenLeft.name}`
+            })
             return
         }
 
@@ -131,6 +185,11 @@ export const SwapModule = () => {
                 </div>
                 <div className="col-6 flex justify-content-center">
                     <Button className="p-button-danger w-10" label="Sell Tokens" onClick={handleSell} />
+                </div>
+            </div>
+            <div className="grid">
+                <div className="col-12">
+                    <Messages ref={msgs} />
                 </div>
             </div>
         </div>
