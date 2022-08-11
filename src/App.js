@@ -21,8 +21,8 @@ import { PoolSelector, PoolChartStats, SwapModule } from './logic/Pool/Pool.comp
 
 export default function Home() {
   return (
-    <div>
-      <div className="grid">
+    <div className="mt-2">
+      <div className="grid mr-0 ml-0">
         <div className="col-8">
           <Card className="h-full">
             <PoolSelector />
@@ -54,7 +54,7 @@ export default function Home() {
           </Card> 
         </div>
       </div>
-      <div className="grid mt-3">
+      <div className="grid mt-0 mr-0 ml-0">
           <div className="col-8">
             {/*<Card className={agoraCard.agoraCard}>
               <h2>Knowledge Graph</h2>
@@ -111,7 +111,7 @@ export default function Home() {
               Token Manager
             </Card>
           </div>*/}
-    </div>   
+      </div> 
     </div> 
   )
 }

@@ -13,5 +13,10 @@ export default [
         type: 'fomo',
         usdcBalance: 1000,
         dailySummonChance: 50
+    },
+    {
+        type: 'rich',
+        usdcBalance: 1000000000,
+        dailySummonChance: 1
     }
 ]
