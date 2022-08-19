@@ -1,33 +1,43 @@
 import sha256 from 'crypto-js/sha256';
 import globalConfig from '../config.global.json'; // make it a hash map
 import HashMap from 'hashmap';
+import UsdcToken from '../Quest/UsdcToken.class';
 
 export default class Pool {
-    name;
+    name
 
-    tokenLeft;
-    tokenRight;
+    tokenLeft
+    tokenRight
 
-    currentLeft = -Infinity;
-    currentRight = Infinity;
-    currentPrice = globalConfig.PRICE_MIN;
-    currentPricePoint = globalConfig.PRICE_MIN;
-    currentLiquidity = 0;
+    currentLeft = -Infinity
+    currentRight = Infinity
+    currentPrice = globalConfig.PRICE_MIN
+    currentPricePoint = globalConfig.PRICE_MIN
+    currentLiquidity = 0
 
-    totalSold = 0;
+    totalSold = 0
 
-    pricePoints = new HashMap();
+    pricePoints = new HashMap()
+
+    #type = 'VALUE_LINK'
 
     constructor(tokenLeft, tokenRight, startingPrice) {
-        if (tokenLeft.name === tokenRight.name) throw 'Tokens should not match';
+        if (typeof tokenLeft !== 'object' || typeof tokenRight !== 'object') throw new Error('Tokens must be an instance of a Token')
+        if (tokenLeft.name === tokenRight.name) throw new Error('Tokens should not match')
 
-        this.tokenLeft = tokenLeft;
-        this.tokenRight = tokenRight;
+        this.tokenLeft = tokenLeft
+        this.tokenRight = tokenRight
 
-        this.name = '0x'+sha256(tokenLeft.name+tokenRight.name);
+        this.id = '0x'+sha256(tokenLeft.name+'-'+tokenRight.name)
+        this.name = `${tokenLeft.name}-${tokenRight.name}`
 
-        if (startingPrice) {
-            this.currentPrice = startingPrice;
+        // By shifting default price we also move the pointer to the right of the entire pool
+        if (startingPrice && typeof startingPrice === 'number') {
+            this.currentPrice = startingPrice
+        }
+
+        if (tokenLeft instanceof UsdcToken || tokenRight instanceof UsdcToken) {
+            this.#type = 'QUEST'
         }
 
         this.initializePoolBoundaries();
@@ -35,20 +45,20 @@ export default class Pool {
 
     initializePoolBoundaries() {
         // Define default price boundaries 
-        this.pricePoints.set(globalConfig.PRICE_MIN, {
+        this.pricePoints.set(this.currentPrice, {
             liquidity: 0,
             left: -Infinity,
             right: globalConfig.PRICE_MAX
-        });
+        })
 
         this.pricePoints.set(globalConfig.PRICE_MAX, {
             liquidity: 0,
             left: globalConfig.PRICE_MIN,
             right: Infinity
-        });
+        })
 
-        this.currentPricePoint = globalConfig.PRICE_MIN;
-        this.currentLeft = -Infinity;
+        this.currentPricePoint = globalConfig.PRICE_MIN
+        this.currentLeft = -Infinity
         this.currentRight = Infinity
     }
 
@@ -271,5 +281,9 @@ export default class Pool {
         journal.forEach(iteration => {
             // console.log(iteration.join('\n'));
         })
+    }
+
+    getType() {
+        return this.#type
     }
 }

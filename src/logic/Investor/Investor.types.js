@@ -1,4 +1,4 @@
-export default [
+const investorTypes = [
     {
         type: 'creator',
         usdcBalance: 10000,
@@ -20,3 +20,5 @@ export default [
         dailySummonChance: 1
     }
 ]
+
+export default investorTypes
