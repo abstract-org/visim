@@ -110,6 +110,7 @@ export const SwapModule = () => {
         pool.buy(amount, investor)
 
         const swapData = {
+            pool: pool.name,
             currentPrice: pool.currentPrice,
             investorHash: investor.hash,
             action: 'buy',

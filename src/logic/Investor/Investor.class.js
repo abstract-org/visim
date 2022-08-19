@@ -1,6 +1,5 @@
 import sha256 from 'crypto-js/sha256';
-import HashMap from 'hashmap';
-import Token from '../Token/Token.class';
+import Token from '../Quest/Token.class';
 
 export default class Investor {
     id;
@@ -8,6 +7,8 @@ export default class Investor {
     type;
     balances = {'USDC': 0}; // not like solidity, what's better -> balances here or in tokens
     positions = [];
+
+    #canCreate = false
 
     constructor(id, usdcBalance = 10000, type = 'creator') {
         this.id = id;
@@ -17,6 +18,10 @@ export default class Investor {
     }
 
     createQuest(name) {
+        if (!this.type === 'creator') {
+            throw new Error('Only investors with a type "creator" can create Quests')
+        }
+        
         return new Token(name);
     }
 

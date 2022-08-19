@@ -23,7 +23,9 @@ export default class Token {
         return new Pool(token0, this, startingPrice);
     }
 
-    addToPool(pool) {
+    addPool(pool) {
+        if (this.pools.find(exPool => exPool.name === pool.name)) return
+        
         this.pools.push(pool);
     }
 
@@ -38,10 +40,10 @@ export default class Token {
                 Math.sqrt(position.priceMin),
                 Math.sqrt(position.priceMax),
                 Math.sqrt(pool.currentPrice)
-            );
+            )
 
-            pool.setPositionSingle(position.priceMin, liquidity);
-            liquidityForLeft.push({priceMax: position.priceMax, liquidity});
+            pool.setPositionSingle(position.priceMin, liquidity)
+            liquidityForLeft.push({priceMax: position.priceMax, liquidity})
         });
 
         liquidityForLeft.forEach(liqItem => {

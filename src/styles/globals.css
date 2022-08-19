@@ -1,10 +1,30 @@
-html,
 body {
-  padding: 0;
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
-  background: #e2e2e2;
-  font-size: 12px;
+    background-color: #e2e2e2;
+}
 
-  }
+.edge {
+    stroke: #b1b1b7;
+    stroke-dasharray: 5;
+    animation: dashdraw .5s linear infinite;
+    stroke-width: 1;
+}
+
+@keyframes dashdraw {
+    0% { stroke-dashoffset: 10; }
+}
+
+rect.fill-white {
+    fill: white;
+}
+
+rect.fill-black {
+    fill: black;
+}
+
+rect.fill-active {
+    fill: #2da149;
+}
+
+rect.fill-inactive {
+    fill: #7a7a7a;
+}

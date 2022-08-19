@@ -7,13 +7,10 @@ import { ScrollPanel } from 'primereact/scrollpanel';
 import { Button } from 'primereact/button';
 import { Messages } from 'primereact/messages';
 
-import agoraCheck from '../../styles/checkbox.module.css';
-
 import useQuestStore from './quest.store';
 import useInvestorStore from '../Investor/investor.store';
 import usePoolStore from '../Pool/pool.store';
 
-import { InvestorSelector } from '../Investor/Investor.components';
 import globalState from '../GlobalState';
 
 const addPoolSelector = state => state.addPool
@@ -69,7 +66,7 @@ export const QuestManager = () => {
     const investor = activeInvestor && globalState.investors.get(activeInvestor)
     const tokenRight = investor.createQuest(questName)
     const pool = tokenRight.createPool()
-    tokenRight.addToPool(pool)
+    tokenRight.addPool(pool)
     tokenRight.initializePoolPositions(pool)
 
     globalState.quests.set(tokenRight.name, tokenRight)

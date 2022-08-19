@@ -1,6 +1,6 @@
 import HashMap from 'hashmap';
 
-import UsdcToken from "../logic/Token/UsdcToken.class";
+import UsdcToken from "../logic/Quest/UsdcToken.class";
 import Investor from "../logic/Investor/Investor.class";
 
 import globalConfig from '../logic/config.global.json';
@@ -8,17 +8,17 @@ import globalConfig from '../logic/config.global.json';
 // Our "global state" to coordinate 
 const state = {
     investors: new HashMap(),
-    tokens: new HashMap(),
+    quests: new HashMap(),
     pools: new HashMap()
 };
-state.tokens.set('USDC', new UsdcToken());
+state.quests.set('USDC', new UsdcToken());
 
 it('swaps USDC for RP1 and updates current price', () => {
     const investorCreator = new Investor(1, 10000, 'creator', true)
     const token1 = investorCreator.createQuest('RP1')
-    const pool = token1.createPool(state.tokens.get('USDC'))
+    const pool = token1.createPool(state.quests.get('USDC'))
 
-    token1.addToPool(pool)
+    token1.addPool(pool)
     token1.initializePoolPositions(pool)
     
     pool.buy(5000, investorCreator)
@@ -34,9 +34,9 @@ it('swaps USDC for RP1 and updates current price', () => {
 it('Buys until runs out of USDC to zero', () => {
     const investorCreator = new Investor(1, 10000, 'creator', true)
     const token1 = investorCreator.createQuest('RP1')
-    const pool = token1.createPool(state.tokens.get('USDC'))
+    const pool = token1.createPool(state.quests.get('USDC'))
 
-    token1.addToPool(pool)
+    token1.addPool(pool)
     token1.initializePoolPositions(pool)
 
     pool.buy(5000, investorCreator)
@@ -55,9 +55,9 @@ it('Three investors buy, one during tick shift', () => {
     const fomo = new Investor(1, 1000, 'fomo', true)
 
     const token1 = creator.createQuest('RP1')
-    const pool = token1.createPool(state.tokens.get('USDC'))
+    const pool = token1.createPool(state.quests.get('USDC'))
 
-    token1.addToPool(pool)
+    token1.addPool(pool)
     token1.initializePoolPositions(pool)
 
     pool.buy(5000, creator)
@@ -71,9 +71,9 @@ fit('Buy all the way to the right', () => {
     const creator = new Investor(1, 1000000000000000, 'creator', true)
 
     const token1 = creator.createQuest('RP1')
-    const pool = token1.createPool(state.tokens.get('USDC'))
+    const pool = token1.createPool(state.quests.get('USDC'))
 
-    token1.addToPool(pool)
+    token1.addPool(pool)
     token1.initializePoolPositions(pool)
 
     pool.buy(1000000000000000, creator)
@@ -83,26 +83,22 @@ fit('Buy all the way to the right', () => {
     expect(pool.currentLiquidity).toBe(0)
 })
 
-fit('Sell all the way to the left', () => {
+it('Sell all the way to the left', () => {
     const creator = new Investor(1, 100000000, 'creator', true)
 
     const token1 = creator.createQuest('RP1')
-    const pool = token1.createPool(state.tokens.get('USDC'))
+    const pool = token1.createPool(state.quests.get('USDC'))
 
-    token1.addToPool(pool)
+    token1.addPool(pool)
     token1.initializePoolPositions(pool)
 
     pool.buy(100000000, creator)
 
-    console.log(creator)
-
     pool.sell(20000, creator)
-
-    console.log(creator)
 
     expect(pool.currentPrice).toBeLessThanOrEqual(globalConfig.PRICE_MAX)
     //expect(pool.totalSold).toBe(20000)
-    expect(pool.currentLiquidity).toBe(0)
+    expect(pool.currentLiquidity).toBeCloseTo(0)
 })
 
 it('Swaps RP1 for USDC and updates current price', () => {
@@ -110,9 +106,9 @@ it('Swaps RP1 for USDC and updates current price', () => {
     const longTerm = new Investor(1, 1000000, 'long-term', true)
 
     const token1 = creator.createQuest('RP1')
-    const pool = token1.createPool(state.tokens.get('USDC'))
+    const pool = token1.createPool(state.quests.get('USDC'))
 
-    token1.addToPool(pool)
+    token1.addPool(pool)
     token1.initializePoolPositions(pool)
     pool.buy(5000, creator)
     console.log(pool)
@@ -127,9 +123,9 @@ it('Swaps RP1 for USDC and updates current price', () => {
 it('calculates initial liquidity for token0', () => {
     const investorCreator = new Investor(1, 10000, 'creator', true);
     const token1 = investorCreator.createQuest('RP1');
-    const pool = token1.createPool(state.tokens.get('USDC'));
+    const pool = token1.createPool(state.quests.get('USDC'));
 
-    token1.addToPool(pool);
+    token1.addPool(pool);
     token1.initializePoolPositions(pool);
 
     const liquidity = pool.getLiquidityForAmounts(5000, 0, Math.sqrt(1), Math.sqrt(10000),pool.getCurrentPrice())
@@ -140,9 +136,9 @@ it('calculates initial liquidity for token0', () => {
 it('sets initial liquidity positions', () => {
     const investorCreator = new Investor(1, 10000, 'creator', true);
     const token1 = investorCreator.createQuest('RP1');
-    const pool = token1.createPool(state.tokens.get('USDC'));
+    const pool = token1.createPool(state.quests.get('USDC'));
 
-    token1.addToPool(pool);
+    token1.addPool(pool);
     token1.initializePoolPositions(pool);
 
 

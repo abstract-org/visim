@@ -43,6 +43,7 @@ export const options = {
 
   export function PoolChart() {
     const swaps = usePoolStore(state => state.swaps)
+    const activePool = usePoolStore(state => state.active)
 
     const data = {
         labels: [],
@@ -59,8 +60,10 @@ export const options = {
     
     
     swaps.forEach((swap, idx) => {
-        data.datasets[0].data.push(swap.currentPrice.toFixed(4))
-        data.labels.push(idx+1)
+        if (activePool === swap.pool) {
+            data.datasets[0].data.push(swap.currentPrice.toFixed(4))
+            data.labels.push(idx+1)
+        }
     })
 
     return <div style={{height: '215px'}}>
