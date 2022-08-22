@@ -51,8 +51,6 @@ beforeAll(() => {
         pair[1].addPool(valueLinkPool)
 
         state.pools.set(valueLinkPool.name, valueLinkPool)
-
-        console.log(valueLinkPool.pricePoints.values())
     })
 })
 
@@ -72,7 +70,7 @@ it('Should find all pools containing tokenA', () => {
     expect(pools.length).toBeGreaterThanOrEqual(1)
 })
 
-fit('Should find route from tokenA to tokenB', () => {
+it('Should find route from tokenA to tokenB', () => {
     const tokenA = state.quests.values()[0]
     const tokenB = state.quests.get( state.quests.keys()[Math.floor(Math.random() * state.quests.count())] )
 })

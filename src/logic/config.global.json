@@ -1,10 +1,31 @@
 {
+    "TOTAL_RESERVES_DEFAULT": 20000,
     "PRICE_MIN": 0,
     "PRICE_MAX": 1000000,
     "INITIAL_LIQUIDITY": [
-        {"priceMin": 1, "priceMax": 10000, "token0Amount": 5000, "token1Amount": 0},
-        {"priceMin": 10, "priceMax": 10000, "token0Amount": 5000, "token1Amount": 0},
-        {"priceMin": 50, "priceMax": 10000, "token0Amount": 5000, "token1Amount": 0},
-        {"priceMin": 200, "priceMax": 10000, "token0Amount": 5000, "token1Amount": 0}
+        {
+            "priceMin": 1,
+            "priceMax": 10000,
+            "tokenLeftAmount": 5000,
+            "tokenRightAmount": 0
+        },
+        {
+            "priceMin": 10,
+            "priceMax": 10000,
+            "tokenLeftAmount": 5000,
+            "tokenRightAmount": 0
+        },
+        {
+            "priceMin": 50,
+            "priceMax": 10000,
+            "tokenLeftAmount": 5000,
+            "tokenRightAmount": 0
+        },
+        {
+            "priceMin": 200,
+            "priceMax": 10000,
+            "tokenLeftAmount": 5000,
+            "tokenRightAmount": 0
+        }
     ]
 }
