@@ -24,7 +24,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
+    "test": "react-scripts test --env=node",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
@@ -49,5 +49,8 @@
     "@faker-js/faker": "^7.4.0",
     "prettier": "^2.7.1",
     "simple-zustand-devtools": "^1.1.0"
+  },
+  "jest": {
+    "testMatch": ["**/__tests__/**.test.js"]
   }
 }

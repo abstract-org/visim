@@ -3,93 +3,92 @@ import React from 'react'
 import { Card } from 'primereact/card'
 import { PoolChart } from './components/PoolChart'
 import { KnowledgeGraph } from './components/KnowledgeGraph'
+import { LogsModule } from './logic/Logs/Logs'
 
 import 'primereact/resources/themes/lara-light-indigo/theme.css'
 import 'primereact/resources/primereact.min.css'
 import 'primeflex/primeflex.css'
 import 'primeicons/primeicons.css'
 
-import { InvestorModule, InvestorPoolBalance, InvestorSelector } from './logic/Investor/Investor.components'
-import { QuestManager } from './logic/Quest/Quest.components'
-import { PoolSelector, PoolChartStats, SwapModule } from './logic/Pool/Pool.components'
+import {
+    InvestorModule,
+    InvestorPoolBalance,
+    InvestorSelector
+} from './logic/Investor/Investor.components'
+import { QuestCitation, QuestCreation } from './logic/Quest/Quest.components'
+import {
+    PoolSelector,
+    PoolChartStats,
+    SwapModule,
+    KnowledgeGraphStats
+} from './logic/Pool/Pool.components'
 import { ValueLinksDebug } from './logic/Generators/ValueLinksDebug'
 
 export default function Home() {
-  return (
-    <div className="mt-2">
-      <ValueLinksDebug />
-      <div className="grid mr-0 ml-0">
-        <div className="col-8">
-          <Card className="h-full">
-            <PoolSelector />
-            <PoolChartStats />
-            <PoolChart height={215} />
-          </Card>
-        </div>
-        <div className="col-4">
-          <Card className="h-full">
-            <div>
-              <div className="grid">
-                <div className="col-12">
-                  <InvestorModule>
-                    <InvestorSelector />
-                  </InvestorModule>
+    return (
+        <div>
+            <ValueLinksDebug />
+            <div className="grid">
+                <div className="col-8">
+                    <Card className="h-full">
+                        <PoolSelector />
+                        <PoolChartStats />
+                        <PoolChart height={215} />
+                    </Card>
                 </div>
-              </div>
-              <div className="grid h-10rem">
-                <div className="col-12">
-                  <InvestorPoolBalance />
+                <div className="col-4">
+                    <Card className="h-full">
+                        <div>
+                            <div className="grid">
+                                <div className="col-12">
+                                    <InvestorModule>
+                                        <InvestorSelector />
+                                    </InvestorModule>
+                                </div>
+                            </div>
+                            <div className="grid h-10rem">
+                                <div className="col-12">
+                                    <InvestorPoolBalance />
+                                </div>
+                            </div>
+                            <div className="grid">
+                                <div className="col-10 col-offset-1">
+                                    <SwapModule />
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
                 </div>
-              </div>
-              <div className="grid mt-10">
-                <div className="col-12">
-                  <SwapModule />
-                </div>
-              </div>
             </div>
-          </Card> 
-        </div>
-      </div>
-      <div className="grid mt-0 mr-0 ml-0">
-          <div className="col-8">
-            <Card>
-              <div className='grid'>
-                <div className='col-12'>
-                <h2>Knowledge Graph</h2>
-                  <div className="flex">
-                    <div className="flex-grow-1 flex align-items-center">
-                      <div>Total Quests:</div>
-                      <div>10</div>
+            <div className="grid mt-2">
+                <div className="col-8 m-0 pt-0">
+                    <Card>
+                        <div className="grid">
+                            <div className="col-12">
+                                <h2>Knowledge Graph</h2>
+                                <KnowledgeGraphStats />
+                            </div>
+                        </div>
+                        <div className="grid">
+                            <div className="col-12">
+                                <KnowledgeGraph />
+                            </div>
+                        </div>
+                    </Card>
+                </div>
+                <div className="col-4 pr-3 pl-3">
+                    <div className="grid">
+                        <Card className="col-12 w-full">
+                            <QuestCreation />
+                        </Card>
                     </div>
-                    <div className="flex-grow-1 flex align-items-center justify-content-center">
-                      <p className="block">Total Market Cap:</p>
-                      <h4 className="block">8,620,000.398</h4>
+                    <div className="grid mt-2">
+                        <Card className="col-12 w-full">
+                            <QuestCitation />
+                        </Card>
                     </div>
-                    <div className="flex-grow-1 flex align-items-center justify-content-center">
-                      <div>Total Value Locked:</div>
-                      <p>Research Paper: 1,605</p>
-                      <p>USDC: 5,252,453</p>
-                    </div>  
-                  </div>
                 </div>
-              </div>
-              <div className='grid'>
-                <div className='col-12'>
-                  <KnowledgeGraph />
-                </div>
-              </div>
-            </Card>
-          </div>
-          <div className="col-4">
-            <Card>
-              <div className="grid">
-                <div className="col-8 col-offset-2">
-                  <QuestManager />
-                </div>
-              </div>
-            </Card>
-          </div>
-          {/*<div className="col-8">
+                {/*<div className="col-8">
             <Card className={agoraCard.agoraCard}>
               <h2>Positions</h2>
               <Dropdown value={paper} options={papers} onChange={(e) => setPaper(e.value)} placeholder='Choose Paper' />
@@ -114,7 +113,14 @@ export default function Home() {
               Token Manager
             </Card>
           </div>*/}
-      </div> 
-    </div> 
-  )
+            </div>
+            <div className="grid">
+                <div className="col-12">
+                    <Card>
+                        <LogsModule />
+                    </Card>
+                </div>
+            </div>
+        </div>
+    )
 }
