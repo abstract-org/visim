@@ -1,4 +1,22 @@
 import { preparePool } from './helpers/poolManager'
+import globalConfig from '../logic/config.global.json'
+
+it('has correct neighbors', () => {
+    const { pool, investor, tokenLeft, tokenRight } = preparePool()
+
+    const firstPosition = globalConfig.INITIAL_LIQUIDITY[0]
+    expect(pool.pricePoints.get(firstPosition.priceMin).right).toBe(
+        globalConfig.INITIAL_LIQUIDITY[1].priceMin
+    )
+
+    const lastPosition =
+        globalConfig.INITIAL_LIQUIDITY[
+            globalConfig.INITIAL_LIQUIDITY.length - 1
+        ]
+    expect(pool.pricePoints.get(lastPosition.priceMin).right).toBe(
+        lastPosition.priceMax
+    )
+})
 
 it('Initializes with default positions', () => {
     const initialPositions = [
@@ -278,5 +296,5 @@ it('Retrieves new balance when removing liquidity', () => {
     investor.addBalance(tokenLeft.name, amountLeft)
     investor.addBalance(tokenRight.name, amountRight)
 
-    expect(investor.balances[tokenLeft.name]).toBe(3000)
+    expect(investor.balances[tokenLeft.name]).toBe(23000)
 })
