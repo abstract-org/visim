@@ -69,14 +69,12 @@ fit('Calculates optimal route to spend A for D', () => {
     mockInvestor1.addBalance(pools.poolE.tokenLeft.name, usdcEIn)
     mockInvestor1.addBalance(pools.poolE.tokenRight.name, eOut)
 
-    pools.poolE.getSwapInfo()
-    pools.poolE.sell(500)
-    pools.poolE.getSwapInfo()
-
     // Deposit Tokens in Cross Pools
     const [abIn, abOut] = pools.AB.buy(200) //  Has X A - Buy A by depositing B
     mockInvestor1.addBalance(pools.AB.tokenLeft.name, abIn)
     mockInvestor1.addBalance(pools.AB.tokenRight.name, abOut)
+    console.log(abIn, abOut)
+    pools.AB.getSwapInfo(true)
 
     const [caIn, caOut] = pools.CA.buy(410) /// Has X C - Buy C by depositing A
     mockInvestor1.addBalance(pools.CA.tokenLeft.name, caIn)
@@ -105,6 +103,8 @@ fit('Calculates optimal route to spend A for D', () => {
     const [ebIn, ebOut] = pools.EB.buy(98) /// Has X E - Buy E by depositing B
     mockInvestor1.addBalance(pools.EB.tokenLeft.name, ebIn)
     mockInvestor1.addBalance(pools.EB.tokenRight.name, ebOut)
+
+    console.log(mockInvestor1)
 
     // Buying D by spending A
     // [A,D], [C,A->D,C], [A,B->E,B->DE], [A,B->C,B->C,E->D,E]

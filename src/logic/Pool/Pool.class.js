@@ -363,6 +363,10 @@ export default class Pool {
             totalAmountIn += -amount0UntilNextPrice
             totalAmountOut += Math.abs(amount1UntilNextPrice)
 
+            // console.log(
+            //     `Buy ${amount0UntilNextPrice}, ${amount1UntilNextPrice}`
+            // )
+
             this.totalSold += Math.abs(amount1UntilNextPrice)
 
             i += 1
@@ -505,9 +509,9 @@ export default class Pool {
                 `Remaining amount after subtracting ${amount0UntilNextPrice}: ${amount}`
             )
 
-            console.log(
-                `Sell ${amount0UntilNextPrice}, ${amount1UntilNextPrice}`
-            )
+            // console.log(
+            //     `Sell ${amount0UntilNextPrice}, ${amount1UntilNextPrice}`
+            // )
 
             totalAmountIn += Math.abs(amount1UntilNextPrice)
             totalAmountOut += amount0UntilNextPrice
@@ -559,35 +563,33 @@ export default class Pool {
         return this.#type
     }
 
-    getSwapInfo() {
+    getSwapInfo(logOut = false) {
         const leftBalance = this.dryBuy(100000000000)
         const rightBalance = this.drySell(100000000000)
 
-        console.log(`Pool: (citing)${this.name}(cited)
-        buy(amt): ${this.tokenLeft.name} in (deducted), ${
-            this.tokenRight.name
-        } out (added)
-        sell(amt): ${this.tokenRight.name} in (deducted), ${
-            this.tokenLeft.name
-        } out (added)
-        total ${this.tokenLeft.name}: ${
-            Math.abs(leftBalance[0]) + Math.abs(rightBalance[0])
+        if (logOut) {
+            console.log(`Pool: (citing)${this.name}(cited)
+            buy(amt): ${this.tokenLeft.name} in (deducted), ${
+                this.tokenRight.name
+            } out (added)
+            sell(amt): ${this.tokenRight.name} in (deducted), ${
+                this.tokenLeft.name
+            } out (added)
+            --
+            total ${this.tokenLeft.name}: ${
+                Math.abs(leftBalance[0]) + Math.abs(rightBalance[0])
+            }
+            total ${this.tokenRight.name}: ${
+                Math.abs(rightBalance[1]) + Math.abs(leftBalance[1])
+            }
+            ---
+            can buy(take) ${Math.abs(rightBalance[0])} ${
+                this.tokenLeft.name
+            } for(give) ${Math.abs(rightBalance[1])} ${this.tokenRight.name}
+            can sell(give) ${Math.abs(leftBalance[0])} ${
+                this.tokenLeft.name
+            } for(take) ${Math.abs(leftBalance[1])} ${this.tokenRight.name}`)
         }
-        total ${this.tokenRight.name}: ${
-            Math.abs(leftBalance[1]) + Math.abs(rightBalance[1])
-        }
-        can buy  up to ${this.tokenLeft.name}: ${Math.abs(
-            leftBalance[0]
-        )} // [0][0]
-        can buy  up to ${this.tokenRight.name}: ${Math.abs(
-            rightBalance[1]
-        )} // [1][1]
-        can sell up to ${this.tokenRight.name}: ${Math.abs(
-            leftBalance[1]
-        )} // [0][1]
-        can sell up to ${this.tokenLeft.name}: ${Math.abs(
-            rightBalance[0]
-        )} // [1][0]`)
 
         return [leftBalance, rightBalance]
     }
