@@ -113,22 +113,22 @@ export const QuestCitation = () => {
             }
 
             const citedQuest = globalState.quests.get(questName)
-            const vlPool = investor.citeQuest(
-                citingQuest,
-                citedQuest,
-                1,
-                10,
-                calculatedAmountLeft,
-                0
+            const crossPool = investor.createPool(citingQuest, citedQuest)
+            const priceMin = 1
+            const priceMax = 10
+            investor.citeQuest(
+                crossPool,
+                priceMin,
+                priceMax,
+                calculatedAmountLeft
             )
-            console.log(calculatedAmountLeft)
             investor.addBalance(citingQuest.name, -calculatedAmountLeft)
 
-            globalState.pools.set(vlPool.name, vlPool)
-            addPool(vlPool.name)
+            globalState.pools.set(crossPool.name, crossPool)
+            addPool(crossPool.name)
             createValueLink({
                 investor: investor.hash,
-                vl: vlPool.name,
+                vl: crossPool.name,
                 initialAmount: calculatedAmountLeft,
                 initialToken: citingQuest.name
             })
@@ -365,8 +365,6 @@ export const QuestCreation = () => {
             activeInvestor && globalState.investors.get(activeInvestor)
         const tokenRight = investor.createQuest(questName)
         const pool = tokenRight.createPool()
-        tokenRight.addPool(pool)
-        tokenRight.initializePoolPositions(pool)
 
         globalState.quests.set(tokenRight.name, tokenRight)
         globalState.pools.set(pool.name, pool)

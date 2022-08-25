@@ -72,14 +72,13 @@ const initValueLinksForDebug = (
     // Init USDC pools
     Array.from({ length: 3 }).forEach(() => {
         const quest = creator.createQuest(faker.name.firstName().toUpperCase())
-        const pool = quest.createPool()
+        const pool = quest.createPool({
+            initialPositions: globalConfig.INITIAL_LIQUIDITY
+        })
 
         addLog(
             `[AGENT] ${quest.name} activated by investor ${creator.type} (${creator.id})`
         )
-
-        quest.addPool(pool)
-        quest.initializePoolPositions(pool, globalConfig.INITIAL_LIQUIDITY)
 
         globalState.quests.set(quest.name, quest)
         globalState.pools.set(pool.name, pool)
@@ -112,8 +111,6 @@ const initValueLinksForDebug = (
 
         // Creating USDC pool for new quest
         const defaultPool = citingQuest.createPool()
-        citingQuest.initializePoolPositions(defaultPool)
-        citingQuest.addPool(defaultPool)
 
         globalConfig.INITIAL_LIQUIDITY.forEach((pos) => {
             addLog(
@@ -133,27 +130,19 @@ const initValueLinksForDebug = (
         const priceMax = 10
         const defaultTokenASum = 1000
 
-        const vlPool = creator.citeQuest(
-            citingQuest,
-            citedQuest,
-            priceMin,
-            priceMax,
-            defaultTokenASum,
-            0
-        )
+        const crossPool = creator.createPool(citingQuest, citedQuest)
+        creator.citeQuest(crossPool, priceMin, priceMax, defaultTokenASum, 0)
 
         addLog(
-            `[AGENT] ${vlPool.name} value-link pool created by ${creator.type} (${creator.id})`
+            `[AGENT] ${crossPool.name} value-link pool created by ${creator.type} (${creator.id})`
         )
         addLog(
-            `[AGENT] ${citingQuest.name} cited ${citedQuest.name} and opened position with ${defaultTokenASum} ${vlPool.tokenLeft.name} and a price range [${priceMin}...${priceMax}] by ${creator.type} (${creator.id})`
+            `[AGENT] ${citingQuest.name} cited ${citedQuest.name} and opened position with ${defaultTokenASum} ${crossPool.tokenLeft.name} and a price range [${priceMin}...${priceMax}] by ${creator.type} (${creator.id})`
         )
-
-        vlPool.buy(0.000000001)
 
         // Update state
-        globalState.pools.set(vlPool.name, vlPool)
+        globalState.pools.set(crossPool.name, crossPool)
 
-        addPool(vlPool.name)
+        addPool(crossPool.name)
     })
 }

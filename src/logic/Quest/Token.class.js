@@ -15,12 +15,25 @@ export default class Token {
         this.name = name
     }
 
-    createPool(tokenLeft = null, startingPrice) {
+    createPool({
+        tokenLeft = null,
+        startingPrice = null,
+        initialPositions = null
+    } = {}) {
         if (tokenLeft === null) {
             tokenLeft = new UsdcToken()
         }
 
-        return new Pool(tokenLeft, this, startingPrice)
+        const pool = new Pool(tokenLeft, this, startingPrice)
+
+        this.addPool(pool)
+        if (!(tokenLeft instanceof UsdcToken)) {
+            tokenLeft.addPool(pool)
+        }
+
+        this.initializePoolPositions(pool, initialPositions)
+
+        return pool
     }
 
     addPool(pool) {
@@ -51,9 +64,6 @@ export default class Token {
         })
 
         this.positions.set(pool.name, pool.pricePoints.values())
-
-        // @TODO: Replace with proper solution
-        pool.buy(0.000000001)
     }
 
     // @TODO: Token can open positions during dampening (?)

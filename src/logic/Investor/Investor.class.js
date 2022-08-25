@@ -1,6 +1,7 @@
 import sha256 from 'crypto-js/sha256'
 import HashMap from 'hashmap'
 import Token from '../Quest/Token.class'
+import Pool from '../Pool/Pool.class'
 
 export default class Investor {
     id
@@ -40,19 +41,32 @@ export default class Investor {
             )
         }
 
-        const preResult = parseFloat(
-            (this.balances[tokenName] + balance).toFixed(9)
-        )
-
-        if (preResult === 0) {
-            this.balances[tokenName] = 0
-        } else {
-            this.balances[tokenName] += balance
-        }
+        this.balances[tokenName] += balance
     }
 
-    // How to keep a special ratio?
     openPosition(pool, priceMin, priceMax, amountLeft = 0, amountRight = 0) {
+        let amounts = []
+        let amount1 = 0
+
+        // Also adding reverse position
+        if (amountLeft > 0 && amountRight > 0) {
+            amount1 = this.openPosition(
+                pool,
+                priceMin,
+                priceMax,
+                0,
+                amountRight
+            )[1]
+        }
+
+        // Adding liquidity from another side
+        // [1...2] -> [0.5...1]
+        if (amountLeft === 0) {
+            let temp = priceMax
+            priceMax = 1 / priceMin
+            priceMin = 1 / temp
+        }
+
         const liquidity = pool.getLiquidityForAmounts(
             amountLeft,
             amountRight,
@@ -60,17 +74,24 @@ export default class Investor {
             Math.sqrt(priceMax),
             Math.sqrt(pool.currentPrice)
         )
+
         pool.setPositionSingle(priceMin, liquidity)
         pool.setPositionSingle(priceMax, -liquidity)
 
         this.positions.set(pool.name, pool.pricePoints.values())
 
-        return pool.getAmountsForLiquidity(
+        amounts = pool.getAmountsForLiquidity(
             liquidity,
             Math.sqrt(priceMin),
             Math.sqrt(priceMax),
             Math.sqrt(pool.currentPrice)
         )
+
+        if (amount1 > 0) {
+            amounts[1] = amount1
+        }
+
+        return amounts
     }
 
     removeLiquidity(pool, priceMin, priceMax, amountLeft = 0, amountRight = 0) {
@@ -114,22 +135,30 @@ export default class Investor {
         )
     }
 
+    createPool(tokenLeft, tokenRight, startingPrice) {
+        if (!tokenLeft || !tokenRight) {
+            throw new Error('You must provide both tokens to create cross pool')
+        }
+        return new Pool(tokenLeft, tokenRight, startingPrice)
+    }
+
     citeQuest(
-        citingQuest,
-        citedQuest,
+        crossPool,
         priceMin = 1,
         priceMax = 10,
         amountLeft = 0,
         amountRight = 0
     ) {
-        // Creating value link pool
-        const pool = citedQuest.createPool(citingQuest)
-        citingQuest.addPool(pool)
-        citedQuest.addPool(pool)
-
+        crossPool.tokenLeft.addPool(crossPool)
+        crossPool.tokenRight.addPool(crossPool)
         // Set "positions" for value link pool
-        this.openPosition(pool, priceMin, priceMax, amountLeft, amountRight)
-
-        return pool
+        const [totalIn, totalOut] = this.openPosition(
+            crossPool,
+            priceMin,
+            priceMax,
+            amountLeft,
+            amountRight
+        )
+        return [totalIn, totalOut]
     }
 }
