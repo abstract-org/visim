@@ -9,27 +9,7 @@ export default class Router {
         this.#state = state
     }
 
-    findPoolsByToken(tokenName) {
-        if (!this.#state || this.#state.pools.count() <= 0) {
-            return []
-        }
-
-        const pools = []
-
-        this.#state.pools.forEach((pool) => {
-            if (
-                pool.tokenLeft.name === tokenName ||
-                pool.tokenRight.name === tokenName
-            ) {
-                pools.push(pool)
-            }
-        })
-
-        return pools
-    }
-
-    // A -> [A,D], [C,A->D,C], [A,B->E,B->DE], [A,B->C,B->C,E->D,E]
-    orderFor(tokenA, tokenB, swaps) {
+    graphPools(swaps) {
         const graph = new Graph()
         const vertices = []
 
@@ -51,41 +31,74 @@ export default class Router {
         return graph
     }
 
-    drySwapAllForToken(tokenName, amount) {
-        const quest = this.#state.quests.get(tokenName)
-        quest.pools.forEach((pool) => {
-            console.log(pool.tokenLeft.name, pool.tokenRight.name)
-        })
-    }
-
-    drySwapForPaths(tokenName, amount, depth = 0) {
-        let results = this.#processTokenForPath(tokenName, amount)
+    findPoolsFor(tokenName, depth = 0) {
+        let results = this.#processTokenForPath(tokenName)
 
         if (depth > 3 && this.#shouldScanPaths) {
             this.#shouldScanPaths = false
             return results
         }
 
-        results.forEach((swap) => {
-            const swapsLeft = this.drySwapForPaths(
-                swap.tokenLeft,
-                amount,
-                depth + 1
-            )
-            const swapsRight = this.drySwapForPaths(
-                swap.tokenRight,
-                amount,
-                depth + 1
-            )
+        results.forEach((res) => {
+            const leftPools = this.findPoolsFor(res.tokenLeft, depth + 1)
+            const rightPools = this.findPoolsFor(res.tokenRight, depth + 1)
 
-            results = Array.prototype.concat(results, swapsLeft, swapsRight)
+            results = Array.prototype.concat(results, leftPools, rightPools)
         })
 
         return results
     }
 
-    #processTokenForPath(tokenName, amount) {
-        let candidatePools = this.#state.quests.get(tokenName).pools
+    findPathways(tokenIn, tokenOut, graph) {
+        let results = []
+
+        // scan family for tOut -> tIn+tOut
+        // store family
+        // scan siblings for tOut (if not tOut) tIn+tSib+tOut
+        // scan next family
+        const family = graph.adjList.get(tokenIn)
+
+        if (!family) {
+            return results
+        }
+
+        console.log(graph)
+        graph.adjList.forEach((family) => {
+            results = this.#processGraphPart(tokenIn, tokenOut, family, graph)
+        })
+    }
+
+    #processGraphPart(tokenIn, tokenOut, family, graph) {
+        let subResults = []
+        let subFamily = [...family]
+        if (family.indexOf(tokenIn) !== -1) {
+            subResults.push({ tokenIn, tokenOut })
+        }
+
+        subFamily.forEach((childToken) => {
+            if (
+                graph.adjList.get(childToken) &&
+                graph.adjList.get(childToken).indexOf(tokenOut) !== -1 &&
+                childToken !== tokenOut
+            ) {
+                subResults.push([
+                    { tokenIn, childToken },
+                    { childToken, tokenOut }
+                ])
+            }
+        })
+
+        subFamily.splice(subFamily.indexOf(tokenIn), 1)
+        console.log(`Would process ${subFamily} for ${tokenIn}`)
+    }
+
+    #processTokenForPath(tokenName) {
+        let quest = this.#state.quests.get(tokenName)
+        if (!quest) {
+            return []
+        }
+
+        let candidatePools = quest.pools
 
         if (!candidatePools || candidatePools.length <= 0) {
             return []
@@ -94,11 +107,9 @@ export default class Router {
         const result = []
         candidatePools.forEach((pool) => {
             if (this.#visitedPools.includes(pool.name)) {
-                // console.log(`${pool.name} exists in visited, skipping`)
                 return
             }
 
-            const [totalIn, totalOut] = pool.dryBuy(amount)
             const tokenLeft = pool.tokenLeft.name
             const tokenRight = pool.tokenRight.name
 
@@ -107,9 +118,7 @@ export default class Router {
             result.push({
                 for: tokenName,
                 tokenLeft,
-                tokenRight,
-                totalIn,
-                totalOut
+                tokenRight
             })
         })
 

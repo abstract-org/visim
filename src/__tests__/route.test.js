@@ -70,49 +70,43 @@ fit('Calculates optimal route to spend A for D', () => {
     mockInvestor1.addBalance(pools.poolE.tokenRight.name, eOut)
 
     // Deposit Tokens in Cross Pools
-    const [abIn, abOut] = pools.AB.buy(200) //  Has X A - Buy A by depositing B
+    const [abIn, abOut] = pools.AB.buy(200) // Buy B by selling A
     mockInvestor1.addBalance(pools.AB.tokenLeft.name, abIn)
     mockInvestor1.addBalance(pools.AB.tokenRight.name, abOut)
-    console.log(abIn, abOut)
-    pools.AB.getSwapInfo(true)
 
-    const [caIn, caOut] = pools.CA.buy(410) /// Has X C - Buy C by depositing A
+    const [caIn, caOut] = pools.CA.buy(410) /// Buy A by selling C
     mockInvestor1.addBalance(pools.CA.tokenLeft.name, caIn)
     mockInvestor1.addBalance(pools.CA.tokenRight.name, caOut)
 
-    const [cbIn, cbOut] = pools.CB.buy(320) // Has X C - Buy C by depositing B
+    const [cbIn, cbOut] = pools.CB.buy(320) // Buy B by selling C
     mockInvestor1.addBalance(pools.CB.tokenLeft.name, cbIn)
     mockInvestor1.addBalance(pools.CB.tokenRight.name, cbOut)
 
-    const [ceIn, ceOut] = pools.CE.buy(1) ///  Has X D - Buy D by depositing C
+    const [ceIn, ceOut] = pools.CE.buy(1) /// Buy R by selling C
     mockInvestor1.addBalance(pools.CE.tokenLeft.name, ceIn)
     mockInvestor1.addBalance(pools.CE.tokenRight.name, ceOut)
 
-    const [adIn, adOut] = pools.AD.buy(130) // Has X A - Buy A by depositing D
+    const [adIn, adOut] = pools.AD.buy(130) // Buy D by selling A
     mockInvestor1.addBalance(pools.AD.tokenLeft.name, adIn)
     mockInvestor1.addBalance(pools.AD.tokenRight.name, adOut)
 
-    const [dcIn, dcOut] = pools.DC.buy(90) // Has X D - Buy D by depositing C
+    const [dcIn, dcOut] = pools.DC.buy(90) // Buy C by selling D
     mockInvestor1.addBalance(pools.DC.tokenLeft.name, dcIn)
     mockInvestor1.addBalance(pools.DC.tokenRight.name, dcOut)
 
-    const [deIn, deOut] = pools.DE.buy(250) // Has X D - Buy D by depositing E
+    const [deIn, deOut] = pools.DE.buy(250) // Buy E by selling D
     mockInvestor1.addBalance(pools.DE.tokenLeft.name, deIn)
     mockInvestor1.addBalance(pools.DE.tokenRight.name, deOut)
 
-    const [ebIn, ebOut] = pools.EB.buy(98) /// Has X E - Buy E by depositing B
+    const [ebIn, ebOut] = pools.EB.buy(98) /// Buy B by selling E
     mockInvestor1.addBalance(pools.EB.tokenLeft.name, ebIn)
     mockInvestor1.addBalance(pools.EB.tokenRight.name, ebOut)
 
-    console.log(mockInvestor1)
-
     // Buying D by spending A
     // [A,D], [C,A->D,C], [A,B->E,B->DE], [A,B->C,B->C,E->D,E]
-
-    //const swaps = router.drySwapForPaths('AGORA_A', amount)
-    // const swaps = router.drySwapAllForToken('AGORA_A', amount)
-
-    // const graph = router.orderFor('AGORA_A', 'AGORA_D', swaps)
-    // console.log(graph)
-    // graph.print()
+    const poolList = router.findPoolsFor('AGORA_A')
+    const graph = router.graphPools(poolList)
+    const pathways = router.findPathways('AGORA_A', 'AGORA_D', graph)
+    console.log(graph)
+    console.log(pathways)
 })

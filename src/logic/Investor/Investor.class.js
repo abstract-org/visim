@@ -41,7 +41,7 @@ export default class Investor {
             )
         }
 
-        this.balances[tokenName] += -balance
+        this.balances[tokenName] += balance
     }
 
     openPosition(pool, priceMin, priceMax, amountLeft = 0, amountRight = 0) {
