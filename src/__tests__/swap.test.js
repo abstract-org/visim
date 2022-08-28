@@ -111,14 +111,14 @@ it('Buys until runs out of USDC', () => {
     const rightBalance = investor.balances[tokenRight.name]
 
     expect(leftBalance).toBe(15001)
-    expect(rightBalance).toBeCloseTo(2512.562)
+    expect(rightBalance).toBe(2513)
 
     let [totalAmountIn2, totalAmountOut2] = pool.buy(5000)
     investor.addBalance(tokenLeft.name, totalAmountIn2)
     investor.addBalance(tokenRight.name, totalAmountOut2)
 
     expect(investor.balances[tokenLeft.name]).toBe(10001)
-    expect(investor.balances[tokenRight.name]).toBeCloseTo(3355.7)
+    expect(investor.balances[tokenRight.name]).toBe(3356)
 
     let [totalAmountIn3, totalAmountOut3] = pool.buy(5000)
     investor.addBalance(tokenLeft.name, totalAmountIn3)
@@ -145,7 +145,7 @@ it('Three investors buy, one during tick shift', () => {
     fomo.addBalance(tokenRight.name, totalAmountOut3)
 
     expect(fomo.balances[pool.tokenLeft.name]).toBe(0)
-    expect(fomo.balances[pool.tokenRight.name]).toBeCloseTo(105.621)
+    expect(fomo.balances[pool.tokenRight.name]).toBe(106)
 })
 
 it('Buy all the way to the right', () => {
@@ -174,11 +174,14 @@ it('Swaps RP1 for USDC and updates current price', () => {
     investor.addBalance(tokenLeft.name, totalAmountIn)
     investor.addBalance(tokenRight.name, totalAmountOut)
 
-    let [totalAmountIn2, totalAmountOut2] = pool.sell(2512.56)
-    investor.addBalance(tokenLeft.name, totalAmountIn2)
-    investor.addBalance(tokenRight.name, totalAmountOut2)
+    expect(pool.currentPrice).toBeCloseTo(3.9601)
 
-    expect(investor.balances[pool.tokenLeft.name]).toBeCloseTo(9999.997)
+    let [totalAmountIn2, totalAmountOut2] = pool.sell(2513)
+    investor.addBalance(tokenLeft.name, totalAmountOut2)
+    investor.addBalance(tokenRight.name, totalAmountIn2)
+
+    expect(investor.balances[pool.tokenLeft.name]).toBe(10000)
+    expect(pool.currentPrice).toBe(1)
 })
 
 it('buys with a price limit up to X within the same liquidity', () => {
@@ -206,8 +209,8 @@ it('sells with a price limit down to X', () => {
     expect(pool.totalSold).toBeCloseTo(5929.808)
 
     let [totalAmountIn, totalAmountOut] = pool.sell(5000, 11)
-    expect(totalAmountIn).toBeCloseTo(35779.738)
-    expect(totalAmountOut).toBeCloseTo(-2161.802)
+    expect(totalAmountOut).toBeCloseTo(35779.738)
+    expect(totalAmountIn).toBeCloseTo(-2161.802)
     expect(pool.currentPrice).toBeCloseTo(11)
 })
 
@@ -218,8 +221,8 @@ it('sells with a price limit down to X by jumping through liquidity', () => {
     expect(pool.totalSold).toBeCloseTo(5929.808)
 
     let [totalAmountIn, totalAmountOut] = pool.sell(5500, 5)
-    expect(totalAmountIn).toBeCloseTo(43757.232)
-    expect(totalAmountOut).toBeCloseTo(-3137.958)
+    expect(totalAmountOut).toBeCloseTo(43757.232)
+    expect(totalAmountIn).toBeCloseTo(-3137.958)
     expect(pool.currentPrice).toBeCloseTo(5)
 })
 
@@ -259,16 +262,16 @@ it('Calculates reserves properly by swapping in different directions in both USD
     investor.citeQuest(AD, 1, 2, 1000, 1000)
     const swap7 = AD.getSwapInfo()
 
-    expect(Math.abs(swap1[1][1])).toBe(20000)
-    expect(Math.abs(swap1[1][0])).toBeCloseTo(12687740.547)
+    expect(Math.abs(swap1[1][0])).toBe(20000)
+    expect(Math.abs(swap1[1][1])).toBeCloseTo(12687740.547)
 
     expect(Math.abs(swap2[0][0])).toBeCloseTo(12687740.547)
     expect(Math.abs(swap2[0][1])).toBe(20000)
 
     expect(Math.abs(swap3[0][0])).toBeCloseTo(6687740.547)
     expect(Math.abs(swap3[0][1])).toBeCloseTo(1265.881)
-    expect(Math.abs(swap3[1][1])).toBeCloseTo(18734.118)
-    expect(Math.abs(swap3[1][0])).toBe(6000000)
+    expect(Math.abs(swap3[1][0])).toBeCloseTo(18734.118)
+    expect(Math.abs(swap3[1][1])).toBe(6000000)
 
     expect(Math.abs(swap4[0][1])).toBe(20000)
     expect(Math.abs(swap4[0][0])).toBeCloseTo(12687740.547)
