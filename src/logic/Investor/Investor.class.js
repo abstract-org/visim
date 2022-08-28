@@ -35,6 +35,11 @@ export default class Investor {
             this.balances[tokenName] = 0
         }
 
+        const diff = parseInt(Math.abs(balance)) / balance
+        if (diff < 1) {
+            balance = Math.round(balance)
+        }
+
         if (this.balances[tokenName] + balance < 0) {
             throw new Error(
                 `You don't have ${balance} of ${tokenName} to spend, remaining amount is ${this.balances[tokenName]}`

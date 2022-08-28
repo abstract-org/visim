@@ -205,8 +205,8 @@ export const SwapModule = () => {
         }
 
         let [totalAmountIn, totalAmountOut] = pool.sell(amount)
-        investor.addBalance(pool.tokenLeft.name, totalAmountIn)
-        investor.addBalance(pool.tokenRight.name, totalAmountOut)
+        investor.addBalance(pool.tokenLeft.name, totalAmountOut)
+        investor.addBalance(pool.tokenRight.name, totalAmountIn)
 
         const swapData = {
             currentPrice: pool.currentPrice,

@@ -1,3 +1,4 @@
+/* eslint-disable no-loop-func */
 import { Graph } from './Graph.class'
 export default class Router {
     #state = []
@@ -9,22 +10,188 @@ export default class Router {
         this.#state = state
     }
 
-    graphPools(swaps) {
+    smartSwap(token0, token1, amountIn, chunkSize = 10) {
+        this.#visitedPools = []
+        const poolList = this.findPoolsFor(token0)
+        const graph = this.graphPools(poolList)
+        const paths = graph.buildPathways(token0, token1)
+        const swapData = this.drySwapAllForAmounts(paths, amountIn)
+        const [sortedPrices, pricedPaths] = this.sortByBestPrice(swapData)
+        const balancesResult = this.smartSwapPaths(
+            pricedPaths,
+            sortedPrices,
+            amountIn,
+            chunkSize
+        )
+
+        return balancesResult
+    }
+
+    smartSwapPaths(pricedPaths, sortedPrices, amount, chunkSize = 10) {
+        const chunks = this.#chunkAmountBy(amount, chunkSize)
+
+        let balancesResult = []
+        let curPricePoint = 0
+        let maxPricePoint = sortedPrices.length - 1
+        let price = sortedPrices[curPricePoint]
+        let path = pricedPaths[price]
+        let nextPrice = sortedPrices[curPricePoint + 1]
+            ? sortedPrices[curPricePoint + 1]
+            : price
+        let outPrice = 0
+
+        for (const chunk of chunks) {
+            // loop sortedPrices
+            const response = this.swapForAmounts(path, chunk, true)
+            if (response) {
+                outPrice = this.#getOutInPrice(chunk, response[0])
+
+                balancesResult = this.#calculateBalances(
+                    balancesResult,
+                    path,
+                    response[0],
+                    chunk
+                )
+            }
+
+            if (!response) {
+                return balancesResult
+            }
+
+            if (outPrice >= nextPrice && sortedPrices.length > 1) {
+                curPricePoint += 1
+                if (curPricePoint > maxPricePoint) {
+                    console.log('Peaked sorted prices')
+                    return balancesResult
+                }
+                price = sortedPrices[curPricePoint]
+                path = pricedPaths[price]
+                nextPrice = sortedPrices[curPricePoint + 1]
+                    ? sortedPrices[curPricePoint + 1]
+                    : null
+            }
+
+            amount -= chunk
+        }
+
+        return balancesResult
+    }
+
+    swapForAmounts(path, amount, zeroForOne, dry = false) {
+        if (!path) return
+        const poolPairs = path.map((token, id) => [token, path[id + 1]])
+        const swaps = []
+        for (const id in poolPairs) {
+            let idx = parseInt(id)
+            const poolTokens = poolPairs[idx]
+            const pool = this.#getPoolByTokens(poolTokens[0], poolTokens[1])
+            const nextPool =
+                idx + 1 < poolPairs.length
+                    ? this.#getPoolByTokens(
+                          poolPairs[idx + 1][0],
+                          poolPairs[idx + 1][1]
+                      )
+                    : null
+
+            if (!pool) {
+                continue
+            }
+
+            let sums = dry
+                ? pool.drySwap(amount, zeroForOne)
+                : pool.swap(amount, zeroForOne)
+            const sumOut = Math.abs(sums[1])
+            if (sumOut < amount) {
+                amount -= sumOut
+            }
+
+            if (Math.abs(sums[0]) === Math.abs(sums[1])) {
+                console.log('Empty pool', pool.name, sums[0], sums[1])
+                return
+            }
+
+            if (amount <= 0 && nextPool) {
+                console.log('Amount ran out')
+                return
+            }
+
+            swaps.push({
+                path,
+                pool: pool.name,
+                token0: pool.tokenLeft.name,
+                token1: pool.tokenRight.name,
+                price: pool.currentPrice,
+                next: nextPool ? nextPool.name : null,
+                op: zeroForOne ? 'buy' : 'sell',
+                in: Math.abs(sums[0]),
+                out: Math.abs(sums[1]),
+                cLiq: pool.currentLiquidity,
+                cPricePoint: pool.currentPricePoint,
+                cPrice: pool.currentPrice,
+                cLeft: pool.currentLeft,
+                cRight: pool.currentRight
+            })
+
+            if (nextPool) {
+                // If current mutual token is not left (switch to sell)
+                const nextTokenIn = zeroForOne
+                    ? pool.tokenRight.name
+                    : pool.tokenLeft.name
+
+                zeroForOne =
+                    nextTokenIn === nextPool.tokenLeft.name ? true : false
+            }
+        }
+
+        return [amount, swaps]
+    }
+
+    drySwapAllForAmounts(paths, amount, zeroForOne = true) {
+        let swaps = []
+        paths.forEach((path) => {
+            const result = this.swapForAmounts(path, amount, zeroForOne, true)
+
+            if (result && result[1]) {
+                swaps.push(result[1])
+            }
+        })
+
+        return swaps
+    }
+
+    sortByBestPrice(swaps) {
+        let sortedPrices = []
+        let pricedPaths = {}
+        swaps.forEach((swapPath) => {
+            const amtIn = swapPath[0].in
+            const amtOut = swapPath[swapPath.length - 1].out
+            const price = this.#getOutInPrice(amtIn, amtOut)
+
+            sortedPrices.push(price)
+            pricedPaths[price] = swapPath[0].path
+        })
+
+        sortedPrices.sort((a, b) => a - b)
+
+        return [sortedPrices, pricedPaths]
+    }
+
+    graphPools(poolList) {
         const graph = new Graph()
         const vertices = []
 
-        swaps.forEach((swap) => {
-            if (!vertices.includes(swap.for)) {
-                vertices.push(swap.for)
-                graph.addVertex(swap.for)
+        poolList.forEach((poolDep) => {
+            if (!vertices.includes(poolDep.for)) {
+                vertices.push(poolDep.for)
+                graph.addVertex(poolDep.for)
             }
 
-            if (swap.for !== swap.tokenLeft) {
-                graph.addEdge(swap.for, swap.tokenLeft)
+            if (poolDep.for !== poolDep.tokenLeft) {
+                graph.addEdge(poolDep.for, poolDep.tokenLeft)
             }
 
-            if (swap.for !== swap.tokenRight) {
-                graph.addEdge(swap.for, swap.tokenRight)
+            if (poolDep.for !== poolDep.tokenRight) {
+                graph.addEdge(poolDep.for, poolDep.tokenRight)
             }
         })
 
@@ -47,49 +214,6 @@ export default class Router {
         })
 
         return results
-    }
-
-    findPathways(tokenIn, tokenOut, graph) {
-        let results = []
-
-        // scan family for tOut -> tIn+tOut
-        // store family
-        // scan siblings for tOut (if not tOut) tIn+tSib+tOut
-        // scan next family
-        const family = graph.adjList.get(tokenIn)
-
-        if (!family) {
-            return results
-        }
-
-        console.log(graph)
-        graph.adjList.forEach((family) => {
-            results = this.#processGraphPart(tokenIn, tokenOut, family, graph)
-        })
-    }
-
-    #processGraphPart(tokenIn, tokenOut, family, graph) {
-        let subResults = []
-        let subFamily = [...family]
-        if (family.indexOf(tokenIn) !== -1) {
-            subResults.push({ tokenIn, tokenOut })
-        }
-
-        subFamily.forEach((childToken) => {
-            if (
-                graph.adjList.get(childToken) &&
-                graph.adjList.get(childToken).indexOf(tokenOut) !== -1 &&
-                childToken !== tokenOut
-            ) {
-                subResults.push([
-                    { tokenIn, childToken },
-                    { childToken, tokenOut }
-                ])
-            }
-        })
-
-        subFamily.splice(subFamily.indexOf(tokenIn), 1)
-        console.log(`Would process ${subFamily} for ${tokenIn}`)
     }
 
     #processTokenForPath(tokenName) {
@@ -123,5 +247,43 @@ export default class Router {
         })
 
         return result
+    }
+
+    #calculateBalances(balancesResult, path, out, chunk) {
+        if (!balancesResult[path[0]]) {
+            balancesResult[path[0]] = 0
+        }
+
+        if (!balancesResult[path[path.length - 1]]) {
+            balancesResult[path[path.length - 1]] = 0
+        }
+
+        balancesResult[path[0]] -= chunk
+        balancesResult[path[path.length - 1]] += out
+
+        return balancesResult
+    }
+
+    #getOutInPrice(out, inAmt) {
+        return out / inAmt
+    }
+
+    #getPoolByTokens(tokenA, tokenB) {
+        return this.#state.pools.has(`${tokenA}-${tokenB}`)
+            ? this.#state.pools.get(`${tokenA}-${tokenB}`)
+            : this.#state.pools.get(`${tokenB}-${tokenA}`)
+    }
+
+    #chunkAmountBy(amount, by) {
+        const max = Math.floor(amount / by)
+        const mod = amount % by
+
+        const chunks = Array(max).fill(by)
+
+        if (mod > 0) {
+            chunks.push(mod)
+        }
+
+        return chunks
     }
 }

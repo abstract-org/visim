@@ -55,6 +55,8 @@ export default class Token {
                 Math.sqrt(pool.currentPrice)
             )
 
+            console.log(position, liquidity, pool.name)
+
             pool.setPositionSingle(position.priceMin, liquidity)
             liquidityForLeft.push({ priceMax: position.priceMax, liquidity })
         })

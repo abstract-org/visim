@@ -62,6 +62,7 @@ export default class Pool {
     }
 
     setPositionSingle(price, liquidity) {
+        console.log('set', price, liquidity)
         this.pricePoints.forEach((position, point) => {
             // setting priceMin liquidity positions
             if (point < price && price <= position.right && liquidity > 0) {
@@ -73,6 +74,7 @@ export default class Pool {
                     newPosition = {
                         liquidity,
                         left: point,
+                        price,
                         right: position.right
                     }
 
@@ -109,6 +111,7 @@ export default class Pool {
                     newPosition = {
                         liquidity,
                         left: position.left,
+                        price,
                         right: point
                     }
 
@@ -259,6 +262,7 @@ export default class Pool {
                 arrivedAtSqrtPrice += amount / currentLiquidity
             }
 
+            journal[i].push(`Current price point: ${this.currentPricePoint}`)
             journal[i].push(`Current price: ${this.currentPrice}`)
             journal[i].push(`Current liquidity: ${currentLiquidity}`)
             journal[i].push(
@@ -363,10 +367,6 @@ export default class Pool {
             totalAmountIn += -amount0UntilNextPrice
             totalAmountOut += Math.abs(amount1UntilNextPrice)
 
-            // console.log(
-            //     `Buy ${amount0UntilNextPrice}, ${amount1UntilNextPrice}`
-            // )
-
             this.totalSold += Math.abs(amount1UntilNextPrice)
 
             i += 1
@@ -377,7 +377,7 @@ export default class Pool {
         )
 
         journal.forEach((iteration) => {
-            // console.log(iteration.join('\n'))
+            console.log(iteration.join('\n'))
         })
 
         return [totalAmountIn, totalAmountOut]
@@ -405,7 +405,6 @@ export default class Pool {
                     : nextPricePoint
 
             currentLiquidity = this.currentLiquidity
-            // arrived=liq/(amt+liq/cursqrtprice)
 
             if (currentLiquidity > 0) {
                 arrivedAtSqrtPrice =
@@ -449,9 +448,14 @@ export default class Pool {
                     }`
                 )
 
+                journal[i].push(
+                    `Price point: ${JSON.stringify(
+                        this.pricePoints.get(nextPricePoint)
+                    )}`
+                )
+
                 this.currentLiquidity -=
                     this.pricePoints.get(nextPricePoint).liquidity
-
                 this.currentRight = this.pricePoints.get(nextPricePoint).right
                 this.currentLeft = this.pricePoints.get(nextPricePoint).left
                 this.currentPricePoint =
@@ -503,24 +507,33 @@ export default class Pool {
             if (amount0UntilNextPrice === Infinity) {
                 amount0UntilNextPrice = 0
             }
+
+            if (
+                Math.abs(amount0UntilNextPrice) ===
+                Math.abs(amount1UntilNextPrice)
+            ) {
+                amount0UntilNextPrice = 0
+                amount1UntilNextPrice = 0
+            }
+
             journal[i].push('---')
             amount += amount0UntilNextPrice
             journal[i].push(
                 `Remaining amount after subtracting ${amount0UntilNextPrice}: ${amount}`
             )
 
-            // console.log(
-            //     `Sell ${amount0UntilNextPrice}, ${amount1UntilNextPrice}`
-            // )
-
-            totalAmountIn += Math.abs(amount1UntilNextPrice)
-            totalAmountOut += amount0UntilNextPrice
+            totalAmountOut += Math.abs(amount1UntilNextPrice)
+            totalAmountIn += amount0UntilNextPrice
 
             journal[i].push(
                 `Total in ${totalAmountIn} / total out ${totalAmountOut}`
             )
 
             this.totalSold += amount0UntilNextPrice
+
+            if (this.totalSold < 0) {
+                this.totalSold = 0
+            }
 
             journal[i].push(`Total sold ${this.totalSold}`)
 
@@ -532,7 +545,7 @@ export default class Pool {
         )
 
         journal.forEach((iteration) => {
-            // console.log(iteration.join('\n'))
+            console.log(iteration.join('\n'))
         })
 
         return [totalAmountIn, totalAmountOut]
@@ -559,6 +572,14 @@ export default class Pool {
         return [totalIn, totalOut]
     }
 
+    swap(amount, zeroForOne) {
+        return zeroForOne ? this.buy(amount) : this.sell(amount)
+    }
+
+    drySwap(amount, zeroForOne) {
+        return zeroForOne ? this.dryBuy(amount) : this.drySell(amount)
+    }
+
     getType() {
         return this.#type
     }
@@ -569,26 +590,26 @@ export default class Pool {
 
         if (logOut) {
             console.log(`Pool: (citing)${this.name}(cited)
-            buy(amt): ${this.tokenLeft.name} in (deducted), ${
+            buy(amt): ${this.tokenLeft.name} in (deduct from amt), ${
                 this.tokenRight.name
-            } out (added)
-            sell(amt): ${this.tokenRight.name} in (deducted), ${
+            } out (add to balance)
+            sell(amt): ${this.tokenRight.name} in (deduct from amt), ${
                 this.tokenLeft.name
-            } out (added)
+            } out (add to balance)
             --
             total ${this.tokenLeft.name}: ${
-                Math.abs(leftBalance[0]) + Math.abs(rightBalance[0])
+                rightBalance[1] > 0 ? rightBalance[1] : 0
             }
             total ${this.tokenRight.name}: ${
-                Math.abs(rightBalance[1]) + Math.abs(leftBalance[1])
+                leftBalance[1] > 0 ? leftBalance[1] : 0
             }
             ---
-            can buy(take) ${Math.abs(rightBalance[0])} ${
+            can buy(take in) ${Math.abs(leftBalance[0])} ${
                 this.tokenLeft.name
-            } for(give) ${Math.abs(rightBalance[1])} ${this.tokenRight.name}
-            can sell(give) ${Math.abs(leftBalance[0])} ${
+            } for(give out) ${Math.abs(leftBalance[1])} ${this.tokenRight.name}
+            can sell(give) ${Math.abs(rightBalance[1])} ${
                 this.tokenLeft.name
-            } for(take) ${Math.abs(leftBalance[1])} ${this.tokenRight.name}`)
+            } for(take) ${Math.abs(rightBalance[0])} ${this.tokenRight.name}`)
         }
 
         return [leftBalance, rightBalance]
