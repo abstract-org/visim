@@ -2,6 +2,7 @@ import sha256 from 'crypto-js/sha256'
 import HashMap from 'hashmap'
 import Token from '../Quest/Token.class'
 import Pool from '../Pool/Pool.class'
+import { p2pp } from '../Utils/logicUtils'
 
 export default class Investor {
     id
@@ -49,56 +50,6 @@ export default class Investor {
         this.balances[tokenName] += balance
     }
 
-    openPosition(pool, priceMin, priceMax, amountLeft = 0, amountRight = 0) {
-        let amounts = []
-        let amount1 = 0
-
-        // Also adding reverse position
-        if (amountLeft > 0 && amountRight > 0) {
-            amount1 = this.openPosition(
-                pool,
-                priceMin,
-                priceMax,
-                0,
-                amountRight
-            )[1]
-        }
-
-        // Adding liquidity from another side
-        // [1...2] -> [0.5...1]
-        if (amountLeft === 0) {
-            let temp = priceMax
-            priceMax = 1 / priceMin
-            priceMin = 1 / temp
-        }
-
-        const liquidity = pool.getLiquidityForAmounts(
-            amountLeft,
-            amountRight,
-            Math.sqrt(priceMin),
-            Math.sqrt(priceMax),
-            Math.sqrt(pool.currentPrice)
-        )
-
-        pool.setPositionSingle(priceMin, liquidity)
-        pool.setPositionSingle(priceMax, -liquidity)
-
-        this.positions.set(pool.name, pool.pricePoints.values())
-
-        amounts = pool.getAmountsForLiquidity(
-            liquidity,
-            Math.sqrt(priceMin),
-            Math.sqrt(priceMax),
-            Math.sqrt(pool.currentPrice)
-        )
-
-        if (amount1 > 0) {
-            amounts[1] = amount1
-        }
-
-        return amounts
-    }
-
     removeLiquidity(pool, priceMin, priceMax, amountLeft = 0, amountRight = 0) {
         return this.#modifyPosition(
             pool,
@@ -127,10 +78,14 @@ export default class Investor {
             Math.sqrt(priceMax),
             Math.sqrt(pool.currentPrice)
         )
-        pool.modifyPositionSingle(priceMin, liquidity)
-        pool.modifyPositionSingle(priceMax, -liquidity)
+        pool.modifyPositionSingle(p2pp(priceMin), liquidity)
+        pool.modifyPositionSingle(p2pp(priceMax), -liquidity)
 
         this.positions.set(pool.name, pool.pricePoints.values())
+
+        if (pool.currentPrice <= priceMax && pool.currentPrice >= priceMin) {
+            pool.currentLiquidity += liquidity
+        }
 
         return pool.getAmountsForLiquidity(
             liquidity,
@@ -151,19 +106,26 @@ export default class Investor {
         crossPool,
         priceMin = 1,
         priceMax = 10,
-        amountLeft = 0,
-        amountRight = 0
+        citingAmount = 0,
+        citedAmount = 0
     ) {
         crossPool.tokenLeft.addPool(crossPool)
         crossPool.tokenRight.addPool(crossPool)
         // Set "positions" for value link pool
-        const [totalIn, totalOut] = this.openPosition(
-            crossPool,
+        const [totalIn, totalOut] = crossPool.openPosition(
             priceMin,
             priceMax,
-            amountLeft,
-            amountRight
+            citingAmount,
+            citedAmount
         )
         return [totalIn, totalOut]
+    }
+
+    pp2p(pricePoint) {
+        return 2 ** pricePoint
+    }
+
+    p2pp(price) {
+        return Math.log2(price)
     }
 }

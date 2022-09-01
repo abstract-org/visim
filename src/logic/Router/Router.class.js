@@ -17,6 +17,7 @@ export default class Router {
         const paths = graph.buildPathways(token0, token1)
         const swapData = this.drySwapAllForAmounts(paths, amountIn)
         const [sortedPrices, pricedPaths] = this.sortByBestPrice(swapData)
+
         const balancesResult = this.smartSwapPaths(
             pricedPaths,
             sortedPrices,
@@ -24,6 +25,7 @@ export default class Router {
             chunkSize
         )
 
+        console.log(token0, token1, amountIn, balancesResult)
         return balancesResult
     }
 
@@ -42,15 +44,15 @@ export default class Router {
 
         for (const chunk of chunks) {
             // loop sortedPrices
-            const response = this.swapForAmounts(path, chunk, true)
+            const response = this.swapForAmounts(path, chunk, false)
             if (response) {
                 outPrice = this.#getOutInPrice(chunk, response[0])
 
                 balancesResult = this.#calculateBalances(
                     balancesResult,
                     path,
-                    response[0],
-                    chunk
+                    response[0][1],
+                    response[0][0]
                 )
             }
 
@@ -77,10 +79,13 @@ export default class Router {
         return balancesResult
     }
 
-    swapForAmounts(path, amount, zeroForOne, dry = false) {
+    swapForAmounts(path, amount, dry = false) {
         if (!path) return
+
         const poolPairs = path.map((token, id) => [token, path[id + 1]])
         const swaps = []
+        let sums = []
+
         for (const id in poolPairs) {
             let idx = parseInt(id)
             const poolTokens = poolPairs[idx]
@@ -97,17 +102,20 @@ export default class Router {
                 continue
             }
 
-            let sums = dry
+            const zeroForOne =
+                pool.tokenLeft.name === poolTokens[0] ? true : false
+
+            sums = dry
                 ? pool.drySwap(amount, zeroForOne)
                 : pool.swap(amount, zeroForOne)
-            const sumOut = Math.abs(sums[1])
-            if (sumOut < amount) {
-                amount -= sumOut
-            }
 
             if (Math.abs(sums[0]) === Math.abs(sums[1])) {
                 console.log('Empty pool', pool.name, sums[0], sums[1])
                 return
+            }
+
+            if (amount >= Math.abs(sums[1])) {
+                amount = Math.abs(sums[1])
             }
 
             if (amount <= 0 && nextPool) {
@@ -131,25 +139,16 @@ export default class Router {
                 cLeft: pool.currentLeft,
                 cRight: pool.currentRight
             })
-
-            if (nextPool) {
-                // If current mutual token is not left (switch to sell)
-                const nextTokenIn = zeroForOne
-                    ? pool.tokenRight.name
-                    : pool.tokenLeft.name
-
-                zeroForOne =
-                    nextTokenIn === nextPool.tokenLeft.name ? true : false
-            }
         }
 
-        return [amount, swaps]
+        return [sums, swaps]
     }
 
-    drySwapAllForAmounts(paths, amount, zeroForOne = true) {
+    drySwapAllForAmounts(paths, amount) {
         let swaps = []
+        const dry = true
         paths.forEach((path) => {
-            const result = this.swapForAmounts(path, amount, zeroForOne, true)
+            const result = this.swapForAmounts(path, amount, dry)
 
             if (result && result[1]) {
                 swaps.push(result[1])

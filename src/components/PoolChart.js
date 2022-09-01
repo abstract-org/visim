@@ -1,73 +1,110 @@
-import React from 'react';
-import { Chart } from 'primereact/chart';
-import usePoolStore from '../logic/Pool/pool.store';
+import React from 'react'
+import { Chart } from 'primereact/chart'
+import usePoolStore from '../logic/Pool/pool.store'
+import { swapLog } from '../logic/Utils/uiUtils'
+
+const alternatePointRotation = (ctx) => {
+    return ctx.raw && ctx.raw.action === 'buy' ? 0 : 180
+}
+
+const alternateBgColor = (ctx) => {
+    return ctx.raw && ctx.raw.action === 'buy' ? 'green' : 'red'
+}
 
 export const options = {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: {
-        legend: false,
-        scales: {
-            x: {
-                ticks: {
-                    color: '#495057'
-                },
-                grid: {
-                    color: '#ebedef'
-                }
+    parsing: {
+        xAxisKey: 'idx',
+        yAxisKey: 'price'
+    },
+    scales: {
+        x: {
+            ticks: {
+                color: '#000000',
+                autoSkip: true,
+                maxTicksLimit: 20,
+                stepSize: 10
             },
-            y: {
-                ticks: {
-                    color: '#495057'
-                },
-                grid: {
-                    color: '#ebedef'
-                }
+            grid: {
+                color: '#ebedef'
             }
         },
+        y: {
+            ticks: {
+                color: '#495057',
+                beginAtZero: false,
+                stepSize: 1
+            },
+            grid: {
+                color: '#ebedef'
+            }
+        }
+    },
+    plugins: {
+        legend: false,
         tooltip: {
             displayColors: false,
             callbacks: {
+                title: function (data) {
+                    return `Block ${data[0].label}`
+                },
+                afterBody: function (data) {
+                    const raw = data[0].raw
+                    return swapLog(raw)
+                },
                 label: function (data) {
                     const returnedArray = [
-                        'Price: ' + parseFloat(data.formattedValue).toFixed(4)
+                        'Price: ' + parseFloat(data.raw.price).toLocaleString()
                     ]
-                    return (
-                        returnedArray
-                    )
+                    return returnedArray
                 },
+                tooltip: {
+                    usePointStyle: true
+                }
             }
+        }
+    },
+    elements: {
+        point: {
+            hoverRadius: 15,
+            radius: 10,
+            pointStyle: 'triangle',
+            pointRotation: alternatePointRotation,
+            backgroundColor: alternateBgColor,
+            pointBorderWidth: 0
         }
     }
 }
 
-  export function PoolChart() {
-    const swaps = usePoolStore(state => state.swaps)
-    const activePool = usePoolStore(state => state.active)
+export function PoolChart() {
+    const swaps = usePoolStore((state) => state.swaps)
+    const activePool = usePoolStore((state) => state.active)
 
     const data = {
         labels: [],
         datasets: [
             {
-                fill: false,
+                fill: true,
                 label: '',
                 data: [],
                 borderColor: 'black',
-                tension: .4
+                spanGaps: true
             }
-        ],
-    };
-    
-    
-    swaps.forEach((swap, idx) => {
+        ]
+    }
+
+    swaps.slice(-15).forEach((swap, idx) => {
         if (activePool === swap.pool) {
-            data.datasets[0].data.push(swap.currentPrice.toFixed(4))
-            data.labels.push(idx+1)
+            swap['idx'] = idx
+            data.datasets[0].data.push(swap)
+            data.labels.push(idx)
         }
     })
 
-    return <div style={{height: '215px'}}>
-        <Chart type="line" data={data} options={options} />
-    </div>
-  }
-
+    return (
+        <div style={{ height: '215px' }}>
+            <Chart type="line" data={data} options={options} />
+        </div>
+    )
+}

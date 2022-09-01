@@ -1,6 +1,7 @@
 import Investor from '../logic/Investor/Investor.class'
 import globalConfig from '../logic/config.global.json'
 import { preparePool } from './helpers/poolManager'
+import { p2pp, pp2p } from '../logic/Utils/logicUtils'
 
 it('Does micro price buy properly within the same liquidity', () => {
     const { pool, investor, tokenLeft, tokenRight } = preparePool(20001)
@@ -37,7 +38,6 @@ it('Does mini price buy properly while jumping liquidity', () => {
 
 it('Tries to buy over limit', () => {
     const { pool, investor, tokenLeft, tokenRight } = preparePool()
-    // pool.buy(12687742)
     pool.buy(150000000)
     const [totalIn, totalOut] = pool.buy(20000)
 
@@ -53,9 +53,29 @@ it('Does micro price sell properly within the same liquidity', () => {
     pool.buy(2)
     const [totalAmountIn, totalAmountOut] = pool.sell(1)
 
+    // console.log(pool, totalAmountIn, totalAmountOut)
     expect(pool.currentLiquidity).toBeCloseTo(5050.505)
     expect(pool.totalSold).toBeCloseTo(1)
     expect(pool.currentPrice).toBeCloseTo(1)
+    expect(totalAmountIn).toBeCloseTo(-1)
+    expect(totalAmountOut).toBeCloseTo(1)
+})
+
+it('Dry buy all', () => {
+    const { pool, investor, tokenLeft, tokenRight } = preparePool()
+
+    const [aBuy, aSell] = pool.getSwapInfo()
+    expect(aBuy[0]).toBeCloseTo(-12687740.547)
+    expect(aBuy[1]).toBeCloseTo(20000)
+})
+
+it('Dry sell all', () => {
+    const { pool, investor, tokenLeft, tokenRight } = preparePool()
+
+    pool.buy(10000000000)
+    const [aBuy, aSell] = pool.getSwapInfo()
+    expect(aSell[0]).toBeCloseTo(-20000)
+    expect(aSell[1]).toBeCloseTo(12687740.547)
 })
 
 it('Does micro price sell properly while jumping liquidity', () => {
@@ -78,15 +98,72 @@ it('Does micro price sell properly while jumping liquidity', () => {
 
 it('Tries to sell over limit', () => {
     const { pool, investor, tokenLeft, tokenRight } = preparePool()
-    pool.buy(12687741)
+    const [a1in, a1out] = pool.buy(1000000000)
     expect(pool.totalSold).toBeCloseTo(20000)
 
-    pool.sell(20000)
-    pool.sell(10)
+    expect(a1in).toBeCloseTo(-12687740.547)
+    expect(a1out).toBeCloseTo(20000)
 
-    expect(pool.currentLiquidity).toBeCloseTo(0)
-    expect(pool.totalSold).toBeCloseTo(0)
-    expect(pool.currentPrice).toBe(1)
+    const [a1_1in, a1_1out] = pool.buy(30)
+    expect(a1_1in).toBe(0)
+    expect(a1_1out).toBe(0)
+
+    const [a2in, a2out] = pool.sell(30000)
+    expect(a2out).toBeCloseTo(12687740.547)
+    expect(a2in).toBeCloseTo(-20000)
+
+    const [a3in, a3out] = pool.sell(10)
+    expect(a3out).toBe(0)
+    expect(a3in).toBe(0)
+    expect(pool.currentRight).toBe(0)
+
+    const [a4in, a4out] = pool.buy(300)
+    expect(a4in).toBeCloseTo(-300)
+    expect(a4out).toBeCloseTo(283.179)
+
+    const [a5in, a5out] = pool.buy(1000000000)
+    expect(a5in).toBeCloseTo(-12687440.547)
+    expect(a5out).toBeCloseTo(20000 - a4out)
+
+    const [a6in, a6out] = pool.buy(10)
+    expect(a6in).toBe(0)
+    expect(a6out).toBe(0)
+
+    const [a7in, a7out] = pool.sell(20000)
+    expect(a7out).toBeCloseTo(12687740.547)
+    expect(a7in).toBeCloseTo(-20000)
+
+    const [a8in, a8out] = pool.sell(20)
+    expect(a8in).toBe(0)
+    expect(a8out).toBe(0)
+
+    const [a9in, a9out] = pool.buy(1000000000)
+    expect(a9in).toBeCloseTo(-12687740.547)
+    expect(a9out).toBeCloseTo(20000)
+
+    const [a10in, a10out] = pool.buy(10)
+    expect(a10in).toBe(0)
+    expect(a10out).toBe(0)
+
+    const [a11in, a11out] = pool.sell(20000)
+    expect(a11out).toBeCloseTo(12687740.547)
+    expect(a11in).toBeCloseTo(-20000)
+
+    const [a12in, a12out] = pool.sell(20)
+    expect(a12in).toBe(0)
+    expect(a12out).toBe(0)
+
+    const [a13in, a13out] = pool.buy(12687739)
+    expect(a13in).toBeCloseTo(-12687739)
+    expect(a13out).toBeCloseTo(19999.999)
+
+    const [a14in, a14out] = pool.sell(19999)
+    expect(a14in).toBeCloseTo(-19999)
+    expect(a14out).toBeCloseTo(12687737.999)
+
+    expect(pool.currentLiquidity).toBeCloseTo(5050.505)
+    expect(pool.totalSold).toBeCloseTo(0.999)
+    expect(pool.currentPrice).toBeCloseTo(1.0)
 })
 
 it('swaps USDC for RP1 and updates current price', () => {
@@ -127,7 +204,7 @@ it('Buys until runs out of USDC', () => {
     expect(investor.balances[tokenLeft.name]).toBeCloseTo(5001)
 })
 
-it('Three investors buy, one during tick shift', () => {
+it('Three investors one tick (buy during liquidity shift)', () => {
     const { pool, investor, tokenLeft, tokenRight } = preparePool()
     const longTerm = new Investor(1, 1000000, 'long-term', true)
     const fomo = new Investor(1, 1000, 'fomo', true)
@@ -238,6 +315,7 @@ it('Calculates reserves properly by swapping in different directions in both USD
     const pool3 = quest3.createPool()
     const pool4 = quest4.createPool()
 
+    pool.getSwapInfo()
     pool.buy(10000000000000)
     const swap1 = pool.getSwapInfo()
 
@@ -250,15 +328,15 @@ it('Calculates reserves properly by swapping in different directions in both USD
     pool4.sell(6000000)
     const swap4 = pool4.getSwapInfo()
 
-    const AB = investor.createPool(quest, quest2)
+    const AB = investor.createPool(quest2, quest)
     investor.citeQuest(AB, 1, 2, 1000, 0)
     const swap5 = AB.getSwapInfo()
 
-    const AC = investor.createPool(quest, quest3)
-    investor.citeQuest(AC, 1, 2, 0, 1000)
+    const AC = investor.createPool(quest3, quest)
+    investor.citeQuest(AC, 1, 2, 1000, 0)
     const swap6 = AC.getSwapInfo()
 
-    const AD = investor.createPool(quest, quest4)
+    const AD = investor.createPool(quest4, quest)
     investor.citeQuest(AD, 1, 2, 1000, 1000)
     const swap7 = AD.getSwapInfo()
 
@@ -279,9 +357,9 @@ it('Calculates reserves properly by swapping in different directions in both USD
     expect(Math.abs(swap5[0][0])).toBeCloseTo(1414.213)
     expect(Math.abs(swap5[0][1])).toBe(1000)
 
-    expect(Math.abs(swap6[0][0])).toBe(1000)
-    expect(Math.abs(swap6[0][1])).toBeCloseTo(1414.213)
+    expect(Math.abs(swap6[0][1])).toBe(1000)
+    expect(Math.abs(swap6[0][0])).toBeCloseTo(1414.213)
 
-    expect(Math.abs(swap7[0][0])).toBeCloseTo(2414.213)
-    expect(Math.abs(swap7[0][1])).toBeCloseTo(2414.213)
+    expect(Math.abs(swap7[0][0])).toBeCloseTo(1414.213)
+    expect(Math.abs(swap7[0][1])).toBeCloseTo(1000)
 })

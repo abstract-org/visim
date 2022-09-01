@@ -2,7 +2,7 @@ import React from 'react'
 import { ProgressBar } from 'primereact/progressbar'
 import { Dropdown } from 'primereact/dropdown'
 
-import { numericValue } from '../Utils'
+import { numericValue } from '../Utils/uiUtils'
 import { generateDefaultInvestors } from './Investor.generator'
 import useInvestorStore from './investor.store'
 import usePoolStore from '../Pool/pool.store'

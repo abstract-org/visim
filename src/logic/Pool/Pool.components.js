@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 
+import { MultiStateCheckbox } from 'primereact/multistatecheckbox'
 import { Dropdown } from 'primereact/dropdown'
 import { InputNumber } from 'primereact/inputnumber'
 import { Button } from 'primereact/button'
@@ -7,9 +8,15 @@ import { Messages } from 'primereact/messages'
 
 import usePoolStore from './pool.store'
 import useInvestorStore from '../Investor/investor.store'
+import useLogsStore from '../Logs/logs.store'
 import globalState from '../GlobalState'
 import useQuestStore from '../Quest/quest.store'
 import globalConfig from '../config.global.json'
+
+import { QuestSelector } from '../Quest/Quest.components'
+import { swapLog } from '../Utils/uiUtils'
+
+import Router from '../Router/Router.class'
 
 export const PoolSelector = () => {
     const pools = usePoolStore((state) => state.pools)
@@ -118,6 +125,9 @@ export const SwapModule = () => {
     const activeInvestor = useInvestorStore((state) => state.active)
     const activePool = usePoolStore((state) => state.active)
     const swap = usePoolStore((state) => state.swap)
+    const addLog = useLogsStore((state) => state.addLog)
+    const swapMode = usePoolStore((state) => state.swapMode)
+    const router = new Router(globalState)
 
     const investor = activeInvestor && globalState.investors.get(activeInvestor)
     const pool = activePool && globalState.pools.get(activePool)
@@ -154,19 +164,32 @@ export const SwapModule = () => {
             return
         }
 
-        let [totalAmountIn, totalAmountOut] = pool.buy(amount)
+        let [totalAmountIn, totalAmountOut] =
+            swapMode === 'direct' || pool.getType() === 'QUEST'
+                ? pool.buy(amount)
+                : router.smartSwap(
+                      pool.tokenLeft.name,
+                      pool.tokenRight.name,
+                      amount
+                  )
         investor.addBalance(pool.tokenLeft.name, totalAmountIn)
         investor.addBalance(pool.tokenRight.name, totalAmountOut)
 
         const swapData = {
             pool: pool.name,
-            currentPrice: pool.currentPrice,
+            price: pool.currentPrice.toFixed(4),
             investorHash: investor.hash,
             action: 'buy',
             balanceLeft: investor.balances[pool.tokenLeft.name],
-            balanceRight: investor.balances[pool.tokenRight.name]
+            balanceRight: investor.balances[pool.tokenRight.name],
+            totalAmountIn,
+            totalAmountOut
         }
         swap(swapData)
+
+        const log = swapLog(swapData)
+
+        addLog(`[HUMAN] ${log}`)
     }
 
     const handleSell = () => {
@@ -204,18 +227,32 @@ export const SwapModule = () => {
             return
         }
 
-        let [totalAmountIn, totalAmountOut] = pool.sell(amount)
+        let [totalAmountIn, totalAmountOut] =
+            swapMode === 'direct' || pool.getType() === 'QUEST'
+                ? pool.sell(amount)
+                : router.smartSwap(
+                      pool.tokenRight.name,
+                      pool.tokenLeft.name,
+                      amount
+                  )
         investor.addBalance(pool.tokenLeft.name, totalAmountOut)
         investor.addBalance(pool.tokenRight.name, totalAmountIn)
 
         const swapData = {
-            currentPrice: pool.currentPrice,
+            pool: pool.name,
+            price: pool.currentPrice.toFixed(4),
             investorHash: investor.hash,
             action: 'sell',
             balanceLeft: investor.balances[pool.tokenLeft.name],
-            balanceRight: investor.balances[pool.tokenRight.name]
+            balanceRight: investor.balances[pool.tokenRight.name],
+            totalAmountIn,
+            totalAmountOut
         }
         swap(swapData)
+
+        const log = swapLog(swapData)
+
+        addLog(`[HUMAN] ${log}`)
     }
 
     const handleSetAmount = (e) => {
@@ -226,7 +263,7 @@ export const SwapModule = () => {
         <div>
             <div className="grid">
                 <div className="col-6">
-                    <PoolSelector />
+                    <QuestSelector />
                 </div>
                 <div className="col-6">
                     <InputNumber
@@ -262,6 +299,33 @@ export const SwapModule = () => {
                     <Messages ref={msgs} />
                 </div>
             </div>
+        </div>
+    )
+}
+
+export const SwapMode = () => {
+    const setSwapMode = usePoolStore((state) => state.setSwapMode)
+    const [value, setValue] = useState('smart')
+    const options = [
+        { value: 'smart', icon: 'pi pi-share-alt' },
+        { value: 'direct', icon: 'pi pi-directions' }
+    ]
+
+    const handleSwapMode = (e) => {
+        setValue(e.value)
+        setSwapMode(e.value)
+    }
+
+    return (
+        <div className="field-checkbox m-0 flex">
+            <MultiStateCheckbox
+                value={value}
+                options={options}
+                onChange={handleSwapMode}
+                optionValue="value"
+                empty={false}
+            />
+            <label>{value}</label>
         </div>
     )
 }

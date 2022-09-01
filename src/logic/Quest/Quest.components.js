@@ -13,6 +13,7 @@ import useInvestorStore from '../Investor/investor.store'
 import usePoolStore from '../Pool/pool.store'
 
 import globalState from '../GlobalState'
+import useLogsStore from '../Logs/logs.store'
 
 const addPoolSelector = (state) => state.addPool
 const addQuestSelector = (state) => state.addQuest
@@ -22,23 +23,30 @@ export const QuestSelector = () => {
     const activeQuest = useQuestStore((state) => state.active)
     const setActive = useQuestStore((state) => state.setActive)
     const quest = activeQuest && globalState.quests.get(activeQuest)
+    const setActivePool = usePoolStore((state) => state.setActive)
+
+    const handleActiveQuest = (e) => {
+        const questName = quests.find((questName) => questName === e.value)
+        const quest = globalState.quests.get(questName)
+        setActive(questName)
+        setActivePool(
+            quest.pools.find((pool) => pool.getType() === 'QUEST').name
+        )
+    }
 
     return (
         <Dropdown
-            className="w-6"
-            value={quest && quest.name}
-            options={quests.map(
-                (questName) => globalState.quests.get(questName).name
-            )}
-            onChange={(e) =>
-                setActive(quests.find((questName) => questName === e.value))
-            }
+            className="w-full"
+            value={activeQuest}
+            options={quests.map((questName) => questName)}
+            onChange={handleActiveQuest}
             placeholder="Choose Quest"
         />
     )
 }
 
 export const QuestCitation = () => {
+    const [proMode, setProMode] = useState(false)
     const [citationRange, setCitationRange] = useState(5)
     const [selectedQuests, setSelectedQuests] = useState([])
     const handleCitationRange = (value) => setCitationRange(value)
@@ -49,6 +57,7 @@ export const QuestCitation = () => {
     const investor = globalState.investors.get(activeInvestor)
     const swaps = usePoolStore((state) => state.swaps)
     const createValueLink = usePoolStore((state) => state.createValueLink)
+    const addLog = useLogsStore((state) => state.addLog)
 
     const msgs = useRef(null)
 
@@ -71,15 +80,15 @@ export const QuestCitation = () => {
             return
         }
 
-        const calculatedAmountLeft = Math.floor(
+        const calcAmountA = Math.floor(
             (investor.balances[pool.tokenRight.name] / 100) * citationRange
         )
-        const cumulativeDeposit = selectedQuests.length * calculatedAmountLeft
+        const cumulativeDeposit = selectedQuests.length * calcAmountA
 
         if (
-            isNaN(calculatedAmountLeft) ||
+            isNaN(calcAmountA) ||
             cumulativeDeposit > investor.balances[pool.tokenRight.name] ||
-            calculatedAmountLeft <= 0
+            calcAmountA <= 0
         ) {
             console.log(
                 `Not enough ${pool.tokenRight.name} balance to cite selected quest(s)`
@@ -113,26 +122,29 @@ export const QuestCitation = () => {
             }
 
             const citedQuest = globalState.quests.get(questName)
-            const crossPool = investor.createPool(citingQuest, citedQuest)
+            const crossPool = investor.createPool(citedQuest, citingQuest)
             const priceMin = 1
             const priceMax = 10
-            investor.citeQuest(
-                crossPool,
-                priceMin,
-                priceMax,
-                calculatedAmountLeft
-            )
-            investor.addBalance(citingQuest.name, -calculatedAmountLeft)
+            investor.citeQuest(crossPool, priceMin, priceMax, calcAmountA)
+            investor.addBalance(citingQuest.name, -calcAmountA)
 
             globalState.pools.set(crossPool.name, crossPool)
             addPool(crossPool.name)
             createValueLink({
                 investor: investor.hash,
                 vl: crossPool.name,
-                initialAmount: calculatedAmountLeft,
+                initialAmount: calcAmountA,
                 initialToken: citingQuest.name
             })
+
+            addLog(
+                `[HUMAN] Investor ${investor.type} (${investor.id}) cited ${citedQuest.name} by depositing ${calcAmountA} of ${citingQuest.name} to ${pool.name} at price ranges of ${priceMin}...${priceMax}`
+            )
         })
+    }
+
+    const handleModifyParameters = () => {
+        setProMode(!proMode)
     }
 
     return (
@@ -155,6 +167,14 @@ export const QuestCitation = () => {
                     onClick={handleCiteQuest}
                 >
                     Cite Quest
+                </Button>
+            </div>
+            <div className="flex justify-content-center mt-2">
+                <Button
+                    className="p-button-secondary p-button-text"
+                    onClick={handleModifyParameters}
+                >
+                    Modify Parameters
                 </Button>
             </div>
             <div>
@@ -337,6 +357,9 @@ export const QuestCreation = () => {
     const addQuest = useQuestStore(addQuestSelector)
     const activeInvestor = useInvestorStore((state) => state.active)
     const quests = useQuestStore((state) => state.quests)
+    const addLog = useLogsStore((state) => state.addLog)
+    const setActiveQuest = useQuestStore((state) => state.setActive)
+    const setActivePool = usePoolStore((state) => state.setActive)
 
     const handleQuestName = (e) => {
         setQuestName(e.target.value)
@@ -372,6 +395,13 @@ export const QuestCreation = () => {
         addPool(pool.name)
 
         setQuestName('')
+
+        setActiveQuest(questName)
+        setActivePool(pool.name)
+
+        addLog(
+            `[HUMAN] Investor ${investor.type} (${investor.id}) created a new quest ${tokenRight.name}`
+        )
     }
 
     return (

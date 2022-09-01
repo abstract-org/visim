@@ -5,12 +5,14 @@ body {
 .edge {
     stroke: #b1b1b7;
     stroke-dasharray: 5;
-    animation: dashdraw .5s linear infinite;
+    animation: dashdraw 0.5s linear infinite;
     stroke-width: 1;
 }
 
 @keyframes dashdraw {
-    0% { stroke-dashoffset: 10; }
+    0% {
+        stroke-dashoffset: 10;
+    }
 }
 
 rect.fill-white {
@@ -27,4 +29,8 @@ rect.fill-active {
 
 rect.fill-inactive {
     fill: #7a7a7a;
+}
+
+.m-auto .react-transform-wrapper {
+    margin: auto;
 }

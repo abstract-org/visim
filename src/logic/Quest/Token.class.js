@@ -44,28 +44,24 @@ export default class Token {
 
     initializePoolPositions(pool, initialPositions) {
         const initial = initialPositions || globalConfig.INITIAL_LIQUIDITY
-        const liquidityForLeft = []
-
         initial.forEach((position) => {
-            let liquidity = pool.getLiquidityForAmounts(
-                position.tokenLeftAmount,
-                position.tokenRightAmount,
-                Math.sqrt(position.priceMin),
-                Math.sqrt(position.priceMax),
-                Math.sqrt(pool.currentPrice)
+            pool.openPosition(
+                position.priceMin,
+                position.priceMax,
+                position.tokenA,
+                position.tokenB
             )
-
-            console.log(position, liquidity, pool.name)
-
-            pool.setPositionSingle(position.priceMin, liquidity)
-            liquidityForLeft.push({ priceMax: position.priceMax, liquidity })
-        })
-
-        liquidityForLeft.forEach((liqItem) => {
-            pool.setPositionSingle(liqItem.priceMax, -liqItem.liquidity)
         })
 
         this.positions.set(pool.name, pool.pricePoints.values())
+    }
+
+    pp2p(pricePoint) {
+        return 2 ** pricePoint
+    }
+
+    p2pp(price) {
+        return Math.log2(price)
     }
 
     // @TODO: Token can open positions during dampening (?)
