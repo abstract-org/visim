@@ -155,12 +155,12 @@ it('Smart route when there is not enough tokens for the amount in the paths', ()
     globalState.pools.set(poolC.name, poolC)
 
     // [A,B]
-    const AB = creator.createPool(questA, questB)
-    creator.citeQuest(AB, priceMin, priceMax, 0, citeAmount)
+    const AB = creator.createPool(questB, questA)
+    creator.citeQuest(AB, priceMin, priceMax, citeAmount, 0)
     globalState.pools.set(AB.name, AB)
     // [B,C]
-    const BC = creator.createPool(questB, questC)
-    creator.citeQuest(BC, priceMin, priceMax, 0, citeAmount)
+    const BC = creator.createPool(questC, questB)
+    creator.citeQuest(BC, priceMin, priceMax, citeAmount, 0)
     globalState.pools.set(BC.name, BC)
 
     const results = router.smartSwap('AGORA_A', 'AGORA_C', amount)
@@ -169,11 +169,11 @@ it('Smart route when there is not enough tokens for the amount in the paths', ()
     expect(results['AGORA_C']).toBeCloseTo(7.071)
 })
 
-fit('Smart route when there is enough tokens for the amount in the paths', () => {
+fit('Smart route with 2 chunks with enough amount', () => {
     const priceMin = 1
     const priceMax = 2
     const amount = 100
-    const citeAmount = (amount / 100) * 5
+    const citeAmount = 40
 
     const creator = new Investor(1, 10000, 'creator')
     const router = new Router(globalState)
@@ -194,35 +194,77 @@ fit('Smart route when there is enough tokens for the amount in the paths', () =>
     globalState.pools.set(poolC.name, poolC)
 
     // [A,B]
-    const AB = creator.createPool(questA, questB)
+    const AB = creator.createPool(questB, questA)
     creator.citeQuest(AB, priceMin, priceMax, citeAmount, 0)
     globalState.pools.set(AB.name, AB)
-    //AB.getSwapInfo(true)
-    //console.log(AB.buy(100))
-    //console.log(AB.sell(100))
+    AB.buy(20)
 
-    console.log(poolA.pricePoints.values())
-    //poolA.getSwapInfo(true)
-    poolA.buy(100000000)
-    poolA.getSwapInfo(true)
-    console.log(poolA.sell(20000))
-
-    poolA.getSwapInfo(true)
     // [B,C]
-    // const BC = creator.createPool(questB, questC)
-    // creator.citeQuest(BC, priceMin, priceMax, citeAmount, 0)
-    // globalState.pools.set(BC.name, BC)
+    const BC = creator.createPool(questC, questB)
+    creator.citeQuest(BC, priceMin, priceMax, citeAmount, 0)
+    globalState.pools.set(BC.name, BC)
+    BC.buy(25)
 
-    // BC.getSwapInfo(true)
-    // const amts2 = BC.buy(amts[1]) // get 7C?
+    AB.getSwapInfo()
+    BC.getSwapInfo()
 
-    // Citation balance side issue? why 7 and not 5?
-    // Which tokens to deposit, citing or cited to the cross pool?
+    const results = router.smartSwap('AGORA_A', 'AGORA_C', 10, 5)
 
-    const results = router.smartSwap('AGORA_A', 'AGORA_C', amount, 20)
+    AB.getSwapInfo()
+    BC.getSwapInfo()
 
-    expect(results['AGORA_A']).toBe(-10)
-    expect(results['AGORA_C']).toBeCloseTo(7.071)
+    expect(results['AGORA_A']).toBeCloseTo(10)
+    expect(results['AGORA_C']).toBeCloseTo(12.88)
 })
 
-it('Dry swap smart routes and restore states', () => {})
+it('Smart route within 1 chunk with enough amount', () => {
+    const priceMin = 1
+    const priceMax = 2
+    const amount = 100
+    const citeAmount = 20
+
+    const creator = new Investor(1, 10000, 'creator')
+    const router = new Router(globalState)
+
+    const questA = creator.createQuest('AGORA_A')
+    const poolA = questA.createPool() // Deposit A
+    globalState.quests.set(questA.name, questA)
+    globalState.pools.set(poolA.name, poolA)
+
+    const questB = creator.createQuest('AGORA_B')
+    const poolB = questB.createPool() // Deposit B
+    globalState.quests.set(questB.name, questB)
+    globalState.pools.set(poolB.name, poolB)
+
+    const questC = creator.createQuest('AGORA_C')
+    const poolC = questC.createPool() // Deposit C
+    globalState.quests.set(questC.name, questC)
+    globalState.pools.set(poolC.name, poolC)
+
+    // [A,B]
+    const AB = creator.createPool(questB, questA)
+    creator.citeQuest(AB, priceMin, priceMax, citeAmount, 0)
+    globalState.pools.set(AB.name, AB)
+    AB.buy(4)
+
+    // [B,C]
+    const BC = creator.createPool(questC, questB)
+    creator.citeQuest(BC, priceMin, priceMax, citeAmount, 0)
+    globalState.pools.set(BC.name, BC)
+    BC.buy(15)
+
+    AB.getSwapInfo()
+    BC.getSwapInfo()
+
+    const results = router.smartSwap('AGORA_A', 'AGORA_C', amount, 5)
+
+    AB.getSwapInfo()
+    BC.getSwapInfo()
+
+    expect(results['AGORA_A']).toBeCloseTo(4)
+    expect(results['AGORA_C']).toBeCloseTo(5.553)
+})
+
+it('Smart route within 1 chunk without enough amount', () => {})
+
+it('Smart route within 2 chunks without enough amount', () => {})

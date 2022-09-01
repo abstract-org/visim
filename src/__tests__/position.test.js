@@ -1,56 +1,46 @@
 import { preparePool } from './helpers/poolManager'
-import globalConfig from '../logic/config.global.json'
-
-it('has correct neighbors', () => {
-    const { pool, investor, tokenLeft, tokenRight } = preparePool()
-
-    const firstPosition = globalConfig.INITIAL_LIQUIDITY[0]
-    expect(pool.pricePoints.get(firstPosition.priceMin).right).toBe(
-        globalConfig.INITIAL_LIQUIDITY[1].priceMin
-    )
-
-    const lastPosition =
-        globalConfig.INITIAL_LIQUIDITY[
-            globalConfig.INITIAL_LIQUIDITY.length - 1
-        ]
-    expect(pool.pricePoints.get(lastPosition.priceMin).right).toBe(
-        lastPosition.priceMax
-    )
-})
+import { p2pp, pp2p } from '../logic/Utils/logicUtils'
 
 it('Initializes with default positions', () => {
     const initialPositions = [
         {
             priceMin: 1,
             priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
+            tokenA: 5000,
+            tokenB: null
         },
         {
             priceMin: 20,
             priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
+            tokenA: 5000,
+            tokenB: null
         },
         {
             priceMin: 50,
             priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
+            tokenA: 5000,
+            tokenB: null
         },
         {
             priceMin: 200,
             priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
+            tokenA: 5000,
+            tokenB: null
         }
     ]
     const { pool } = preparePool(20000, 'creator', initialPositions)
-    const positions = pool.pricePoints.values()
+    const p20 = pool.pricePoints.get(p2pp(20))
+    const p50 = pool.pricePoints.get(p2pp(50))
+    const p200 = pool.pricePoints.get(p2pp(200))
+    const p10k = pool.pricePoints.get(p2pp(10000))
 
-    expect(positions[2].liquidity).toBeCloseTo(23407.494)
-    expect(positions[3].left).toBe(20)
-    expect(positions[4].right).toBe(10000)
+    expect(p20.liquidity).toBeCloseTo(23407.494)
+    expect(p50.left).toBe(p2pp(20))
+    expect(p50.liquidity).toBeCloseTo(38045.566)
+    expect(p200.right).toBe(p2pp(10000))
+    expect(p200.liquidity).toBeCloseTo(82357.834)
+    expect(p10k.right).toBe(p2pp(1000000))
+    expect(p10k.liquidity).toBeCloseTo(-148861.401)
 })
 
 it('Opens a new position and adjusts neighbors', () => {
@@ -58,26 +48,26 @@ it('Opens a new position and adjusts neighbors', () => {
         {
             priceMin: 1,
             priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
+            tokenA: 5000,
+            tokenB: 0
         },
         {
             priceMin: 20,
             priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
+            tokenA: 5000,
+            tokenB: 0
         },
         {
             priceMin: 50,
             priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
+            tokenA: 5000,
+            tokenB: 0
         },
         {
             priceMin: 200,
             priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
+            tokenA: 5000,
+            tokenB: 0
         }
     ]
     const { pool, investor, tokenLeft, tokenRight } = preparePool(
@@ -86,75 +76,86 @@ it('Opens a new position and adjusts neighbors', () => {
         initialPositions
     )
 
-    investor.openPosition(pool, 10, 1000, 5000)
+    pool.openPosition(10, 1000, 5000)
     const positions = pool.pricePoints.values()
+    const p10 = pool.pricePoints.get(p2pp(10))
+    const p1k = pool.pricePoints.get(p2pp(1000))
 
-    expect(positions[2].liquidity).toBeCloseTo(17568.209)
-    expect(positions[6].liquidity).toBeCloseTo(-17568.209)
+    expect(p10.left).toBeCloseTo(p2pp(1))
+    expect(p10.right).toBeCloseTo(p2pp(20))
+    expect(p10.liquidity).toBeCloseTo(17568.209)
+
+    expect(p1k.left).toBeCloseTo(p2pp(200))
+    expect(p1k.right).toBeCloseTo(p2pp(10000))
+    expect(p1k.liquidity).toBeCloseTo(-17568.209)
 })
 
-it('Opens a new position with token B (the other side)', () => {
-    const initialPositions = [
-        {
-            priceMin: 1,
-            priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
-        },
-        {
-            priceMin: 20,
-            priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
-        },
-        {
-            priceMin: 50,
-            priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
-        },
-        {
-            priceMin: 200,
-            priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
-        }
-    ]
-    const { pool, investor, tokenLeft, tokenRight } = preparePool(
-        20000,
-        'creator',
-        initialPositions
-    )
+// it('Opens a new position with token B (the other side)', () => {
+//     const initialPositions = [
+//         {
+//             priceMin: 1,
+//             priceMax: 10000,
+//             tokenA: 5000,
+//             tokenB: 0
+//         },
+//         {
+//             priceMin: 20,
+//             priceMax: 10000,
+//             tokenA: 5000,
+//             tokenB: 0
+//         },
+//         {
+//             priceMin: 50,
+//             priceMax: 10000,
+//             tokenA: 5000,
+//             tokenB: 0
+//         },
+//         {
+//             priceMin: 200,
+//             priceMax: 10000,
+//             tokenA: 5000,
+//             tokenB: 0
+//         }
+//     ]
+//     const { pool, investor, tokenLeft, tokenRight } = preparePool(
+//         20000,
+//         'creator',
+//         initialPositions
+//     )
 
-    investor.openPosition(pool, 10, 1000, 500, 3333)
-    const positions = pool.pricePoints.values()
-})
+//     pool.openPosition(10, 1000, 0, 5000)
+//     const p10 = pool.pricePoints.get(p2pp(1 / 1000))
+//     const p1k = pool.pricePoints.get(p2pp(1 / 10))
+
+//     expect(p10.liquidity).toBeCloseTo(5163.277)
+//     expect(p1k.liquidity).toBeCloseTo(-5163.277)
+// })
 
 it('Removes liquidity partially from a position', () => {
     const initialPositions = [
         {
             priceMin: 1,
             priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
+            tokenA: 5000,
+            tokenB: 0
         },
         {
             priceMin: 20,
             priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
+            tokenA: 5000,
+            tokenB: 0
         },
         {
             priceMin: 50,
             priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
+            tokenA: 5000,
+            tokenB: 0
         },
         {
             priceMin: 200,
             priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
+            tokenA: 5000,
+            tokenB: 0
         }
     ]
     const { pool, investor, tokenLeft, tokenRight } = preparePool(
@@ -163,11 +164,11 @@ it('Removes liquidity partially from a position', () => {
         initialPositions
     )
 
-    const oldPosition = pool.pricePoints.get(50)
+    const oldPosition = pool.pricePoints.get(p2pp(50))
     expect(oldPosition.liquidity).toBeCloseTo(38045.566)
 
     investor.removeLiquidity(pool, 50, 10000, 3000)
-    const newPosition = pool.pricePoints.get(50)
+    const newPosition = pool.pricePoints.get(p2pp(50))
     expect(newPosition.liquidity).toBeCloseTo(15218.226)
 })
 
@@ -176,26 +177,26 @@ it('Deletes fully an open position and removes liquidity', () => {
         {
             priceMin: 1,
             priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
+            tokenA: 5000,
+            tokenB: 0
         },
         {
             priceMin: 20,
             priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
+            tokenA: 5000,
+            tokenB: 0
         },
         {
             priceMin: 50,
             priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
+            tokenA: 5000,
+            tokenB: 0
         },
         {
             priceMin: 200,
             priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
+            tokenA: 5000,
+            tokenB: 0
         }
     ]
     const { pool, investor, tokenLeft, tokenRight } = preparePool(
@@ -204,7 +205,7 @@ it('Deletes fully an open position and removes liquidity', () => {
         initialPositions
     )
 
-    const oldPosition = pool.pricePoints.get(50)
+    const oldPosition = pool.pricePoints.get(p2pp(50))
     expect(oldPosition.liquidity).toBeCloseTo(38045.566)
 
     investor.removePosition(pool, 50, 10000, 5000)
@@ -218,26 +219,26 @@ it('Updates position with new liquidity if already exists', () => {
         {
             priceMin: 1,
             priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
+            tokenA: 5000,
+            tokenB: 0
         },
         {
             priceMin: 20,
             priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
+            tokenA: 5000,
+            tokenB: 0
         },
         {
             priceMin: 50,
             priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
+            tokenA: 5000,
+            tokenB: 0
         },
         {
             priceMin: 200,
             priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
+            tokenA: 5000,
+            tokenB: 0
         }
     ]
     const { pool, investor, tokenLeft, tokenRight } = preparePool(
@@ -246,11 +247,11 @@ it('Updates position with new liquidity if already exists', () => {
         initialPositions
     )
 
-    const oldPosition = pool.pricePoints.get(20)
+    const oldPosition = pool.pricePoints.get(p2pp(20))
     expect(oldPosition.liquidity).toBeCloseTo(23407.494)
 
-    investor.openPosition(pool, 20, 10000, 5000)
-    const newPosition = pool.pricePoints.get(20)
+    pool.openPosition(20, 10000, 5000)
+    const newPosition = pool.pricePoints.get(p2pp(20))
     expect(newPosition.liquidity).toBeCloseTo(46814.989)
 })
 
@@ -259,26 +260,26 @@ it('Retrieves new balance when removing liquidity', () => {
         {
             priceMin: 1,
             priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
+            tokenA: 5000,
+            tokenB: 0
         },
         {
             priceMin: 20,
             priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
+            tokenA: 5000,
+            tokenB: 0
         },
         {
             priceMin: 50,
             priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
+            tokenA: 5000,
+            tokenB: 0
         },
         {
             priceMin: 200,
             priceMax: 10000,
-            tokenLeftAmount: 5000,
-            tokenRightAmount: 0
+            tokenA: 5000,
+            tokenB: 0
         }
     ]
     const { pool, investor, tokenLeft, tokenRight } = preparePool(

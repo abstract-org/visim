@@ -88,7 +88,7 @@ const initValueLinksForDebug = (
 
         globalConfig.INITIAL_LIQUIDITY.forEach((pos) => {
             addLog(
-                `[AGENT] ${pos.tokenLeftAmount} ${pool.tokenLeft.name} and ${pos.tokenRightAmount} ${pool.tokenRight.name} added liquidity at price range [${pos.priceMin}...${pos.priceMax}]`
+                `[AGENT] ${pos.tokenA} ${pool.tokenLeft.name} and ${pos.tokenB} ${pool.tokenRight.name} added liquidity at price range [${pos.priceMin}...${pos.priceMax}]`
             )
         })
     })
@@ -114,7 +114,7 @@ const initValueLinksForDebug = (
 
         globalConfig.INITIAL_LIQUIDITY.forEach((pos) => {
             addLog(
-                `[AGENT] ${pos.tokenLeftAmount} ${defaultPool.tokenLeft.name} and ${pos.tokenRightAmount} ${defaultPool.tokenRight.name} added liquidity at price range [${pos.priceMin}...${pos.priceMax}]`
+                `[AGENT] ${pos.tokenA} ${defaultPool.tokenLeft.name} and ${pos.tokenB} ${defaultPool.tokenRight.name} added liquidity at price range [${pos.priceMin}...${pos.priceMax}]`
             )
         })
 
@@ -130,7 +130,7 @@ const initValueLinksForDebug = (
         const priceMax = 10
         const defaultTokenASum = 1000
 
-        const crossPool = creator.createPool(citingQuest, citedQuest)
+        const crossPool = creator.createPool(citedQuest, citingQuest)
         creator.citeQuest(crossPool, priceMin, priceMax, defaultTokenASum, 0)
 
         addLog(
