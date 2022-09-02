@@ -11,6 +11,7 @@ export function KnowledgeGraph() {
     const pools = usePoolStore((state) => state.pools)
     const quests = useQuestStore((state) => state.quests)
     const setActivePool = usePoolStore((state) => state.setActive)
+    const setSwapMode = usePoolStore((state) => state.setSwapMode)
     const setActiveQuest = useQuestStore((state) => state.setActive)
     const swaps = usePoolStore((state) => state.swaps)
     const activePool = usePoolStore((state) => state.active)
@@ -88,6 +89,7 @@ export function KnowledgeGraph() {
                                                 setActiveQuest(
                                                     pool.tokenRight.name
                                                 )
+                                                setSwapMode('direct')
                                             }
                                         })
                                     }
@@ -123,6 +125,7 @@ export function KnowledgeGraph() {
                                     )
                                     setActivePool(pool.name)
                                     setActiveQuest(pool.tokenLeft.name)
+                                    setSwapMode('smart')
                                 }}
                             />
                         )}
