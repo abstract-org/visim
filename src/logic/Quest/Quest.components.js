@@ -24,14 +24,19 @@ export const QuestSelector = () => {
     const setActive = useQuestStore((state) => state.setActive)
     const quest = activeQuest && globalState.quests.get(activeQuest)
     const setActivePool = usePoolStore((state) => state.setActive)
+    const setSwapMode = usePoolStore((state) => state.setSwapMode)
 
     const handleActiveQuest = (e) => {
         const questName = quests.find((questName) => questName === e.value)
         const quest = globalState.quests.get(questName)
+        for (const pool of quest.pools) {
+            if (pool.getType() === 'QUEST') {
+                setSwapMode('direct')
+                setActivePool(pool.name)
+            }
+        }
+
         setActive(questName)
-        setActivePool(
-            quest.pools.find((pool) => pool.getType() === 'QUEST').name
-        )
     }
 
     return (
@@ -360,6 +365,7 @@ export const QuestCreation = () => {
     const addLog = useLogsStore((state) => state.addLog)
     const setActiveQuest = useQuestStore((state) => state.setActive)
     const setActivePool = usePoolStore((state) => state.setActive)
+    const setSwapMode = usePoolStore((state) => state.setSwapMode)
 
     const handleQuestName = (e) => {
         setQuestName(e.target.value)
@@ -398,6 +404,7 @@ export const QuestCreation = () => {
 
         setActiveQuest(questName)
         setActivePool(pool.name)
+        setSwapMode('direct')
 
         addLog(
             `[HUMAN] Investor ${investor.type} (${investor.id}) created a new quest ${tokenRight.name}`

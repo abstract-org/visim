@@ -174,6 +174,7 @@ export const SwapModule = () => {
                   )
         investor.addBalance(pool.tokenLeft.name, totalAmountIn)
         investor.addBalance(pool.tokenRight.name, totalAmountOut)
+        globalState.investors.set(investor.hash, investor)
 
         const swapData = {
             pool: pool.name,
@@ -237,6 +238,7 @@ export const SwapModule = () => {
                   )
         investor.addBalance(pool.tokenLeft.name, totalAmountOut)
         investor.addBalance(pool.tokenRight.name, totalAmountIn)
+        globalState.investors.set(investor.hash, investor)
 
         const swapData = {
             pool: pool.name,
@@ -305,7 +307,9 @@ export const SwapModule = () => {
 
 export const SwapMode = () => {
     const setSwapMode = usePoolStore((state) => state.setSwapMode)
-    const [value, setValue] = useState('smart')
+    const swapMode = usePoolStore((state) => state.swapMode)
+
+    const [value, setValue] = useState(swapMode || 'smart')
     const options = [
         { value: 'smart', icon: 'pi pi-share-alt' },
         { value: 'direct', icon: 'pi pi-directions' }
@@ -319,13 +323,13 @@ export const SwapMode = () => {
     return (
         <div className="field-checkbox m-0 flex">
             <MultiStateCheckbox
-                value={value}
+                value={swapMode}
                 options={options}
                 onChange={handleSwapMode}
                 optionValue="value"
                 empty={false}
             />
-            <label>{value}</label>
+            <label>{swapMode}</label>
         </div>
     )
 }

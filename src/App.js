@@ -50,7 +50,7 @@ export default function Home() {
                                     <SwapMode />
                                 </div>
                             </div>
-                            <div className="grid h-10rem">
+                            <div className="grid">
                                 <div className="col-12">
                                     <InvestorPoolBalance />
                                 </div>
