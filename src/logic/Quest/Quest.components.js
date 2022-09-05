@@ -51,7 +51,6 @@ export const QuestSelector = () => {
 }
 
 export const QuestCitation = () => {
-    const [proMode, setProMode] = useState(false)
     const [citationRange, setCitationRange] = useState(5)
     const [selectedQuests, setSelectedQuests] = useState([])
     const handleCitationRange = (value) => setCitationRange(value)
@@ -63,8 +62,17 @@ export const QuestCitation = () => {
     const swaps = usePoolStore((state) => state.swaps)
     const createValueLink = usePoolStore((state) => state.createValueLink)
     const addLog = useLogsStore((state) => state.addLog)
+    const proMode = useQuestStore((state) => state.proMode)
+    const setProMode = useQuestStore((state) => state.setProMode)
+    const activeQuest = useQuestStore((state) => state.active)
 
     const msgs = useRef(null)
+
+    // Reset selected quests and citation range if active quest equal to the one to be cited
+    if (selectedQuests.includes(activeQuest)) {
+        selectedQuests.splice(selectedQuests.indexOf(activePool), 1)
+        setSelectedQuests(selectedQuests)
+    }
 
     const handleCiteQuest = () => {
         if (selectedQuests.length <= 0) {
@@ -150,6 +158,10 @@ export const QuestCitation = () => {
 
     const handleModifyParameters = () => {
         setProMode(!proMode)
+
+        if (!proMode) {
+            handleCitationRange(5)
+        }
     }
 
     return (
@@ -176,7 +188,9 @@ export const QuestCitation = () => {
             </div>
             <div className="flex justify-content-center mt-2">
                 <Button
-                    className="p-button-secondary p-button-text"
+                    className={`${
+                        proMode ? 'p-button-outlined' : 'p-button-text'
+                    } p-button-secondary`}
                     onClick={handleModifyParameters}
                 >
                     Modify Parameters
@@ -250,6 +264,7 @@ export const CitingQuestLiquidity = (props) => {
     const activePool = usePoolStore((state) => state.active)
     const pool = globalState.pools.get(activePool)
     const swaps = usePoolStore((state) => state.swaps)
+    const proMode = useQuestStore((state) => state.proMode)
     const msgs = useRef(null)
 
     if (props.selectedQuests.length <= 0) {
@@ -327,25 +342,14 @@ export const CitingQuestLiquidity = (props) => {
                     </span>
                 </div>
             </div>
-            <div className="grid">
-                <div className="col-12">
-                    <span className="text-xs">
-                        * Price range by default: 1 to 10
-                    </span>
-                </div>
-            </div>
-            <div className="grid">
-                <div className="col-12">
-                    <span className="text-center block pb-2">
-                        {props.citationRange}%
-                    </span>
-                    <Slider
-                        step={5}
-                        value={props.citationRange}
-                        onChange={(e) => props.handleCitationRange(e.value)}
-                    />
-                </div>
-            </div>
+            {proMode ? (
+                <CitationRangeSlider
+                    citationRange={props.citationRange}
+                    handleCitationRange={props.handleCitationRange}
+                />
+            ) : (
+                ''
+            )}
             <div className="grid">
                 <div className="col-12">
                     <Messages ref={msgs} />
@@ -439,6 +443,32 @@ export const QuestCreation = () => {
             </div>
             <div>
                 <Messages ref={msgs}></Messages>
+            </div>
+        </div>
+    )
+}
+
+const CitationRangeSlider = (props) => {
+    return (
+        <div>
+            <div className="grid">
+                <div className="col-12">
+                    <span className="text-xs">
+                        * Price range by default: 1 to 10
+                    </span>
+                </div>
+            </div>
+            <div className="grid">
+                <div className="col-12">
+                    <span className="text-center block pb-2">
+                        {props.citationRange}%
+                    </span>
+                    <Slider
+                        step={5}
+                        value={props.citationRange}
+                        onChange={(e) => props.handleCitationRange(e.value)}
+                    />
+                </div>
             </div>
         </div>
     )

@@ -10,7 +10,7 @@ export default class Router {
         this.#state = state
     }
 
-    smartSwap(token0, token1, amountIn, chunkSize = 10) {
+    smartSwap(token0, token1, amountIn, chunkSize = 10, fullOutput = false) {
         this.#visitedPools = []
         const poolList = this.findPoolsFor(token0)
         const graph = this.graphPools(poolList)
@@ -25,8 +25,7 @@ export default class Router {
             chunkSize
         )
 
-        console.log(token0, token1, amountIn, balancesResult)
-        return balancesResult
+        return [-balancesResult[token0], balancesResult[token1]]
     }
 
     smartSwapPaths(pricedPaths, sortedPrices, amount, chunkSize = 10) {

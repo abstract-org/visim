@@ -34,3 +34,91 @@ rect.fill-inactive {
 .m-auto .react-transform-wrapper {
     margin: auto;
 }
+
+.gen-card {
+    max-width: 50vw;
+    background-color: #f0f0f0;
+}
+
+.gen-card .header {
+    background-color: #a9a7a7;
+    color: black;
+    padding: 1rem 0.5rem;
+    font-weight: bold;
+}
+
+.gen-card .column {
+    margin: 0.5rem 0;
+    padding: 0 0.5rem;
+}
+
+.gen-card .p-inplace-display {
+    text-decoration: underline;
+}
+
+.gen-card .p-inputtext-sm {
+    width: 5rem;
+    height: 1.5rem;
+    font-size: 0.5rem;
+    margin-left: 0.1rem;
+}
+
+.gen-card .p-inplace {
+    min-height: 24px;
+}
+
+.gen-card .p-inplace .p-inplace-display {
+    padding: 0.1rem 0.3rem;
+    line-height: 1.5rem;
+}
+
+.gen-card .p-inplace .p-inplace-content {
+    display: flex;
+    align-items: stretch;
+}
+
+.gen-card .p-inplace-content > input,
+.gen-card .p-dropdown {
+    margin-left: 0.5rem;
+}
+
+.gen-card .p-inplace-content > button {
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    margin-right: 0.3rem;
+}
+
+.gen-card .inplace-static-text {
+    line-height: 1.5rem;
+}
+
+.gen-card .p-blockui-container {
+    font-style: italic;
+    padding: 0.2rem;
+    margin-left: 0.3rem;
+}
+
+.gen-card .p-dropdown {
+    height: 1.5rem;
+}
+
+.gen-card .p-dropdown .p-dropdown-label {
+    padding: 0.65625rem 0.65625rem;
+    font-size: 0.875rem;
+    line-height: 0rem;
+}
+
+.p-dropdown-panel .p-dropdown-items li.p-dropdown-item {
+    padding: 0 0.75rem;
+    font-size: 0.875rem;
+}
+
+.gen-card .p-button.p-button-danger.p-button-icon-only {
+    width: 2rem;
+    height: 2rem;
+}
+
+.p-tabview-title {
+    margin: 0 0.5rem;
+}
