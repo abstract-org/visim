@@ -23,5 +23,10 @@ export const swapLog = (swapData) => {
                   swapData.totalAmountIn.toFixed(4)
               ).toLocaleString()} ${pool.tokenLeft.name}`
 
-    return `Investor ${investor.type} (${investor.id}) ${action} ${amounts}`
+    const paths = swapData.paths.length
+        ? `through paths: ${swapData.paths.map(
+              (path) => '[ ' + path.join(', ') + ' ]'
+          )}`
+        : ''
+    return `Investor ${investor.type} (${investor.id}) ${action} ${amounts} ${paths}`
 }
