@@ -15,6 +15,8 @@ export function KnowledgeGraph() {
     const setActiveQuest = useQuestStore((state) => state.setActive)
     const swaps = usePoolStore((state) => state.swaps)
     const activePool = usePoolStore((state) => state.active)
+    const activeQuest = useQuestStore((state) => state.active)
+    const pool = activePool && globalState.pools.get(activePool)
 
     let edges = []
     let nodes = []
@@ -27,7 +29,9 @@ export function KnowledgeGraph() {
             text: quest,
             data: {
                 active:
-                    activePool && activePool.indexOf(quest) !== -1
+                    activeQuest &&
+                    (pool.tokenLeft.name === quest ||
+                        pool.tokenRight.name === quest)
                         ? true
                         : false
             }
@@ -89,7 +93,6 @@ export function KnowledgeGraph() {
                                                 setActiveQuest(
                                                     pool.tokenRight.name
                                                 )
-                                                setSwapMode('direct')
                                             }
                                         })
                                     }
