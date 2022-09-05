@@ -2,6 +2,9 @@ import sha256 from 'crypto-js/sha256'
 import globalConfig from '../config.global.json' // make it a hash map
 import HashMap from 'hashmap'
 import UsdcToken from '../Quest/UsdcToken.class'
+import { pp2p, p2pp } from '../Utils/logicUtils'
+
+let pp
 
 export default class Pool {
     name
@@ -9,10 +12,10 @@ export default class Pool {
     tokenLeft
     tokenRight
 
-    currentLeft = -Infinity
-    currentRight = Infinity
+    currentLeft = p2pp(globalConfig.PRICE_MIN)
+    currentRight = p2pp(globalConfig.PRICE_MAX)
     currentPrice = 1
-    currentPricePoint = globalConfig.PRICE_MIN
+    currentPricePoint = Math.log2(1)
     currentLiquidity = 0
 
     totalSold = 0
@@ -44,20 +47,33 @@ export default class Pool {
         }
 
         this.initializePoolBoundaries()
+
+        pp = this.pricePoints
     }
 
     initializePoolBoundaries() {
         // Define default price boundaries
-        this.pricePoints.set(this.currentPricePoint, {
+        this.pricePoints.set(p2pp(globalConfig.PRICE_MIN), {
+            // starts with PRICE_MIN
             liquidity: 0,
-            left: -Infinity,
-            right: globalConfig.PRICE_MAX
+            left: p2pp(globalConfig.PRICE_MIN),
+            pp: p2pp(globalConfig.PRICE_MIN),
+            right: this.currentPricePoint
         })
 
-        this.pricePoints.set(globalConfig.PRICE_MAX, {
+        this.pricePoints.set(this.currentPricePoint, {
+            // starts with PRICE_MIN
+            liquidity: 0,
+            left: p2pp(globalConfig.PRICE_MIN),
+            pp: this.currentPricePoint,
+            right: p2pp(globalConfig.PRICE_MAX)
+        })
+
+        this.pricePoints.set(p2pp(globalConfig.PRICE_MAX), {
             liquidity: 0,
             left: this.currentPricePoint,
-            right: Infinity
+            pp: p2pp(globalConfig.PRICE_MAX),
+            right: p2pp(globalConfig.PRICE_MAX)
         })
     }
 
@@ -73,6 +89,7 @@ export default class Pool {
                     newPosition = {
                         liquidity,
                         left: point,
+                        pp: price,
                         right: position.right
                     }
 
@@ -109,6 +126,7 @@ export default class Pool {
                     newPosition = {
                         liquidity,
                         left: position.left,
+                        pp: price,
                         right: point
                     }
 
@@ -174,14 +192,19 @@ export default class Pool {
     }
 
     getLiquidityForAmounts(
-        amountLeft,
-        amountRight,
+        tokenAamount,
+        tokenBamount,
         sqrtPriceMin,
         sqrtPriceMax,
         currentSqrtPrice
     ) {
-        const liquidity0 = amountLeft / (1 / sqrtPriceMin - 1 / sqrtPriceMax)
-        const liquidity1 = amountRight / (currentSqrtPrice - sqrtPriceMin)
+        // if you change sides - change sides in the formula or price (e.g 1/10000, 1)
+        // if changing direction of pool, math won't work: prices are directional
+        //      so need to either swap tokens in the math functions,
+        //      or swap prices given to these functions to 1/price
+
+        const liquidity0 = tokenAamount / (1 / sqrtPriceMin - 1 / sqrtPriceMax)
+        const liquidity1 = tokenBamount / (currentSqrtPrice - sqrtPriceMin)
 
         if (currentSqrtPrice <= sqrtPriceMin) {
             return liquidity0
@@ -202,10 +225,10 @@ export default class Pool {
             Math.min(curSqrtPrice, sqrtPriceMax),
             sqrtPriceMin
         )
-        const amountLeft = liquidity * (1 / clampedPrice - 1 / sqrtPriceMax)
-        const amountRight = liquidity * (clampedPrice - sqrtPriceMin)
+        const tokenAamount = liquidity * (1 / clampedPrice - 1 / sqrtPriceMax)
+        const tokenBamount = liquidity * (clampedPrice - sqrtPriceMin)
 
-        return [amountLeft, amountRight] // one can be zero if current price outside the range
+        return [tokenAamount, tokenBamount] // one can be zero if current price outside the range
     }
 
     dryBuy(amount, priceLimit = null) {
@@ -234,7 +257,7 @@ export default class Pool {
             totalAmountOut = 0
 
         let nextPricePoint
-        let nextPriceShift
+        let nextPriceTarget
 
         let currentLiquidity
         let arrivedAtSqrtPrice = Math.sqrt(this.currentPrice)
@@ -247,10 +270,10 @@ export default class Pool {
             journal[i] = []
 
             nextPricePoint = this.currentRight
-            nextPriceShift =
-                priceLimit && nextPricePoint > priceLimit
+            nextPriceTarget =
+                priceLimit && pp2p(nextPricePoint) > priceLimit
                     ? priceLimit
-                    : nextPricePoint
+                    : pp2p(nextPricePoint)
 
             // sets local variable from global variable (global changes on each cycle)
             currentLiquidity = this.currentLiquidity
@@ -259,6 +282,8 @@ export default class Pool {
                 arrivedAtSqrtPrice += amount / currentLiquidity
             }
 
+            journal[i].push(`Op: buy ${i}`)
+            journal[i].push(`Current price point: ${this.currentPricePoint}`)
             journal[i].push(`Current price: ${this.currentPrice}`)
             journal[i].push(`Current liquidity: ${currentLiquidity}`)
             journal[i].push(
@@ -271,29 +296,29 @@ export default class Pool {
                 )})`
             )
             journal[i].push(
-                `Next price shift: ${nextPriceShift} (${Math.sqrt(
-                    nextPriceShift
+                `Next price shift: ${nextPriceTarget} (${Math.sqrt(
+                    nextPriceTarget
                 )})`
             )
             journal[i].push(`Arrived price before cap: ${arrivedAtSqrtPrice}`)
 
-            if (arrivedAtSqrtPrice > Math.sqrt(nextPriceShift)) {
-                arrivedAtSqrtPrice = Math.sqrt(nextPriceShift)
+            if (arrivedAtSqrtPrice > Math.sqrt(nextPriceTarget)) {
+                arrivedAtSqrtPrice = Math.sqrt(nextPriceTarget)
             }
 
             journal[i].push(`Arrived price after cap: ${arrivedAtSqrtPrice}`)
             journal[i].push('---')
 
             if (
-                Math.sqrt(nextPriceShift) >= Math.sqrt(nextPricePoint) &&
-                arrivedAtSqrtPrice >= Math.sqrt(nextPriceShift)
+                Math.sqrt(nextPriceTarget) >= Math.sqrt(pp2p(nextPricePoint)) &&
+                arrivedAtSqrtPrice >= Math.sqrt(nextPriceTarget)
             ) {
-                arrivedAtSqrtPrice = Math.sqrt(nextPriceShift)
+                arrivedAtSqrtPrice = Math.sqrt(nextPriceTarget)
 
                 journal[i].push(
                     `Arrived price is >= than ${
-                        arrivedAtSqrtPrice >= Math.sqrt(nextPriceShift)
-                            ? 'nextPriceShift'
+                        arrivedAtSqrtPrice >= Math.sqrt(nextPriceTarget)
+                            ? 'nextPriceTarget'
                             : 'nextPricePoint'
                     }, capping at ${arrivedAtSqrtPrice}`
                 )
@@ -363,22 +388,20 @@ export default class Pool {
             totalAmountIn += -amount0UntilNextPrice
             totalAmountOut += Math.abs(amount1UntilNextPrice)
 
-            // console.log(
-            //     `Buy ${amount0UntilNextPrice}, ${amount1UntilNextPrice}`
-            // )
-
             this.totalSold += Math.abs(amount1UntilNextPrice)
 
             i += 1
         } while (
             amount > 0 &&
-            arrivedAtSqrtPrice === Math.sqrt(nextPricePoint) &&
-            this.currentRight < globalConfig.PRICE_MAX
+            arrivedAtSqrtPrice === Math.sqrt(pp2p(nextPricePoint)) &&
+            this.currentRight < p2pp(globalConfig.PRICE_MAX)
         )
 
-        journal.forEach((iteration) => {
-            // console.log(iteration.join('\n'))
-        })
+        if (globalConfig.JOURNAL && globalConfig.JOURNAL_BUY) {
+            journal.forEach((iteration) => {
+                console.log(iteration.join('\n'))
+            })
+        }
 
         return [totalAmountIn, totalAmountOut]
     }
@@ -387,79 +410,116 @@ export default class Pool {
         let totalAmountIn = 0,
             totalAmountOut = 0
 
-        let nextPricePoint
-        let nextPriceShift
+        let nextPricePoint = this.currentRight
+        let nextPriceTarget
         let currentLiquidity
-        let arrivedAtSqrtPrice = Math.sqrt(this.currentPrice)
+        let arrivedAtSqrtPrice = Math.sqrt(2 ** this.currentRight)
 
         let journal = []
         let i = 0
 
-        do {
+        while (
+            amount > 0 &&
+            arrivedAtSqrtPrice === Math.sqrt(pp2p(nextPricePoint)) &&
+            this.currentPricePoint > p2pp(globalConfig.PRICE_MIN)
+        ) {
             journal[i] = []
 
             nextPricePoint = this.currentPricePoint
-            nextPriceShift =
-                priceLimit && nextPricePoint < priceLimit
+            nextPriceTarget =
+                priceLimit && pp2p(nextPricePoint) < priceLimit
                     ? priceLimit
-                    : nextPricePoint
+                    : pp2p(nextPricePoint)
 
             currentLiquidity = this.currentLiquidity
-            // arrived=liq/(amt+liq/cursqrtprice)
+            // newprice = currentprice + amount/curliq
 
-            if (currentLiquidity > 0) {
-                arrivedAtSqrtPrice =
-                    currentLiquidity /
-                    (amount + currentLiquidity / Math.sqrt(this.currentPrice))
-            }
+            arrivedAtSqrtPrice =
+                currentLiquidity /
+                (amount + currentLiquidity / Math.sqrt(this.currentPrice))
 
-            journal[i].push(`Current price: ${this.currentPrice}`)
+            // arrived
+
+            journal[i].push(`Op: sell ${i}`)
             journal[i].push(
-                `Current left/right: ${this.currentLeft}/${this.currentRight}`
+                `Bottom (current for buy) price point: ${
+                    this.currentPricePoint
+                } (${pp2p(this.currentPricePoint)})`
+            )
+            journal[i].push(
+                `Current price: ${this.currentPrice} (sqrt ${Math.sqrt(
+                    this.currentPrice
+                )})`
             )
             journal[i].push(`Current liquidity: ${currentLiquidity}`)
+            journal[i].push(
+                `Current left/right: ${this.currentLeft} (${pp2p(
+                    this.currentLeft
+                )})/${this.currentRight} (${pp2p(this.currentRight)})`
+            )
             journal[i].push('---')
-            journal[i].push(`Next price point: ${nextPricePoint}`)
-            journal[i].push(`Next price shift: ${nextPriceShift}`)
+            journal[i].push(
+                `Next price point: ${nextPricePoint} (${pp2p(nextPricePoint)})`
+            )
+            journal[i].push(`Next price shift: ${nextPriceTarget}`)
             journal[i].push('---')
-            journal[i].push(`Arrived price before cap: ${arrivedAtSqrtPrice}`)
+            journal[i].push(
+                `Arrived price before cap: ${arrivedAtSqrtPrice} (${
+                    arrivedAtSqrtPrice ** 2
+                })`
+            )
 
-            if (arrivedAtSqrtPrice < Math.sqrt(nextPriceShift)) {
-                arrivedAtSqrtPrice = Math.sqrt(nextPriceShift)
+            if (arrivedAtSqrtPrice < Math.sqrt(nextPriceTarget)) {
+                arrivedAtSqrtPrice = Math.sqrt(nextPriceTarget)
             }
 
-            journal[i].push(`Arrived price after cap: ${arrivedAtSqrtPrice}`)
+            journal[i].push(
+                `Arrived price after cap: ${arrivedAtSqrtPrice} (${
+                    arrivedAtSqrtPrice ** 2
+                })`
+            )
             journal[i].push('---')
 
             if (
-                Math.sqrt(nextPriceShift) <= Math.sqrt(nextPricePoint) &&
-                arrivedAtSqrtPrice <= Math.sqrt(nextPriceShift)
+                Math.sqrt(nextPriceTarget) <= Math.sqrt(pp2p(nextPricePoint)) &&
+                arrivedAtSqrtPrice <= Math.sqrt(nextPriceTarget)
             ) {
-                arrivedAtSqrtPrice = Math.sqrt(nextPriceShift)
                 journal[i].push(
                     `Arrived price is <= than ${
-                        arrivedAtSqrtPrice <= Math.sqrt(nextPriceShift)
-                            ? 'nextPriceShift'
+                        arrivedAtSqrtPrice <= Math.sqrt(nextPriceTarget)
+                            ? 'nextPriceTarget'
                             : 'nextPricePoint'
-                    }, capping at ${arrivedAtSqrtPrice}`
+                    }, capping at ${arrivedAtSqrtPrice} (${
+                        arrivedAtSqrtPrice ** 2
+                    })`
                 )
+
+                const np = this.pricePoints.get(nextPricePoint)
                 journal[i].push(
-                    `Liq check ${
-                        this.pricePoints.get(nextPricePoint).liquidity
-                    }`
+                    `Next position: liq: ${np.liquidity} left: ${np.left} pp: ${np.pp} right: ${np.right}`
                 )
 
-                this.currentLiquidity -=
-                    this.pricePoints.get(nextPricePoint).liquidity
+                this.currentLiquidity -= this.pricePoints.get(
+                    this.currentPricePoint
+                ).liquidity
 
-                this.currentRight = this.pricePoints.get(nextPricePoint).right
-                this.currentLeft = this.pricePoints.get(nextPricePoint).left
-                this.currentPricePoint =
-                    this.pricePoints.get(nextPricePoint).left
+                if (this.currentLiquidity / 0.000001 < 0) {
+                    this.currentLiquidity = 0
+                }
+
+                this.currentRight = this.currentPricePoint
+                this.currentPricePoint = this.pricePoints.get(
+                    this.currentPricePoint
+                ).left
+                this.currentLeft = this.pricePoints.get(
+                    this.currentPricePoint
+                ).left // using updated curPP
 
                 journal[i].push(`Next liquidity: ${this.currentLiquidity}`)
                 journal[i].push(
-                    `Next left/right: ${this.currentLeft}/${this.currentRight}`
+                    `Next left/right: ${this.currentLeft} (${pp2p(
+                        this.currentLeft
+                    )})/${this.currentRight} (${pp2p(this.currentRight)})`
                 )
                 journal[i].push('!!! ---')
                 journal[i].push(`WILL MOVE TO NEXT POSITION: ${nextPricePoint}`)
@@ -494,27 +554,21 @@ export default class Pool {
             journal[i].push('---')
 
             this.currentPrice = arrivedAtSqrtPrice ** 2
+
             journal[i].push(
                 `New price: ${this.currentPrice} (${Math.sqrt(
                     arrivedAtSqrtPrice
                 )})`
             )
 
-            if (amount0UntilNextPrice === Infinity) {
-                amount0UntilNextPrice = 0
-            }
             journal[i].push('---')
             amount += amount0UntilNextPrice
             journal[i].push(
                 `Remaining amount after subtracting ${amount0UntilNextPrice}: ${amount}`
             )
 
-            // console.log(
-            //     `Sell ${amount0UntilNextPrice}, ${amount1UntilNextPrice}`
-            // )
-
-            totalAmountIn += Math.abs(amount1UntilNextPrice)
-            totalAmountOut += amount0UntilNextPrice
+            totalAmountOut += Math.abs(amount1UntilNextPrice)
+            totalAmountIn += amount0UntilNextPrice
 
             journal[i].push(
                 `Total in ${totalAmountIn} / total out ${totalAmountOut}`
@@ -522,18 +576,20 @@ export default class Pool {
 
             this.totalSold += amount0UntilNextPrice
 
+            if (this.totalSold < 0) {
+                this.totalSold = 0
+            }
+
             journal[i].push(`Total sold ${this.totalSold}`)
 
             i += 1
-        } while (
-            amount > 0 &&
-            arrivedAtSqrtPrice === Math.sqrt(nextPricePoint) &&
-            this.currentLeft >= globalConfig.PRICE_MIN
-        )
+        }
 
-        journal.forEach((iteration) => {
-            // console.log(iteration.join('\n'))
-        })
+        if (globalConfig.JOURNAL && globalConfig.JOURNAL_SELL) {
+            journal.forEach((iteration) => {
+                console.log(iteration.join('\n'))
+            })
+        }
 
         return [totalAmountIn, totalAmountOut]
     }
@@ -559,6 +615,14 @@ export default class Pool {
         return [totalIn, totalOut]
     }
 
+    swap(amount, zeroForOne) {
+        return zeroForOne ? this.buy(amount) : this.sell(amount)
+    }
+
+    drySwap(amount, zeroForOne) {
+        return zeroForOne ? this.dryBuy(amount) : this.drySell(amount)
+    }
+
     getType() {
         return this.#type
     }
@@ -568,29 +632,71 @@ export default class Pool {
         const rightBalance = this.drySell(100000000000)
 
         if (logOut) {
-            console.log(`Pool: (citing)${this.name}(cited)
-            buy(amt): ${this.tokenLeft.name} in (deducted), ${
+            console.log(`Pool: (cited/USDC)${this.name}(citing)
+            buy(amt): ${this.tokenLeft.name} in (deduct from amt), ${
                 this.tokenRight.name
-            } out (added)
-            sell(amt): ${this.tokenRight.name} in (deducted), ${
+            } out (add to balance)
+            sell(amt): ${this.tokenRight.name} in (deduct from amt), ${
                 this.tokenLeft.name
-            } out (added)
+            } out (add to balance)
             --
             total ${this.tokenLeft.name}: ${
-                Math.abs(leftBalance[0]) + Math.abs(rightBalance[0])
+                rightBalance[1] > 0 ? rightBalance[1] : 0
             }
             total ${this.tokenRight.name}: ${
-                Math.abs(rightBalance[1]) + Math.abs(leftBalance[1])
+                leftBalance[1] > 0 ? leftBalance[1] : 0
             }
             ---
-            can buy(take) ${Math.abs(rightBalance[0])} ${
+            can buy(take in) ${Math.abs(leftBalance[0])} ${
                 this.tokenLeft.name
-            } for(give) ${Math.abs(rightBalance[1])} ${this.tokenRight.name}
-            can sell(give) ${Math.abs(leftBalance[0])} ${
+            } for(give out) ${Math.abs(leftBalance[1])} ${this.tokenRight.name}
+            can sell(give) ${Math.abs(rightBalance[1])} ${
                 this.tokenLeft.name
-            } for(take) ${Math.abs(leftBalance[1])} ${this.tokenRight.name}`)
+            } for(take) ${Math.abs(rightBalance[0])} ${this.tokenRight.name}`)
         }
 
         return [leftBalance, rightBalance]
+    }
+
+    // @TODO: Reverse positions not implemented as of now, for citing - change the order of tokens in a pool
+    // The bug was in which place the amounts are added, and how to properly look at the pool without complicating the code
+    openPosition(priceMin, priceMax, tokenA = 0, tokenB = 0) {
+        let amounts = []
+        let amount1 = 0
+
+        /**
+         *  AB curr_price = 1
+            Inv1 deposits 100A into AB pool at [1B/A....10000B/A] rnge
+            Inv2 deposits 100B into AB pool at [1A/B...10000A/B] range, which is
+            [0.0001B/A...1B/A] range
+         */
+
+        const liquidity = this.getLiquidityForAmounts(
+            tokenA,
+            tokenB,
+            Math.sqrt(priceMin),
+            Math.sqrt(priceMax),
+            Math.sqrt(this.currentPrice)
+        )
+
+        this.setPositionSingle(p2pp(priceMin), liquidity)
+        this.setPositionSingle(p2pp(priceMax), -liquidity)
+
+        if (this.currentPrice <= priceMax && this.currentPrice >= priceMin) {
+            this.currentLiquidity += liquidity
+        }
+
+        amounts = this.getAmountsForLiquidity(
+            liquidity,
+            Math.sqrt(priceMin),
+            Math.sqrt(priceMax),
+            Math.sqrt(this.currentPrice)
+        )
+
+        if (amount1 > 0) {
+            amounts[1] = amount1
+        }
+
+        return amounts
     }
 }
