@@ -10,6 +10,8 @@ const globalState = {
     pools: new HashMap(),
     quests: new HashMap(), // tokens
     investors: new HashMap(),
+    investorGens: new HashMap(),
+    questGens: [],
     logs: []
 }
 

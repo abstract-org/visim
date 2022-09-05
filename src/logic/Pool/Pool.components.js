@@ -48,21 +48,22 @@ export const PoolChartStats = () => {
     const swaps = usePoolStore((state) => state.swaps)
     const nf = new Intl.NumberFormat('en-US')
     const tempTotalInPool = globalConfig.TOTAL_RESERVES_DEFAULT
+    const pool = activePool && globalState.pools.get(activePool)
+    let reserves
 
-    const currentPrice =
-        activePool && globalState.pools.get(activePool).currentPrice
+    const currentPrice = pool && pool.currentPrice
 
     const totalValueLocked =
-        activePool &&
-        Number(
-            (
-                globalState.pools.get(activePool).totalSold * currentPrice
-            ).toFixed(0)
-        )
+        activePool && Number((pool.totalSold * currentPrice).toFixed(0))
 
     const marketCap =
         activePool &&
         nf.format(Math.abs(parseInt(tempTotalInPool * currentPrice)))
+
+    if (pool) {
+        reserves = pool.getSwapInfo()
+        console.log(reserves)
+    }
 
     return (
         <div className="flex">
@@ -70,14 +71,41 @@ export const PoolChartStats = () => {
                 <p>Current Price:</p>
                 <h1>{(currentPrice && currentPrice.toFixed(4)) || 0}</h1>
             </div>
-            <div className="flex-grow-1 flex flex-column">
-                <p>Current Market Cap:</p>
-                <h1>{marketCap || 0}</h1>
-            </div>
+            {pool && pool.getType() === 'QUEST' ? (
+                <div className="flex-grow-1 flex flex-column">
+                    <p>Current Market Cap:</p>
+                    <h1>{marketCap || 0}</h1>
+                </div>
+            ) : (
+                ''
+            )}
             <div className="flex-grow-1 flex flex-column">
                 <p>Total Value Locked:</p>
                 <h1>{nf.format(totalValueLocked) || 0}</h1>
             </div>
+            {pool ? (
+                <div className="flex-grow-1 flex flex-column">
+                    <p>Reserves:</p>
+                    <span>
+                        <h4 className="m-1">
+                            {pool.tokenLeft.name}{' '}
+                            {reserves[1][1] > 0
+                                ? nf.format(Math.round(reserves[1][1]))
+                                : 0}
+                        </h4>
+                    </span>
+                    <span className="m-1">
+                        <h4>
+                            {pool.tokenRight.name}{' '}
+                            {reserves[0][1] > 0
+                                ? nf.format(Math.round(reserves[0][1]))
+                                : 0}
+                        </h4>
+                    </span>
+                </div>
+            ) : (
+                ''
+            )}
         </div>
     )
 }
@@ -163,7 +191,6 @@ export const SwapModule = () => {
             })
             return
         }
-
         let [totalAmountIn, totalAmountOut] =
             swapMode === 'direct' || pool.getType() === 'QUEST'
                 ? pool.buy(amount)
