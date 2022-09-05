@@ -257,7 +257,7 @@ export const SwapModule = () => {
         }
 
         let [totalAmountIn, totalAmountOut] =
-            swapMode === 'direct' || pool.getType() === 'QUEST'
+            swapMode === 'direct'
                 ? pool.sell(amount)
                 : router.smartSwap(
                       pool.tokenRight.name,
@@ -276,9 +276,11 @@ export const SwapModule = () => {
             balanceLeft: investor.balances[pool.tokenLeft.name],
             balanceRight: investor.balances[pool.tokenRight.name],
             totalAmountIn,
-            totalAmountOut
+            totalAmountOut,
+            paths: router.getPaths()
         }
         swap(swapData)
+        console.log(swapData)
 
         const log = swapLog(swapData)
 

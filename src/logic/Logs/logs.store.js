@@ -7,8 +7,7 @@ const useLogsStore = create(
         active: null,
         logs: [],
         addLog: (log) =>
-            set(produce((state) => ({ logs: [...state.logs, log] }))),
-        preload: (logs) => set((state) => ({ logs }))
+            set(produce((state) => ({ logs: [...state.logs, log] })))
     }))
 )
 
