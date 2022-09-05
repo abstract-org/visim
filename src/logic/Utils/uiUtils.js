@@ -18,15 +18,16 @@ export const swapLog = (swapData) => {
                   swapData.totalAmountIn.toFixed(4)
               ).toLocaleString()} ${pool.tokenLeft.name}`
             : `${Math.abs(
-                  swapData.totalAmountOut.toFixed(4)
-              ).toLocaleString()} ${pool.tokenRight.name} for ${Math.abs(
                   swapData.totalAmountIn.toFixed(4)
+              ).toLocaleString()} ${pool.tokenRight.name} for ${Math.abs(
+                  swapData.totalAmountOut.toFixed(4)
               ).toLocaleString()} ${pool.tokenLeft.name}`
 
-    const paths = swapData.paths.length
-        ? `through paths: ${swapData.paths.map(
-              (path) => '[ ' + path.join(', ') + ' ]'
-          )}`
-        : ''
+    const paths =
+        swapData.paths && swapData.paths.length
+            ? `through paths: ${swapData.paths.map(
+                  (path) => '[ ' + path.join(', ') + ' ]'
+              )}`
+            : ''
     return `Investor ${investor.type} (${investor.id}) ${action} ${amounts} ${paths}`
 }
