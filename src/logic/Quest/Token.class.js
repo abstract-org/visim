@@ -27,9 +27,7 @@ export default class Token {
         const pool = new Pool(tokenLeft, this, startingPrice)
 
         this.addPool(pool)
-        if (!(tokenLeft instanceof UsdcToken)) {
-            tokenLeft.addPool(pool)
-        }
+        tokenLeft.addPool(pool)
 
         this.initializePoolPositions(pool, initialPositions)
 

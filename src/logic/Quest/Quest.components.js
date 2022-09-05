@@ -31,7 +31,6 @@ export const QuestSelector = () => {
         const quest = globalState.quests.get(questName)
         for (const pool of quest.pools) {
             if (pool.getType() === 'QUEST') {
-                setSwapMode('direct')
                 setActivePool(pool.name)
             }
         }
@@ -399,6 +398,9 @@ export const QuestCreation = () => {
         const tokenRight = investor.createQuest(questName)
         const pool = tokenRight.createPool()
 
+        if (!globalState.quests.has(pool.tokenLeft.name)) {
+            globalState.quests.set(pool.tokenLeft.name, pool.tokenLeft)
+        }
         globalState.quests.set(tokenRight.name, tokenRight)
         globalState.pools.set(pool.name, pool)
         addQuest(tokenRight.name)
@@ -408,7 +410,6 @@ export const QuestCreation = () => {
 
         setActiveQuest(questName)
         setActivePool(pool.name)
-        setSwapMode('direct')
 
         addLog(
             `[HUMAN] Investor ${investor.type} (${investor.id}) created a new quest ${tokenRight.name}`
