@@ -3,6 +3,8 @@ import { Graph } from './Graph.class'
 export default class Router {
     #state = []
     #visitedPools = []
+    #swaps = []
+    #paths = []
     #shouldScanPaths = true
 
     // @param State state
@@ -10,22 +12,29 @@ export default class Router {
         this.#state = state
     }
 
-    smartSwap(token0, token1, amountIn, chunkSize = 10, fullOutput = false) {
+    smartSwap(token0, token1, amountIn, chunkSize = 10) {
         this.#visitedPools = []
+        this.#swaps = []
+        this.#paths = []
         const poolList = this.findPoolsFor(token0)
         const graph = this.graphPools(poolList)
         const paths = graph.buildPathways(token0, token1)
-        const swapData = this.drySwapAllForAmounts(paths, amountIn)
+        const swapData = this.drySwapAllForAmounts(paths, chunkSize)
         const [sortedPrices, pricedPaths] = this.sortByBestPrice(swapData)
 
-        const balancesResult = this.smartSwapPaths(
+        let sums = this.smartSwapPaths(
             pricedPaths,
             sortedPrices,
             amountIn,
             chunkSize
         )
 
-        return [-balancesResult[token0], balancesResult[token1]]
+        if (!sums) {
+            return []
+        }
+
+        this.#paths = paths
+        return sums
     }
 
     smartSwapPaths(pricedPaths, sortedPrices, amount, chunkSize = 10) {
@@ -43,19 +52,24 @@ export default class Router {
 
         for (const chunk of chunks) {
             // loop sortedPrices
-            const response = this.swapForAmounts(path, chunk, false)
-            if (response) {
-                outPrice = this.#getOutInPrice(chunk, response[0])
+            const { sums, swaps } = this.swapForAmounts(path, chunk, false)
+            if (sums) {
+                outPrice = this.#getOutInPrice(chunk, sums[0])
 
                 balancesResult = this.#calculateBalances(
                     balancesResult,
                     path,
-                    response[0][1],
-                    response[0][0]
+                    sums[1],
+                    sums[0]
                 )
+
+                // Re-enter chunk into loop during path change to avoid skipping it
+                if (sums[0] === 0) {
+                    chunks.push(chunkSize)
+                }
             }
 
-            if (!response) {
+            if (!sums) {
                 return balancesResult
             }
 
@@ -72,14 +86,15 @@ export default class Router {
                     : null
             }
 
-            amount -= chunk
+            amount -= sums[0]
+            this.#swaps.push(swaps)
         }
 
         return balancesResult
     }
 
     swapForAmounts(path, amount, dry = false) {
-        if (!path) return
+        if (!path) return { swaps: false, sums: false }
 
         const poolPairs = path.map((token, id) => [token, path[id + 1]])
         const swaps = []
@@ -109,8 +124,7 @@ export default class Router {
                 : pool.swap(amount, zeroForOne)
 
             if (Math.abs(sums[0]) === Math.abs(sums[1])) {
-                console.log('Empty pool', pool.name, sums[0], sums[1])
-                return
+                return { swaps, sums }
             }
 
             if (amount >= Math.abs(sums[1])) {
@@ -119,7 +133,7 @@ export default class Router {
 
             if (amount <= 0 && nextPool) {
                 console.log('Amount ran out')
-                return
+                return { swaps, sums }
             }
 
             swaps.push({
@@ -140,21 +154,20 @@ export default class Router {
             })
         }
 
-        return [sums, swaps]
+        return { sums, swaps }
     }
 
     drySwapAllForAmounts(paths, amount) {
-        let swaps = []
+        let swapsRes = []
         const dry = true
         paths.forEach((path) => {
-            const result = this.swapForAmounts(path, amount, dry)
-
-            if (result && result[1]) {
-                swaps.push(result[1])
+            const { swaps } = this.swapForAmounts(path, amount, dry)
+            if (swaps) {
+                swapsRes.push(swaps)
             }
         })
 
-        return swaps
+        return swapsRes
     }
 
     sortByBestPrice(swaps) {
@@ -176,21 +189,18 @@ export default class Router {
 
     graphPools(poolList) {
         const graph = new Graph()
-        const vertices = []
-
-        poolList.forEach((poolDep) => {
-            if (!vertices.includes(poolDep.for)) {
-                vertices.push(poolDep.for)
-                graph.addVertex(poolDep.for)
+        poolList.forEach((pool) => {
+            if (!graph.adjList.has(pool.tokenLeft)) {
+                graph.addVertex(pool.tokenLeft)
             }
 
-            if (poolDep.for !== poolDep.tokenLeft) {
-                graph.addEdge(poolDep.for, poolDep.tokenLeft)
+            if (!graph.adjList.has(pool.tokenRight)) {
+                graph.addVertex(pool.tokenRight)
             }
+        })
 
-            if (poolDep.for !== poolDep.tokenRight) {
-                graph.addEdge(poolDep.for, poolDep.tokenRight)
-            }
+        poolList.forEach((pool) => {
+            graph.addEdge(pool.tokenLeft, pool.tokenRight)
         })
 
         return graph
@@ -212,6 +222,14 @@ export default class Router {
         })
 
         return results
+    }
+
+    getPaths() {
+        return this.#paths
+    }
+
+    getSwaps() {
+        return this.#swaps
     }
 
     #processTokenForPath(tokenName) {
@@ -248,16 +266,16 @@ export default class Router {
     }
 
     #calculateBalances(balancesResult, path, out, chunk) {
-        if (!balancesResult[path[0]]) {
-            balancesResult[path[0]] = 0
+        if (!balancesResult[0]) {
+            balancesResult[0] = 0
         }
 
-        if (!balancesResult[path[path.length - 1]]) {
-            balancesResult[path[path.length - 1]] = 0
+        if (!balancesResult[1]) {
+            balancesResult[1] = 0
         }
 
-        balancesResult[path[0]] -= chunk
-        balancesResult[path[path.length - 1]] += out
+        balancesResult[0] -= chunk
+        balancesResult[1] += out
 
         return balancesResult
     }

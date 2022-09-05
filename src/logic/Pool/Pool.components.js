@@ -62,7 +62,6 @@ export const PoolChartStats = () => {
 
     if (pool) {
         reserves = pool.getSwapInfo()
-        console.log(reserves)
     }
 
     return (
@@ -192,13 +191,14 @@ export const SwapModule = () => {
             return
         }
         let [totalAmountIn, totalAmountOut] =
-            swapMode === 'direct' || pool.getType() === 'QUEST'
+            swapMode === 'direct'
                 ? pool.buy(amount)
                 : router.smartSwap(
                       pool.tokenLeft.name,
                       pool.tokenRight.name,
                       amount
                   )
+        console.log(swapMode, totalAmountIn, totalAmountOut)
         investor.addBalance(pool.tokenLeft.name, totalAmountIn)
         investor.addBalance(pool.tokenRight.name, totalAmountOut)
         globalState.investors.set(investor.hash, investor)
@@ -211,7 +211,8 @@ export const SwapModule = () => {
             balanceLeft: investor.balances[pool.tokenLeft.name],
             balanceRight: investor.balances[pool.tokenRight.name],
             totalAmountIn,
-            totalAmountOut
+            totalAmountOut,
+            paths: router.getPaths()
         }
         swap(swapData)
 
