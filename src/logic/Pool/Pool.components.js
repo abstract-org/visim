@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 
+import { MultiStateCheckbox } from 'primereact/multistatecheckbox'
 import { Dropdown } from 'primereact/dropdown'
 import { InputNumber } from 'primereact/inputnumber'
 import { Button } from 'primereact/button'
@@ -7,9 +8,15 @@ import { Messages } from 'primereact/messages'
 
 import usePoolStore from './pool.store'
 import useInvestorStore from '../Investor/investor.store'
+import useLogsStore from '../Logs/logs.store'
 import globalState from '../GlobalState'
 import useQuestStore from '../Quest/quest.store'
 import globalConfig from '../config.global.json'
+
+import { QuestSelector } from '../Quest/Quest.components'
+import { swapLog } from '../Utils/uiUtils'
+
+import Router from '../Router/Router.class'
 
 export const PoolSelector = () => {
     const pools = usePoolStore((state) => state.pools)
@@ -41,21 +48,22 @@ export const PoolChartStats = () => {
     const swaps = usePoolStore((state) => state.swaps)
     const nf = new Intl.NumberFormat('en-US')
     const tempTotalInPool = globalConfig.TOTAL_RESERVES_DEFAULT
+    const pool = activePool && globalState.pools.get(activePool)
+    let reserves
 
-    const currentPrice =
-        activePool && globalState.pools.get(activePool).currentPrice
+    const currentPrice = pool && pool.currentPrice
 
     const totalValueLocked =
-        activePool &&
-        Number(
-            (
-                globalState.pools.get(activePool).totalSold * currentPrice
-            ).toFixed(0)
-        )
+        activePool && Number((pool.totalSold * currentPrice).toFixed(0))
 
     const marketCap =
         activePool &&
         nf.format(Math.abs(parseInt(tempTotalInPool * currentPrice)))
+
+    if (pool) {
+        reserves = pool.getSwapInfo()
+        console.log(reserves)
+    }
 
     return (
         <div className="flex">
@@ -63,14 +71,41 @@ export const PoolChartStats = () => {
                 <p>Current Price:</p>
                 <h1>{(currentPrice && currentPrice.toFixed(4)) || 0}</h1>
             </div>
-            <div className="flex-grow-1 flex flex-column">
-                <p>Current Market Cap:</p>
-                <h1>{marketCap || 0}</h1>
-            </div>
+            {pool && pool.getType() === 'QUEST' ? (
+                <div className="flex-grow-1 flex flex-column">
+                    <p>Current Market Cap:</p>
+                    <h1>{marketCap || 0}</h1>
+                </div>
+            ) : (
+                ''
+            )}
             <div className="flex-grow-1 flex flex-column">
                 <p>Total Value Locked:</p>
                 <h1>{nf.format(totalValueLocked) || 0}</h1>
             </div>
+            {pool ? (
+                <div className="flex-grow-1 flex flex-column">
+                    <p>Reserves:</p>
+                    <span>
+                        <h4 className="m-1">
+                            {pool.tokenLeft.name}{' '}
+                            {reserves[1][1] > 0
+                                ? nf.format(Math.round(reserves[1][1]))
+                                : 0}
+                        </h4>
+                    </span>
+                    <span className="m-1">
+                        <h4>
+                            {pool.tokenRight.name}{' '}
+                            {reserves[0][1] > 0
+                                ? nf.format(Math.round(reserves[0][1]))
+                                : 0}
+                        </h4>
+                    </span>
+                </div>
+            ) : (
+                ''
+            )}
         </div>
     )
 }
@@ -118,6 +153,9 @@ export const SwapModule = () => {
     const activeInvestor = useInvestorStore((state) => state.active)
     const activePool = usePoolStore((state) => state.active)
     const swap = usePoolStore((state) => state.swap)
+    const addLog = useLogsStore((state) => state.addLog)
+    const swapMode = usePoolStore((state) => state.swapMode)
+    const router = new Router(globalState)
 
     const investor = activeInvestor && globalState.investors.get(activeInvestor)
     const pool = activePool && globalState.pools.get(activePool)
@@ -153,20 +191,33 @@ export const SwapModule = () => {
             })
             return
         }
-
-        let [totalAmountIn, totalAmountOut] = pool.buy(amount)
+        let [totalAmountIn, totalAmountOut] =
+            swapMode === 'direct' || pool.getType() === 'QUEST'
+                ? pool.buy(amount)
+                : router.smartSwap(
+                      pool.tokenLeft.name,
+                      pool.tokenRight.name,
+                      amount
+                  )
         investor.addBalance(pool.tokenLeft.name, totalAmountIn)
         investor.addBalance(pool.tokenRight.name, totalAmountOut)
+        globalState.investors.set(investor.hash, investor)
 
         const swapData = {
             pool: pool.name,
-            currentPrice: pool.currentPrice,
+            price: pool.currentPrice.toFixed(4),
             investorHash: investor.hash,
             action: 'buy',
             balanceLeft: investor.balances[pool.tokenLeft.name],
-            balanceRight: investor.balances[pool.tokenRight.name]
+            balanceRight: investor.balances[pool.tokenRight.name],
+            totalAmountIn,
+            totalAmountOut
         }
         swap(swapData)
+
+        const log = swapLog(swapData)
+
+        addLog(`[HUMAN] ${log}`)
     }
 
     const handleSell = () => {
@@ -204,18 +255,33 @@ export const SwapModule = () => {
             return
         }
 
-        let [totalAmountIn, totalAmountOut] = pool.sell(amount)
-        investor.addBalance(pool.tokenLeft.name, totalAmountIn)
-        investor.addBalance(pool.tokenRight.name, totalAmountOut)
+        let [totalAmountIn, totalAmountOut] =
+            swapMode === 'direct' || pool.getType() === 'QUEST'
+                ? pool.sell(amount)
+                : router.smartSwap(
+                      pool.tokenRight.name,
+                      pool.tokenLeft.name,
+                      amount
+                  )
+        investor.addBalance(pool.tokenLeft.name, totalAmountOut)
+        investor.addBalance(pool.tokenRight.name, totalAmountIn)
+        globalState.investors.set(investor.hash, investor)
 
         const swapData = {
-            currentPrice: pool.currentPrice,
+            pool: pool.name,
+            price: pool.currentPrice.toFixed(4),
             investorHash: investor.hash,
             action: 'sell',
             balanceLeft: investor.balances[pool.tokenLeft.name],
-            balanceRight: investor.balances[pool.tokenRight.name]
+            balanceRight: investor.balances[pool.tokenRight.name],
+            totalAmountIn,
+            totalAmountOut
         }
         swap(swapData)
+
+        const log = swapLog(swapData)
+
+        addLog(`[HUMAN] ${log}`)
     }
 
     const handleSetAmount = (e) => {
@@ -226,7 +292,7 @@ export const SwapModule = () => {
         <div>
             <div className="grid">
                 <div className="col-6">
-                    <PoolSelector />
+                    <QuestSelector />
                 </div>
                 <div className="col-6">
                     <InputNumber
@@ -262,6 +328,35 @@ export const SwapModule = () => {
                     <Messages ref={msgs} />
                 </div>
             </div>
+        </div>
+    )
+}
+
+export const SwapMode = () => {
+    const setSwapMode = usePoolStore((state) => state.setSwapMode)
+    const swapMode = usePoolStore((state) => state.swapMode)
+
+    const [value, setValue] = useState(swapMode || 'smart')
+    const options = [
+        { value: 'smart', icon: 'pi pi-share-alt' },
+        { value: 'direct', icon: 'pi pi-directions' }
+    ]
+
+    const handleSwapMode = (e) => {
+        setValue(e.value)
+        setSwapMode(e.value)
+    }
+
+    return (
+        <div className="field-checkbox m-0 flex">
+            <MultiStateCheckbox
+                value={swapMode}
+                options={options}
+                onChange={handleSwapMode}
+                optionValue="value"
+                empty={false}
+            />
+            <label>{swapMode}</label>
         </div>
     )
 }

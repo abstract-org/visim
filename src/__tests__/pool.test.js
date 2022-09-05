@@ -1,7 +1,8 @@
 import globalConfig from '../logic/config.global.json'
+import { p2pp, pp2p } from '../logic/Utils/logicUtils'
 import { preparePool } from './helpers/poolManager'
 
-it('calculates initial liquidity', () => {
+it('calculates initial liquidity for token0', () => {
     const { pool, investor, tokenLeft, tokenRight } = preparePool()
 
     const liquidity = pool.getLiquidityForAmounts(
@@ -16,15 +17,16 @@ it('calculates initial liquidity', () => {
 
 it('sets initial liquidity positions', () => {
     const { pool, investor, tokenLeft, tokenRight } = preparePool()
-
-    expect(Math.round(pool.pricePoints.get(50).liquidity)).toBeCloseTo(38046)
+    expect(Math.round(pool.pricePoints.get(p2pp(50)).liquidity)).toBeCloseTo(
+        38046
+    )
 })
 
-it('gets amountLeft for liquidity', () => {
+it('gets amount1 for liquidity', () => {
     const { pool, investor, tokenLeft, tokenRight } = preparePool()
     const firstPosition = globalConfig.INITIAL_LIQUIDITY[0]
 
-    const liquidity = pool.pricePoints.get(firstPosition.priceMin).liquidity
+    const liquidity = pool.pricePoints.get(p2pp(1)).liquidity
 
     const [amount0, amount1] = pool.getAmountsForLiquidity(
         liquidity,
@@ -32,8 +34,7 @@ it('gets amountLeft for liquidity', () => {
         Math.sqrt(firstPosition.priceMax),
         Math.sqrt(firstPosition.priceMin)
     )
-
-    expect(amount0).toBe(firstPosition.tokenLeftAmount)
+    expect(amount0).toBe(firstPosition.tokenA)
 })
 
 it('cites a quest', () => {
@@ -41,14 +42,14 @@ it('cites a quest', () => {
     const priceMax = 10
     const { pool, investor, tokenLeft, tokenRight } = preparePool()
     const citedQuest = investor.createQuest('CITED')
-    const crossPool = investor.createPool(tokenRight, citedQuest)
+    const crossPool = investor.createPool(citedQuest, tokenRight)
 
-    investor.citeQuest(crossPool, priceMin, priceMax, 100)
+    investor.citeQuest(crossPool, priceMin, priceMax, 100, 0)
 
     tokenRight.addPool(crossPool)
     citedQuest.addPool(crossPool)
 
-    expect(crossPool.name).toBe(`${tokenRight.name}-${citedQuest.name}`)
-    expect(crossPool.pricePoints.get(1).liquidity).toBeCloseTo(146.247)
-    expect(crossPool.pricePoints.get(10).liquidity).toBeCloseTo(-146.247)
+    expect(crossPool.name).toBe(`${citedQuest.name}-${tokenRight.name}`)
+    expect(crossPool.pricePoints.get(p2pp(1)).liquidity).toBeCloseTo(146.247)
+    expect(crossPool.pricePoints.get(p2pp(10)).liquidity).toBeCloseTo(-146.247)
 })

@@ -1,9 +1,12 @@
 export class Graph {
     constructor() {
+        this.vertices = 0
         this.adjList = new Map()
+        this.paths = []
     }
 
     addVertex(v) {
+        this.vertices += 1
         this.adjList.set(v, [])
     }
 
@@ -11,18 +14,62 @@ export class Graph {
         this.adjList.get(v).push(w)
     }
 
-    print() {
-        const keys = this.adjList.keys()
+    buildPathways(tokenA, tokenB) {
+        let isVisited = new Array(this.vertices)
 
-        for (const key of keys) {
-            const values = this.adjList.get(key)
-            let concat = ''
+        // Call recursive utility
+        this.buildPathwaysUtil(tokenA, tokenB, isVisited, [tokenA])
 
-            for (const value of values) {
-                concat += `${value} `
-            }
+        return this.getPathway()
+    }
 
-            console.log(`${key} -> ${concat}`)
+    buildPathwaysUtil(tokenA, tokenB, isVisited, localPathList) {
+        if (tokenA === tokenB) {
+            let path = []
+            localPathList.forEach((node) =>
+                node !== 'undefined' ? path.push(node) : null
+            )
+            this.paths.push(path)
+            return
         }
+
+        // Mark the current node
+        isVisited[tokenA] = true
+
+        if (!this.adjList.get(tokenA)) {
+            return
+        }
+
+        // Recur for all the vertices
+        // adjacent to current vertex
+        for (let i = 0; i < this.adjList.get(tokenA).length; i++) {
+            if (!isVisited[this.adjList.get(tokenA)[i]]) {
+                // store current node
+                // in path[]
+
+                localPathList.push(this.adjList.get(tokenA)[i])
+
+                this.buildPathwaysUtil(
+                    this.adjList.get(tokenA)[i],
+                    tokenB,
+                    isVisited,
+                    localPathList
+                )
+
+                // remove current node
+                // in path[]
+                localPathList.splice(
+                    localPathList.indexOf(this.adjList.get(tokenA)[i]),
+                    2
+                )
+            }
+        }
+
+        // Mark the current node
+        isVisited[tokenA] = false
+    }
+
+    getPathway() {
+        return this.paths
     }
 }

@@ -17,17 +17,22 @@ import {
 } from './logic/Investor/Investor.components'
 import { QuestCitation, QuestCreation } from './logic/Quest/Quest.components'
 import {
+    SwapMode,
     PoolSelector,
     PoolChartStats,
     SwapModule,
     KnowledgeGraphStats
 } from './logic/Pool/Pool.components'
 import { ValueLinksDebug } from './logic/Generators/ValueLinksDebug'
+import { Button } from 'primereact/button'
+import { InputNumber } from 'primereact/inputnumber'
+import { Panel } from 'primereact/panel'
+
+import { InvestorRandomGenerator } from './logic/Generators/Generator.components'
 
 export default function Home() {
     return (
         <div>
-            <ValueLinksDebug />
             <div className="grid">
                 <div className="col-8">
                     <Card className="h-full">
@@ -40,13 +45,16 @@ export default function Home() {
                     <Card className="h-full">
                         <div>
                             <div className="grid">
-                                <div className="col-12">
+                                <div className="col-10">
                                     <InvestorModule>
                                         <InvestorSelector />
                                     </InvestorModule>
                                 </div>
+                                <div className="col-2 flex">
+                                    <SwapMode />
+                                </div>
                             </div>
-                            <div className="grid h-10rem">
+                            <div className="grid">
                                 <div className="col-12">
                                     <InvestorPoolBalance />
                                 </div>
@@ -62,7 +70,7 @@ export default function Home() {
             </div>
             <div className="grid mt-2">
                 <div className="col-8 m-0 pt-0">
-                    <Card>
+                    <Card className="h-full">
                         <div className="grid">
                             <div className="col-12">
                                 <h2>Knowledge Graph</h2>
@@ -78,41 +86,52 @@ export default function Home() {
                 </div>
                 <div className="col-4 pr-3 pl-3">
                     <div className="grid">
-                        <Card className="col-12 w-full">
+                        <Card className="col-12 w-full h-full">
                             <QuestCreation />
                         </Card>
                     </div>
                     <div className="grid mt-2">
-                        <Card className="col-12 w-full">
+                        <Card className="col-12 w-full h-full">
                             <QuestCitation />
                         </Card>
                     </div>
                 </div>
-                {/*<div className="col-8">
-            <Card className={agoraCard.agoraCard}>
-              <h2>Positions</h2>
-              <Dropdown value={paper} options={papers} onChange={(e) => setPaper(e.value)} placeholder='Choose Paper' />
-              <PositionsChart height={215} />
-            </Card>
-          </div>
-          <div className="col-4">
-            <Card className={agoraCard.agoraCard}>
-              <DataTable className={agoraDt.agoraDt} value={logs} header="Logs" size="small" responsiveLayout="scroll">
-                  <Column field="block" header="Block"></Column>
-                  <Column field="event" header="Event"></Column>
-              </DataTable>
-            </Card>
-          </div>
-          <div className="col-8">
-            <Card className={agoraCard.agoraCard}>
-              Random Generator
-            </Card>
-          </div>
-          <div className="col-4">
-            <Card className={agoraCard.agoraCard}>
-              Token Manager
-            </Card>
-          </div>*/}
+            </div>
+            <div className="grid">
+                <div className="col-12">
+                    <Card className="h-full">
+                        <div className="grid">
+                            <div className="col-12">
+                                <div className="flex justify-content-between flex-wrap">
+                                    <div className="flex flex-grow-1">
+                                        <h2 className="m-0">
+                                            Random Generator
+                                        </h2>
+                                    </div>
+                                    <div className="flex flex-grow-0 mr-3">
+                                        <Button label="Generate" />
+                                    </div>
+                                    <div className="flex flex-grow-0 w-1">
+                                        <div className="p-inputgroup">
+                                            <span className="p-inputgroup-addon">
+                                                Days
+                                            </span>
+                                            <InputNumber
+                                                placeholder="100"
+                                                value={100}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="grid">
+                            <div className="col-12">
+                                <InvestorRandomGenerator />
+                            </div>
+                        </div>
+                    </Card>
+                </div>
             </div>
             <div className="grid">
                 <div className="col-12">

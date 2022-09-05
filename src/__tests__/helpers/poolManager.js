@@ -45,36 +45,36 @@ export const prepareCrossPools = (priceMin, priceMax, defaultTokenASum) => {
     quests.push(questE)
 
     // [A,B]
-    const AB = creator.createPool(questA, questB)
-    creator.citeQuest(AB, priceMin, priceMax, 0, defaultTokenASum) // deposit A (citing)
+    const AB = creator.createPool(questB, questA)
+    creator.citeQuest(AB, priceMin, priceMax, defaultTokenASum, 0) // deposit A (citing)
 
     // [C,A]
-    const CA = creator.createPool(questC, questA)
-    creator.citeQuest(CA, priceMin, priceMax, 0, defaultTokenASum) // deposit C (citing)
+    const CA = creator.createPool(questA, questC)
+    creator.citeQuest(CA, priceMin, priceMax, defaultTokenASum, 0) // deposit C (citing)
 
     // [C,B]
-    const CB = creator.createPool(questC, questB)
-    creator.citeQuest(CB, priceMin, priceMax, 0, defaultTokenASum) // deposit C (citing)
+    const CB = creator.createPool(questB, questC)
+    creator.citeQuest(CB, priceMin, priceMax, defaultTokenASum, 0) // deposit C (citing)
 
     // [C,E]
-    const CE = creator.createPool(questC, questE)
-    creator.citeQuest(CE, priceMin, priceMax, 0, defaultTokenASum) // deposit C (citing)
+    const CE = creator.createPool(questE, questC)
+    creator.citeQuest(CE, priceMin, priceMax, defaultTokenASum, 0) // deposit C (citing)
 
     // [A,D]
-    const AD = creator.createPool(questA, questD)
-    creator.citeQuest(AD, priceMin, priceMax, 0, defaultTokenASum) // deposit A (citing)
+    const AD = creator.createPool(questD, questA)
+    creator.citeQuest(AD, priceMin, priceMax, defaultTokenASum, 0) // deposit A (citing)
 
     // [D,E]
-    const DE = creator.createPool(questD, questE)
-    creator.citeQuest(DE, priceMin, priceMax, 0, defaultTokenASum) // deposit D (citing)
+    const DE = creator.createPool(questE, questD)
+    creator.citeQuest(DE, priceMin, priceMax, defaultTokenASum, 0) // deposit D (citing)
 
     // [D,C]
-    const DC = creator.createPool(questD, questC)
-    creator.citeQuest(DC, priceMin, priceMax, 0, defaultTokenASum) // deposit D (citing)
+    const DC = creator.createPool(questC, questD)
+    creator.citeQuest(DC, priceMin, priceMax, defaultTokenASum, 0) // deposit D (citing)
 
     // [E,B]
-    const EB = creator.createPool(questE, questB)
-    creator.citeQuest(EB, priceMin, priceMax, 0, defaultTokenASum) // deposit E (citing)
+    const EB = creator.createPool(questB, questE)
+    creator.citeQuest(EB, priceMin, priceMax, defaultTokenASum, 0) // deposit E (citing)
 
     return [
         quests,
