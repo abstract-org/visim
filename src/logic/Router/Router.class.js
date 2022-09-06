@@ -33,8 +33,7 @@ export default class Router {
             return []
         }
 
-        this.#paths = paths
-        return sums
+        return [-sums[0], sums[1]]
     }
 
     smartSwapPaths(pricedPaths, sortedPrices, amount, chunkSize = 10) {
@@ -49,6 +48,7 @@ export default class Router {
             ? sortedPrices[curPricePoint + 1]
             : price
         let outPrice = 0
+        let pathsUsed = []
 
         for (const chunk of chunks) {
             // loop sortedPrices
@@ -66,6 +66,11 @@ export default class Router {
                 // Re-enter chunk into loop during path change to avoid skipping it
                 if (sums[0] === 0) {
                     chunks.push(chunkSize)
+                } else {
+                    let pathString = path.join('-')
+                    if (!this.#paths.includes(pathString)) {
+                        this.#paths.push(pathString)
+                    }
                 }
             }
 
@@ -86,7 +91,7 @@ export default class Router {
                     : null
             }
 
-            amount -= sums[0]
+            amount += sums[0]
             this.#swaps.push(swaps)
         }
 
@@ -174,6 +179,10 @@ export default class Router {
         let sortedPrices = []
         let pricedPaths = {}
         swaps.forEach((swapPath) => {
+            if (swapPath.length <= 0) {
+                return // @TODO: What is this edge case after citing a quest and trying to sell token for USDC?
+            }
+
             const amtIn = swapPath[0].in
             const amtOut = swapPath[swapPath.length - 1].out
             const price = this.#getOutInPrice(amtIn, amtOut)

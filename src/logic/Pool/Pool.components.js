@@ -203,22 +203,41 @@ export const SwapModule = () => {
         investor.addBalance(pool.tokenRight.name, totalAmountOut)
         globalState.investors.set(investor.hash, investor)
 
-        const swapData = {
-            pool: pool.name,
-            price: pool.currentPrice.toFixed(4),
-            investorHash: investor.hash,
-            action: 'buy',
-            balanceLeft: investor.balances[pool.tokenLeft.name],
-            balanceRight: investor.balances[pool.tokenRight.name],
-            totalAmountIn,
-            totalAmountOut,
-            paths: router.getPaths()
+        if (swapMode === 'direct') {
+            const swapData = {
+                pool: pool.name,
+                price: pool.currentPrice.toFixed(4),
+                investorHash: investor.hash,
+                action: 'buy',
+                balanceLeft: investor.balances[pool.tokenLeft.name],
+                balanceRight: investor.balances[pool.tokenRight.name],
+                totalAmountIn,
+                totalAmountOut,
+                paths: router.getPaths()
+            }
+            swap(swapData)
+            const log = swapLog(swapData)
+            addLog(`[HUMAN] ${log}`)
+        } else {
+            const swaps = router.getSwaps()
+
+            swaps.forEach((swapSingle) => {
+                const swapData = {
+                    pool: swapSingle[0].pool,
+                    price: swapSingle[0].price.toFixed(4),
+                    investorHash: investor.hash,
+                    action: 'buy',
+                    balanceLeft: investor.balances[pool.tokenLeft.name],
+                    balanceRight: investor.balances[pool.tokenRight.name],
+                    totalAmountIn,
+                    totalAmountOut,
+                    paths: router.getPaths()
+                }
+                swap(swapData)
+                const log = swapLog(swapData)
+                addLog(`[SMART-ROUTE] ${log}`)
+            })
         }
-        swap(swapData)
-
-        const log = swapLog(swapData)
-
-        addLog(`[HUMAN] ${log}`)
     }
 
     const handleSell = () => {
@@ -264,6 +283,7 @@ export const SwapModule = () => {
                       pool.tokenLeft.name,
                       amount
                   )
+        console.log(swapMode, totalAmountIn, totalAmountOut)
         investor.addBalance(pool.tokenLeft.name, totalAmountOut)
         investor.addBalance(pool.tokenRight.name, totalAmountIn)
         globalState.investors.set(investor.hash, investor)
@@ -280,7 +300,6 @@ export const SwapModule = () => {
             paths: router.getPaths()
         }
         swap(swapData)
-        console.log(swapData)
 
         const log = swapLog(swapData)
 

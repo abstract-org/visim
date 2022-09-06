@@ -400,6 +400,10 @@ export const QuestCreation = () => {
 
         if (!globalState.quests.has(pool.tokenLeft.name)) {
             globalState.quests.set(pool.tokenLeft.name, pool.tokenLeft)
+        } else {
+            const exQuest = globalState.quests.get(pool.tokenLeft.name)
+            exQuest.addPool(pool)
+            globalState.quests.set(pool.tokenLeft.name, exQuest)
         }
         globalState.quests.set(tokenRight.name, tokenRight)
         globalState.pools.set(pool.name, pool)
