@@ -26,7 +26,7 @@ export const swapLog = (swapData) => {
     const paths =
         swapData.paths && swapData.paths.length
             ? `through paths: ${swapData.paths.map(
-                  (path) => '[ ' + path.join(', ') + ' ]'
+                  (path) => '[ ' + path + ' ]'
               )}`
             : ''
     return `Investor ${investor.type} (${investor.id}) ${action} ${amounts} ${paths}`
