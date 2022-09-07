@@ -11,15 +11,15 @@ export function KnowledgeGraph() {
     const pools = usePoolStore((state) => state.pools)
     const quests = useQuestStore((state) => state.quests)
     const setActivePool = usePoolStore((state) => state.setActive)
-    const setSwapMode = usePoolStore((state) => state.setSwapMode)
     const setActiveQuest = useQuestStore((state) => state.setActive)
     const swaps = usePoolStore((state) => state.swaps)
     const activePool = usePoolStore((state) => state.active)
     const activeQuest = useQuestStore((state) => state.active)
-    const pool = activePool && globalState.pools.get(activePool)
+    // const pool = activePool && globalState.pools.get(activePool)
 
     let edges = []
     let nodes = []
+    let producedEdges = []
 
     const defSize = { width: 80, height: 50 }
 
@@ -30,8 +30,10 @@ export function KnowledgeGraph() {
             data: {
                 active:
                     activeQuest &&
-                    (pool.tokenLeft.name === quest ||
-                        pool.tokenRight.name === quest)
+                    (globalState.pools.get(activePool).tokenLeft.name ===
+                        quest ||
+                        globalState.pools.get(activePool).tokenRight.name ===
+                            quest)
                         ? true
                         : false
             }
@@ -39,7 +41,7 @@ export function KnowledgeGraph() {
 
         const citingPools = pools.filter(
             (pool) =>
-                pool.indexOf(`-${quest}`) !== -1 &&
+                globalState.pools.get(pool).name === pool &&
                 globalState.pools.get(pool).getType() !== 'QUEST'
         )
 
@@ -48,12 +50,17 @@ export function KnowledgeGraph() {
                 const [cited, citing] = poolName.split('-')
                 const citingId = quests.findIndex((qs) => qs === citing)
                 const citedId = quests.findIndex((qs) => qs === cited)
-                edges.push({
-                    id: `${citedId}-${citingId}`,
-                    from: citingId,
-                    to: citedId,
-                    pool: `${cited}-${citing}`
-                })
+
+                if (!producedEdges.includes(`${citedId}-${citingId}`)) {
+                    edges.push({
+                        id: `${citedId}-${citingId}`,
+                        from: citingId,
+                        to: citedId,
+                        pool: `${cited}-${citing}`
+                    })
+                }
+
+                producedEdges.push(`${citedId}-${citingId}`)
             })
         }
     })
@@ -128,7 +135,6 @@ export function KnowledgeGraph() {
                                     )
                                     setActivePool(pool.name)
                                     setActiveQuest(pool.tokenLeft.name)
-                                    setSwapMode('smart')
                                 }}
                             />
                         )}
