@@ -1,34 +1,33 @@
-import React from 'react'
-
-import { Card } from 'primereact/card'
-import { PoolChart } from './components/PoolChart'
-import { KnowledgeGraph } from './components/KnowledgeGraph'
-import { LogsModule } from './logic/Logs/Logs'
-
-import 'primereact/resources/themes/lara-light-indigo/theme.css'
-import 'primereact/resources/primereact.min.css'
 import 'primeflex/primeflex.css'
 import 'primeicons/primeicons.css'
+import { Button } from 'primereact/button'
+import { Card } from 'primereact/card'
+import { Divider } from 'primereact/divider'
+import { InputNumber } from 'primereact/inputnumber'
+import 'primereact/resources/primereact.min.css'
+import 'primereact/resources/themes/lara-light-indigo/theme.css'
+import React from 'react'
 
+import { KnowledgeGraph } from './components/KnowledgeGraph'
+import { PoolChart } from './components/PoolChart'
+import {
+    InvestorRandomGenerator,
+    QuestRandomGenerator
+} from './logic/Generators/Generator.components'
 import {
     InvestorModule,
     InvestorPoolBalance,
     InvestorSelector
 } from './logic/Investor/Investor.components'
-import { QuestCitation, QuestCreation } from './logic/Quest/Quest.components'
+import { LogsModule } from './logic/Logs/Logs'
 import {
-    SwapMode,
-    PoolSelector,
+    KnowledgeGraphStats,
     PoolChartStats,
-    SwapModule,
-    KnowledgeGraphStats
+    PoolSelector,
+    SwapMode,
+    SwapModule
 } from './logic/Pool/Pool.components'
-import { ValueLinksDebug } from './logic/Generators/ValueLinksDebug'
-import { Button } from 'primereact/button'
-import { InputNumber } from 'primereact/inputnumber'
-import { Panel } from 'primereact/panel'
-
-import { InvestorRandomGenerator } from './logic/Generators/Generator.components'
+import { QuestCitation, QuestCreation } from './logic/Quest/Quest.components'
 
 export default function Home() {
     return (
@@ -128,6 +127,14 @@ export default function Home() {
                         <div className="grid">
                             <div className="col-12">
                                 <InvestorRandomGenerator />
+                            </div>
+                        </div>
+                        <div className="grid">
+                            <Divider />
+                        </div>
+                        <div className="grid">
+                            <div className="col-12">
+                                <QuestRandomGenerator />
                             </div>
                         </div>
                     </Card>

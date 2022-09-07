@@ -1,22 +1,19 @@
-import { useRef, useState } from 'react'
-
-import { MultiStateCheckbox } from 'primereact/multistatecheckbox'
+import { Button } from 'primereact/button'
 import { Dropdown } from 'primereact/dropdown'
 import { InputNumber } from 'primereact/inputnumber'
-import { Button } from 'primereact/button'
 import { Messages } from 'primereact/messages'
+import { MultiStateCheckbox } from 'primereact/multistatecheckbox'
+import { useRef, useState } from 'react'
 
-import usePoolStore from './pool.store'
+import globalState from '../GlobalState'
 import useInvestorStore from '../Investor/investor.store'
 import useLogsStore from '../Logs/logs.store'
-import globalState from '../GlobalState'
-import useQuestStore from '../Quest/quest.store'
-import globalConfig from '../config.global.json'
-
 import { QuestSelector } from '../Quest/Quest.components'
-import { swapLog } from '../Utils/uiUtils'
-
+import useQuestStore from '../Quest/quest.store'
 import Router from '../Router/Router.class'
+import { swapLog } from '../Utils/uiUtils'
+import globalConfig from '../config.global.json'
+import usePoolStore from './pool.store'
 
 export const PoolSelector = () => {
     const pools = usePoolStore((state) => state.pools)
@@ -203,41 +200,21 @@ export const SwapModule = () => {
         investor.addBalance(pool.tokenRight.name, totalAmountOut)
         globalState.investors.set(investor.hash, investor)
 
-        if (swapMode === 'direct') {
-            const swapData = {
-                pool: pool.name,
-                price: pool.currentPrice.toFixed(4),
-                investorHash: investor.hash,
-                action: 'buy',
-                balanceLeft: investor.balances[pool.tokenLeft.name],
-                balanceRight: investor.balances[pool.tokenRight.name],
-                totalAmountIn,
-                totalAmountOut,
-                paths: router.getPaths()
-            }
-            swap(swapData)
-            const log = swapLog(swapData)
-            addLog(`[HUMAN] ${log}`)
-        } else {
-            const swaps = router.getSwaps()
-
-            swaps.forEach((swapSingle) => {
-                const swapData = {
-                    pool: swapSingle[0].pool,
-                    price: swapSingle[0].price.toFixed(4),
-                    investorHash: investor.hash,
-                    action: 'buy',
-                    balanceLeft: investor.balances[pool.tokenLeft.name],
-                    balanceRight: investor.balances[pool.tokenRight.name],
-                    totalAmountIn,
-                    totalAmountOut,
-                    paths: router.getPaths()
-                }
-                swap(swapData)
-                const log = swapLog(swapData)
-                addLog(`[SMART-ROUTE] ${log}`)
-            })
+        const swapData = {
+            pool: pool.name,
+            price: pool.currentPrice.toFixed(4),
+            investorHash: investor.hash,
+            action: 'buy',
+            balanceLeft: investor.balances[pool.tokenLeft.name],
+            balanceRight: investor.balances[pool.tokenRight.name],
+            totalAmountIn,
+            totalAmountOut,
+            paths: router.getPaths()
         }
+
+        swap(swapData)
+        const log = swapLog(swapData)
+        addLog(`[HUMAN] ${log}`)
     }
 
     const handleSell = () => {

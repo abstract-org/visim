@@ -1,66 +1,129 @@
+import { Button } from 'primereact/button'
+import { Dropdown } from 'primereact/dropdown'
 import { Inplace, InplaceContent, InplaceDisplay } from 'primereact/inplace'
 import { InputText } from 'primereact/inputtext'
-import { Dropdown } from 'primereact/dropdown'
-import { Button } from 'primereact/button'
-import { TabView, TabPanel } from 'primereact/tabview'
+import { Message } from 'primereact/message'
+import { useRef, useState } from 'react'
 
-import { useState } from 'react'
+import useGeneratorStore from './generator.store'
+import { invGen, questGen } from './initialState'
+
+const addInvSelector = (state) => state.addInvConfig
+const updateInvSelector = (state) => state.updateInvConfig
+const deleteInvSelector = (state) => state.deleteInvConfig
+
+const addQuestSelector = (state) => state.addQuestConfig
+const updateQuestSelector = (state) => state.updateQuestConfig
+const deleteQuestSelector = (state) => state.deleteQuestConfig
 
 export const InvestorRandomGenerator = () => {
-    const [active, setActiveIndex] = useState(0)
-    const [count, setCount] = useState(0)
-    const handleNewInvestorGen = (e) => {
-        setActiveIndex(e.index)
-        setCount(count + 1)
+    const invConfigs = useGeneratorStore((state) => state.invConfigs)
+    const addInvConfig = useGeneratorStore(addInvSelector)
+
+    const handleNewInvestorGen = () => {
+        addInvConfig(invGen)
     }
 
     return (
-        <TabView
-            activeIndex={active}
-            onTabChange={(e) => setActiveIndex(e.index)}
-            scrollable
-        >
-            <TabPanel
-                headerTemplate={
-                    <Button
-                        label="Create Investor"
-                        icon="pi pi-plus"
-                        className="px-2 p-button-secondary"
-                        onClick={handleNewInvestorGen}
-                    ></Button>
-                }
-            />
-            {Array.from({ length: count }, (_, i) => ({
-                title: 'Header ' + (i + 1),
-                content: <GenCardInvestor />
-            })).map((tab) => {
-                return (
-                    <TabPanel
-                        leftIcon="pi pi-money-bill"
-                        key={tab.title}
-                        header={tab.title}
-                        closable
-                    >
-                        {tab.content}
-                    </TabPanel>
-                )
-            })}
-        </TabView>
+        <div>
+            <Button
+                label="Create Investor"
+                icon="pi pi-plus"
+                className="px-2 p-button-secondary"
+                onClick={handleNewInvestorGen}
+            ></Button>
+            <div className="gen-wrapper flex flex-row flex-nowrap justify-content-start">
+                {invConfigs.map((gen, key) => {
+                    return (
+                        <div
+                            key={key}
+                            header={key}
+                            className={`flex-order-${gen.id} flex flex-grow-0`}
+                        >
+                            <GenCardInvestor id={gen.id} />
+                        </div>
+                    )
+                })}
+            </div>
+        </div>
     )
 }
 
-export const GenCardInvestor = () => {
+export const GenCardInvestor = (props) => {
+    const aliasAlert = useRef(null)
+    const invConfigs = useGeneratorStore((state) => state.invConfigs)
+    const questConfigs = useGeneratorStore((state) => state.questConfigs)
+    const [state, setState] = useState(
+        invConfigs.find((gen) => gen.id === props.id)
+    )
+    const updateInvConfig = useGeneratorStore(updateInvSelector)
+    const deleteInvConfig = useGeneratorStore(deleteInvSelector)
+
+    const dropdownOptions = questConfigs.map((gen) => ({
+        label: `#${gen.id} ${gen.questGenAlias}`,
+        value: gen.id
+    }))
+
+    const handleChange = (evt) => {
+        setState({
+            ...state,
+            [evt.target.id]: evt.target.value
+        })
+    }
+
+    const handleSave = () => {
+        const alertRef = aliasAlert.current.getElement()
+
+        if (state.invGenAlias.length > 0) {
+            console.log(state)
+            updateInvConfig(state)
+            alertRef.style.display = 'none'
+        } else {
+            alertRef.style.display = 'block'
+        }
+    }
+
+    const handleDelete = (id) => {
+        deleteInvConfig(id)
+    }
+
     return (
         <div className="flex flex-column gen-card">
             <div className="header flex">
                 <div className="flex flex-grow-1">
-                    <span className="inplace-static-text">Investor -</span>
+                    <span className="inplace-static-text">
+                        [ #{props.id} ] Investor -
+                    </span>
                     <InPlaceElement
+                        id="invGenAlias"
                         active={true}
-                        display="Small Author"
+                        display={state.invGenAlias}
                         type="text"
                         component="input"
+                        handleChange={handleChange}
+                        state={state}
                     />
+
+                    <div className="flex flex-grow-1 justify-content-end">
+                        <Message
+                            className="alias-alert"
+                            severity="error"
+                            text="Alias is required"
+                            ref={aliasAlert}
+                            style={{ display: 'none' }}
+                        />
+                        <Button
+                            icon="pi pi-save"
+                            className="w-2rem h-2rem p-button-success"
+                            onClick={handleSave}
+                        />
+                        <div className="mr-3"></div>
+                        <Button
+                            icon="pi pi-trash"
+                            className="w-2rem h-2rem p-button-danger"
+                            onClick={() => handleDelete(props.id)}
+                        />
+                    </div>
                 </div>
             </div>
             <div className="column flex">
@@ -68,10 +131,13 @@ export const GenCardInvestor = () => {
                     Daily probability to spawn
                 </span>
                 <InPlaceElement
+                    id="dailySpawnProbability"
                     active={false}
-                    display="20%"
+                    display={`${state.dailySpawnProbability}%`}
                     type="number"
                     component="input"
+                    handleChange={handleChange}
+                    state={state}
                 />
             </div>
             <div className="column flex">
@@ -79,122 +145,130 @@ export const GenCardInvestor = () => {
                     USDC Initial Balance
                 </span>
                 <InPlaceElement
+                    id="initialBalance"
                     active={false}
-                    display="0%"
+                    display={state.initialBalance}
                     type="number"
                     component="input"
+                    handleChange={handleChange}
+                    state={state}
                 />
+            </div>
+            <hr className="dashed-divider" />
+            <div className="column flex">
+                <span className="inplace-static-text">Every</span>
+                <InPlaceElement
+                    id="buySellPeriodDays"
+                    active={false}
+                    display={state.buySellPeriodDays}
+                    type="number"
+                    component="input"
+                    handleChange={handleChange}
+                    state={state}
+                />
+                <span className="inplace-static-text">days:</span>
             </div>
             <div className="column flex">
                 <span className="inplace-static-text">Buys using</span>
                 <InPlaceElement
+                    id="buySumPerc"
                     active={false}
-                    display="0%"
+                    display={`${state.buySumPerc}%`}
                     type="number"
                     component="input"
+                    handleChange={handleChange}
+                    state={state}
                 />
-                <span className="inplace-static-text">of his balance in</span>
+                <span className="inplace-static-text">of their balance in</span>
 
                 <InPlaceElement
+                    id="buyQuestPerc"
                     active={false}
-                    display="0%"
+                    display={`${state.buyQuestPerc}%`}
                     type="number"
                     component="input"
+                    handleChange={handleChange}
+                    state={state}
                 />
                 <span className="inplace-static-text">quests that are top</span>
 
                 <InPlaceElement
+                    id="buyGainerPerc"
                     active={false}
-                    display="0%"
+                    display={`${state.buyGainerPerc}%`}
                     type="number"
                     component="input"
+                    handleChange={handleChange}
+                    state={state}
                 />
                 <span className="inplace-static-text">gainers</span>
             </div>
             <div className="column flex">
                 <span className="inplace-static-text">Sell</span>
                 <InPlaceElement
+                    id="sellIncSumPerc"
                     active={false}
-                    display="0%"
+                    display={`${state.sellIncSumPerc}%`}
                     type="number"
                     component="input"
+                    handleChange={handleChange}
+                    state={state}
                 />
                 <span className="inplace-static-text">
-                    of owned tokens that decreased in price by
+                    of owned tokens that decreased in price
                 </span>
-                <InPlaceElement
-                    active={false}
-                    display="0"
-                    type="number"
-                    component="input"
-                />
-                <span className="inplace-static-text">over</span>
-                <InPlaceElement
-                    active={false}
-                    display="0"
-                    type="number"
-                    component="input"
-                />
-                <span className="inplace-static-text">days</span>
             </div>
             <div className="column flex">
                 <span className="inplace-static-text">Sell</span>
                 <InPlaceElement
+                    id="sellDecSumPerc"
                     active={false}
-                    display="0%"
+                    display={`${state.sellDecSumPerc}%`}
                     type="number"
                     component="input"
+                    handleChange={handleChange}
+                    state={state}
                 />
                 <span className="inplace-static-text">
-                    of owned tokens that increased in price by
+                    of owned tokens that increased in price
                 </span>
-                <InPlaceElement
-                    active={false}
-                    display="0"
-                    type="number"
-                    component="input"
-                />
-                <span className="inplace-static-text">over</span>
-                <InPlaceElement
-                    active={false}
-                    display="0"
-                    type="number"
-                    component="input"
-                />
-                <span className="inplace-static-text">days</span>
             </div>
+            <hr className="dashed-divider" />
             <div className="column flex">
-                <span className="inplace-static-text">Create a</span>
-                <InPlaceElement
-                    active={false}
-                    display="Small Scale"
-                    component="dropdown"
-                    options={[
-                        {
-                            value: 'small',
-                            label: 'Small Scale'
-                        }
-                    ]}
-                    value="small"
-                />
                 <span className="inplace-static-text">
-                    quest on initialization
+                    On initialization create Quest
                 </span>
+                <InPlaceElement
+                    id="createQuest"
+                    active={true}
+                    display=""
+                    component="dropdown"
+                    options={dropdownOptions}
+                    value=""
+                    handleChange={handleChange}
+                    state={state}
+                />
             </div>
             <div className="column flex">
                 <span className="inplace-static-text">Every</span>
                 <InPlaceElement
+                    id="valueSellEveryDays"
                     active={false}
-                    display="30"
+                    display={state.valueSellEveryDays}
                     type="number"
                     component="input"
+                    handleChange={handleChange}
+                    state={state}
                 />
                 <span className="inplace-static-text">days sells</span>
                 <InPlaceElement
+                    id="valueSellAmount"
                     active={false}
-                    display="5000"
+                    display={state.valueSellAmount}
                     type="number"
                     component="input"
+                    handleChange={handleChange}
+                    state={state}
                 />
                 <span className="inplace-static-text">
                     value of his own created quest
@@ -204,156 +278,203 @@ export const GenCardInvestor = () => {
     )
 }
 
-export const GenCardQuest = () => {
+export const QuestRandomGenerator = () => {
+    const questConfigs = useGeneratorStore((state) => state.questConfigs)
+    const addQuestConfig = useGeneratorStore(addQuestSelector)
+
+    const handleNewQuestGen = () => {
+        console.log(questGen)
+        addQuestConfig(questGen)
+    }
+
+    return (
+        <div>
+            <Button
+                label="Create Quest"
+                icon="pi pi-plus"
+                className="px-2 p-button-secondary"
+                onClick={handleNewQuestGen}
+            ></Button>
+            <div className="gen-wrapper flex flex-row flex-nowrap justify-content-start">
+                {questConfigs.map((gen, key) => {
+                    return (
+                        <div
+                            key={key}
+                            header={key}
+                            className={`flex-order-${gen.id} flex flex-grow-0`}
+                        >
+                            <GenCardQuest id={gen.id} />
+                        </div>
+                    )
+                })}
+            </div>
+        </div>
+    )
+}
+
+export const GenCardQuest = (props) => {
+    const aliasAlert = useRef(null)
+    const questConfigs = useGeneratorStore((state) => state.questConfigs)
+    const [state, setState] = useState(
+        questConfigs.find((gen) => gen.id === props.id)
+    )
+    const updateQuestConfig = useGeneratorStore(updateQuestSelector)
+    const deleteQuestConfig = useGeneratorStore(deleteQuestSelector)
+
+    const handleChange = (evt) => {
+        setState({
+            ...state,
+            [evt.target.id]: evt.target.value
+        })
+    }
+
+    const handleSave = () => {
+        const alertRef = aliasAlert.current.getElement()
+
+        if (state.questGenAlias.length > 0) {
+            console.log(state)
+            updateQuestConfig(state)
+            alertRef.style.display = 'none'
+        } else {
+            alertRef.style.display = 'block'
+        }
+    }
+
+    const handleDelete = (id) => {
+        deleteQuestConfig(id)
+    }
+
     return (
         <div className="flex flex-column gen-card">
             <div className="header flex">
-                <div className="flex flex-grow-1">
-                    <span className="inplace-static-text">Investor -</span>
-                    <InPlaceElement
-                        active={true}
-                        display="Small Author"
-                        type="text"
-                        component="input"
+                <span className="inplace-static-text">
+                    [ #{props.id} ] Quest -
+                </span>
+                <InPlaceElement
+                    id="questGenAlias"
+                    active={true}
+                    display={state.questGenAlias}
+                    type="text"
+                    component="input"
+                    handleChange={handleChange}
+                    state={state}
+                />
+
+                <div className="flex flex-grow-1 justify-content-end">
+                    <Message
+                        className="alias-alert"
+                        severity="error"
+                        text="Alias is required"
+                        ref={aliasAlert}
+                        style={{ display: 'none' }}
+                    />
+                    <Button
+                        icon="pi pi-save"
+                        className="w-2rem h-2rem p-button-success"
+                        onClick={handleSave}
+                    />
+                    <div className="mr-3"></div>
+                    <Button
+                        icon="pi pi-trash"
+                        className="w-2rem h-2rem p-button-danger"
+                        onClick={() => handleDelete(props.id)}
                     />
                 </div>
             </div>
             <div className="column flex">
                 <span className="inplace-static-text">
-                    Daily probability to spawn
+                    Initial investment from author
                 </span>
                 <InPlaceElement
+                    id="initialAuthorInvest"
                     active={false}
-                    display="20%"
+                    display={state.initialAuthorInvest}
                     type="number"
                     component="input"
+                    handleChange={handleChange}
+                    state={state}
                 />
             </div>
             <div className="column flex">
                 <span className="inplace-static-text">
-                    USDC Initial Balance
+                    Initial numbers of tokens in USDC pool
                 </span>
                 <InPlaceElement
+                    id="poolSizeTokens"
                     active={false}
-                    display="0%"
+                    display={state.poolSizeTokens}
                     type="number"
                     component="input"
+                    handleChange={handleChange}
+                    state={state}
                 />
             </div>
             <div className="column flex">
-                <span className="inplace-static-text">Buys using</span>
-                <InPlaceElement
-                    active={false}
-                    display="0%"
-                    type="number"
-                    component="input"
-                />
-                <span className="inplace-static-text">of his balance in</span>
-
-                <InPlaceElement
-                    active={false}
-                    display="0%"
-                    type="number"
-                    component="input"
-                />
-                <span className="inplace-static-text">quests that are top</span>
-
-                <InPlaceElement
-                    active={false}
-                    display="0%"
-                    type="number"
-                    component="input"
-                />
-                <span className="inplace-static-text">gainers</span>
-            </div>
-            <div className="column flex">
-                <span className="inplace-static-text">Sell</span>
-                <InPlaceElement
-                    active={false}
-                    display="0%"
-                    type="number"
-                    component="input"
-                />
                 <span className="inplace-static-text">
-                    of owned tokens that decreased in price by
-                </span>
-                <InPlaceElement
-                    active={false}
-                    display="0"
-                    type="number"
-                    component="input"
-                />
-                <span className="inplace-static-text">over</span>
-                <InPlaceElement
-                    active={false}
-                    display="0"
-                    type="number"
-                    component="input"
-                />
-                <span className="inplace-static-text">days</span>
-            </div>
-            <div className="column flex">
-                <span className="inplace-static-text">Sell</span>
-                <InPlaceElement
-                    active={false}
-                    display="0%"
-                    type="number"
-                    component="input"
-                />
-                <span className="inplace-static-text">
-                    of owned tokens that increased in price by
-                </span>
-                <InPlaceElement
-                    active={false}
-                    display="0"
-                    type="number"
-                    component="input"
-                />
-                <span className="inplace-static-text">over</span>
-                <InPlaceElement
-                    active={false}
-                    display="0"
-                    type="number"
-                    component="input"
-                />
-                <span className="inplace-static-text">days</span>
-            </div>
-            <div className="column flex">
-                <span className="inplace-static-text">Create a</span>
-                <InPlaceElement
-                    active={false}
-                    display="Small Scale"
-                    component="dropdown"
-                    options={[
-                        {
-                            value: 'small',
-                            label: 'Small Scale'
-                        }
-                    ]}
-                    value="small"
-                />
-                <span className="inplace-static-text">
-                    quest on initialization
+                    Initial token price: 1
                 </span>
             </div>
             <div className="column flex">
-                <span className="inplace-static-text">Every</span>
-                <InPlaceElement
-                    active={false}
-                    display="30"
-                    type="number"
-                    component="input"
-                />
-                <span className="inplace-static-text">days sells</span>
-                <InPlaceElement
-                    active={false}
-                    display="5000"
-                    type="number"
-                    component="input"
-                />
                 <span className="inplace-static-text">
-                    value of his own created quest
+                    Initial positions: 1...10000, 20...10000, 50...10000,
+                    200...10000
                 </span>
+            </div>
+            <div className="column flex">
+                <span className="inplace-static-text">
+                    Probability to cite Agora
+                </span>
+                <InPlaceElement
+                    id="probCiteAgora"
+                    active={false}
+                    display={`${state.probCiteAgora}%`}
+                    type="number"
+                    component="input"
+                    handleChange={handleChange}
+                    state={state}
+                />
+            </div>
+            <div className="column flex">
+                <span className="inplace-static-text">
+                    Portion of tokens used for citing Agora
+                </span>
+                <InPlaceElement
+                    id="agoraCitePerc"
+                    active={false}
+                    display={`${state.agoraCitePerc}%`}
+                    type="number"
+                    component="input"
+                    handleChange={handleChange}
+                    state={state}
+                />
+            </div>
+            <div className="column flex">
+                <span className="inplace-static-text">
+                    Probability to cite other papers
+                </span>
+                <InPlaceElement
+                    id="probOtherCite"
+                    active={false}
+                    display={`${state.probOtherCite}%`}
+                    type="number"
+                    component="input"
+                    handleChange={handleChange}
+                    state={state}
+                />
+            </div>
+            <div className="column flex">
+                <span className="inplace-static-text">
+                    Portion of tokens used for other citings
+                </span>
+                <InPlaceElement
+                    id="otherCitePerc"
+                    active={false}
+                    display={`${state.otherCitePerc}%`}
+                    type="number"
+                    component="input"
+                    handleChange={handleChange}
+                    state={state}
+                />
             </div>
         </div>
     )
@@ -361,7 +482,7 @@ export const GenCardQuest = () => {
 
 const InPlaceElement = (props) => {
     return (
-        <Inplace active={props.active || false} closable>
+        <Inplace active={props.active} closable onToggle={props.onToggle}>
             <InplaceDisplay>{props.display}</InplaceDisplay>
             <InplaceContent>
                 {props.component === 'input' ? (
@@ -376,14 +497,40 @@ const InPlaceElement = (props) => {
 
 const PresetInPlaceInput = (props) => {
     return (
-        <InputText
-            autoFocus
-            type={props.type || 'text'}
-            className="block p-inputtext-sm"
-        />
+        <div className="flex">
+            <InputText
+                id={props.id}
+                value={props.state[props.id]}
+                autoFocus
+                type={props.type || 'text'}
+                className="block p-inputtext-sm"
+                onChange={props.handleChange}
+            />
+        </div>
     )
 }
 
 const PresetInPlaceDropdown = (props) => {
-    return <Dropdown value={props.value} options={props.options} />
+    return (
+        <Dropdown
+            value={props.value}
+            options={props.options}
+            onChange={props.handleChange}
+            placeholder="Select Generator"
+        />
+    )
+}
+
+const WrappedInplace = (props) => {
+    return (
+        <InPlaceElement
+            id={props.inputId}
+            active={false}
+            display={props.state[props.inputId]}
+            type="number"
+            component="input"
+            handleChange={props.handleChange}
+            state={props.state}
+        />
+    )
 }

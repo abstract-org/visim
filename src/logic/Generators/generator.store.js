@@ -1,30 +1,64 @@
 import create from 'zustand'
-import produce from 'immer'
 import { devtools } from 'zustand/middleware'
 
 const useGeneratorStore = create(
     devtools((set, get) => ({
-        investorGens: [],
-        questGens: [],
-        addInvestorGen: (genLen) =>
-            set(
-                produce((state) => ({
-                    investorGens: Array.from({ length: genLen }).fill({})
-                }))
-            ),
-        removeInvestorGen: (genId) =>
-            set((state) => {
-                const gens = [...get().investorGens]
-                const index = gens.indexOf(genId)
-                gens.splice(index, 1)
-                state.investorGens = gens
-            }),
-        addQuestGen: (genId) =>
-            set(
-                produce((state) => ({
-                    questGens: [...state.questGens, genId]
-                }))
-            )
+        invConfigs: [],
+        questConfigs: [],
+        addInvConfig: (stateConfig) =>
+            set((state) => ({
+                invConfigs: [
+                    {
+                        id: get().invConfigs.length + 1,
+                        ...stateConfig
+                    },
+                    ...state.invConfigs
+                ]
+            })),
+        updateInvConfig: (stateConfig) =>
+            set((state) => ({
+                invConfigs: state.invConfigs.map((gen) => {
+                    if (gen.id === stateConfig.id) {
+                        return {
+                            ...stateConfig
+                        }
+                    } else {
+                        return gen
+                    }
+                })
+            })),
+        deleteInvConfig: (index) =>
+            set((state) => ({
+                invConfigs: state.invConfigs.filter((gen) => gen.id !== index)
+            })),
+        addQuestConfig: (stateConfig) =>
+            set((state) => ({
+                questConfigs: [
+                    {
+                        id: get().questConfigs.length + 1,
+                        ...stateConfig
+                    },
+                    ...state.questConfigs
+                ]
+            })),
+        updateQuestConfig: (stateConfig) =>
+            set((state) => ({
+                questConfigs: state.questConfigs.map((gen) => {
+                    if (gen.id === stateConfig.id) {
+                        return {
+                            ...stateConfig
+                        }
+                    } else {
+                        return gen
+                    }
+                })
+            })),
+        deleteQuestConfig: (index) =>
+            set((state) => ({
+                questConfigs: state.questConfigs.filter(
+                    (gen) => gen.id !== index
+                )
+            }))
     }))
 )
 
