@@ -1,5 +1,5 @@
-import globalConfig from '../logic/config.global.json'
 import { p2pp, pp2p } from '../logic/Utils/logicUtils'
+import globalConfig from '../logic/config.global.json'
 import { preparePool } from './helpers/poolManager'
 
 it('calculates initial liquidity for token0', () => {
@@ -37,19 +37,114 @@ it('gets amount1 for liquidity', () => {
     expect(amount0).toBe(firstPosition.tokenA)
 })
 
-it('cites a quest', () => {
-    const priceMin = 1
-    const priceMax = 10
-    const { pool, investor, tokenLeft, tokenRight } = preparePool()
-    const citedQuest = investor.createQuest('CITED')
+/**
+ * --- A luxury ---
+    deposit A
+    A: 1
+    B: 2
+
+    B[0.5...1]
+
+    deposit B
+    A: 1
+    B: 2
+
+    A[2...4]
+
+    --- B luxury ---
+    deposit A
+    A: 2
+    B: 1
+
+    B[0.5...1]
+
+    deposit B
+    A: 2
+    B: 1
+    A[2...4]
+ */
+
+it('cites a quest with fresh pools', () => {
+    const { pool, investor, tokenRight } = preparePool()
+    const citedQuest = investor.createQuest('AGORA')
     const crossPool = investor.createPool(citedQuest, tokenRight)
 
-    investor.citeQuest(crossPool, priceMin, priceMax, 100, 0)
+    const priceRange = investor.calculatePriceRange(pool, crossPool, 2)
+
+    investor.citeQuest(crossPool, priceRange.min, priceRange.max, 100, 0)
 
     tokenRight.addPool(crossPool)
     citedQuest.addPool(crossPool)
 
+    const swapInfo = crossPool.getSwapInfo()
+
     expect(crossPool.name).toBe(`${citedQuest.name}-${tokenRight.name}`)
-    expect(crossPool.pricePoints.get(p2pp(1)).liquidity).toBeCloseTo(146.247)
-    expect(crossPool.pricePoints.get(p2pp(10)).liquidity).toBeCloseTo(-146.247)
+    expect(swapInfo[0][0]).toBeCloseTo(-141.421)
+    expect(swapInfo[0][1]).toBeCloseTo(100)
+    expect(
+        crossPool.pricePoints.get(p2pp(priceRange.max)).liquidity
+    ).toBeCloseTo(-341.421)
+    expect(
+        crossPool.pricePoints.get(p2pp(priceRange.min)).liquidity
+    ).toBeCloseTo(341.421)
+})
+
+fit('cites a quest with traded pool A', () => {
+    const { pool, investor, tokenRight } = preparePool()
+    const citedQuest = investor.createQuest('AGORA')
+    const citedPool = citedQuest.createPool()
+    const crossPool = investor.createPool(citedQuest, tokenRight)
+    pool.buy(2092)
+
+    const priceRange = investor.calculatePriceRange(pool, citedPool, 2)
+    const [totalIn, totalOut] = investor.citeQuest(
+        crossPool,
+        priceRange.min,
+        priceRange.max,
+        100,
+        0
+    )
+
+    tokenRight.addPool(crossPool)
+    citedQuest.addPool(crossPool)
+
+    const swapInfo = crossPool.getSwapInfo()
+
+    expect(crossPool.name).toBe(`${citedQuest.name}-${tokenRight.name}`)
+    expect(swapInfo[0][0]).toBeCloseTo(-70.71)
+    expect(swapInfo[0][1]).toBeCloseTo(100)
+    expect(
+        crossPool.pricePoints.get(p2pp(priceRange.max)).liquidity
+    ).toBeCloseTo(-241.42)
+    expect(
+        crossPool.pricePoints.get(p2pp(priceRange.min)).liquidity
+    ).toBeCloseTo(241.42)
+})
+
+it('cites a quest with traded pool B', () => {
+    const { pool, investor, tokenRight } = preparePool()
+    const citedQuest = investor.createQuest('AGORA')
+    const citedPool = citedQuest.createPool()
+    const crossPool = investor.createPool(citedQuest, tokenRight)
+    citedPool.buy(2092)
+
+    const priceRange = investor.calculatePriceRange(pool, citedPool, 2)
+    console.log(priceRange)
+
+    investor.citeQuest(crossPool, priceRange.min, priceRange.max, 100, 0)
+
+    tokenRight.addPool(crossPool)
+    citedQuest.addPool(crossPool)
+
+    const swapInfo = crossPool.getSwapInfo()
+
+    expect(crossPool.name).toBe(`${citedQuest.name}-${tokenRight.name}`)
+    expect(swapInfo[0][0]).toBeCloseTo(-282.843)
+    expect(swapInfo[0][1]).toBeCloseTo(100)
+    expect(
+        crossPool.pricePoints.get(p2pp(priceRange.max)).liquidity
+    ).toBeCloseTo(-482.843)
+    expect(
+        crossPool.pricePoints.get(p2pp(priceRange.min)).liquidity
+    ).toBeCloseTo(482.843)
 })

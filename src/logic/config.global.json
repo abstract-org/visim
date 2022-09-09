@@ -29,6 +29,6 @@
         }
     ],
     "JOURNAL": false,
-    "JOURNAL_BUY": false,
+    "JOURNAL_BUY": true,
     "JOURNAL_SELL": true
 }

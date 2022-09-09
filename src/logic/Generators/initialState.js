@@ -1,7 +1,7 @@
 export const invGen = {
     invGenAlias: 'Type A',
     createQuest: '',
-    dailySpawnProbability: 20,
+    dailySpawnProbability: 50,
     initialBalance: 10000,
     buySellPeriodDays: 30,
     buySumPerc: 0,
@@ -22,4 +22,19 @@ export const questGen = {
     agoraCitePerc: 2,
     probOtherCite: 500,
     otherCitePerc: 5
+}
+
+export const dayData = {
+    investors: [],
+    quests: [],
+    pools: [],
+    questProbs: {
+        citeAgora: false,
+        citeOther: false,
+        citeOtherAmount: 0
+    },
+    invProbs: {
+        spawnInv: false,
+        spawnInvAmount: 0
+    }
 }

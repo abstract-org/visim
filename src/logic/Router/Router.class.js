@@ -1,5 +1,6 @@
 /* eslint-disable no-loop-func */
 import { Graph } from './Graph.class'
+
 export default class Router {
     #state = []
     #visitedPools = []
@@ -12,15 +13,20 @@ export default class Router {
         this.#state = state
     }
 
-    smartSwap(token0, token1, amountIn, chunkSize = 10) {
+    smartSwap(token0, token1, amountIn, chunkSize = 10, DEBUG = false) {
         this.#visitedPools = []
         this.#swaps = []
         this.#paths = []
         const poolList = this.findPoolsFor(token0)
+        if (DEBUG) console.log(poolList)
         const graph = this.graphPools(poolList)
+        if (DEBUG) console.log(graph)
         const paths = graph.buildPathways(token0, token1)
+        if (DEBUG) console.log(paths)
         const swapData = this.drySwapAllForAmounts(paths, chunkSize)
+        if (DEBUG) console.log(swapData)
         const [sortedPrices, pricedPaths] = this.sortByBestPrice(swapData)
+        if (DEBUG) console.log(sortedPrices, pricedPaths)
 
         let sums = this.smartSwapPaths(
             pricedPaths,
@@ -48,7 +54,6 @@ export default class Router {
             ? sortedPrices[curPricePoint + 1]
             : price
         let outPrice = 0
-        let pathsUsed = []
 
         for (const chunk of chunks) {
             // loop sortedPrices

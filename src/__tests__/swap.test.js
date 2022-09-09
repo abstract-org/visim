@@ -1,7 +1,7 @@
 import Investor from '../logic/Investor/Investor.class'
+import { p2pp, pp2p } from '../logic/Utils/logicUtils'
 import globalConfig from '../logic/config.global.json'
 import { preparePool } from './helpers/poolManager'
-import { p2pp, pp2p } from '../logic/Utils/logicUtils'
 
 it('Does micro price buy properly within the same liquidity', () => {
     const { pool, investor, tokenLeft, tokenRight } = preparePool(20001)
@@ -45,7 +45,7 @@ it('Tries to buy over limit', () => {
     expect(totalOut).toBe(0)
     expect(pool.currentLiquidity).toBe(0)
     expect(pool.totalSold).toBe(20000)
-    expect(pool.currentPrice).toBeCloseTo(10000)
+    expect(pool.currentPrice).toBeCloseTo(999999.999)
 })
 
 it('Does micro price sell properly within the same liquidity', () => {

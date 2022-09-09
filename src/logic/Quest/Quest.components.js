@@ -1,19 +1,17 @@
+import { Button } from 'primereact/button'
+import { Checkbox } from 'primereact/checkbox'
+import { Dropdown } from 'primereact/dropdown'
+import { InputText } from 'primereact/inputtext'
+import { Messages } from 'primereact/messages'
+import { ScrollPanel } from 'primereact/scrollpanel'
+import { Slider } from 'primereact/slider'
 import React, { useRef, useState } from 'react'
 
-import { Dropdown } from 'primereact/dropdown'
-import { Checkbox } from 'primereact/checkbox'
-import { InputText } from 'primereact/inputtext'
-import { ScrollPanel } from 'primereact/scrollpanel'
-import { Button } from 'primereact/button'
-import { Messages } from 'primereact/messages'
-import { Slider } from 'primereact/slider'
-
-import useQuestStore from './quest.store'
-import useInvestorStore from '../Investor/investor.store'
-import usePoolStore from '../Pool/pool.store'
-
 import globalState from '../GlobalState'
+import useInvestorStore from '../Investor/investor.store'
 import useLogsStore from '../Logs/logs.store'
+import usePoolStore from '../Pool/pool.store'
+import useQuestStore from './quest.store'
 
 const addPoolSelector = (state) => state.addPool
 const addQuestSelector = (state) => state.addQuest
@@ -29,11 +27,11 @@ export const QuestSelector = () => {
     const handleActiveQuest = (e) => {
         const questName = quests.find((questName) => questName === e.value)
         const quest = globalState.quests.get(questName)
-        for (const pool of quest.pools) {
-            if (pool.getType() === 'QUEST') {
-                setActivePool(pool.name)
-            }
-        }
+        // for (const pool of quest.pools) {
+        //     if (pool.getType() === 'QUEST') {
+        //         setActivePool(pool.name)
+        //     }
+        // }
 
         setActive(questName)
     }
@@ -54,9 +52,8 @@ export const QuestCitation = () => {
     const [selectedQuests, setSelectedQuests] = useState([])
     const handleCitationRange = (value) => setCitationRange(value)
     const activeInvestor = useInvestorStore((state) => state.active)
-    const activePool = usePoolStore((state) => state.active)
+    const setActivePool = usePoolStore((state) => state.setActive)
     const addPool = usePoolStore((state) => state.addPool)
-    const pool = globalState.pools.get(activePool)
     const investor = globalState.investors.get(activeInvestor)
     const swaps = usePoolStore((state) => state.swaps)
     const createValueLink = usePoolStore((state) => state.createValueLink)
@@ -69,7 +66,7 @@ export const QuestCitation = () => {
 
     // Reset selected quests and citation range if active quest equal to the one to be cited
     if (selectedQuests.includes(activeQuest)) {
-        selectedQuests.splice(selectedQuests.indexOf(activePool), 1)
+        selectedQuests.splice(activeQuest, 1)
         setSelectedQuests(selectedQuests)
     }
 
@@ -83,44 +80,44 @@ export const QuestCitation = () => {
             return
         }
 
-        if (!activeInvestor || !activePool) {
-            console.log(`You need to select investor and a pool (paper)`)
+        if (!activeInvestor || !activeQuest) {
+            console.log(`You need to select investor and a paper`)
             msgs.current.show({
                 severity: 'warn',
-                detail: 'You need to select investor and a pool (paper)'
+                detail: 'You need to select investor and a paper'
             })
             return
         }
 
         const calcAmountA = Math.floor(
-            (investor.balances[pool.tokenRight.name] / 100) * citationRange
+            (investor.balances[activeQuest] / 100) * citationRange
         )
         const cumulativeDeposit = selectedQuests.length * calcAmountA
 
         if (
             isNaN(calcAmountA) ||
-            cumulativeDeposit > investor.balances[pool.tokenRight.name] ||
+            cumulativeDeposit > investor.balances[activeQuest] ||
             calcAmountA <= 0
         ) {
             console.log(
-                `Not enough ${pool.tokenRight.name} balance to cite selected quest(s)`
+                `Not enough ${activeQuest} balance to cite selected quest(s)`
             )
             msgs.current.show({
                 severity: 'warn',
-                detail: `Not enough ${pool.tokenRight.name} balance to cite selected quest(s)`
+                detail: `Not enough ${activeQuest} balance to cite selected quest(s)`
             })
             return
         }
 
-        const citingQuest = globalState.quests.get(pool.tokenRight.name)
+        const citingQuest = globalState.quests.get(activeQuest)
 
         selectedQuests.forEach((questName) => {
-            if (questName === pool.tokenRight.name) {
+            if (questName === activeQuest) {
                 return
             }
 
-            const poolName = `${pool.tokenRight.name}-${questName}`
-            const swapPoolName = `${questName}-${pool.tokenRight.name}`
+            const poolName = `${activeQuest}-${questName}`
+            const swapPoolName = `${questName}-${activeQuest}`
             if (
                 globalState.pools.get(poolName) ||
                 globalState.pools.get(swapPoolName)
@@ -135,6 +132,7 @@ export const QuestCitation = () => {
 
             const citedQuest = globalState.quests.get(questName)
             const crossPool = investor.createPool(citedQuest, citingQuest)
+            // @TODO: Change to calculated prices based on market price
             const priceMin = 1
             const priceMax = 10
             investor.citeQuest(crossPool, priceMin, priceMax, calcAmountA)
@@ -148,9 +146,10 @@ export const QuestCitation = () => {
                 initialAmount: calcAmountA,
                 initialToken: citingQuest.name
             })
+            setActivePool(crossPool.name)
 
             addLog(
-                `[HUMAN] Investor ${investor.type} (${investor.id}) cited ${citedQuest.name} by depositing ${calcAmountA} of ${citingQuest.name} to ${pool.name} at price ranges of ${priceMin}...${priceMax}`
+                `[HUMAN] Investor ${investor.type} (${investor.id}) cited ${citedQuest.name} by depositing ${calcAmountA} of ${citingQuest.name} to ${crossPool.name}`
             )
         })
     }
@@ -204,8 +203,7 @@ export const QuestCitation = () => {
 
 export const CitingQuestList = (props) => {
     const quests = useQuestStore((state) => state.quests)
-    const activePool = usePoolStore((state) => state.active)
-    const pool = activePool && globalState.pools.get(activePool)
+    const activeQuest = useQuestStore((state) => state.active)
 
     const handleQuestSelect = (e) => {
         let selectedQuests = [...props.selectedQuests]
@@ -229,30 +227,29 @@ export const CitingQuestList = (props) => {
 
     return (
         <div>
-            {quests.map((quest, idx) => {
-                const questObj = globalState.quests.get(quest)
-                // @TODO: Reduce
-                if (pool && pool.tokenRight.name === quest) {
-                    return null
-                }
+            {quests
+                .filter((quest) => quest !== activeQuest)
+                .map((quest, idx) => {
+                    const questObj = globalState.quests.get(quest)
+                    // @TODO: Reduce
 
-                return (
-                    <div className="field-checkbox" key={idx}>
-                        <Checkbox
-                            inputId={`quest-${questObj.name}`}
-                            name={`quest-${questObj.name}`}
-                            value={questObj.name}
-                            onChange={handleQuestSelect}
-                            checked={props.selectedQuests.includes(
-                                questObj.name
-                            )}
-                        />
-                        <label htmlFor={`quest-${questObj.name}`}>
-                            {questObj.name}
-                        </label>
-                    </div>
-                )
-            })}
+                    return (
+                        <div className="field-checkbox" key={idx}>
+                            <Checkbox
+                                inputId={`quest-${questObj.name}`}
+                                name={`quest-${questObj.name}`}
+                                value={questObj.name}
+                                onChange={handleQuestSelect}
+                                checked={props.selectedQuests.includes(
+                                    questObj.name
+                                )}
+                            />
+                            <label htmlFor={`quest-${questObj.name}`}>
+                                {questObj.name}
+                            </label>
+                        </div>
+                    )
+                })}
         </div>
     )
 }
@@ -260,8 +257,7 @@ export const CitingQuestList = (props) => {
 export const CitingQuestLiquidity = (props) => {
     const activeInvestor = useInvestorStore((state) => state.active)
     const investor = globalState.investors.get(activeInvestor)
-    const activePool = usePoolStore((state) => state.active)
-    const pool = globalState.pools.get(activePool)
+    const activeQuest = useQuestStore((state) => state.active)
     const swaps = usePoolStore((state) => state.swaps)
     const proMode = useQuestStore((state) => state.proMode)
     const msgs = useRef(null)
@@ -270,41 +266,28 @@ export const CitingQuestLiquidity = (props) => {
         return
     }
 
-    if (!activePool) {
+    if (!investor.balances[activeQuest]) {
         return (
             <div className="grid">
                 <div className="col-12 mt-2">
-                    Select pool (paper) to see price range
-                </div>
-            </div>
-        )
-    }
-
-    if (!investor.balances[pool.tokenRight.name]) {
-        return (
-            <div className="grid">
-                <div className="col-12 mt-2">
-                    Not enough {pool.tokenRight.name} balance to cite any quest
+                    Not enough {activeQuest} balance to cite any quest
                 </div>
             </div>
         )
     }
 
     const calculatedDeposit =
-        activePool &&
+        activeQuest &&
         activeInvestor &&
-        Math.floor(
-            (investor.balances[pool.tokenRight.name] / 100) *
-                props.citationRange
-        )
+        Math.floor((investor.balances[activeQuest] / 100) * props.citationRange)
 
     const cumulativeDeposit = props.selectedQuests.length * calculatedDeposit
 
     const shouldNotRender =
-        investor.balances[pool.tokenRight.name] <= 0 ||
+        investor.balances[activeQuest] <= 0 ||
         calculatedDeposit < 1 ||
-        investor.balances[pool.tokenRight.name] < calculatedDeposit ||
-        cumulativeDeposit > investor.balances[pool.tokenRight.name]
+        investor.balances[activeQuest] < calculatedDeposit ||
+        cumulativeDeposit > investor.balances[activeQuest]
 
     // @TODO: Take logic out of render, calculate all citations - check if will run out of balance
     return (
@@ -321,8 +304,8 @@ export const CitingQuestLiquidity = (props) => {
                                         key={idx}
                                         className="text-red-600 block"
                                     >
-                                        Not enough {pool.tokenRight.name}{' '}
-                                        balance to cite {selectedQuest}
+                                        Not enough {activeQuest} balance to cite{' '}
+                                        {selectedQuest}
                                     </span>
                                 )
                             }
@@ -332,9 +315,8 @@ export const CitingQuestLiquidity = (props) => {
                                     key={idx}
                                     className="text-green-600 block"
                                 >
-                                    Will deposit {calculatedDeposit}{' '}
-                                    {pool.tokenRight.name} to cite{' '}
-                                    {selectedQuest}
+                                    [#{idx + 1}] Deposit {calculatedDeposit}{' '}
+                                    {activeQuest} to cite {selectedQuest}
                                 </span>
                             )
                         })}
@@ -345,6 +327,7 @@ export const CitingQuestLiquidity = (props) => {
                 <CitationRangeSlider
                     citationRange={props.citationRange}
                     handleCitationRange={props.handleCitationRange}
+                    token={activeQuest}
                 />
             ) : (
                 ''
@@ -458,15 +441,8 @@ const CitationRangeSlider = (props) => {
         <div>
             <div className="grid">
                 <div className="col-12">
-                    <span className="text-xs">
-                        * Price range by default: 1 to 10
-                    </span>
-                </div>
-            </div>
-            <div className="grid">
-                <div className="col-12">
                     <span className="text-center block pb-2">
-                        {props.citationRange}%
+                        {props.citationRange}% of total {props.token}
                     </span>
                     <Slider
                         step={5}

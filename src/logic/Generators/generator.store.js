@@ -1,5 +1,8 @@
+import Chance from 'chance'
 import create from 'zustand'
 import { devtools } from 'zustand/middleware'
+
+const chance = Chance()
 
 const useGeneratorStore = create(
     devtools((set, get) => ({
@@ -8,17 +11,16 @@ const useGeneratorStore = create(
         addInvConfig: (stateConfig) =>
             set((state) => ({
                 invConfigs: [
+                    ...state.invConfigs,
                     {
-                        id: get().invConfigs.length + 1,
                         ...stateConfig
-                    },
-                    ...state.invConfigs
+                    }
                 ]
             })),
         updateInvConfig: (stateConfig) =>
             set((state) => ({
                 invConfigs: state.invConfigs.map((gen) => {
-                    if (gen.id === stateConfig.id) {
+                    if (gen.invGenAlias === stateConfig.invGenAlias) {
                         return {
                             ...stateConfig
                         }
@@ -27,24 +29,25 @@ const useGeneratorStore = create(
                     }
                 })
             })),
-        deleteInvConfig: (index) =>
+        deleteInvConfig: (invGenAlias) =>
             set((state) => ({
-                invConfigs: state.invConfigs.filter((gen) => gen.id !== index)
+                invConfigs: state.invConfigs.filter(
+                    (gen) => gen.invGenAlias !== invGenAlias
+                )
             })),
         addQuestConfig: (stateConfig) =>
             set((state) => ({
                 questConfigs: [
+                    ...state.questConfigs,
                     {
-                        id: get().questConfigs.length + 1,
                         ...stateConfig
-                    },
-                    ...state.questConfigs
+                    }
                 ]
             })),
         updateQuestConfig: (stateConfig) =>
             set((state) => ({
                 questConfigs: state.questConfigs.map((gen) => {
-                    if (gen.id === stateConfig.id) {
+                    if (gen.questGenAlias === stateConfig.questGenAlias) {
                         return {
                             ...stateConfig
                         }
@@ -53,10 +56,10 @@ const useGeneratorStore = create(
                     }
                 })
             })),
-        deleteQuestConfig: (index) =>
+        deleteQuestConfig: (questGenAlias) =>
             set((state) => ({
                 questConfigs: state.questConfigs.filter(
-                    (gen) => gen.id !== index
+                    (gen) => gen.questGenAlias !== questGenAlias
                 )
             }))
     }))

@@ -1,8 +1,8 @@
 import HashMap from 'hashmap'
 
 import Pool from '../Pool/Pool.class'
-
-import globalConfig from '../config.global.json' // make it a hash map
+import globalConfig from '../config.global.json'
+// make it a hash map
 import UsdcToken from './UsdcToken.class'
 
 export default class Token {
@@ -18,7 +18,8 @@ export default class Token {
     createPool({
         tokenLeft = null,
         startingPrice = null,
-        initialPositions = null
+        initialPositions = null,
+        totalTokensProvisioned = null
     } = {}) {
         if (tokenLeft === null) {
             tokenLeft = new UsdcToken()
@@ -52,14 +53,6 @@ export default class Token {
         })
 
         this.positions.set(pool.name, pool.pricePoints.values())
-    }
-
-    pp2p(pricePoint) {
-        return 2 ** pricePoint
-    }
-
-    p2pp(price) {
-        return Math.log2(price)
     }
 
     // @TODO: Token can open positions during dampening (?)
