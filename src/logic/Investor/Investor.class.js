@@ -1,17 +1,19 @@
 import sha256 from 'crypto-js/sha256'
 import HashMap from 'hashmap'
-import Token from '../Quest/Token.class'
+
 import Pool from '../Pool/Pool.class'
+import Token from '../Quest/Token.class'
 import { p2pp } from '../Utils/logicUtils'
 
 export default class Investor {
-    id
-    hash
-    type
+    id = null
+    hash = null
+    type = null
     balances = { USDC: 0 } // not like solidity, what's better -> balances here or in tokens
     positions = new HashMap()
 
     #canCreate = false
+    #PRICE_RANGE_MULTIPLIER = 2
 
     constructor(id, usdcBalance = 10000, type = 'creator') {
         this.id = id
@@ -22,12 +24,6 @@ export default class Investor {
     }
 
     createQuest(name) {
-        if (!this.#canCreate) {
-            throw new Error(
-                'Only investors with a type "creator" can create Quests'
-            )
-        }
-
         return new Token(name)
     }
 
@@ -111,6 +107,7 @@ export default class Investor {
     ) {
         crossPool.tokenLeft.addPool(crossPool)
         crossPool.tokenRight.addPool(crossPool)
+
         // Set "positions" for value link pool
         const [totalIn, totalOut] = crossPool.openPosition(
             priceMin,
@@ -121,11 +118,25 @@ export default class Investor {
         return [totalIn, totalOut]
     }
 
-    pp2p(pricePoint) {
-        return 2 ** pricePoint
-    }
+    calculatePriceRange(
+        citingQuestPool,
+        citedQuestPool,
+        multiplier = this.#PRICE_RANGE_MULTIPLIER
+    ) {
+        const citingPrice = citingQuestPool.currentPrice
+        const citedPrice = citedQuestPool.currentPrice
 
-    p2pp(price) {
-        return Math.log2(price)
+        const usdcPriceCiting = 1 / citingPrice
+        const usdcPriceCited = 1 / citedPrice
+
+        // Depositing cheap
+        if (usdcPriceCiting > usdcPriceCited) {
+            const AforB = usdcPriceCiting / usdcPriceCited
+            return { min: AforB, max: AforB * multiplier }
+        } else {
+            // Depositing luxury
+            const BforA = usdcPriceCiting / usdcPriceCited
+            return { min: BforA, max: BforA * multiplier }
+        }
     }
 }

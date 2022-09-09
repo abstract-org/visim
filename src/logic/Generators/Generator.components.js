@@ -1,12 +1,23 @@
+import Chance from 'chance'
 import { Button } from 'primereact/button'
+import { Card } from 'primereact/card'
+import { Divider } from 'primereact/divider'
 import { Dropdown } from 'primereact/dropdown'
 import { Inplace, InplaceContent, InplaceDisplay } from 'primereact/inplace'
+import { InputNumber } from 'primereact/inputnumber'
 import { InputText } from 'primereact/inputtext'
 import { Message } from 'primereact/message'
-import { useRef, useState } from 'react'
+import { ProgressBar } from 'primereact/progressbar'
+import { Sidebar } from 'primereact/sidebar'
+import React, { useRef, useState } from 'react'
 
+import globalState from '../GlobalState'
+import useInvestorStore from '../Investor/investor.store'
+import usePoolStore from '../Pool/pool.store'
+import useQuestStore from '../Quest/quest.store'
+import Generator from './Generator.class'
 import useGeneratorStore from './generator.store'
-import { invGen, questGen } from './initialState'
+import { dayData, invGen, questGen } from './initialState'
 
 const addInvSelector = (state) => state.addInvConfig
 const updateInvSelector = (state) => state.updateInvConfig
@@ -16,18 +27,161 @@ const addQuestSelector = (state) => state.addQuestConfig
 const updateQuestSelector = (state) => state.updateQuestConfig
 const deleteQuestSelector = (state) => state.deleteQuestConfig
 
+export const GeneratorRunner = () => {
+    const invConfigs = useGeneratorStore((state) => state.invConfigs)
+    const questConfigs = useGeneratorStore((state) => state.questConfigs)
+    const [genDays, setGenDays] = useState(10)
+    const [genActive, setGenActive] = useState(false)
+    const [stopGen, setStopGen] = useState(false)
+    const [genOutput, setGenOutput] = useState({
+        day: 1,
+        ...dayData
+    })
+
+    const addPool = usePoolStore((state) => state.addPool)
+    const addInvestor = useInvestorStore((state) => state.addInvestor)
+    const addQuest = useQuestStore((state) => state.addQuest)
+    const setActivePool = usePoolStore((state) => state.setActive)
+
+    const handleGenerate = async () => {
+        if (genDays <= 0) {
+            console.log('Specify amount of days to simulate')
+            return
+        }
+
+        if (invConfigs.length <= 0 || questConfigs.length <= 0) {
+            console.log(
+                'Please create generator configs with investor and quest panel first'
+            )
+            return
+        }
+
+        const genManager = new Generator(invConfigs, questConfigs, genDays)
+
+        setGenActive(true)
+
+        // Every day
+        for (let day = 1; day <= genDays; day++) {
+            console.log(`Simulating day ${day}`)
+            const stepData = await genManager.step(day)
+            await genManager.sleep(500)
+
+            setGenOutput({
+                ...genOutput,
+                ...stepData,
+                day
+            })
+        }
+
+        genManager.getInvestors().forEach((investor) => {
+            globalState.investors.set(investor.hash, investor)
+            addInvestor(investor.hash)
+        })
+        genManager.getQuests().forEach((quest) => {
+            globalState.quests.set(quest.name, quest)
+            addQuest(quest.name)
+        })
+        genManager.getPools().forEach((pool) => {
+            globalState.pools.set(pool.name, pool)
+            addPool(pool.name)
+        })
+    }
+
+    const handleStop = () => {
+        setGenActive(false)
+        setStopGen(true)
+    }
+
+    return (
+        <div>
+            <Sidebar
+                visible={genActive}
+                onHide={handleStop}
+                closeOnEscape={false}
+                blockScroll={true}
+                dismissable={false}
+                fullScreen={true}
+                className="sized-fullscreen"
+            >
+                <h1>Simulation Dashboard</h1>
+                <ProgressBar
+                    value={(genOutput.day * (100 / genDays)).toFixed(1)}
+                    className="w-6 flex align-self-center"
+                />
+            </Sidebar>
+            <div className="grid">
+                <div className="col-12">
+                    <Card className="h-full">
+                        <div className="grid">
+                            <div className="col-12">
+                                <div className="flex justify-content-between flex-wrap">
+                                    <div className="flex flex-grow-1">
+                                        <h2 className="m-0">
+                                            Random Generator
+                                        </h2>
+                                    </div>
+                                    <div className="flex flex-grow-0 mr-3">
+                                        <Button
+                                            label="Generate"
+                                            onClick={handleGenerate}
+                                            loading={genActive}
+                                        />
+                                    </div>
+                                    <div className="flex flex-grow-0 w-1">
+                                        <div className="p-inputgroup">
+                                            <span className="p-inputgroup-addon">
+                                                Days
+                                            </span>
+                                            <InputNumber
+                                                placeholder="10"
+                                                value={genDays}
+                                                onChange={(e) =>
+                                                    setGenDays(e.value)
+                                                }
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="grid">
+                            <div className="col-12">
+                                <InvestorRandomGenerator />
+                            </div>
+                        </div>
+                        <div className="grid">
+                            <Divider />
+                        </div>
+                        <div className="grid">
+                            <div className="col-12">
+                                <QuestRandomGenerator />
+                            </div>
+                        </div>
+                    </Card>
+                </div>
+            </div>
+        </div>
+    )
+}
+
 export const InvestorRandomGenerator = () => {
     const invConfigs = useGeneratorStore((state) => state.invConfigs)
-    const addInvConfig = useGeneratorStore(addInvSelector)
+    const addInvConfig = useGeneratorStore((state) => state.addInvConfig)
+
+    const chance = Chance()
 
     const handleNewInvestorGen = () => {
-        addInvConfig(invGen)
+        const newInvGen = Object.assign(invGen, {
+            invGenAlias: chance.syllable() + chance.integer({ min: 1, max: 10 })
+        })
+
+        addInvConfig(newInvGen)
     }
 
     return (
         <div>
             <Button
-                label="Create Investor"
+                label="Create Investor Template"
                 icon="pi pi-plus"
                 className="px-2 p-button-secondary"
                 onClick={handleNewInvestorGen}
@@ -38,9 +192,9 @@ export const InvestorRandomGenerator = () => {
                         <div
                             key={key}
                             header={key}
-                            className={`flex-order-${gen.id} flex flex-grow-0`}
+                            className={`flex-order-${gen.invGenAlias} flex flex-grow-0`}
                         >
-                            <GenCardInvestor id={gen.id} />
+                            <GenCardInvestor invGenAlias={gen.invGenAlias} />
                         </div>
                     )
                 })}
@@ -54,15 +208,26 @@ export const GenCardInvestor = (props) => {
     const invConfigs = useGeneratorStore((state) => state.invConfigs)
     const questConfigs = useGeneratorStore((state) => state.questConfigs)
     const [state, setState] = useState(
-        invConfigs.find((gen) => gen.id === props.id)
+        invConfigs.find((gen) => gen.invGenAlias === props.invGenAlias)
     )
     const updateInvConfig = useGeneratorStore(updateInvSelector)
     const deleteInvConfig = useGeneratorStore(deleteInvSelector)
 
-    const dropdownOptions = questConfigs.map((gen) => ({
-        label: `#${gen.id} ${gen.questGenAlias}`,
-        value: gen.id
+    const defaultOptions = [
+        {
+            label: 'Select Template',
+            value: ''
+        },
+        {
+            label: 'Random Template',
+            value: 'random'
+        }
+    ]
+    const questOptions = questConfigs.map((gen) => ({
+        label: `#${gen.questGenAlias}`,
+        value: gen.questGenAlias
     }))
+    const dropdownOptions = Array.prototype.concat(defaultOptions, questOptions)
 
     const handleChange = (evt) => {
         setState({
@@ -75,7 +240,6 @@ export const GenCardInvestor = (props) => {
         const alertRef = aliasAlert.current.getElement()
 
         if (state.invGenAlias.length > 0) {
-            console.log(state)
             updateInvConfig(state)
             alertRef.style.display = 'none'
         } else {
@@ -83,17 +247,16 @@ export const GenCardInvestor = (props) => {
         }
     }
 
-    const handleDelete = (id) => {
-        deleteInvConfig(id)
+    const handleDelete = (invGenAlias) => {
+        console.log(invGenAlias)
+        deleteInvConfig(invGenAlias)
     }
 
     return (
         <div className="flex flex-column gen-card">
             <div className="header flex">
                 <div className="flex flex-grow-1">
-                    <span className="inplace-static-text">
-                        [ #{props.id} ] Investor -
-                    </span>
+                    <span className="inplace-static-text">Investor -</span>
                     <InPlaceElement
                         id="invGenAlias"
                         active={true}
@@ -121,7 +284,7 @@ export const GenCardInvestor = (props) => {
                         <Button
                             icon="pi pi-trash"
                             className="w-2rem h-2rem p-button-danger"
-                            onClick={() => handleDelete(props.id)}
+                            onClick={() => handleDelete(props.invGenAlias)}
                         />
                     </div>
                 </div>
@@ -241,10 +404,9 @@ export const GenCardInvestor = (props) => {
                 <InPlaceElement
                     id="createQuest"
                     active={true}
-                    display=""
+                    display={state.createQuest}
                     component="dropdown"
                     options={dropdownOptions}
-                    value=""
                     handleChange={handleChange}
                     state={state}
                 />
@@ -280,11 +442,16 @@ export const GenCardInvestor = (props) => {
 
 export const QuestRandomGenerator = () => {
     const questConfigs = useGeneratorStore((state) => state.questConfigs)
-    const addQuestConfig = useGeneratorStore(addQuestSelector)
+    const addQuestConfig = useGeneratorStore((state) => state.addQuestConfig)
+
+    const chance = Chance()
 
     const handleNewQuestGen = () => {
-        console.log(questGen)
-        addQuestConfig(questGen)
+        const newQuestGen = Object.assign(questGen, {
+            questGenAlias:
+                chance.syllable() + chance.integer({ min: 1, max: 10 })
+        })
+        addQuestConfig(newQuestGen)
     }
 
     return (
@@ -301,9 +468,9 @@ export const QuestRandomGenerator = () => {
                         <div
                             key={key}
                             header={key}
-                            className={`flex-order-${gen.id} flex flex-grow-0`}
+                            className={`flex-order-${gen.questGenAlias} flex flex-grow-0`}
                         >
-                            <GenCardQuest id={gen.id} />
+                            <GenCardQuest questGenAlias={gen.questGenAlias} />
                         </div>
                     )
                 })}
@@ -316,7 +483,7 @@ export const GenCardQuest = (props) => {
     const aliasAlert = useRef(null)
     const questConfigs = useGeneratorStore((state) => state.questConfigs)
     const [state, setState] = useState(
-        questConfigs.find((gen) => gen.id === props.id)
+        questConfigs.find((gen) => gen.questGenAlias === props.questGenAlias)
     )
     const updateQuestConfig = useGeneratorStore(updateQuestSelector)
     const deleteQuestConfig = useGeneratorStore(deleteQuestSelector)
@@ -332,7 +499,6 @@ export const GenCardQuest = (props) => {
         const alertRef = aliasAlert.current.getElement()
 
         if (state.questGenAlias.length > 0) {
-            console.log(state)
             updateQuestConfig(state)
             alertRef.style.display = 'none'
         } else {
@@ -347,9 +513,7 @@ export const GenCardQuest = (props) => {
     return (
         <div className="flex flex-column gen-card">
             <div className="header flex">
-                <span className="inplace-static-text">
-                    [ #{props.id} ] Quest -
-                </span>
+                <span className="inplace-static-text">Quest -</span>
                 <InPlaceElement
                     id="questGenAlias"
                     active={true}
@@ -377,7 +541,7 @@ export const GenCardQuest = (props) => {
                     <Button
                         icon="pi pi-trash"
                         className="w-2rem h-2rem p-button-danger"
-                        onClick={() => handleDelete(props.id)}
+                        onClick={() => handleDelete(props.questGenAlias)}
                     />
                 </div>
             </div>
@@ -513,24 +677,11 @@ const PresetInPlaceInput = (props) => {
 const PresetInPlaceDropdown = (props) => {
     return (
         <Dropdown
-            value={props.value}
+            id={props.id}
+            value={props.state[props.id]}
             options={props.options}
             onChange={props.handleChange}
             placeholder="Select Generator"
-        />
-    )
-}
-
-const WrappedInplace = (props) => {
-    return (
-        <InPlaceElement
-            id={props.inputId}
-            active={false}
-            display={props.state[props.inputId]}
-            type="number"
-            component="input"
-            handleChange={props.handleChange}
-            state={props.state}
         />
     )
 }

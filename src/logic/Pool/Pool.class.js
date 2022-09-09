@@ -1,8 +1,10 @@
 import sha256 from 'crypto-js/sha256'
-import globalConfig from '../config.global.json' // make it a hash map
+// make it a hash map
 import HashMap from 'hashmap'
+
 import UsdcToken from '../Quest/UsdcToken.class'
-import { pp2p, p2pp } from '../Utils/logicUtils'
+import { p2pp, pp2p } from '../Utils/logicUtils'
+import globalConfig from '../config.global.json'
 
 let pp
 
@@ -278,9 +280,7 @@ export default class Pool {
             // sets local variable from global variable (global changes on each cycle)
             currentLiquidity = this.currentLiquidity
 
-            if (currentLiquidity > 0) {
-                arrivedAtSqrtPrice += amount / currentLiquidity
-            }
+            arrivedAtSqrtPrice += amount / currentLiquidity
 
             journal[i].push(`Op: buy ${i}`)
             journal[i].push(`Current price point: ${this.currentPricePoint}`)
@@ -313,8 +313,6 @@ export default class Pool {
                 Math.sqrt(nextPriceTarget) >= Math.sqrt(pp2p(nextPricePoint)) &&
                 arrivedAtSqrtPrice >= Math.sqrt(nextPriceTarget)
             ) {
-                arrivedAtSqrtPrice = Math.sqrt(nextPriceTarget)
-
                 journal[i].push(
                     `Arrived price is >= than ${
                         arrivedAtSqrtPrice >= Math.sqrt(nextPriceTarget)
@@ -666,10 +664,16 @@ export default class Pool {
 
         /**
          *  AB curr_price = 1
-            Inv1 deposits 100A into AB pool at [1B/A....10000B/A] rnge
+            Inv1 deposits 100A into AB pool at [1B/A....10000B/A] range
             Inv2 deposits 100B into AB pool at [1A/B...10000A/B] range, which is
             [0.0001B/A...1B/A] range
          */
+
+        // @TODO:move to mirrored pools with buy func
+        if (this.currentLiquidity === 0 && priceMin < this.currentPrice) {
+            this.sell(1)
+            this.currentPrice = 0
+        }
 
         const liquidity = this.getLiquidityForAmounts(
             tokenA,

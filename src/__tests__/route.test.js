@@ -1,4 +1,5 @@
 import HashMap from 'hashmap'
+
 import Investor from '../logic/Investor/Investor.class'
 import Router from '../logic/Router/Router.class'
 import { prepareCrossPools } from './helpers/poolManager'
@@ -168,6 +169,9 @@ it('Smart route with one citation selling USDC/TEST1', () => {
 
     const questB = creator.createQuest('TEST_2')
     const poolB = questB.createPool() // Deposit B
+    const exPool = globalState.quests.get(poolA.tokenLeft.name)
+    exPool.addPool(poolB)
+    globalState.quests.set(poolA.tokenLeft.name, exPool)
     globalState.quests.set(questB.name, questB)
     globalState.pools.set(poolB.name, poolB)
 
@@ -189,7 +193,7 @@ it('Smart route with one citation selling USDC/TEST1', () => {
     expect(res3[1]).toBeCloseTo(59.613)
 })
 
-fit('Smart route with USDC buying from new pool', () => {
+it('Smart route with USDC buying from new pool', () => {
     const creator = new Investor(1, 10000, 'creator')
     const router = new Router(globalState)
 
@@ -229,6 +233,9 @@ it('Smart route with USDC buying citing', () => {
 
     const questB = creator.createQuest('TEST_2')
     const poolB = questB.createPool() // Deposit B
+    const exPool = globalState.quests.get(poolA.tokenLeft.name)
+    exPool.addPool(poolB)
+    globalState.quests.set(poolA.tokenLeft.name, exPool)
     globalState.quests.set(questB.name, questB)
     globalState.pools.set(poolB.name, poolB)
     poolB.buy(555) // Buy TEST_2 (around 500)
@@ -262,6 +269,9 @@ it('Smart route with USDC buying cited', () => {
 
     const questB = creator.createQuest('TEST_2')
     const poolB = questB.createPool() // Deposit B
+    const exPool = globalState.quests.get(poolA.tokenLeft.name)
+    exPool.addPool(poolB)
+    globalState.quests.set(poolA.tokenLeft.name, exPool)
     globalState.quests.set(questB.name, questB)
     globalState.pools.set(poolB.name, poolB)
     poolB.buy(555) // Buy TEST_2 (around 500)
@@ -276,4 +286,42 @@ it('Smart route with USDC buying cited', () => {
 
     expect(results[0]).toBeCloseTo(-99.847)
     expect(results[1]).toBeCloseTo(92.97)
+})
+
+it('Smart route with USDC buying big sum with sliced amount', () => {
+    const creator = new Investor(1, 10000, 'creator')
+    const router = new Router(globalState)
+
+    const questA = creator.createQuest('TEST_1')
+    const poolA = questA.createPool() // Deposit A
+    globalState.quests.set(poolA.tokenLeft.name, poolA.tokenLeft)
+    globalState.quests.set(questA.name, questA)
+    globalState.pools.set(poolA.name, poolA)
+
+    const questB = creator.createQuest('TEST_2')
+    const poolB = questB.createPool() // Deposit B
+    const exPool = globalState.quests.get(poolA.tokenLeft.name)
+    exPool.addPool(poolB)
+    globalState.quests.set(poolA.tokenLeft.name, exPool)
+    globalState.quests.set(questB.name, questB)
+    globalState.pools.set(poolB.name, poolB)
+
+    const res1 = router.smartSwap('USDC', 'TEST_1', 5000, 10)
+    router.smartSwap('USDC', 'TEST_2', 5000)
+
+    const AB = creator.createPool(questB, questA)
+    creator.citeQuest(AB, 1, 10, 1005, 0)
+    globalState.pools.set(AB.name, AB)
+
+    const res3 = router.smartSwap('USDC', 'TEST_1', 1000000, 1000000 / 4)
+    const res4 = router.smartSwap('TEST_2', 'USDC', 1000000, 1000000 / 2)
+
+    expect(res1[0]).toBeCloseTo(-5000)
+    expect(res1[1]).toBeCloseTo(2512.562)
+
+    expect(res3[0]).toBeCloseTo(-1000000)
+    expect(res3[1]).toBeCloseTo(10849.689)
+
+    expect(res4[0]).toBeCloseTo(-3517.562)
+    expect(res4[1]).toBeCloseTo(281792.806)
 })

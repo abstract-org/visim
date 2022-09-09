@@ -21,8 +21,16 @@ export const PoolSelector = () => {
     const setActive = usePoolStore((state) => state.setActive)
 
     const handleChoosePool = (e) => {
-        setActive(pools.find((pool) => pool === e.value))
+        setActive(e.value)
     }
+
+    pools.map((pool) => {
+        console.log(globalState.pools.get(pool))
+        console.log(globalState.pools.get(pool).tokenLeft)
+        console.log(globalState.pools.get(pool).tokenRight)
+
+        return pool
+    })
 
     return (
         <Dropdown
@@ -148,6 +156,7 @@ export const SwapModule = () => {
     const [amount, setAmount] = useState(0)
     const activeInvestor = useInvestorStore((state) => state.active)
     const activePool = usePoolStore((state) => state.active)
+    const activeQuest = useQuestStore((state) => state.active)
     const swap = usePoolStore((state) => state.swap)
     const addLog = useLogsStore((state) => state.addLog)
     const swapMode = usePoolStore((state) => state.swapMode)
@@ -166,13 +175,13 @@ export const SwapModule = () => {
             return
         }
 
-        if (!activePool) {
-            msgs.current.show({
-                severity: 'warn',
-                detail: 'Please select the pool first'
-            })
-            return
-        }
+        // if (!activePool) {
+        //     msgs.current.show({
+        //         severity: 'warn',
+        //         detail: 'Please select the pool first'
+        //     })
+        //     return
+        // }
         if (!activeInvestor) {
             msgs.current.show({
                 severity: 'warn',
@@ -180,24 +189,20 @@ export const SwapModule = () => {
             })
             return
         }
-        if (investor.balances[pool.tokenLeft.name] < amount) {
+        if (investor.balances['USDC'] < amount) {
             msgs.current.show({
                 severity: 'warn',
-                detail: `Not enough ${pool.tokenLeft.name} to purchase ${amount} of ${pool.tokenRight.name}`
+                detail: `Not enough USDC to purchase ${amount} of ${activeQuest}`
             })
             return
         }
         let [totalAmountIn, totalAmountOut] =
             swapMode === 'direct'
                 ? pool.buy(amount)
-                : router.smartSwap(
-                      pool.tokenLeft.name,
-                      pool.tokenRight.name,
-                      amount
-                  )
+                : router.smartSwap('USDC', activeQuest, amount)
         console.log(swapMode, totalAmountIn, totalAmountOut)
-        investor.addBalance(pool.tokenLeft.name, totalAmountIn)
-        investor.addBalance(pool.tokenRight.name, totalAmountOut)
+        investor.addBalance('USDC', totalAmountIn)
+        investor.addBalance(activeQuest, totalAmountOut)
         globalState.investors.set(investor.hash, investor)
 
         const swapData = {
@@ -205,8 +210,8 @@ export const SwapModule = () => {
             price: pool.currentPrice.toFixed(4),
             investorHash: investor.hash,
             action: 'buy',
-            balanceLeft: investor.balances[pool.tokenLeft.name],
-            balanceRight: investor.balances[pool.tokenRight.name],
+            balanceLeft: 'USDC',
+            balanceRight: investor.balances[activeQuest],
             totalAmountIn,
             totalAmountOut,
             paths: router.getPaths()
@@ -227,13 +232,14 @@ export const SwapModule = () => {
             return
         }
 
-        if (!activePool) {
-            msgs.current.show({
-                severity: 'warn',
-                detail: 'Please select the pool first'
-            })
-            return
-        }
+        // if (!activePool) {
+        //     msgs.current.show({
+        //         severity: 'warn',
+        //         detail: 'Please select the pool first'
+        //     })
+        //     return
+        // }
+
         if (!activeInvestor) {
             msgs.current.show({
                 severity: 'warn',
@@ -242,12 +248,12 @@ export const SwapModule = () => {
             return
         }
         if (
-            !investor.balances[pool.tokenRight.name] ||
-            investor.balances[pool.tokenRight.name] < amount
+            !investor.balances[activeQuest] ||
+            investor.balances[activeQuest] < amount
         ) {
             msgs.current.show({
                 severity: 'warn',
-                detail: `Not enough ${pool.tokenRight.name} to purchase ${amount} of ${pool.tokenLeft.name}`
+                detail: `Not enough ${activeQuest} to purchase ${amount} of USDC`
             })
             return
         }
@@ -255,14 +261,10 @@ export const SwapModule = () => {
         let [totalAmountIn, totalAmountOut] =
             swapMode === 'direct'
                 ? pool.sell(amount)
-                : router.smartSwap(
-                      pool.tokenRight.name,
-                      pool.tokenLeft.name,
-                      amount
-                  )
+                : router.smartSwap(activeQuest, 'USDC', amount)
         console.log(swapMode, totalAmountIn, totalAmountOut)
-        investor.addBalance(pool.tokenLeft.name, totalAmountOut)
-        investor.addBalance(pool.tokenRight.name, totalAmountIn)
+        investor.addBalance('USDC', totalAmountOut)
+        investor.addBalance(activeQuest, totalAmountIn)
         globalState.investors.set(investor.hash, investor)
 
         const swapData = {
@@ -270,8 +272,8 @@ export const SwapModule = () => {
             price: pool.currentPrice.toFixed(4),
             investorHash: investor.hash,
             action: 'sell',
-            balanceLeft: investor.balances[pool.tokenLeft.name],
-            balanceRight: investor.balances[pool.tokenRight.name],
+            balanceLeft: investor.balances['USDC'],
+            balanceRight: investor.balances[activeQuest],
             totalAmountIn,
             totalAmountOut,
             paths: router.getPaths()
@@ -306,18 +308,14 @@ export const SwapModule = () => {
                 <div className="col-6 flex justify-content-center">
                     <Button
                         className="p-button-success w-10 justify-content-center"
-                        label={`Buy (in ${
-                            (pool && pool.tokenLeft.name) || 'USDC'
-                        })`}
+                        label={`Buy in USDC`}
                         onClick={handleBuy}
                     />
                 </div>
                 <div className="col-6 flex justify-content-center">
                     <Button
                         className="p-button-danger w-10"
-                        label={`Sell ${
-                            (pool && pool.tokenRight.name) || 'Tokens'
-                        }`}
+                        label={`Sell ${activeQuest || 'Tokens'}`}
                         onClick={handleSell}
                     />
                 </div>

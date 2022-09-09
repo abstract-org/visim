@@ -1,13 +1,14 @@
-import React from 'react'
-import { ProgressBar } from 'primereact/progressbar'
 import { Dropdown } from 'primereact/dropdown'
+import { ProgressBar } from 'primereact/progressbar'
+import React from 'react'
 
+import { BalanceBar } from '../../components/ExtraUiComponents'
+import globalState from '../GlobalState'
+import usePoolStore from '../Pool/pool.store'
+import useQuestStore from '../Quest/quest.store'
 import { numericValue } from '../Utils/uiUtils'
 import { generateDefaultInvestors } from './Investor.generator'
 import useInvestorStore from './investor.store'
-import usePoolStore from '../Pool/pool.store'
-import globalState from '../GlobalState'
-import useQuestStore from '../Quest/quest.store'
 
 const addInvestorsSelector = (state) => state.addInvestors
 const setActiveSelector = (state) => state.setActive
@@ -39,7 +40,7 @@ export function InvestorSelector() {
     return (
         <div>
             <Dropdown
-                className="w-6"
+                className="w-12"
                 value={activeInvestor}
                 options={investorsValues}
                 onChange={(e) => setActive(e.value)}
@@ -56,13 +57,32 @@ export function InvestorPoolBalance() {
     const swaps = usePoolStore((state) => state.swaps)
     const valueLinks = usePoolStore((state) => state.valueLinks)
 
-    let balanceContent = <p>Choose Pool to see balances</p>
-
-    if (activePool && activeInvestor) {
-        const pool = globalState.pools.get(activePool)
+    if (activeInvestor) {
         const investor = globalState.investors.get(activeInvestor)
 
-        balanceContent = (
+        const pool = {}
+
+        return (
+            <div className="grid">
+                <div className="col-12">
+                    <div className="flex flex-wrap align-content-between justify-content-start">
+                        {Object.entries(investor.balances).map(
+                            (balance, key) => {
+                                return (
+                                    <BalanceBar
+                                        key={balance[0]}
+                                        token={balance[0]}
+                                        value={balance[1]}
+                                    />
+                                )
+                            }
+                        )}
+                    </div>
+                </div>
+            </div>
+        )
+
+        return (
             <div>
                 <div className="grid">
                     <div className="col-6">
@@ -70,7 +90,7 @@ export function InvestorPoolBalance() {
                             <b>{investor && pool.tokenLeft.name}</b>
                             &nbsp;Balance
                         </p>
-                        <ProgressBar
+                        <BalanceBar
                             value={
                                 (investor &&
                                     Math.floor(
@@ -78,14 +98,13 @@ export function InvestorPoolBalance() {
                                     )) ||
                                 0
                             }
-                            displayValueTemplate={numericValue}
-                        ></ProgressBar>
+                        />
                     </div>
                     <div className="col-6">
                         <p>
                             <b>{pool && pool.tokenRight.name}</b>&nbsp;Balance
                         </p>
-                        <ProgressBar
+                        <BalanceBar
                             value={
                                 (investor &&
                                     Math.floor(
@@ -93,8 +112,7 @@ export function InvestorPoolBalance() {
                                     )) ||
                                 0
                             }
-                            displayValueTemplate={numericValue}
-                        ></ProgressBar>
+                        />
                     </div>
                 </div>
                 <div className="grid">
@@ -125,8 +143,6 @@ export function InvestorPoolBalance() {
             </div>
         )
     }
-
-    return balanceContent
 }
 
 export const InvestorSingleBalance = (props) => {

@@ -1,5 +1,25 @@
+import HashMap from 'hashmap'
+
+import Investor from '../logic/Investor/Investor.class'
+import Router from '../logic/Router/Router.class'
+import { p2pp } from '../logic/Utils/logicUtils'
 import { preparePool } from './helpers/poolManager'
-import { p2pp, pp2p } from '../logic/Utils/logicUtils'
+
+let globalState = {
+    pools: new HashMap(),
+    investors: new HashMap(),
+    quests: new HashMap()
+}
+
+beforeAll(() => {})
+
+afterEach(() => {
+    globalState = {
+        pools: new HashMap(),
+        investors: new HashMap(),
+        quests: new HashMap()
+    }
+})
 
 it('Initializes with default positions', () => {
     const initialPositions = [
@@ -299,3 +319,36 @@ it('Retrieves new balance when removing liquidity', () => {
 
     expect(investor.balances[tokenLeft.name]).toBe(23000)
 })
+
+// it('Does citation according to market value of a token', () => {
+//     const creator = new Investor(1, 10000, 'creator')
+//     const router = new Router(globalState)
+
+//     const questA = creator.createQuest('TEST_1')
+//     const poolA = questA.createPool() // Deposit A
+//     globalState.quests.set(poolA.tokenLeft.name, poolA.tokenLeft)
+//     globalState.quests.set(questA.name, questA)
+//     globalState.pools.set(poolA.name, poolA)
+//     router.smartSwap('USDC', 'TEST_1', 50000, 5000)
+
+//     const questB = creator.createQuest('TEST_2')
+//     const poolB = questB.createPool() // Deposit B
+//     const exPool1 = globalState.quests.get(poolB.tokenLeft.name)
+//     exPool1.addPool(poolB)
+//     globalState.quests.set(poolB.tokenLeft.name, exPool1)
+//     globalState.quests.set(questB.name, questB)
+//     globalState.pools.set(poolB.name, poolB)
+//     router.smartSwap('USDC', 'TEST_2', 100000, 5000)
+
+//     const questAgora = creator.createQuest('AGORA')
+//     const poolAgora = questAgora.createPool() // Deposit AGORA
+//     const exPool2 = globalState.quests.get(poolAgora.tokenLeft.name)
+//     exPool2.addPool(poolAgora)
+//     globalState.quests.set(poolAgora.tokenLeft.name, exPool2)
+//     globalState.quests.set(questAgora.name, questAgora)
+//     globalState.pools.set(poolAgora.name, poolAgora)
+
+//     const AB = creator.createPool(questB, questA)
+//     creator.citeQuest(AB, 0.475, 2.1, 118, 0)
+//     globalState.pools.set(AB.name, AB)
+// })
