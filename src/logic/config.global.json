@@ -2,6 +2,7 @@
     "TOTAL_RESERVES_DEFAULT": 20000,
     "PRICE_MIN": 0,
     "PRICE_MAX": 1000000,
+    "CHUNK_SIZE": 5,
     "INITIAL_LIQUIDITY": [
         {
             "priceMin": 1,
