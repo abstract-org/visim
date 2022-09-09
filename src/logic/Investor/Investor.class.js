@@ -28,6 +28,11 @@ export default class Investor {
     }
 
     addBalance(tokenName, balance) {
+        if (isNaN(balance)) {
+            console.log('Trying to pass NaN amount')
+            return
+        }
+
         if (!this.balances[tokenName]) {
             this.balances[tokenName] = 0
         }

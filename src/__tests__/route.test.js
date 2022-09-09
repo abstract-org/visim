@@ -145,8 +145,8 @@ it('Calculates routes to swap A for D', () => {
     expect(swapData[0][3].out).toBeCloseTo(6.891)
     expect(sortedPrices[5]).toBeCloseTo(1.069)
     expect(sortedPrices[0]).toBeCloseTo(0.9799)
-    expect(mockInvestor2.balances['AGORA_A']).toBe(1606)
-    expect(mockInvestor2.balances['AGORA_D']).toBeCloseTo(437)
+    expect(mockInvestor2.balances['AGORA_A']).toBe(1990)
+    expect(mockInvestor2.balances['AGORA_D']).toBeCloseTo(602)
 })
 
 it('Smart route within 1 chunk without enough amount', () => {})
@@ -324,4 +324,90 @@ it('Smart route with USDC buying big sum with sliced amount', () => {
 
     expect(res4[0]).toBeCloseTo(-3517.562)
     expect(res4[1]).toBeCloseTo(281792.806)
+})
+
+it('Smart route for token through cited cross pool', () => {
+    const creator = new Investor(1, 10000, 'creator')
+    const router = new Router(globalState)
+
+    const questA = creator.createQuest('TEST')
+    const poolA = questA.createPool() // Deposit A
+    globalState.quests.set(poolA.tokenLeft.name, poolA.tokenLeft)
+    globalState.quests.set(questA.name, questA)
+    globalState.pools.set(poolA.name, poolA)
+    poolA.buy(5000)
+
+    const questB = creator.createQuest('AGORA')
+    const poolB = questB.createPool() // Deposit B
+    const exPool = globalState.quests.get(poolA.tokenLeft.name)
+    exPool.addPool(poolB)
+    globalState.quests.set(poolA.tokenLeft.name, exPool)
+    globalState.quests.set(questB.name, questB)
+    globalState.pools.set(poolB.name, poolB)
+
+    const AB = creator.createPool(questB, questA)
+    const priceRange = creator.calculatePriceRange(poolA, poolB, 2)
+    creator.citeQuest(AB, priceRange.min, priceRange.max, 1005, 0)
+    globalState.pools.set(AB.name, AB)
+
+    const res3 = router.smartSwap('USDC', 'TEST', 2000, 10)
+
+    expect(res3[0]).toBeCloseTo(-1998.901)
+    expect(res3[1]).toBeCloseTo(1361.034)
+})
+
+it('Smart route for token through cited cross pool with multiple smart swaps', () => {
+    const creator = new Investor(1, 10000, 'creator')
+    const router = new Router(globalState)
+
+    const questA = creator.createQuest('TEST')
+    const poolA = questA.createPool() // Deposit A
+    globalState.quests.set(poolA.tokenLeft.name, poolA.tokenLeft)
+    globalState.quests.set(questA.name, questA)
+    globalState.pools.set(poolA.name, poolA)
+    poolA.buy(5000)
+
+    const questB = creator.createQuest('AGORA')
+    const poolB = questB.createPool() // Deposit B
+    const exPool = globalState.quests.get(poolA.tokenLeft.name)
+    exPool.addPool(poolB)
+    globalState.quests.set(poolA.tokenLeft.name, exPool)
+    globalState.quests.set(questB.name, questB)
+    globalState.pools.set(poolB.name, poolB)
+
+    const AB = creator.createPool(questB, questA)
+    const priceRange = creator.calculatePriceRange(poolA, poolB, 2)
+    creator.citeQuest(AB, priceRange.min, priceRange.max, 1005, 0)
+    globalState.pools.set(AB.name, AB)
+
+    const res1 = router.smartSwap('USDC', 'TEST', 250, 10)
+    expect(res1[0]).toBeCloseTo(-247.27)
+    expect(res1[1]).toBeCloseTo(761.811)
+
+    const res2 = router.smartSwap('USDC', 'TEST', 100, 10)
+    expect(res2[0]).toBeCloseTo(-97.473)
+    expect(res2[1]).toBeCloseTo(214.829)
+
+    const res3 = router.smartSwap('USDC', 'TEST', 50, 10)
+    const swapData = AB.getSwapInfo()
+    expect(res3[0]).toBeCloseTo(-44.157)
+    expect(res3[1]).toBeCloseTo(35.912)
+    expect(swapData[1][1]).toBeCloseTo(358.901)
+
+    const res4 = router.smartSwap('USDC', 'TEST', 650, 10)
+    const res5 = router.smartSwap('USDC', 'TEST', 400, 10)
+    const res6 = router.smartSwap('USDC', 'TEST', 400, 10)
+    const res7 = router.smartSwap('USDC', 'TEST', 150, 10)
+
+    const sumIn =
+        res1[0] + res2[0] + res3[0] + res4[0] + res5[0] + res6[0] + res7[0]
+    const sumOut =
+        res1[1] + res2[1] + res3[1] + res4[1] + res5[1] + res6[1] + res7[1]
+
+    expect(sumIn).toBeCloseTo(-1988.901) // @TODO: Inconsistent with previous test due to big chunk sizes and small amounts of swap
+    expect(sumOut).toBeCloseTo(1359.166)
+    expect(poolA.currentPrice).toBeCloseTo(5.348)
+    expect(poolB.currentPrice).toBeCloseTo(1.181)
+    expect(AB.currentPrice).toBeCloseTo(999999.999)
+    expect(AB.currentLiquidity).toBe(0)
 })

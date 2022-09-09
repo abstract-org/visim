@@ -11,6 +11,7 @@ import useLogsStore from '../Logs/logs.store'
 import { QuestSelector } from '../Quest/Quest.components'
 import useQuestStore from '../Quest/quest.store'
 import Router from '../Router/Router.class'
+import { formSwapData } from '../Utils/logicUtils'
 import { swapLog } from '../Utils/uiUtils'
 import globalConfig from '../config.global.json'
 import usePoolStore from './pool.store'
@@ -23,14 +24,6 @@ export const PoolSelector = () => {
     const handleChoosePool = (e) => {
         setActive(e.value)
     }
-
-    pools.map((pool) => {
-        console.log(globalState.pools.get(pool))
-        console.log(globalState.pools.get(pool).tokenLeft)
-        console.log(globalState.pools.get(pool).tokenRight)
-
-        return pool
-    })
 
     return (
         <Dropdown
@@ -73,7 +66,7 @@ export const PoolChartStats = () => {
         <div className="flex">
             <div className="flex-grow-1 flex flex-column">
                 <p>Current Price:</p>
-                <h1>{(currentPrice && currentPrice.toFixed(4)) || 0}</h1>
+                <h1>{(currentPrice && currentPrice.toFixed(2)) || 0}</h1>
             </div>
             {pool && pool.getType() === 'QUEST' ? (
                 <div className="flex-grow-1 flex flex-column">
@@ -83,10 +76,14 @@ export const PoolChartStats = () => {
             ) : (
                 ''
             )}
-            <div className="flex-grow-1 flex flex-column">
-                <p>Total Value Locked:</p>
-                <h1>{nf.format(totalValueLocked) || 0}</h1>
-            </div>
+            {pool && pool.getType() === 'QUEST' ? (
+                <div className="flex-grow-1 flex flex-column">
+                    <p>Total Value Locked:</p>
+                    <h1>{nf.format(totalValueLocked) || 0}</h1>
+                </div>
+            ) : (
+                ''
+            )}
             {pool ? (
                 <div className="flex-grow-1 flex flex-column">
                     <p>Reserves:</p>
@@ -175,13 +172,6 @@ export const SwapModule = () => {
             return
         }
 
-        // if (!activePool) {
-        //     msgs.current.show({
-        //         severity: 'warn',
-        //         detail: 'Please select the pool first'
-        //     })
-        //     return
-        // }
         if (!activeInvestor) {
             msgs.current.show({
                 severity: 'warn',
@@ -189,6 +179,7 @@ export const SwapModule = () => {
             })
             return
         }
+
         if (investor.balances['USDC'] < amount) {
             msgs.current.show({
                 severity: 'warn',
@@ -196,30 +187,83 @@ export const SwapModule = () => {
             })
             return
         }
+
         let [totalAmountIn, totalAmountOut] =
             swapMode === 'direct'
                 ? pool.buy(amount)
-                : router.smartSwap('USDC', activeQuest, amount)
-        console.log(swapMode, totalAmountIn, totalAmountOut)
+                : router.smartSwap(
+                      'USDC',
+                      activeQuest,
+                      amount,
+                      globalConfig.CHUNK_SIZE
+                  )
+        console.log(swapMode, totalAmountIn, totalAmountOut, router.getPaths())
+
         investor.addBalance('USDC', totalAmountIn)
         investor.addBalance(activeQuest, totalAmountOut)
         globalState.investors.set(investor.hash, investor)
 
-        const swapData = {
-            pool: pool.name,
-            price: pool.currentPrice.toFixed(4),
-            investorHash: investor.hash,
-            action: 'buy',
-            balanceLeft: 'USDC',
-            balanceRight: investor.balances[activeQuest],
-            totalAmountIn,
-            totalAmountOut,
-            paths: router.getPaths()
-        }
+        if (swapMode === 'direct') {
+            const swapData = formSwapData(
+                pool,
+                investor,
+                'buy',
+                investor.balances['USDC'],
+                investor.balances[activeQuest],
+                totalAmountIn,
+                totalAmountOut,
+                []
+            )
+            swap(swapData)
+            const log = swapLog(swapData)
+            addLog(`[HUMAN] ${log}`)
+        } else {
+            const smSwaps = router.getSwaps()
+            console.log(smSwaps)
+            let combSwaps = {}
+            smSwaps.forEach((smSwap) => {
+                if (!combSwaps) {
+                    combSwaps = {}
+                }
+                if (!combSwaps[smSwap.pool]) {
+                    combSwaps[smSwap.pool] = {}
+                }
+                if (!combSwaps[smSwap.pool][smSwap.op]) {
+                    const pool = globalState.pools.get(smSwap.pool)
+                    combSwaps[smSwap.pool][smSwap.op] = {
+                        pool,
+                        totalAmountIn: 0,
+                        totalAmountOut: 0,
+                        action: smSwap.op,
+                        path: smSwap.path
+                    }
+                }
 
-        swap(swapData)
-        const log = swapLog(swapData)
-        addLog(`[HUMAN] ${log}`)
+                combSwaps[smSwap.pool][smSwap.op].totalAmountIn -= smSwap.in
+                combSwaps[smSwap.pool][smSwap.op].totalAmountOut += smSwap.out
+            })
+
+            Object.entries(combSwaps).forEach((ops) => {
+                Object.entries(ops[1]).forEach((op) => {
+                    const pool = globalState.pools.get(ops[0])
+                    console.log(op[1])
+                    const swapData = formSwapData(
+                        pool,
+                        investor,
+                        op[0],
+                        investor.balances['USDC'],
+                        investor.balances[activeQuest],
+                        op[1].totalAmountIn,
+                        op[1].totalAmountOut,
+                        op[1].path
+                    )
+                    console.log(swapData)
+                    swap(swapData)
+                    const log = swapLog(swapData)
+                    addLog(`[SMART-ROUTE] ${log}`)
+                })
+            })
+        }
     }
 
     const handleSell = () => {
@@ -231,14 +275,6 @@ export const SwapModule = () => {
             })
             return
         }
-
-        // if (!activePool) {
-        //     msgs.current.show({
-        //         severity: 'warn',
-        //         detail: 'Please select the pool first'
-        //     })
-        //     return
-        // }
 
         if (!activeInvestor) {
             msgs.current.show({
@@ -261,28 +297,77 @@ export const SwapModule = () => {
         let [totalAmountIn, totalAmountOut] =
             swapMode === 'direct'
                 ? pool.sell(amount)
-                : router.smartSwap(activeQuest, 'USDC', amount)
-        console.log(swapMode, totalAmountIn, totalAmountOut)
+                : router.smartSwap(
+                      activeQuest,
+                      'USDC',
+                      amount,
+                      globalConfig.CHUNK_SIZE
+                  )
+        console.log(swapMode, totalAmountIn, totalAmountOut, router.getPaths())
         investor.addBalance('USDC', totalAmountOut)
         investor.addBalance(activeQuest, totalAmountIn)
         globalState.investors.set(investor.hash, investor)
 
-        const swapData = {
-            pool: pool.name,
-            price: pool.currentPrice.toFixed(4),
-            investorHash: investor.hash,
-            action: 'sell',
-            balanceLeft: investor.balances['USDC'],
-            balanceRight: investor.balances[activeQuest],
-            totalAmountIn,
-            totalAmountOut,
-            paths: router.getPaths()
+        if (swapMode === 'direct') {
+            const swapData = formSwapData(
+                pool,
+                investor,
+                'sell',
+                investor.balances['USDC'],
+                investor.balances[activeQuest],
+                totalAmountIn,
+                totalAmountOut,
+                []
+            )
+            swap(swapData)
+            const log = swapLog(swapData)
+            addLog(`[HUMAN] ${log}`)
+        } else {
+            const smSwaps = router.getSwaps()
+            let combSwaps = {}
+            smSwaps.forEach((smSwap) => {
+                if (!combSwaps) {
+                    combSwaps = {}
+                }
+                if (!combSwaps[smSwap.pool]) {
+                    combSwaps[smSwap.pool] = {}
+                }
+                if (!combSwaps[smSwap.pool][smSwap.op]) {
+                    const pool = globalState.pools.get(smSwap.pool)
+                    combSwaps[smSwap.pool][smSwap.op] = {
+                        pool,
+                        totalAmountIn: 0,
+                        totalAmountOut: 0,
+                        action: smSwap.op,
+                        path: smSwap.path
+                    }
+                }
+
+                combSwaps[smSwap.pool][smSwap.op].totalAmountIn -= smSwap.in
+                combSwaps[smSwap.pool][smSwap.op].totalAmountOut += smSwap.out
+            })
+
+            Object.entries(combSwaps).forEach((ops) => {
+                Object.entries(ops[1]).forEach((op) => {
+                    const pool = globalState.pools.get(ops[0])
+                    console.log(op[1])
+                    const swapData = formSwapData(
+                        pool,
+                        investor,
+                        op[0],
+                        investor.balances['USDC'],
+                        investor.balances[activeQuest],
+                        op[1].totalAmountIn,
+                        op[1].totalAmountOut,
+                        op[1].path
+                    )
+                    console.log(swapData)
+                    swap(swapData)
+                    const log = swapLog(swapData)
+                    addLog(`[SMART-ROUTE] ${log}`)
+                })
+            })
         }
-        swap(swapData)
-
-        const log = swapLog(swapData)
-
-        addLog(`[HUMAN] ${log}`)
     }
 
     const handleSetAmount = (e) => {

@@ -43,8 +43,7 @@ export default class Router {
     }
 
     smartSwapPaths(pricedPaths, sortedPrices, amount, chunkSize = 10) {
-        const chunks = this.#chunkAmountBy(amount, chunkSize)
-
+        let chunks = this.#chunkAmountBy(amount, chunkSize)
         let balancesResult = []
         let curPricePoint = 0
         let maxPricePoint = sortedPrices.length - 1
@@ -55,10 +54,11 @@ export default class Router {
             : price
         let outPrice = 0
 
-        for (const chunk of chunks) {
+        for (const [id, chunk] of chunks.entries()) {
             // loop sortedPrices
             const { sums, swaps } = this.swapForAmounts(path, chunk, false)
             if (sums) {
+                console.log('Single swap', sums, path, swaps.length)
                 outPrice = this.#getOutInPrice(chunk, sums[0])
 
                 balancesResult = this.#calculateBalances(
@@ -85,10 +85,12 @@ export default class Router {
 
             if (outPrice >= nextPrice && sortedPrices.length > 1) {
                 curPricePoint += 1
+
                 if (curPricePoint > maxPricePoint) {
                     console.log('Peaked sorted prices')
                     return balancesResult
                 }
+
                 price = sortedPrices[curPricePoint]
                 path = pricedPaths[price]
                 nextPrice = sortedPrices[curPricePoint + 1]
@@ -97,7 +99,12 @@ export default class Router {
             }
 
             amount += sums[0]
-            this.#swaps.push(swaps)
+            this.#swaps = [...this.#swaps, ...swaps]
+
+            // @TODO: Extends chunks until runs out of amount (not optimal, needs amount per path formula)
+            if (amount >= chunkSize && id + 1 === chunks.length) {
+                chunks.push(chunkSize)
+            }
         }
 
         return balancesResult
@@ -106,9 +113,12 @@ export default class Router {
     swapForAmounts(path, amount, dry = false) {
         if (!path) return { swaps: false, sums: false }
 
-        const poolPairs = path.map((token, id) => [token, path[id + 1]])
+        const poolPairs = path
+            .map((token, id) => [token, path[id + 1]])
+            .filter((pair) => pair[0] && pair[1])
         const swaps = []
         let sums = []
+        let sumsTotal = []
 
         for (const id in poolPairs) {
             let idx = parseInt(id)
@@ -133,8 +143,27 @@ export default class Router {
                 ? pool.drySwap(amount, zeroForOne)
                 : pool.swap(amount, zeroForOne)
 
+            if (idx === 0) {
+                sumsTotal[0] = sums[0]
+            }
+            if (idx === poolPairs.length - 1) {
+                sumsTotal[1] = sums[1]
+            }
+
+            console.log(
+                idx,
+                path,
+                pool.name,
+                poolPairs,
+                sums,
+                amount,
+                zeroForOne,
+                '----',
+                sumsTotal
+            )
+
             if (Math.abs(sums[0]) === Math.abs(sums[1])) {
-                return { swaps, sums }
+                return { swaps, sumsTotal }
             }
 
             if (amount >= Math.abs(sums[1])) {
@@ -143,7 +172,7 @@ export default class Router {
 
             if (amount <= 0 && nextPool) {
                 console.log('Amount ran out')
-                return { swaps, sums }
+                return { swaps, sumsTotal }
             }
 
             swaps.push({
@@ -164,7 +193,7 @@ export default class Router {
             })
         }
 
-        return { sums, swaps }
+        return { swaps, sums: sumsTotal }
     }
 
     drySwapAllForAmounts(paths, amount) {
