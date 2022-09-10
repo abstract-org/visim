@@ -6,27 +6,51 @@ export default class Router {
     #visitedPools = []
     #swaps = []
     #paths = []
+    #pathsVisited = []
+    #outSums = [0, 0]
     #shouldScanPaths = true
+    #DEBUG = false
+    #DEBUG_DRY = false
+    #DRY_SWAP_CHUNK_SIZE = 10
 
     // @param State state
-    constructor(state) {
+    constructor(state = null, debug = false, debugDry = false) {
         this.#state = state
-    }
-
-    smartSwap(token0, token1, amountIn, chunkSize = 10, DEBUG = false) {
+        this.#DEBUG = debug
+        this.#DEBUG_DRY = debugDry
         this.#visitedPools = []
         this.#swaps = []
         this.#paths = []
+        this.#pathsVisited = []
+    }
+
+    smartSwap(token0, token1, amountIn, chunkSize = 10, initial = false) {
+        this.#visitedPools = []
+        this.#paths = []
+
+        if (initial) {
+            console.log('new swap ' + amountIn)
+            this.#swaps = []
+            this.#pathsVisited = []
+        }
         const poolList = this.findPoolsFor(token0)
-        if (DEBUG) console.log(poolList)
+        if (this.#DEBUG) console.log(poolList)
         const graph = this.graphPools(poolList)
-        if (DEBUG) console.log(graph)
-        const paths = graph.buildPathways(token0, token1)
-        if (DEBUG) console.log(paths)
-        const swapData = this.drySwapAllForAmounts(paths, chunkSize)
-        if (DEBUG) console.log(swapData)
+        if (this.#DEBUG) console.log(graph)
+        this.#paths = graph.buildPathways(token0, token1)
+        if (this.#DEBUG) console.log(this.#paths)
+        const swapData = this.drySwapAllForAmounts(
+            this.#paths,
+            this.#DRY_SWAP_CHUNK_SIZE
+        )
+        if (this.#DEBUG && this.#DEBUG_DRY) console.log(swapData)
         const [sortedPrices, pricedPaths] = this.sortByBestPrice(swapData)
-        if (DEBUG) console.log(sortedPrices, pricedPaths)
+
+        if (Object.keys(pricedPaths).length <= 0) {
+            return []
+        }
+
+        if (this.#DEBUG) console.log(sortedPrices, pricedPaths, amountIn)
 
         let sums = this.smartSwapPaths(
             pricedPaths,
@@ -39,63 +63,80 @@ export default class Router {
             return []
         }
 
-        return [-sums[0], sums[1]]
+        this.#outSums[0] += sums[0]
+        this.#outSums[1] += sums[1]
+        console.log(this.#outSums, amountIn, chunkSize, this.getPaths())
+        if (typeof sums[0] === 'number' && sums[0] < amountIn) {
+            return this.smartSwap(token0, token1, amountIn - sums[0], chunkSize)
+        }
+
+        return [-this.#outSums[0], this.#outSums[1]]
     }
 
     smartSwapPaths(pricedPaths, sortedPrices, amount, chunkSize = 10) {
-        let chunks = this.#chunkAmountBy(amount, chunkSize)
+        let chunks = this.chunkAmountBy(amount, chunkSize)
         let balancesResult = []
-        let curPricePoint = 0
-        let maxPricePoint = sortedPrices.length - 1
+
+        let curPricePoint = sortedPrices.length - 1
+        let maxPricePoint = 0
         let price = sortedPrices[curPricePoint]
-        let path = pricedPaths[price]
-        let nextPrice = sortedPrices[curPricePoint + 1]
-            ? sortedPrices[curPricePoint + 1]
-            : price
+        let nextPrice = sortedPrices[curPricePoint - 1]
+            ? sortedPrices[curPricePoint - 1]
+            : null
         let outPrice = 0
 
+        let path = Object.keys(pricedPaths)
+            .find((key) => pricedPaths[key] === price)
+            .split(',')
+
         for (const [id, chunk] of chunks.entries()) {
-            // loop sortedPrices
-            const { sums, swaps } = this.swapForAmounts(path, chunk, false)
-            if (sums) {
-                console.log('Single swap', sums, path, swaps.length)
-                outPrice = this.#getOutInPrice(chunk, sums[0])
-
-                balancesResult = this.#calculateBalances(
-                    balancesResult,
-                    path,
-                    sums[1],
-                    sums[0]
-                )
-
-                // Re-enter chunk into loop during path change to avoid skipping it
-                if (sums[0] === 0) {
-                    chunks.push(chunkSize)
-                } else {
-                    let pathString = path.join('-')
-                    if (!this.#paths.includes(pathString)) {
-                        this.#paths.push(pathString)
-                    }
-                }
-            }
+            // traverse sortedPrices
+            const { sums, swaps } = this.swapInPath(path, chunk, false)
 
             if (!sums) {
                 return balancesResult
             }
 
-            if (outPrice >= nextPrice && sortedPrices.length > 1) {
-                curPricePoint += 1
+            if (this.#DEBUG) {
+                console.log(
+                    'Single swap',
+                    sums,
+                    path,
+                    'swaps length',
+                    swaps.length
+                )
+            }
 
-                if (curPricePoint > maxPricePoint) {
-                    console.log('Peaked sorted prices')
+            outPrice = this.#getOutInPrice(sums[0], sums[1])
+
+            if ((nextPrice && outPrice <= nextPrice) || isNaN(outPrice)) {
+                curPricePoint -= 1
+                if (curPricePoint < maxPricePoint) {
+                    if (this.#DEBUG) console.log('Peaked sorted prices')
                     return balancesResult
                 }
 
                 price = sortedPrices[curPricePoint]
-                path = pricedPaths[price]
-                nextPrice = sortedPrices[curPricePoint + 1]
-                    ? sortedPrices[curPricePoint + 1]
+                nextPrice = sortedPrices[curPricePoint - 1]
+                    ? sortedPrices[curPricePoint - 1]
                     : null
+                path = Object.keys(pricedPaths)
+                    .find((key) => pricedPaths[key] === price)
+                    .split(',')
+            }
+
+            balancesResult = this.#calculateBalances(
+                balancesResult,
+                sums[1],
+                sums[0]
+            )
+
+            // @TODO: We want to record only paths that yielded results, we skip abrupted chains
+            if (sums && !(sums[0] === 0 && sums[1] === 0)) {
+                let pathString = path.join('-')
+                if (!this.#pathsVisited.includes(pathString)) {
+                    this.#pathsVisited.push(pathString)
+                }
             }
 
             amount += sums[0]
@@ -110,9 +151,7 @@ export default class Router {
         return balancesResult
     }
 
-    swapForAmounts(path, amount, dry = false) {
-        if (!path) return { swaps: false, sums: false }
-
+    swapInPath(path, amount, dry = false) {
         const poolPairs = path
             .map((token, id) => [token, path[id + 1]])
             .filter((pair) => pair[0] && pair[1])
@@ -132,10 +171,6 @@ export default class Router {
                       )
                     : null
 
-            if (!pool) {
-                continue
-            }
-
             const zeroForOne =
                 pool.tokenLeft.name === poolTokens[0] ? true : false
 
@@ -150,29 +185,40 @@ export default class Router {
                 sumsTotal[1] = sums[1]
             }
 
-            console.log(
-                idx,
-                path,
-                pool.name,
-                poolPairs,
-                sums,
-                amount,
-                zeroForOne,
-                '----',
-                sumsTotal
-            )
+            if ((this.#DEBUG && !dry) || (this.#DEBUG_DRY && dry)) {
+                console.log(
+                    `[${dry ? 'DRY' : 'REAL'}]\n`,
+                    `ID: ${idx}\n`,
+                    `POOL: ${pool.name}\n`,
+                    `PATH: ${path}\n`,
+                    `PAIRS: ${poolPairs}\n`,
+                    `${zeroForOne ? 'BUY' : 'SELL'}\n`,
+                    `AMT PRE CAP: ${amount}\n`,
+                    `SUMS: ${sums}\n`,
+                    `RESULT: ${sumsTotal}`
+                )
+            }
+            amount = Math.abs(sums[1])
 
-            if (Math.abs(sums[0]) === Math.abs(sums[1])) {
-                return { swaps, sumsTotal }
+            if (Math.abs(sums[0]) === 0 && Math.abs(sums[1]) === 0) {
+                if ((this.#DEBUG && !dry) || this.#DEBUG_DRY)
+                    console.log(
+                        `[${
+                            dry ? 'DRY' : 'REAL'
+                        }] Swap returned nils at ${path} on index ${idx} pool ${
+                            pool.name
+                        }`,
+                        pool.drySell(1.1726),
+                        pool.getSwapInfo(true)
+                    )
+                return { swaps, sums: [0, 0] }
             }
 
-            if (amount >= Math.abs(sums[1])) {
-                amount = Math.abs(sums[1])
-            }
-
+            // @TODO: Currently cases where chain swap can break is filtered out during drySwap
+            // Can be smarter solution?
             if (amount <= 0 && nextPool) {
                 console.log('Amount ran out')
-                return { swaps, sumsTotal }
+                return { swaps, sums: false }
             }
 
             swaps.push({
@@ -192,7 +238,6 @@ export default class Router {
                 cRight: pool.currentRight
             })
         }
-
         return { swaps, sums: sumsTotal }
     }
 
@@ -200,8 +245,26 @@ export default class Router {
         let swapsRes = []
         const dry = true
         paths.forEach((path) => {
-            const { swaps } = this.swapForAmounts(path, amount, dry)
+            const { swaps, sums } = this.swapInPath(path, amount, dry)
             if (swaps) {
+                if (
+                    swaps.length < path.length - 1 ||
+                    !sums ||
+                    (sums && (sums[0] === 0 || sums[1] === 0))
+                ) {
+                    if (this.#DEBUG && this.#DEBUG_DRY) {
+                        console.log(
+                            '[DRY] PATH ' +
+                                path +
+                                ' is not qualified for smart routing' +
+                                ' with sums ' +
+                                sums[0] +
+                                ' and ' +
+                                sums[1]
+                        )
+                    }
+                    return
+                }
                 swapsRes.push(swaps)
             }
         })
@@ -213,16 +276,14 @@ export default class Router {
         let sortedPrices = []
         let pricedPaths = {}
         swaps.forEach((swapPath) => {
-            if (swapPath.length <= 0) {
-                return // @TODO: What is this edge case after citing a quest and trying to sell token for USDC?
-            }
-
             const amtIn = swapPath[0].in
             const amtOut = swapPath[swapPath.length - 1].out
             const price = this.#getOutInPrice(amtIn, amtOut)
 
-            sortedPrices.push(price)
-            pricedPaths[price] = swapPath[0].path
+            if (amtIn > 0 && amtOut > 0) {
+                sortedPrices.push(price)
+                pricedPaths[swapPath[0].path] = price
+            }
         })
 
         sortedPrices.sort((a, b) => a - b)
@@ -268,7 +329,7 @@ export default class Router {
     }
 
     getPaths() {
-        return this.#paths
+        return this.#pathsVisited
     }
 
     getSwaps() {
@@ -308,7 +369,7 @@ export default class Router {
         return result
     }
 
-    #calculateBalances(balancesResult, path, out, chunk) {
+    #calculateBalances(balancesResult, out, chunk) {
         if (!balancesResult[0]) {
             balancesResult[0] = 0
         }
@@ -323,8 +384,8 @@ export default class Router {
         return balancesResult
     }
 
-    #getOutInPrice(out, inAmt) {
-        return out / inAmt
+    #getOutInPrice(inAmt, outAmt) {
+        return Math.abs(outAmt) / Math.abs(inAmt)
     }
 
     #getPoolByTokens(tokenA, tokenB) {
@@ -333,7 +394,7 @@ export default class Router {
             : this.#state.pools.get(`${tokenB}-${tokenA}`)
     }
 
-    #chunkAmountBy(amount, by) {
+    chunkAmountBy(amount, by) {
         const max = Math.floor(amount / by)
         const mod = amount % by
 

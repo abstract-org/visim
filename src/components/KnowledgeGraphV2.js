@@ -7,7 +7,7 @@ import {
 } from '@react-sigma/core'
 import '@react-sigma/core/lib/react-sigma.min.css'
 import { LayoutForceAtlas2Control } from '@react-sigma/layout-forceatlas2'
-import Graph from 'graphology'
+import { MultiDirectedGraph } from 'graphology'
 
 import globalState from '../logic/GlobalState'
 import usePoolStore from '../logic/Pool/pool.store'
@@ -27,7 +27,7 @@ export const KnowledgeGraphV2 = (props) => {
     const BLUE = '#727EE0'
     const GREEN = '#5DB346'
 
-    const graph = new Graph({ allowSelfLoop: true, multi: true })
+    const graph = new MultiDirectedGraph({ allowSelfLoop: true, multi: true })
     let edges = []
     let nodes = []
     let producedEdges = []
