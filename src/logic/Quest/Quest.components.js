@@ -346,6 +346,7 @@ export const QuestCreation = () => {
     const [questName, setQuestName] = useState('')
     const addPool = usePoolStore(addPoolSelector)
     const addQuest = useQuestStore(addQuestSelector)
+    const addHumanQuest = useQuestStore((state) => state.addHumanQuest)
     const activeInvestor = useInvestorStore((state) => state.active)
     const quests = useQuestStore((state) => state.quests)
     const addLog = useLogsStore((state) => state.addLog)
@@ -391,6 +392,7 @@ export const QuestCreation = () => {
         globalState.quests.set(tokenRight.name, tokenRight)
         globalState.pools.set(pool.name, pool)
         addQuest(tokenRight.name)
+        addHumanQuest(tokenRight.name)
         addPool(pool.name)
 
         setQuestName('')
