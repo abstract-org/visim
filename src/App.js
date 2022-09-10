@@ -4,7 +4,7 @@ import { Card } from 'primereact/card'
 import 'primereact/resources/primereact.min.css'
 import 'primereact/resources/themes/lara-light-indigo/theme.css'
 
-import { KnowledgeGraph } from './components/KnowledgeGraph'
+import { KnowledgeGraphV2 } from './components/KnowledgeGraphV2'
 import { PoolChart } from './components/PoolChart'
 import { GeneratorRunner } from './logic/Generators/Generator.components'
 import {
@@ -71,8 +71,8 @@ export default function Home() {
                             </div>
                         </div>
                         <div className="grid">
-                            <div className="col-12">
-                                <KnowledgeGraph />
+                            <div className="col-12 h-full">
+                                <KnowledgeGraphV2 />
                             </div>
                         </div>
                     </Card>
