@@ -27,6 +27,8 @@ export function KnowledgeGraph() {
     const defSize = { width: 80, height: 50 }
 
     quests.forEach((quest, idx) => {
+        if (quest.name === 'USDC') return
+
         nodes.push({
             id: idx,
             text: quest,

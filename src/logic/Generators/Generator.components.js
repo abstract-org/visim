@@ -1,4 +1,5 @@
 import Chance from 'chance'
+import { BlockUI } from 'primereact/blockui'
 import { Button } from 'primereact/button'
 import { Card } from 'primereact/card'
 import { Divider } from 'primereact/divider'
@@ -56,7 +57,12 @@ export const GeneratorRunner = () => {
             return
         }
 
-        const genManager = new Generator(invConfigs, questConfigs, genDays)
+        const genManager = new Generator(
+            invConfigs,
+            questConfigs,
+            globalState.pools.values(),
+            globalState.quests.values()
+        )
 
         setGenActive(true)
 
@@ -332,69 +338,88 @@ export const GenCardInvestor = (props) => {
                 <span className="inplace-static-text">days:</span>
             </div>
             <div className="column flex">
-                <span className="inplace-static-text">Buys using</span>
-                <InPlaceElement
-                    id="buySumPerc"
-                    active={false}
-                    display={`${state.buySumPerc}%`}
-                    type="number"
-                    component="input"
-                    handleChange={handleChange}
-                    state={state}
-                />
-                <span className="inplace-static-text">of their balance in</span>
+                <BlockUI
+                    blocked={state.buySellPeriodDays <= 0}
+                    className="flex w-full"
+                >
+                    <span className="inplace-static-text">Buys using</span>
+                    <InPlaceElement
+                        id="buySumPerc"
+                        active={false}
+                        display={`${state.buySumPerc}%`}
+                        type="number"
+                        component="input"
+                        handleChange={handleChange}
+                        state={state}
+                    />
+                    <span className="inplace-static-text">
+                        of their balance in
+                    </span>
 
-                <InPlaceElement
-                    id="buyQuestPerc"
-                    active={false}
-                    display={`${state.buyQuestPerc}%`}
-                    type="number"
-                    component="input"
-                    handleChange={handleChange}
-                    state={state}
-                />
-                <span className="inplace-static-text">quests that are top</span>
+                    <InPlaceElement
+                        id="buyQuestPerc"
+                        active={false}
+                        display={`${state.buyQuestPerc}%`}
+                        type="number"
+                        component="input"
+                        handleChange={handleChange}
+                        state={state}
+                    />
+                    <span className="inplace-static-text">
+                        quests that are top
+                    </span>
 
-                <InPlaceElement
-                    id="buyGainerPerc"
-                    active={false}
-                    display={`${state.buyGainerPerc}%`}
-                    type="number"
-                    component="input"
-                    handleChange={handleChange}
-                    state={state}
-                />
-                <span className="inplace-static-text">gainers</span>
+                    <InPlaceElement
+                        id="buyGainerPerc"
+                        active={false}
+                        display={`${state.buyGainerPerc}%`}
+                        type="number"
+                        component="input"
+                        handleChange={handleChange}
+                        state={state}
+                    />
+                    <span className="inplace-static-text">gainers</span>
+                </BlockUI>
             </div>
             <div className="column flex">
-                <span className="inplace-static-text">Sell</span>
-                <InPlaceElement
-                    id="sellIncSumPerc"
-                    active={false}
-                    display={`${state.sellIncSumPerc}%`}
-                    type="number"
-                    component="input"
-                    handleChange={handleChange}
-                    state={state}
-                />
-                <span className="inplace-static-text">
-                    of owned tokens that decreased in price
-                </span>
+                <BlockUI
+                    blocked={state.buySellPeriodDays <= 0}
+                    className="flex w-full"
+                >
+                    <span className="inplace-static-text">Sell</span>
+                    <InPlaceElement
+                        id="sellIncSumPerc"
+                        active={false}
+                        display={`${state.sellIncSumPerc}%`}
+                        type="number"
+                        component="input"
+                        handleChange={handleChange}
+                        state={state}
+                    />
+                    <span className="inplace-static-text">
+                        of owned tokens that decreased in price
+                    </span>
+                </BlockUI>
             </div>
             <div className="column flex">
-                <span className="inplace-static-text">Sell</span>
-                <InPlaceElement
-                    id="sellDecSumPerc"
-                    active={false}
-                    display={`${state.sellDecSumPerc}%`}
-                    type="number"
-                    component="input"
-                    handleChange={handleChange}
-                    state={state}
-                />
-                <span className="inplace-static-text">
-                    of owned tokens that increased in price
-                </span>
+                <BlockUI
+                    blocked={state.buySellPeriodDays <= 0}
+                    className="flex w-full pi pi-lock"
+                >
+                    <span className="inplace-static-text">Sell</span>
+                    <InPlaceElement
+                        id="sellDecSumPerc"
+                        active={false}
+                        display={`${state.sellDecSumPerc}%`}
+                        type="number"
+                        component="input"
+                        handleChange={handleChange}
+                        state={state}
+                    />
+                    <span className="inplace-static-text">
+                        of owned tokens that increased in price
+                    </span>
+                </BlockUI>
             </div>
             <hr className="dashed-divider" />
             <div className="column flex">

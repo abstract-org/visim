@@ -3,12 +3,12 @@ export const invGen = {
     createQuest: '',
     dailySpawnProbability: 50,
     initialBalance: 10000,
-    buySellPeriodDays: 30,
-    buySumPerc: 0,
-    buyQuestPerc: 0,
-    buyGainerPerc: 0,
-    sellIncSumPerc: 0,
-    sellDecSumPerc: 0,
+    buySellPeriodDays: 0,
+    buySumPerc: 10,
+    buyQuestPerc: 50,
+    buyGainerPerc: 20,
+    sellIncSumPerc: 20,
+    sellDecSumPerc: 5,
     valueSellEveryDays: 30,
     valueSellAmount: 5000
 }
