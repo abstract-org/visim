@@ -157,7 +157,10 @@ export const SwapModule = () => {
     const swap = usePoolStore((state) => state.swap)
     const addLog = useLogsStore((state) => state.addLog)
     const swapMode = usePoolStore((state) => state.swapMode)
-    const router = new Router(globalState)
+    const router = new Router(
+        globalState.quests.values(),
+        globalState.pools.values()
+    )
 
     const investor = activeInvestor && globalState.investors.get(activeInvestor)
     const pool = activePool && globalState.pools.get(activePool)
@@ -197,7 +200,6 @@ export const SwapModule = () => {
                       amount,
                       globalConfig.CHUNK_SIZE
                   )
-        console.log(swapMode, totalAmountIn, totalAmountOut, router.getPaths())
 
         investor.addBalance('USDC', totalAmountIn)
         investor.addBalance(activeQuest, totalAmountOut)
@@ -219,7 +221,6 @@ export const SwapModule = () => {
             addLog(`[HUMAN] ${log}`)
         } else {
             const smSwaps = router.getSwaps()
-            console.log(smSwaps)
             let combSwaps = {}
             smSwaps.forEach((smSwap) => {
                 if (!combSwaps) {
@@ -246,7 +247,6 @@ export const SwapModule = () => {
             Object.entries(combSwaps).forEach((ops) => {
                 Object.entries(ops[1]).forEach((op) => {
                     const pool = globalState.pools.get(ops[0])
-                    console.log(op[1])
                     const swapData = formSwapData(
                         pool,
                         investor,
@@ -257,7 +257,6 @@ export const SwapModule = () => {
                         op[1].totalAmountOut,
                         op[1].path
                     )
-                    console.log(swapData)
                     swap(swapData)
                     const log = swapLog(swapData)
                     addLog(`[SMART-ROUTE] ${log}`)

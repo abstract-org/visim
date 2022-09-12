@@ -18,7 +18,7 @@ export default class Investor {
     constructor(id, usdcBalance = 10000, type = 'creator') {
         this.id = id
         this.hash = '0x' + sha256(`${id.toString()} + ${type}`)
-        this.balances.USDC = usdcBalance
+        this.balances.USDC = parseFloat(usdcBalance)
         this.type = type
         this.#canCreate = type === 'creator'
     }
@@ -96,11 +96,11 @@ export default class Investor {
         )
     }
 
-    createPool(tokenLeft, tokenRight, startingPrice) {
-        if (!tokenLeft || !tokenRight) {
+    createPool(citedToken, citingToken, startingPrice) {
+        if (!citedToken || !citingToken) {
             throw new Error('You must provide both tokens to create cross pool')
         }
-        return new Pool(tokenLeft, tokenRight, startingPrice)
+        return new Pool(citedToken, citingToken, startingPrice)
     }
 
     citeQuest(
@@ -128,6 +128,12 @@ export default class Investor {
         citedQuestPool,
         multiplier = this.#PRICE_RANGE_MULTIPLIER
     ) {
+        if (!citingQuestPool.currentPrice || !citingQuestPool.currentPrice) {
+            throw new Error(
+                'Did you pass quest instead of a pool for citation?'
+            )
+        }
+
         const citingPrice = citingQuestPool.currentPrice
         const citedPrice = citedQuestPool.currentPrice
 

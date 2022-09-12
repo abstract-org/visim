@@ -55,7 +55,8 @@ rect.fill-inactive {
     text-decoration: underline;
 }
 
-.gen-card .p-inputtext-sm {
+.gen-card .p-inputtext-sm,
+.gen-card .p-inputtext-sm > input {
     width: 8rem;
     height: 1.5rem;
     font-size: 0.5rem;
@@ -93,9 +94,8 @@ rect.fill-inactive {
 }
 
 .gen-card .p-blockui-container {
-    font-style: italic;
-    padding: 0.2rem;
-    margin-left: 0.3rem;
+    display: flex;
+    width: 100%;
 }
 
 .gen-card .p-dropdown {

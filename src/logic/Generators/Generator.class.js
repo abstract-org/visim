@@ -1,6 +1,7 @@
 import Chance from 'chance'
 
 import Investor from '../Investor/Investor.class'
+import Router from '../Router/Router.class'
 
 class Generator {
     #invConfigs = []
@@ -14,15 +15,25 @@ class Generator {
     #cachedInvestors = []
     #cachedQuests = []
     #cachedPools = []
+    #dailyTradedPools = []
+    #tradingInvs = {}
+    #sellValueInvs = {}
 
-    constructor(invConfigs, questConfigs) {
+    constructor(invConfigs, questConfigs, globalPools, globalQuests) {
+        this.#chance = Chance()
+
         this.#invConfigs = invConfigs
         this.#questConfigs = questConfigs
-        this.#chance = Chance()
+        this.#cachedQuests = [...globalQuests]
+        this.#cachedPools = [...globalPools]
     }
 
     async step(day) {
-        this.#dayData[day] = { investors: [], quests: [], pools: [] }
+        this.#dayData[day] = {
+            investors: [],
+            quests: [],
+            pools: []
+        }
 
         this.#invConfigs.forEach((inv) => {
             // Calculate probabilities
@@ -68,6 +79,10 @@ class Generator {
                             const [totalIn, totalOut] = pool.buy(
                                 questConfig.initialAuthorInvest
                             )
+                            console.log(
+                                `Initial investment ${questConfig.initialAuthorInvest}/${totalIn}/${totalOut}`
+                            )
+                            console.log(typeof totalIn, typeof totalOut)
                             investor.addBalance(this.#DEFAULT_TOKEN, totalIn)
                             investor.addBalance(quest.name, totalOut)
                         }
@@ -86,8 +101,6 @@ class Generator {
                                         this.#FOUNDATION_TOKEN
                                     )
 
-                                this.#cachedQuests.push(agoraQuest)
-                                this.#cachedPools.push(agoraPool)
                                 this.#dayData[day]['quests'].push(agoraQuest)
                                 this.#dayData[day]['pools'].push(agoraPool)
                             }
@@ -116,10 +129,19 @@ class Generator {
                                         quest.name === this.#FOUNDATION_TOKEN
                                 )
 
-                                const citedAgoraPool = investor.createPool(
-                                    agoraQuest,
-                                    quest
+                                let citedAgoraPool = this.#cachedPools.find(
+                                    (pool) =>
+                                        pool.tokenLeft.name ===
+                                            agoraQuest.name &&
+                                        pool.tokenRight.name === quest.name
                                 )
+
+                                if (!citedAgoraPool) {
+                                    citedAgoraPool = investor.createPool(
+                                        agoraQuest,
+                                        quest
+                                    )
+                                }
 
                                 const [totalIn, totalOut] = investor.citeQuest(
                                     citedAgoraPool,
@@ -173,10 +195,19 @@ class Generator {
                                             citedPool
                                         )
 
-                                    const crossPool = investor.createPool(
-                                        randomQuest,
-                                        quest
+                                    let crossPool = this.#cachedPools.find(
+                                        (pool) =>
+                                            pool.tokenLeft.name ===
+                                                randomQuest.name &&
+                                            pool.tokenRight.name === quest.name
                                     )
+
+                                    if (!crossPool) {
+                                        crossPool = investor.createPool(
+                                            randomQuest,
+                                            quest
+                                        )
+                                    }
 
                                     const [totalIn, totalOut] =
                                         investor.citeQuest(
@@ -195,14 +226,158 @@ class Generator {
                         }
                     }
 
-                    // Before trading - daily calculation per investor probability
-                    // Investor trading section
                     this.#dayData[day]['investors'].push(investor)
+
+                    if (parseInt(inv.buySellPeriodDays) > 0) {
+                        if (!this.#tradingInvs[inv.buySellPeriodDays]) {
+                            this.#tradingInvs[inv.buySellPeriodDays] = []
+                        }
+
+                        this.#tradingInvs[inv.buySellPeriodDays].push({
+                            investor,
+                            conf: inv
+                        })
+                    }
+
+                    if (parseInt(inv.valueSellEveryDays) > 0) {
+                        if (!this.#sellValueInvs[inv.valueSellEveryDays]) {
+                            this.#sellValueInvs[inv.valueSellEveryDays] = []
+                        }
+
+                        this.#sellValueInvs[inv.valueSellEveryDays].push({
+                            investor,
+                            conf: inv
+                        })
+                    }
                 } // end of inv spawner loop
             } // end of inv spawner if
         })
 
+        // Every X days - buy/sell by investors
+        const tradingDayKeys = Object.keys(this.#tradingInvs)
+        tradingDayKeys.forEach((dayKey) => {
+            if (day % dayKey === 0) {
+                const investors = this.#tradingInvs[dayKey]
+                investors.forEach((investorObj, idx) => {
+                    const investor = investorObj.investor
+                    const conf = investorObj.conf
+
+                    if (
+                        conf.buySumPerc <= 0 ||
+                        conf.buyGainerPerc <= 0 ||
+                        conf.buyQuestPerc <= 0
+                    ) {
+                        return
+                    }
+
+                    const spendAmount =
+                        (investor.balances[this.#DEFAULT_TOKEN] / 100) *
+                        conf.buySumPerc
+                    const topGainers = this.getTopGainers(
+                        conf.buyQuestPerc,
+                        conf.buyGainerPerc
+                    )
+
+                    if (!topGainers) {
+                        return
+                    }
+
+                    const router = new Router(
+                        this.#cachedQuests,
+                        this.#cachedPools
+                    )
+
+                    const perPoolAmt = spendAmount / topGainers.length
+                    if (perPoolAmt <= 0 || router.isZero(perPoolAmt)) {
+                        console.log(`Per pool is ${perPoolAmt}`)
+                        return
+                    }
+
+                    topGainers.forEach((pool) => {
+                        const [totalIn, totalOut] = router.smartSwap(
+                            this.#DEFAULT_TOKEN,
+                            pool.tokenRight.name,
+                            perPoolAmt
+                        )
+
+                        if (
+                            router.isZero(totalIn) ||
+                            totalOut <= 0 ||
+                            router.isZero(totalOut) ||
+                            isNaN(totalIn) ||
+                            isNaN(totalOut)
+                        ) {
+                            console.log(
+                                `Bad trade at: ${pool.name} ${totalIn} ${totalOut} ${perPoolAmt}`
+                            )
+                            console.log(
+                                pool.currentLiquidity,
+                                pool.currentPrice,
+                                investor.balances,
+                                router.getPaths(),
+                                router.getSwaps()
+                            )
+                            topGainers.forEach((tg) => {
+                                console.table(tg)
+                            })
+                            return
+                        }
+
+                        investor.addBalance(pool.tokenLeft.name, totalIn)
+                        investor.addBalance(pool.tokenRight.name, totalOut)
+                        // @TODO @URG: Add investor back to its place in array to update their object
+                        console.log(this.#tradingInvs[dayKey][idx].investor)
+                    })
+                })
+            }
+        })
+
+        // Top gainers:
+        // Store pool and their TVL by day
+        // Take last 30 entries of TVL per pool and check if it grew or not
+        // Sort top growers
+        //
+        // Increased in price:
+        // Store pool and their price direction by day
+        // Take last 7 entries of price and see if it always went up
+
         return this.#dayData[day]
+    }
+
+    getTopGainers(buyQuestPerc, buyGainerPerc) {
+        // Get random pools to invest in if there's no trading history for at least 30 days
+        if (!this.#dailyTradedPools.length && !this.#dayData[30]) {
+            const questsAmount = Math.ceil(
+                (this.#cachedQuests.length / 100) * buyGainerPerc
+            )
+            const randomQuests = this.getRandomElements(
+                this.#cachedQuests.filter(
+                    (quest) => quest.name !== this.#FOUNDATION_TOKEN
+                ),
+                questsAmount
+            )
+
+            if (!randomQuests.length) {
+                return
+            }
+
+            const toTradePools = randomQuests
+                .map((quest) =>
+                    this.#cachedPools.find(
+                        (pool) =>
+                            pool.tokenLeft.name === this.#DEFAULT_TOKEN &&
+                            pool.tokenRight.name === quest.name
+                    )
+                )
+                .filter((x) => x)
+            const poolsAmount = Math.ceil(
+                (toTradePools.length / 100) * buyQuestPerc
+            )
+
+            return this.getRandomElements(toTradePools, poolsAmount)
+        }
+
+        // Collect top gainers of the last 30 days
     }
 
     calculateCiteAmount(investor, quest, percentage, quantity = 1) {
@@ -233,24 +408,21 @@ class Generator {
         const quest = investor.createQuest(name)
         // @TODO: Could be an issue with USDC token not having all pools for trading, fix the issue first
         const pool = quest.createPool({ totalTokensProvisioned })
+        this.#cachedQuests.push(quest)
 
         let leftSideQuest = this.#cachedQuests.find(
             (quest) => quest.name === this.#DEFAULT_TOKEN
         )
         if (leftSideQuest) {
             leftSideQuest.addPool(pool)
+            this.#cachedQuests.map((quest) =>
+                quest.name === leftSideQuest.name ? leftSideQuest : quest
+            )
         } else {
             leftSideQuest = pool.tokenLeft
-        }
-
-        if (
-            !this.#cachedQuests.find(
-                (quest) => quest.name === leftSideQuest.name
-            )
-        ) {
             this.#cachedQuests.push(leftSideQuest)
         }
-        this.#cachedQuests.push(quest)
+
         this.#cachedPools.push(pool)
 
         return { quest, pool }
@@ -263,12 +435,8 @@ class Generator {
             citeOtherQuantity: 0
         }
 
-        chances.citeAgora = this.#chance.bool({
-            likelihood: quest.probCiteAgora
-        })
-        chances.citeOther = this.#chance.bool({
-            likelihood: quest.probOtherCite > 100 ? 100 : quest.probOtherCite
-        })
+        chances.citeAgora = this.calcProb(quest.probCiteAgora)
+        chances.citeOther = this.calcProb(quest.probOtherCite)
 
         chances.citeOtherQuantity =
             chances.citeOther && quest.probOtherCite > 100
@@ -278,18 +446,20 @@ class Generator {
         return chances
     }
 
+    calcProb(percentage) {
+        return this.#chance.bool({
+            likelihood: percentage > 100 ? 100 : percentage
+        })
+    }
+
     calculateInvProbabilities(inv) {
         const chances = {
             spawnInv: false,
             spawnInvQuantity: 0
         }
 
-        chances.spawnInv = this.#chance.bool({
-            likelihood:
-                inv.dailySpawnProbability > 100
-                    ? 100
-                    : inv.dailySpawnProbability
-        })
+        chances.spawnInv = this.calcProb(inv.dailySpawnProbability)
+
         chances.spawnInvQuantity =
             chances.spawnInv && inv.dailySpawnProbability > 100
                 ? Math.floor(inv.dailySpawnProbability / 100)
