@@ -357,7 +357,7 @@ class Generator {
                 questsAmount
             )
 
-            if (!randomQuests.length) {
+            if (!randomQuests) {
                 return
             }
 
