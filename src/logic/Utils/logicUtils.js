@@ -10,22 +10,20 @@ export const formSwapData = (
     pool,
     investor,
     action,
-    balanceLeft,
-    balanceRight,
     totalAmountIn,
     totalAmountOut,
     paths
 ) => {
     return {
-        pool: pool.name,
-        price: pool.currentPrice.toFixed(4),
+        pool: pool && pool.name,
+        price: pool && pool.currentPrice.toFixed(2),
         investorHash: investor.hash,
         action: action,
-        balanceLeft: balanceLeft,
-        balanceRight: balanceRight,
-        totalAmountIn,
-        totalAmountOut,
-        paths
+        mcap: pool.getType() === 'QUEST' ? pool.getMarketCap() : '',
+        tvl: pool.getType() === 'QUEST' ? pool.getTVL() : '',
+        totalAmountIn: totalAmountIn ? totalAmountIn.toFixed(2) : '',
+        totalAmountOut: totalAmountOut ? totalAmountOut.toFixed(2) : '',
+        paths: paths ? paths.join('-') : ''
     }
 }
 

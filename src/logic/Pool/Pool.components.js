@@ -12,7 +12,6 @@ import { QuestSelector } from '../Quest/Quest.components'
 import useQuestStore from '../Quest/quest.store'
 import Router from '../Router/Router.class'
 import { formSwapData, getCombinedSwaps } from '../Utils/logicUtils'
-import { swapLog } from '../Utils/uiUtils'
 import globalConfig from '../config.global.json'
 import usePoolStore from './pool.store'
 
@@ -150,7 +149,7 @@ export const SwapModule = () => {
     const activePool = usePoolStore((state) => state.active)
     const activeQuest = useQuestStore((state) => state.active)
     const swap = usePoolStore((state) => state.swap)
-    const addLog = useLogsStore((state) => state.addLog)
+    const addLogObj = useLogsStore((state) => state.addLogObj)
     const swapMode = usePoolStore((state) => state.swapMode)
     const router = new Router(
         globalState.quests.values(),
@@ -204,16 +203,12 @@ export const SwapModule = () => {
             const swapData = formSwapData(
                 pool,
                 investor,
-                'buy',
-                investor.balances['USDC'],
-                investor.balances[activeQuest],
+                'BOUGHT',
                 totalAmountIn,
-                totalAmountOut,
-                []
+                totalAmountOut
             )
             swap(swapData)
-            const log = swapLog(swapData)
-            addLog(`[HUMAN] ${log}`)
+            addLogObj(swapData)
         } else {
             const smSwaps = router.getSwaps()
             const combSwaps = getCombinedSwaps(
@@ -228,15 +223,12 @@ export const SwapModule = () => {
                         pool,
                         investor,
                         op[0],
-                        investor.balances['USDC'],
-                        investor.balances[activeQuest],
                         op[1].totalAmountIn,
                         op[1].totalAmountOut,
                         op[1].path
                     )
                     swap(swapData)
-                    const log = swapLog(swapData)
-                    addLog(`[SMART-ROUTE] ${log}`)
+                    addLogObj(swapData)
                 })
             })
         }
@@ -288,16 +280,12 @@ export const SwapModule = () => {
             const swapData = formSwapData(
                 pool,
                 investor,
-                'sell',
-                investor.balances['USDC'],
-                investor.balances[activeQuest],
+                'SOLD',
                 totalAmountIn,
-                totalAmountOut,
-                []
+                totalAmountOut
             )
             swap(swapData)
-            const log = swapLog(swapData)
-            addLog(`[HUMAN] ${log}`)
+            addLogObj(swapData)
         } else {
             const smSwaps = router.getSwaps()
             const combSwaps = getCombinedSwaps(
@@ -308,21 +296,16 @@ export const SwapModule = () => {
             Object.entries(combSwaps).forEach((ops) => {
                 Object.entries(ops[1]).forEach((op) => {
                     const pool = globalState.pools.get(ops[0])
-                    console.log(op[1])
                     const swapData = formSwapData(
                         pool,
                         investor,
                         op[0],
-                        investor.balances['USDC'],
-                        investor.balances[activeQuest],
                         op[1].totalAmountIn,
                         op[1].totalAmountOut,
                         op[1].path
                     )
-                    console.log(swapData)
                     swap(swapData)
-                    const log = swapLog(swapData)
-                    addLog(`[SMART-ROUTE] ${log}`)
+                    addLogObj(swapData)
                 })
             })
         }

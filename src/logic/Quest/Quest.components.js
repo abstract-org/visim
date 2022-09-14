@@ -57,7 +57,7 @@ export const QuestCitation = () => {
     const investor = globalState.investors.get(activeInvestor)
     const swaps = usePoolStore((state) => state.swaps)
     const createValueLink = usePoolStore((state) => state.createValueLink)
-    const addLog = useLogsStore((state) => state.addLog)
+    const addLogObj = useLogsStore((state) => state.addLogObj)
     const proMode = useQuestStore((state) => state.proMode)
     const setProMode = useQuestStore((state) => state.setProMode)
     const activeQuest = useQuestStore((state) => state.active)
@@ -148,9 +148,13 @@ export const QuestCitation = () => {
             })
             setActivePool(crossPool.name)
 
-            addLog(
-                `[HUMAN] Investor ${investor.type} (${investor.id}) cited ${citedQuest.name} by depositing ${calcAmountA} of ${citingQuest.name} to ${crossPool.name}`
-            )
+            const logData = {
+                pool: crossPool.name,
+                investorHash: investor.hash,
+                action: `CITED`,
+                totalAmountIn: calcAmountA
+            }
+            addLogObj(logData)
         })
     }
 
@@ -349,7 +353,7 @@ export const QuestCreation = () => {
     const addHumanQuest = useQuestStore((state) => state.addHumanQuest)
     const activeInvestor = useInvestorStore((state) => state.active)
     const quests = useQuestStore((state) => state.quests)
-    const addLog = useLogsStore((state) => state.addLog)
+    const addLogObj = useLogsStore((state) => state.addLogObj)
     const setActiveQuest = useQuestStore((state) => state.setActive)
     const setActivePool = usePoolStore((state) => state.setActive)
     const setSwapMode = usePoolStore((state) => state.setSwapMode)
@@ -400,9 +404,12 @@ export const QuestCreation = () => {
         setActiveQuest(questName)
         setActivePool(pool.name)
 
-        addLog(
-            `[HUMAN] Investor ${investor.type} (${investor.id}) created a new quest ${tokenRight.name}`
-        )
+        const logData = {
+            pool: pool.name,
+            investorHash: investor.hash,
+            action: `CREATED`
+        }
+        addLogObj(logData)
     }
 
     return (

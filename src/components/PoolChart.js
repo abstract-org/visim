@@ -1,15 +1,16 @@
-import React from 'react'
 import { Chart } from 'primereact/chart'
+import React from 'react'
+
+import useLogsStore from '../logic/Logs/logs.store'
 import usePoolStore from '../logic/Pool/pool.store'
 import { swapLog } from '../logic/Utils/uiUtils'
-import useLogsStore from '../logic/Logs/logs.store'
 
 const alternatePointRotation = (ctx) => {
-    return ctx.raw && ctx.raw.action === 'buy' ? 0 : 180
+    return ctx.raw && ctx.raw.action === 'BOUGHT' ? 0 : 180
 }
 
 const alternateBgColor = (ctx) => {
-    return ctx.raw && ctx.raw.action === 'buy' ? 'green' : 'red'
+    return ctx.raw && ctx.raw.action === 'BOUGHT' ? 'green' : 'red'
 }
 
 export const options = {
@@ -96,8 +97,13 @@ export function PoolChart() {
         ]
     }
 
+    const localSwaps = JSON.parse(JSON.stringify(swaps))
+    const poolSwaps = localSwaps
+        .map((swap) => (swap.pool === activePool ? swap : null))
+        .filter((x) => x)
     const filler = logs.length - swaps.length
-    const slicedSwaps = swaps.slice(-15)
+    const slicedSwaps =
+        poolSwaps.length <= 15 ? poolSwaps : poolSwaps.slice(-15)
     const resSwaps = Array.from({ length: filler })
         .fill(null)
         .concat(slicedSwaps)

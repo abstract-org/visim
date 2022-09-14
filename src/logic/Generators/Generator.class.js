@@ -2,6 +2,7 @@ import Chance from 'chance'
 
 import Investor from '../Investor/Investor.class'
 import Router from '../Router/Router.class'
+import { formSwapData, getCombinedSwaps } from '../Utils/logicUtils'
 
 class Generator {
     #invConfigs = []
@@ -15,7 +16,6 @@ class Generator {
     #cachedQuests = []
     #cachedPools = []
     #dailyTradedPools = []
-    #smartSwaps = []
     #tradingInvs = {}
     #sellValueInvs = {}
 
@@ -33,7 +33,7 @@ class Generator {
             investors: [],
             quests: [],
             pools: [],
-            swaps: []
+            actions: []
         }
 
         this.#invConfigs.forEach((inv) => {
@@ -50,6 +50,11 @@ class Generator {
                         inv.initialBalance
                     )
                     this.#dayData[day].investors.push(investor)
+                    this.#dayData[day].actions.push({
+                        investorHash: investor.hash,
+                        action: 'SPAWNED',
+                        day
+                    })
 
                     const questType = inv.createQuest
 
@@ -70,6 +75,12 @@ class Generator {
                             `${questConfig.questGenAlias}${questSum + 1}`,
                             questConfig.poolSizeTokens
                         )
+                        this.#dayData[day].actions.push({
+                            pool: pool.name,
+                            investorHash: investor.hash,
+                            action: 'CREATED',
+                            day
+                        })
                         this.#dayData[day].quests.push(quest)
                         this.#dayData[day].pools.push(pool)
 
@@ -83,6 +94,14 @@ class Generator {
                             const [totalIn, totalOut] = pool.buy(
                                 questConfig.initialAuthorInvest
                             )
+                            this.#dayData[day].actions.push({
+                                pool: pool.name,
+                                investorHash: investor.hash,
+                                action: 'BOUGHT',
+                                totalAmountIn: totalIn.toFixed(2),
+                                totalAmountOut: totalOut.toFixed(2),
+                                day
+                            })
                             this.storeTradedPool(day, pool)
                             investor.addBalance(this.#DEFAULT_TOKEN, totalIn)
                             investor.addBalance(quest.name, totalOut)
@@ -136,6 +155,12 @@ class Generator {
                                         singleQuest,
                                         quest
                                     )
+                                    this.#dayData[day].actions.push({
+                                        pool: citedSinglePool.name,
+                                        investorHash: investor.hash,
+                                        action: 'CREATED',
+                                        day
+                                    })
                                 }
                                 this.#dayData[day].pools.push(citedSinglePool)
 
@@ -146,6 +171,13 @@ class Generator {
                                     citeSingleAmount,
                                     0
                                 )
+                                this.#dayData[day].actions.push({
+                                    pool: citedSinglePool.name,
+                                    investorHash: investor.hash,
+                                    action: 'CITED',
+                                    totalAmountIn: citeSingleAmount.toFixed(2),
+                                    day
+                                })
 
                                 investor.addBalance(quest.name, -totalIn)
 
@@ -205,6 +237,12 @@ class Generator {
                                             randomQuest,
                                             quest
                                         )
+                                        this.#dayData[day].actions.push({
+                                            pool: crossPool.name,
+                                            investorHash: investor.hash,
+                                            action: 'CREATED',
+                                            day
+                                        })
                                     }
                                     this.#dayData[day].pools.push(crossPool)
 
@@ -216,6 +254,14 @@ class Generator {
                                             citeOtherAmount
                                         )
 
+                                    this.#dayData[day].actions.push({
+                                        pool: crossPool.name,
+                                        investorHash: investor.hash,
+                                        action: 'CITED',
+                                        totalAmountIn:
+                                            citeOtherAmount.toFixed(2),
+                                        day
+                                    })
                                     investor.addBalance(quest.name, -totalIn)
 
                                     this.#cachedPools.push(crossPool)
@@ -303,12 +349,6 @@ class Generator {
                         )
                         // collect pool price movements here and in other calls of router.smartSwap
                         this.storeTradedPool(day, pool)
-                        this.#dayData[day].swaps.push([
-                            pool.name,
-                            totalIn,
-                            totalOut
-                        ])
-                        this.#smartSwaps.push([pool.name, totalIn, totalOut])
 
                         if (
                             router.isZero(totalIn) ||
@@ -332,6 +372,7 @@ class Generator {
                             })
                             return
                         }
+                        this.#processSwapData(investor, router.getSwaps(), day)
                         investor.addBalance(pool.tokenLeft.name, totalIn)
                         investor.addBalance(pool.tokenRight.name, totalOut)
                     })
@@ -354,16 +395,6 @@ class Generator {
 
                             // collect pool price movements here and in other calls of router.smartSwap
                             this.storeTradedPool(day, pool)
-                            this.#dayData[day].swaps.push([
-                                pool.name,
-                                totalIn,
-                                totalOut
-                            ])
-                            this.#smartSwaps.push([
-                                pool.name,
-                                totalIn,
-                                totalOut
-                            ])
 
                             if (
                                 router.isZero(totalIn) ||
@@ -387,6 +418,11 @@ class Generator {
                                 })
                                 return
                             }
+                            this.#processSwapData(
+                                investor,
+                                router.getSwaps(),
+                                day
+                            )
                             investor.addBalance(pool.tokenRight.name, totalIn)
                             investor.addBalance(pool.tokenLeft.name, totalOut)
                         })
@@ -455,6 +491,8 @@ class Generator {
                             )
                             break
                         }
+
+                        this.#processSwapData(author, router.getSwaps(), day)
 
                         totalIn += amtIn
                         totalOut += amtOut
@@ -717,6 +755,29 @@ class Generator {
         })
     }
 
+    #processSwapData(investor, swaps, day) {
+        const combSwaps = getCombinedSwaps(swaps, this.#cachedPools)
+
+        console.log(investor, swaps, day, combSwaps)
+        Object.entries(combSwaps).forEach((ops) => {
+            Object.entries(ops[1]).forEach((op) => {
+                const pool = this.#cachedPools.find(
+                    (pool) => pool.name === ops[0]
+                )
+                const swapData = formSwapData(
+                    pool,
+                    investor,
+                    op[0],
+                    op[1].totalAmountIn || null,
+                    op[1].totalAmountOut || null,
+                    op[1].path || null,
+                    day
+                )
+                this.#dayData[day].actions.push(swapData)
+            })
+        })
+    }
+
     sleep(ms) {
         return new Promise((resolve) => setTimeout(resolve, ms))
     }
@@ -757,10 +818,6 @@ class Generator {
 
     getPools() {
         return this.#cachedPools
-    }
-
-    getSmartSwaps() {
-        return this.#smartSwaps
     }
 
     getDailyTradedPools() {

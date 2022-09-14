@@ -25,7 +25,6 @@ import { QuestCitation, QuestCreation } from './logic/Quest/Quest.components'
 export default function Home() {
     return (
         <div>
-            <GeneratorRunner />
             <div className="grid">
                 <div className="col-8">
                     <Card className="h-full">
@@ -90,7 +89,7 @@ export default function Home() {
                     </div>
                 </div>
             </div>
-
+            <GeneratorRunner />
             <div className="grid">
                 <div className="col-12">
                     <Card>

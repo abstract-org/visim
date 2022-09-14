@@ -1,5 +1,8 @@
 import React from 'react'
+
 import globalState from '../GlobalState'
+
+const nf = new Intl.NumberFormat('en-US')
 
 export const numericValue = (value) => {
     return <React.Fragment>{value}</React.Fragment>
@@ -9,25 +12,26 @@ export const swapLog = (swapData) => {
     const investor = globalState.investors.get(swapData.investorHash)
     const pool = globalState.pools.get(swapData.pool)
 
-    const action = swapData.action === 'buy' ? 'bought' : 'sold'
     const amounts =
-        swapData.action === 'buy'
-            ? `${Math.abs(
-                  swapData.totalAmountOut.toFixed(4)
-              ).toLocaleString()} ${pool.tokenRight.name} for ${Math.abs(
-                  swapData.totalAmountIn.toFixed(4)
-              ).toLocaleString()} ${pool.tokenLeft.name}`
-            : `${Math.abs(
-                  swapData.totalAmountIn.toFixed(4)
-              ).toLocaleString()} ${pool.tokenRight.name} for ${Math.abs(
-                  swapData.totalAmountOut.toFixed(4)
-              ).toLocaleString()} ${pool.tokenLeft.name}`
+        swapData.action === 'BOUGHT'
+            ? `${Math.abs(swapData.totalAmountOut).toLocaleString()} ${
+                  pool.tokenRight.name
+              } for ${Math.abs(swapData.totalAmountIn).toLocaleString()} ${
+                  pool.tokenLeft.name
+              }`
+            : `${Math.abs(swapData.totalAmountIn).toLocaleString()} ${
+                  pool.tokenRight.name
+              } for ${Math.abs(swapData.totalAmountOut).toLocaleString()} ${
+                  pool.tokenLeft.name
+              }`
 
-    const paths =
-        swapData.paths && swapData.paths.length
-            ? `through paths: ${swapData.paths.map(
-                  (path) => '[ ' + path + ' ]'
-              )}`
+    const paths = swapData.paths ? `through: ${swapData.paths}` : ''
+    const day = swapData.day ? `[DAY ${swapData.day}] ` : ''
+    const numData =
+        swapData.mcap && swapData.tvl
+            ? `\n\nPool state:\nMCAP: ${nf.format(
+                  swapData.mcap
+              )}\nTVL: ${nf.format(swapData.tvl)}`
             : ''
-    return `Investor ${investor.type} (${investor.id}) ${action} ${amounts} ${paths}`
+    return `${day}Investor ${investor.type} ${swapData.action} ${amounts} ${paths} ${numData}`
 }

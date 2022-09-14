@@ -45,7 +45,7 @@ it('Tries to buy over limit', () => {
     expect(totalOut).toBe(0)
     expect(pool.currentLiquidity).toBe(0)
     expect(pool.totalSold).toBe(20000)
-    expect(pool.currentPrice).toBeCloseTo(9999.999)
+    expect(pool.currentPrice).toBeCloseTo(999999.999)
 })
 
 it('Does micro price sell properly within the same liquidity', () => {
