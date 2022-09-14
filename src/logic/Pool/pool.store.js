@@ -1,3 +1,4 @@
+import produce from 'immer'
 import create from 'zustand'
 import { devtools } from 'zustand/middleware'
 
@@ -7,6 +8,12 @@ const usePoolStore = create(
         pools: [],
         swapMode: 'smart',
         addPool: (pool) => set((state) => ({ pools: [...state.pools, pool] })),
+        addMultiplePools: (pools) =>
+            set(
+                produce((state) => ({
+                    investors: [...state.pools, ...pools]
+                }))
+            ),
         setActive: (pool) => set(() => ({ active: pool })),
         swaps: [],
         swap: (swap) => set((state) => ({ swaps: [...state.swaps, swap] })),

@@ -11,6 +11,7 @@ export default class Investor {
     type = null
     balances = { USDC: 0 } // not like solidity, what's better -> balances here or in tokens
     positions = new HashMap()
+    questsCreated = []
 
     #canCreate = false
     #PRICE_RANGE_MULTIPLIER = 2
@@ -24,7 +25,9 @@ export default class Investor {
     }
 
     createQuest(name) {
-        return new Token(name)
+        const quest = new Token(name)
+        this.questsCreated.push(quest)
+        return quest
     }
 
     addBalance(tokenName, balance) {

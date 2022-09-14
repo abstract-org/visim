@@ -33,12 +33,14 @@ export const GeneratorRunner = () => {
     const questConfigs = useGeneratorStore((state) => state.questConfigs)
     const [genDays, setGenDays] = useState(10)
     const [genActive, setGenActive] = useState(false)
-    const [stopGen, setStopGen] = useState(false)
     const [genOutput, setGenOutput] = useState({
         day: 1,
         ...dayData
     })
 
+    const addPools = usePoolStore((state) => state.addMultiplePools)
+    const addInvestors = useInvestorStore((state) => state.addMultipleInvestors)
+    const addQuests = useQuestStore((state) => state.addMultipleQuests)
     const addPool = usePoolStore((state) => state.addPool)
     const addInvestor = useInvestorStore((state) => state.addInvestor)
     const addQuest = useQuestStore((state) => state.addQuest)
@@ -50,12 +52,14 @@ export const GeneratorRunner = () => {
             return
         }
 
-        if (invConfigs.length <= 0 || questConfigs.length <= 0) {
+        if (invConfigs.length <= 0) {
             console.log(
-                'Please create generator configs with investor and quest panel first'
+                'Please create generator configs with investor module first'
             )
             return
         }
+
+        setGenActive(true)
 
         const genManager = new Generator(
             invConfigs,
@@ -64,57 +68,71 @@ export const GeneratorRunner = () => {
             globalState.quests.values()
         )
 
-        setGenActive(true)
-
         // Every day
         for (let day = 1; day <= genDays; day++) {
             console.log(`Simulating day ${day}`)
             const stepData = await genManager.step(day)
-            await genManager.sleep(500)
 
             setGenOutput({
                 ...genOutput,
                 ...stepData,
                 day
             })
+
+            console.log(stepData)
+
+            stepData.investors.forEach((investor) => {
+                if (!globalState.investors.has(investor.hash)) {
+                    globalState.investors.set(investor.hash, investor)
+                    addInvestor(investor.hash)
+                }
+            })
+            stepData.quests.forEach((quest) => {
+                if (!globalState.quests.has(quest.name)) {
+                    globalState.quests.set(quest.name, quest)
+                    addQuest(quest.name)
+                }
+            })
+            stepData.pools.forEach((pool) => {
+                if (!globalState.pools.has(pool.name)) {
+                    globalState.pools.set(pool.name, pool)
+                    addPool(pool.name)
+                }
+            })
+
+            await genManager.sleep(1000)
         }
 
-        genManager.getInvestors().forEach((investor) => {
-            globalState.investors.set(investor.hash, investor)
-            addInvestor(investor.hash)
-        })
-        genManager.getQuests().forEach((quest) => {
-            globalState.quests.set(quest.name, quest)
-            addQuest(quest.name)
-        })
-        genManager.getPools().forEach((pool) => {
-            globalState.pools.set(pool.name, pool)
-            addPool(pool.name)
-        })
-    }
+        // genManager.getInvestors().forEach((investor) => {
+        //     globalState.investors.set(investor.hash, investor)
+        //     addInvestor(investor.hash)
+        // })
+        // genManager.getQuests().forEach((quest) => {
+        //     globalState.quests.set(quest.name, quest)
+        //     addQuest(quest.name)
+        // })
+        // genManager.getPools().forEach((pool) => {
+        //     globalState.pools.set(pool.name, pool)
+        //     addPool(pool.name)
+        // })
 
-    const handleStop = () => {
         setGenActive(false)
-        setStopGen(true)
     }
 
     return (
         <div>
-            <Sidebar
-                visible={genActive}
-                onHide={handleStop}
-                closeOnEscape={false}
-                blockScroll={true}
-                dismissable={false}
-                fullScreen={true}
-                className="sized-fullscreen"
-            >
-                <h1>Simulation Dashboard</h1>
-                <ProgressBar
-                    value={(genOutput.day * (100 / genDays)).toFixed(1)}
-                    className="w-6 flex align-self-center"
-                />
-            </Sidebar>
+            <div id="simulation-progress" className="sim-sticky">
+                {genActive ? (
+                    <div className="sim-content">
+                        <ProgressBar
+                            value={(genOutput.day * (100 / genDays)).toFixed(1)}
+                            className="w-12 flex align-self-center"
+                        />
+                    </div>
+                ) : (
+                    ''
+                )}
+            </div>
             <div className="grid">
                 <div className="col-12">
                     <Card className="h-full">
@@ -177,6 +195,10 @@ export const InvestorRandomGenerator = () => {
     const chance = Chance()
 
     const handleNewInvestorGen = () => {
+        if (invConfigs.length >= 4) {
+            return
+        }
+
         const newInvGen = Object.assign(invGen, {
             invGenAlias: chance.syllable() + chance.integer({ min: 1, max: 10 })
         })
@@ -218,22 +240,33 @@ export const GenCardInvestor = (props) => {
     )
     const updateInvConfig = useGeneratorStore(updateInvSelector)
     const deleteInvConfig = useGeneratorStore(deleteInvSelector)
+    const quests = useQuestStore((state) => state.quests)
 
     const defaultOptions = [
         {
             label: 'Select Template',
             value: ''
-        },
-        {
+        }
+        /*{
             label: 'Random Template',
             value: 'random'
-        }
+        }*/
     ]
     const questOptions = questConfigs.map((gen) => ({
         label: `#${gen.questGenAlias}`,
         value: gen.questGenAlias
     }))
     const dropdownOptions = Array.prototype.concat(defaultOptions, questOptions)
+
+    const defaultOption = [{ label: 'Select Quest', value: '' }]
+    const dropdownQuests = quests.map((quest) => ({
+        label: quest,
+        value: quest
+    }))
+    const dropdownQuestsOptions = Array.prototype.concat(
+        defaultOption,
+        dropdownQuests
+    )
 
     const handleChange = (evt) => {
         setState({
@@ -342,6 +375,25 @@ export const GenCardInvestor = (props) => {
                     blocked={state.buySellPeriodDays <= 0}
                     className="flex w-full"
                 >
+                    <span className="inplace-static-text">
+                        Exclude quest from direct investment:
+                    </span>
+                    <InPlaceElement
+                        id="excludeSingleName"
+                        active={true}
+                        display={state.excludeSingleName}
+                        component="dropdown"
+                        options={dropdownQuestsOptions}
+                        handleChange={handleChange}
+                        state={state}
+                    />
+                </BlockUI>
+            </div>
+            <div className="column flex">
+                <BlockUI
+                    blocked={state.buySellPeriodDays <= 0}
+                    className="flex w-full"
+                >
                     <span className="inplace-static-text">Buys using</span>
                     <InPlaceElement
                         id="buySumPerc"
@@ -378,7 +430,9 @@ export const GenCardInvestor = (props) => {
                         handleChange={handleChange}
                         state={state}
                     />
-                    <span className="inplace-static-text">gainers</span>
+                    <span className="inplace-static-text">
+                        gainers (up to 30 days)
+                    </span>
                 </BlockUI>
             </div>
             <div className="column flex">
@@ -397,14 +451,24 @@ export const GenCardInvestor = (props) => {
                         state={state}
                     />
                     <span className="inplace-static-text">
-                        of owned tokens that decreased in price
+                        of owned tokens that decreased in price by
                     </span>
+                    <InPlaceElement
+                        id="sellIncByPerc"
+                        active={false}
+                        display={`${state.sellIncByPerc}%`}
+                        type="number"
+                        component="input"
+                        handleChange={handleChange}
+                        state={state}
+                    />
+                    <span className="inplace-static-text">(up to 7 days)</span>
                 </BlockUI>
             </div>
             <div className="column flex">
                 <BlockUI
                     blocked={state.buySellPeriodDays <= 0}
-                    className="flex w-full pi pi-lock"
+                    className="flex w-full"
                 >
                     <span className="inplace-static-text">Sell</span>
                     <InPlaceElement
@@ -417,8 +481,18 @@ export const GenCardInvestor = (props) => {
                         state={state}
                     />
                     <span className="inplace-static-text">
-                        of owned tokens that increased in price
+                        of owned tokens that increased in price by
                     </span>
+                    <InPlaceElement
+                        id="sellDecByPerc"
+                        active={false}
+                        display={`${state.sellDecByPerc}%`}
+                        type="number"
+                        component="input"
+                        handleChange={handleChange}
+                        state={state}
+                    />
+                    <span className="inplace-static-text">(up to 7 days)</span>
                 </BlockUI>
             </div>
             <hr className="dashed-divider" />
@@ -472,6 +546,10 @@ export const QuestRandomGenerator = () => {
     const chance = Chance()
 
     const handleNewQuestGen = () => {
+        if (questConfigs.length >= 4) {
+            return
+        }
+
         const newQuestGen = Object.assign(questGen, {
             questGenAlias:
                 chance.syllable() + chance.integer({ min: 1, max: 10 })
@@ -512,6 +590,17 @@ export const GenCardQuest = (props) => {
     )
     const updateQuestConfig = useGeneratorStore(updateQuestSelector)
     const deleteQuestConfig = useGeneratorStore(deleteQuestSelector)
+    const quests = useQuestStore((state) => state.quests)
+
+    const defaultOption = [{ label: 'Select Quest', value: '' }]
+    const dropdownQuests = quests.map((quest) => ({
+        label: quest,
+        value: quest
+    }))
+    const dropdownQuestsOptions = Array.prototype.concat(
+        defaultOption,
+        dropdownQuests
+    )
 
     const handleChange = (evt) => {
         setState({
@@ -610,33 +699,44 @@ export const GenCardQuest = (props) => {
                 </span>
             </div>
             <div className="column flex">
-                <span className="inplace-static-text">
-                    Probability to cite Agora
-                </span>
+                <span className="inplace-static-text">Probability to cite</span>
                 <InPlaceElement
-                    id="probCiteAgora"
+                    id="citeSingleName"
+                    active={true}
+                    display={state.citeSingleName}
+                    component="dropdown"
+                    options={dropdownQuestsOptions}
+                    handleChange={handleChange}
+                    state={state}
+                />
+                <InPlaceElement
+                    id="probCiteSingle"
                     active={false}
-                    display={`${state.probCiteAgora}%`}
+                    display={`${state.probCiteSingle}%`}
                     type="number"
                     component="input"
                     handleChange={handleChange}
                     state={state}
                 />
             </div>
-            <div className="column flex">
-                <span className="inplace-static-text">
-                    Portion of tokens used for citing Agora
-                </span>
-                <InPlaceElement
-                    id="agoraCitePerc"
-                    active={false}
-                    display={`${state.agoraCitePerc}%`}
-                    type="number"
-                    component="input"
-                    handleChange={handleChange}
-                    state={state}
-                />
-            </div>
+            {state.citeSingleName ? (
+                <div className="column flex">
+                    <span className="inplace-static-text">
+                        Portion of tokens used for citing {state.citeSingleName}
+                    </span>
+                    <InPlaceElement
+                        id="singleCitePerc"
+                        active={false}
+                        display={`${state.singleCitePerc}%`}
+                        type="number"
+                        component="input"
+                        handleChange={handleChange}
+                        state={state}
+                    />
+                </div>
+            ) : (
+                ''
+            )}
             <div className="column flex">
                 <span className="inplace-static-text">
                     Probability to cite other papers

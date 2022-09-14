@@ -11,7 +11,7 @@ import useLogsStore from '../Logs/logs.store'
 import { QuestSelector } from '../Quest/Quest.components'
 import useQuestStore from '../Quest/quest.store'
 import Router from '../Router/Router.class'
-import { formSwapData } from '../Utils/logicUtils'
+import { formSwapData, getCombinedSwaps } from '../Utils/logicUtils'
 import { swapLog } from '../Utils/uiUtils'
 import globalConfig from '../config.global.json'
 import usePoolStore from './pool.store'
@@ -45,18 +45,14 @@ export const PoolChartStats = () => {
     const activePool = usePoolStore((state) => state.active)
     const swaps = usePoolStore((state) => state.swaps)
     const nf = new Intl.NumberFormat('en-US')
-    const tempTotalInPool = globalConfig.TOTAL_RESERVES_DEFAULT
     const pool = activePool && globalState.pools.get(activePool)
     let reserves
 
     const currentPrice = pool && pool.currentPrice
 
-    const totalValueLocked =
-        activePool && Number((pool.totalSold * currentPrice).toFixed(0))
+    const totalValueLocked = activePool && pool.getTVL()
 
-    const marketCap =
-        activePool &&
-        nf.format(Math.abs(parseInt(tempTotalInPool * currentPrice)))
+    const marketCap = activePool && nf.format(pool.getMarketCap())
 
     if (pool) {
         reserves = pool.getSwapInfo()
@@ -116,7 +112,6 @@ export const KnowledgeGraphStats = () => {
     const pools = usePoolStore((state) => state.pools)
     const swaps = usePoolStore((state) => state.swaps)
     const nf = new Intl.NumberFormat('en-US')
-    const tempTotalInPool = globalConfig.TOTAL_RESERVES_DEFAULT
 
     let marketCap = 0
     let totalValueLocked = 0
@@ -125,8 +120,8 @@ export const KnowledgeGraphStats = () => {
         const pool = globalState.pools.get(poolName)
 
         if (pool.getType() === 'QUEST') {
-            marketCap += pool.currentPrice * tempTotalInPool
-            totalValueLocked += pool.currentPrice * pool.totalSold
+            marketCap += pool.getMarketCap()
+            totalValueLocked += pool.getTVL()
         }
     })
 
@@ -221,28 +216,10 @@ export const SwapModule = () => {
             addLog(`[HUMAN] ${log}`)
         } else {
             const smSwaps = router.getSwaps()
-            let combSwaps = {}
-            smSwaps.forEach((smSwap) => {
-                if (!combSwaps) {
-                    combSwaps = {}
-                }
-                if (!combSwaps[smSwap.pool]) {
-                    combSwaps[smSwap.pool] = {}
-                }
-                if (!combSwaps[smSwap.pool][smSwap.op]) {
-                    const pool = globalState.pools.get(smSwap.pool)
-                    combSwaps[smSwap.pool][smSwap.op] = {
-                        pool,
-                        totalAmountIn: 0,
-                        totalAmountOut: 0,
-                        action: smSwap.op,
-                        path: smSwap.path
-                    }
-                }
-
-                combSwaps[smSwap.pool][smSwap.op].totalAmountIn -= smSwap.in
-                combSwaps[smSwap.pool][smSwap.op].totalAmountOut += smSwap.out
-            })
+            const combSwaps = getCombinedSwaps(
+                smSwaps,
+                globalState.pools.values()
+            )
 
             Object.entries(combSwaps).forEach((ops) => {
                 Object.entries(ops[1]).forEach((op) => {
@@ -323,28 +300,10 @@ export const SwapModule = () => {
             addLog(`[HUMAN] ${log}`)
         } else {
             const smSwaps = router.getSwaps()
-            let combSwaps = {}
-            smSwaps.forEach((smSwap) => {
-                if (!combSwaps) {
-                    combSwaps = {}
-                }
-                if (!combSwaps[smSwap.pool]) {
-                    combSwaps[smSwap.pool] = {}
-                }
-                if (!combSwaps[smSwap.pool][smSwap.op]) {
-                    const pool = globalState.pools.get(smSwap.pool)
-                    combSwaps[smSwap.pool][smSwap.op] = {
-                        pool,
-                        totalAmountIn: 0,
-                        totalAmountOut: 0,
-                        action: smSwap.op,
-                        path: smSwap.path
-                    }
-                }
-
-                combSwaps[smSwap.pool][smSwap.op].totalAmountIn -= smSwap.in
-                combSwaps[smSwap.pool][smSwap.op].totalAmountOut += smSwap.out
-            })
+            const combSwaps = getCombinedSwaps(
+                smSwaps,
+                globalState.pools.values()
+            )
 
             Object.entries(combSwaps).forEach((ops) => {
                 Object.entries(ops[1]).forEach((op) => {

@@ -1,5 +1,6 @@
 export class Graph {
     constructor() {
+        this.limitPathSize = 4
         this.vertices = 0
         this.adjList = new Map()
         this.paths = []
@@ -44,7 +45,10 @@ export class Graph {
         // Recur for all the vertices
         // adjacent to current vertex
         for (let i = 0; i < this.adjList.get(tokenA).length; i++) {
-            if (!isVisited[this.adjList.get(tokenA)[i]]) {
+            if (
+                !isVisited[this.adjList.get(tokenA)[i]] &&
+                localPathList.length < this.limitPathSize
+            ) {
                 // store current node
                 // in path[]
 

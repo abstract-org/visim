@@ -45,7 +45,7 @@ it('Tries to buy over limit', () => {
     expect(totalOut).toBe(0)
     expect(pool.currentLiquidity).toBe(0)
     expect(pool.totalSold).toBe(20000)
-    expect(pool.currentPrice).toBeCloseTo(999999.999)
+    expect(pool.currentPrice).toBeCloseTo(9999.999)
 })
 
 it('Does micro price sell properly within the same liquidity', () => {
@@ -228,7 +228,7 @@ it('Three investors one tick (buy during liquidity shift)', () => {
 it('Buy all the way to the right', () => {
     const { pool, investor, tokenLeft, tokenRight } = preparePool()
 
-    pool.buy(1000000000000000)
+    pool.buy(10000000000000000)
 
     expect(pool.currentPrice).toBeLessThanOrEqual(globalConfig.PRICE_MAX)
     expect(pool.totalSold).toBe(20000)
