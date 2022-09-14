@@ -1,4 +1,5 @@
 import HashMap from 'hashmap'
+
 // This is not a state, just an array of:
 // pools, tokens, investors
 // Storing those in a state management like Zustand
@@ -9,10 +10,7 @@ import HashMap from 'hashmap'
 const globalState = {
     pools: new HashMap(),
     quests: new HashMap(), // tokens
-    investors: new HashMap(),
-    investorGens: new HashMap(),
-    questGens: [],
-    logs: []
+    investors: new HashMap()
 }
 
 window.globalState = globalState

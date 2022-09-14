@@ -3,7 +3,8 @@ import {
     FullScreenControl,
     SearchControl,
     SigmaContainer,
-    ZoomControl
+    ZoomControl,
+    useRegisterEvents
 } from '@react-sigma/core'
 import '@react-sigma/core/lib/react-sigma.min.css'
 import { LayoutForceAtlas2Control } from '@react-sigma/layout-forceatlas2'
@@ -32,10 +33,13 @@ export const KnowledgeGraphV2 = (props) => {
     let nodes = []
     let producedEdges = []
 
-    quests.forEach((quest) => {
+    quests.forEach((quest, id) => {
+        const pool = globalState.pools
+            .values()
+            .find((p) => p.tokenRight.name === quest)
         if (!graph.hasNode(quest)) {
             graph.addNode(quest, {
-                size: 15,
+                size: Math.log(pool.getMarketCap()),
                 label: quest,
                 color: humanQuests.includes(quest) ? BLUE : RED,
                 x: Math.random(),
@@ -51,11 +55,11 @@ export const KnowledgeGraphV2 = (props) => {
     )
 
     if (citingPools.length > 0) {
-        citingPools.forEach((poolName) => {
+        citingPools.forEach((poolName, id) => {
             const [cited, citing] = poolName.split('-')
             if (!graph.hasNode(poolName)) {
                 graph.addNode(poolName, {
-                    size: 15,
+                    size: 6,
                     label: poolName,
                     color: GREEN,
                     x: Math.random(),

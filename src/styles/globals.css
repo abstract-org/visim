@@ -215,3 +215,18 @@ rect.fill-inactive {
 .sim-sticky + .sim-content {
     padding-top: 60px;
 }
+
+.cfilters .p-dropdown {
+    height: 1.5rem;
+}
+
+.cfilters .p-dropdown .p-dropdown-label {
+    padding: 0.65625rem 0.65625rem;
+    font-size: 0.875rem;
+    line-height: 0rem;
+}
+
+.cfilters .p-dropdown-panel .p-dropdown-items li.p-dropdown-item {
+    padding: 0 0.75rem;
+    font-size: 0.875rem;
+}

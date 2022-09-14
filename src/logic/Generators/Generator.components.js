@@ -9,22 +9,20 @@ import { InputNumber } from 'primereact/inputnumber'
 import { InputText } from 'primereact/inputtext'
 import { Message } from 'primereact/message'
 import { ProgressBar } from 'primereact/progressbar'
-import { Sidebar } from 'primereact/sidebar'
 import React, { useRef, useState } from 'react'
 
 import globalState from '../GlobalState'
 import useInvestorStore from '../Investor/investor.store'
+import useLogsStore from '../Logs/logs.store'
 import usePoolStore from '../Pool/pool.store'
 import useQuestStore from '../Quest/quest.store'
 import Generator from './Generator.class'
 import useGeneratorStore from './generator.store'
 import { dayData, invGen, questGen } from './initialState'
 
-const addInvSelector = (state) => state.addInvConfig
 const updateInvSelector = (state) => state.updateInvConfig
 const deleteInvSelector = (state) => state.deleteInvConfig
 
-const addQuestSelector = (state) => state.addQuestConfig
 const updateQuestSelector = (state) => state.updateQuestConfig
 const deleteQuestSelector = (state) => state.deleteQuestConfig
 
@@ -32,19 +30,18 @@ export const GeneratorRunner = () => {
     const invConfigs = useGeneratorStore((state) => state.invConfigs)
     const questConfigs = useGeneratorStore((state) => state.questConfigs)
     const [genDays, setGenDays] = useState(10)
+    const [passedDays, setPassedDays] = useState(0)
     const [genActive, setGenActive] = useState(false)
     const [genOutput, setGenOutput] = useState({
         day: 1,
         ...dayData
     })
 
-    const addPools = usePoolStore((state) => state.addMultiplePools)
-    const addInvestors = useInvestorStore((state) => state.addMultipleInvestors)
-    const addQuests = useQuestStore((state) => state.addMultipleQuests)
     const addPool = usePoolStore((state) => state.addPool)
     const addInvestor = useInvestorStore((state) => state.addInvestor)
     const addQuest = useQuestStore((state) => state.addQuest)
-    const setActivePool = usePoolStore((state) => state.setActive)
+    const swap = usePoolStore((state) => state.swap)
+    const addLogObj = useLogsStore((state) => state.addLogObj)
 
     const handleGenerate = async () => {
         if (genDays <= 0) {
@@ -69,7 +66,7 @@ export const GeneratorRunner = () => {
         )
 
         // Every day
-        for (let day = 1; day <= genDays; day++) {
+        for (let day = passedDays + 1; day <= genDays + passedDays; day++) {
             console.log(`Simulating day ${day}`)
             const stepData = await genManager.step(day)
 
@@ -78,8 +75,6 @@ export const GeneratorRunner = () => {
                 ...stepData,
                 day
             })
-
-            console.log(stepData)
 
             stepData.investors.forEach((investor) => {
                 if (!globalState.investors.has(investor.hash)) {
@@ -99,23 +94,17 @@ export const GeneratorRunner = () => {
                     addPool(pool.name)
                 }
             })
+            stepData.actions.forEach((action) => {
+                if (['BOUGH', 'SOLD'].includes(action.action)) {
+                    swap(action)
+                }
+                addLogObj(action)
+            })
 
             await genManager.sleep(1000)
         }
 
-        // genManager.getInvestors().forEach((investor) => {
-        //     globalState.investors.set(investor.hash, investor)
-        //     addInvestor(investor.hash)
-        // })
-        // genManager.getQuests().forEach((quest) => {
-        //     globalState.quests.set(quest.name, quest)
-        //     addQuest(quest.name)
-        // })
-        // genManager.getPools().forEach((pool) => {
-        //     globalState.pools.set(pool.name, pool)
-        //     addPool(pool.name)
-        // })
-
+        setPassedDays(passedDays + genDays)
         setGenActive(false)
     }
 
@@ -125,7 +114,10 @@ export const GeneratorRunner = () => {
                 {genActive ? (
                     <div className="sim-content">
                         <ProgressBar
-                            value={(genOutput.day * (100 / genDays)).toFixed(1)}
+                            value={(
+                                (genOutput.day - passedDays) *
+                                (100 / genDays)
+                            ).toFixed(1)}
                             className="w-12 flex align-self-center"
                         />
                     </div>
@@ -295,8 +287,10 @@ export const GenCardInvestor = (props) => {
         <div className="flex flex-column gen-card">
             <div className="header flex">
                 <div className="flex flex-grow-1">
-                    <span className="inplace-static-text">Investor -</span>
-                    <InPlaceElement
+                    <span className="inplace-static-text">
+                        Investor - {state.invGenAlias}
+                    </span>
+                    {/*<InPlaceElement
                         id="invGenAlias"
                         active={true}
                         display={state.invGenAlias}
@@ -304,7 +298,7 @@ export const GenCardInvestor = (props) => {
                         component="input"
                         handleChange={handleChange}
                         state={state}
-                    />
+                    />*/}
 
                     <div className="flex flex-grow-1 justify-content-end">
                         <Message
@@ -627,8 +621,10 @@ export const GenCardQuest = (props) => {
     return (
         <div className="flex flex-column gen-card">
             <div className="header flex">
-                <span className="inplace-static-text">Quest -</span>
-                <InPlaceElement
+                <span className="inplace-static-text">
+                    Quest - {state.questGenAlias}
+                </span>
+                {/*<InPlaceElement
                     id="questGenAlias"
                     active={true}
                     display={state.questGenAlias}
@@ -636,7 +632,7 @@ export const GenCardQuest = (props) => {
                     component="input"
                     handleChange={handleChange}
                     state={state}
-                />
+    />*/}
 
                 <div className="flex flex-grow-1 justify-content-end">
                     <Message

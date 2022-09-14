@@ -21,7 +21,7 @@ afterEach(() => {
 })
 
 it('Generates investors', async () => {
-    const genDays = 10
+    const genDays = 15
     const invAuthor = {
         ...invGen,
         invGenAlias: 'AUTHOR',
@@ -90,9 +90,7 @@ it('Generates investors', async () => {
         'invs:',
         globalState.investors.length,
         'quests:',
-        globalState.quests.length,
-        'swaps:',
-        genManager.getSmartSwaps().length
+        globalState.quests.length
     )
 
     const poolPrices = []

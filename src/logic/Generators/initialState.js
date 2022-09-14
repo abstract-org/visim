@@ -32,7 +32,7 @@ export const dayData = {
     investors: [],
     quests: [],
     pools: [],
-    swaps: [],
+    actions: [],
     questProbs: {
         citeSingle: false,
         citeOther: false,

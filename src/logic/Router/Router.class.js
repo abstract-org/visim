@@ -9,6 +9,8 @@ export default class Router {
     #_VISITED_PATHS = []
     #_SWAPS = []
     #_DEFAULT_SWAP_SUM = 10
+    #_SWAP_SUM_MAX_CHUNKS = 100
+    #_SWAP_SUM_STEPPER = 10000
 
     /* eslint-disable no-loop-func */
     #DEBUG = false
@@ -47,6 +49,12 @@ export default class Router {
         this.#FOUND_PATHS = graph.buildPathways(token0, token1)
         if (this.#DEBUG) console.log(this.#FOUND_PATHS)
 
+        if (amountIn > this.#_SWAP_SUM_STEPPER) {
+            this.#_DEFAULT_SWAP_SUM = amountIn / this.#_SWAP_SUM_MAX_CHUNKS
+        } else {
+            this.#_DEFAULT_SWAP_SUM = this.#_SWAP_SUM_MAX_CHUNKS
+        }
+
         do {
             this.#_PRICED_PATHS = this.drySwapForPricedPaths(this.#FOUND_PATHS)
             if (this.#DEBUG) console.log(this.#_PRICED_PATHS, amountIn)
@@ -58,7 +66,6 @@ export default class Router {
             amountIn += sums[0]
             totalInOut[0] += sums[0]
             totalInOut[1] += sums[1]
-
             // console.log('visited_graph', this.#_visitedForGraph.length)
             // console.log('paths', this.#FOUND_PATHS.length)
             // console.log('priced_paths', this.#_PRICED_PATHS.length)
@@ -72,6 +79,7 @@ export default class Router {
         } while (
             !this.isZero(amountIn) &&
             amountIn > 0 &&
+            !this.#isNearZero(amountIn) &&
             this.#_PRICED_PATHS.length
         )
 
@@ -112,7 +120,7 @@ export default class Router {
                 this.#_SWAPS.push({
                     path: pricedPath.path,
                     pool: pool.name,
-                    op: zeroForOne ? 'buy' : 'sell',
+                    op: zeroForOne ? 'BOUGHT' : 'SOLD',
                     in: Math.abs(poolSum[0]),
                     out: Math.abs(poolSum[1])
                 })
@@ -473,5 +481,19 @@ export default class Router {
 
     isZero(amount) {
         return Math.abs(amount) < 1e-10
+    }
+
+    #isNearZero(amountIn) {
+        return (
+            0 ===
+            parseInt(
+                amountIn
+                    .toFixed(10)
+                    .replace(/\D/g, '')
+                    .split('')
+                    .slice(0, 8)
+                    .join('')
+            )
+        )
     }
 }
