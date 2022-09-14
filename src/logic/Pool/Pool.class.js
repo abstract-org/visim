@@ -703,4 +703,15 @@ export default class Pool {
 
         return amounts
     }
+
+    getTVL() {
+        return Math.round(this.totalSold * this.currentPrice)
+    }
+
+    getMarketCap() {
+        const swapInfo = this.getSwapInfo()
+        const totalTokens = Math.abs(swapInfo[0][1]) + Math.abs(swapInfo[1][0])
+
+        return Math.round(totalTokens * this.currentPrice)
+    }
 }

@@ -12,6 +12,12 @@ const useInvestorStore = create(
                     investors: [...state.investors, hash]
                 }))
             ),
+        addMultipleInvestors: (hashes) =>
+            set(
+                produce((state) => ({
+                    investors: [...state.investors, ...hashes]
+                }))
+            ),
         addInvestors: (investorsList) =>
             set(
                 produce((state) => {

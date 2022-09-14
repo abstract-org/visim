@@ -212,7 +212,7 @@ it('Swaps USDC for D through a long chain with enough token supply', () => {
     const res1 = router.smartSwap('USDC', 'AGORA_D', 25000)
 
     expect(res1[0]).toBeCloseTo(-25000)
-    expect(res1[1]).toBeCloseTo(3997.5699) // was: 3998.915
+    expect(res1[1]).toBeCloseTo(3998.915)
 })
 
 it('Swaps USDC for D through a long chain with different crosspool supplies', () => {

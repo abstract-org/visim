@@ -52,22 +52,28 @@ export default class Router {
             if (this.#DEBUG) console.log(this.#_PRICED_PATHS, amountIn)
             if (!this.#_PRICED_PATHS.length) return []
 
+            //const sums = [amountIn < 10 ? -amountIn : -10, 10]
             const sums = this.swapBestPath(amountIn, this.#_PRICED_PATHS[0])
+
             amountIn += sums[0]
             totalInOut[0] += sums[0]
             totalInOut[1] += sums[1]
-            // console.log(
-            //     amountIn,
-            //     sums,
-            //     this.#_PRICED_PATHS[0],
-            //     '---',
-            //     totalInOut
-            // )
+
+            // console.log('visited_graph', this.#_visitedForGraph.length)
+            // console.log('paths', this.#FOUND_PATHS.length)
+            // console.log('priced_paths', this.#_PRICED_PATHS.length)
+            // console.log('visited_swap', this.#_VISITED_PATHS.length)
+            // console.log('swaps', this.#_SWAPS.length)
+            // console.log('amountIn', amountIn)
 
             if (!this.#_VISITED_PATHS.includes(this.#_PRICED_PATHS[0])) {
                 this.#_VISITED_PATHS.push(this.#_PRICED_PATHS[0])
             }
-        } while (!this.isZero(amountIn) && this.#_PRICED_PATHS.length)
+        } while (
+            !this.isZero(amountIn) &&
+            amountIn > 0 &&
+            this.#_PRICED_PATHS.length
+        )
 
         return totalInOut
     }
@@ -131,16 +137,26 @@ export default class Router {
 
     drySwapForPricedPaths(paths) {
         let pathPrices = []
+        let existingPrices = []
         for (const path of paths) {
             const { sums } = this.swapInPath(path, 1, true)
             if (sums[1] === 0) {
                 continue
             }
 
+            const outPrice = this.#getOutInPrice(sums[0], sums[1])
+
+            // @TODO: Is it good removing paths with identical prices?
+            // if (existingPrices.indexOf(outPrice) !== -1) {
+            //     continue
+            // }
+
             pathPrices.push({
                 path,
-                price: this.#getOutInPrice(sums[0], sums[1])
+                price: outPrice
             })
+
+            existingPrices.push(outPrice)
         }
 
         pathPrices.sort((a, b) => b.price - a.price)
