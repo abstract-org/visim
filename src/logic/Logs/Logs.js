@@ -8,7 +8,6 @@ import globalState from '../GlobalState'
 import useLogsStore from './logs.store'
 
 export const LogsModule = () => {
-    const logs = useLogsStore((state) => state.logs)
     const logObjs = useLogsStore((state) => state.logObjs)
     const [filters, setFilters] = useState({
         investor: { value: null, matchMode: FilterMatchMode.EQUALS },

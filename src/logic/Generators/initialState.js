@@ -12,8 +12,8 @@ export const invGen = {
     sellIncByPerc: 10,
     sellDecSumPerc: 5,
     sellDecByPerc: 10,
-    valueSellEveryDays: 30,
-    valueSellAmount: 5000
+    valueSellEveryDays: 0,
+    valueSellAmount: 0
 }
 
 export const questGen = {

@@ -9,8 +9,11 @@ export const numericValue = (value) => {
 }
 
 export const swapLog = (swapData) => {
+    if (!swapData) return
+
     const investor = globalState.investors.get(swapData.investorHash)
     const pool = globalState.pools.get(swapData.pool)
+    const poolFlip = pool.name.split('-').reduce((p, c) => `${c}-${p}`)
 
     const amounts =
         swapData.action === 'BOUGHT'

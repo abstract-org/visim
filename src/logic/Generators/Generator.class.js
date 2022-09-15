@@ -757,8 +757,6 @@ class Generator {
 
     #processSwapData(investor, swaps, day) {
         const combSwaps = getCombinedSwaps(swaps, this.#cachedPools)
-
-        console.log(investor, swaps, day, combSwaps)
         Object.entries(combSwaps).forEach((ops) => {
             Object.entries(ops[1]).forEach((op) => {
                 const pool = this.#cachedPools.find(

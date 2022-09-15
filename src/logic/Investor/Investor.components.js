@@ -55,7 +55,6 @@ export function InvestorPoolBalance() {
     const activeQuest = useQuestStore((state) => state.active)
     const activeInvestor = useInvestorStore((state) => state.active)
     const swaps = usePoolStore((state) => state.swaps)
-    const valueLinks = usePoolStore((state) => state.valueLinks)
 
     if (activeInvestor) {
         const investor = globalState.investors.get(activeInvestor)
