@@ -183,6 +183,8 @@ export const GeneratorRunner = () => {
 export const InvestorRandomGenerator = () => {
     const invConfigs = useGeneratorStore((state) => state.invConfigs)
     const addInvConfig = useGeneratorStore((state) => state.addInvConfig)
+    const updateInvConfig = useGeneratorStore(updateInvSelector)
+    const deleteInvConfig = useGeneratorStore(deleteInvSelector)
 
     const chance = Chance()
 
@@ -199,7 +201,7 @@ export const InvestorRandomGenerator = () => {
     }
 
     return (
-        <div>
+        <React.Fragment>
             <Button
                 label="Create Investor Template"
                 icon="pi pi-plus"
@@ -207,31 +209,25 @@ export const InvestorRandomGenerator = () => {
                 onClick={handleNewInvestorGen}
             ></Button>
             <div className="gen-wrapper flex flex-row flex-nowrap justify-content-start">
-                {invConfigs.map((gen, key) => {
+                {invConfigs.map((gen) => {
                     return (
-                        <div
-                            key={key}
-                            header={key}
-                            className={`flex-order-${gen.invGenAlias} flex flex-grow-0`}
-                        >
-                            <GenCardInvestor invGenAlias={gen.invGenAlias} />
-                        </div>
+                        <GenCardInvestor
+                            updateInvConfig={updateInvConfig}
+                            deleteInvConfig={deleteInvConfig}
+                            state={gen}
+                            key={gen.invGenAlias}
+                        />
                     )
                 })}
             </div>
-        </div>
+        </React.Fragment>
     )
 }
 
 export const GenCardInvestor = (props) => {
     const aliasAlert = useRef(null)
-    const invConfigs = useGeneratorStore((state) => state.invConfigs)
     const questConfigs = useGeneratorStore((state) => state.questConfigs)
-    const [state, setState] = useState(
-        invConfigs.find((gen) => gen.invGenAlias === props.invGenAlias)
-    )
-    const updateInvConfig = useGeneratorStore(updateInvSelector)
-    const deleteInvConfig = useGeneratorStore(deleteInvSelector)
+    const [state, setState] = useState(props.state)
     const quests = useQuestStore((state) => state.quests)
 
     const defaultOptions = [
@@ -271,7 +267,7 @@ export const GenCardInvestor = (props) => {
         const alertRef = aliasAlert.current.getElement()
 
         if (state.invGenAlias.length > 0) {
-            updateInvConfig(state)
+            props.updateInvConfig(state)
             alertRef.style.display = 'none'
         } else {
             alertRef.style.display = 'block'
@@ -279,8 +275,7 @@ export const GenCardInvestor = (props) => {
     }
 
     const handleDelete = (invGenAlias) => {
-        console.log(invGenAlias)
-        deleteInvConfig(invGenAlias)
+        props.deleteInvConfig(invGenAlias)
     }
 
     return (
@@ -317,7 +312,9 @@ export const GenCardInvestor = (props) => {
                         <Button
                             icon="pi pi-trash"
                             className="w-2rem h-2rem p-button-danger"
-                            onClick={() => handleDelete(props.invGenAlias)}
+                            onClick={() =>
+                                handleDelete(props.state.invGenAlias)
+                            }
                         />
                     </div>
                 </div>
@@ -536,6 +533,8 @@ export const GenCardInvestor = (props) => {
 export const QuestRandomGenerator = () => {
     const questConfigs = useGeneratorStore((state) => state.questConfigs)
     const addQuestConfig = useGeneratorStore((state) => state.addQuestConfig)
+    const updateQuestConfig = useGeneratorStore(updateQuestSelector)
+    const deleteQuestConfig = useGeneratorStore(deleteQuestSelector)
 
     const chance = Chance()
 
@@ -552,7 +551,7 @@ export const QuestRandomGenerator = () => {
     }
 
     return (
-        <div>
+        <React.Fragment>
             <Button
                 label="Create Quest"
                 icon="pi pi-plus"
@@ -560,30 +559,24 @@ export const QuestRandomGenerator = () => {
                 onClick={handleNewQuestGen}
             ></Button>
             <div className="gen-wrapper flex flex-row flex-nowrap justify-content-start">
-                {questConfigs.map((gen, key) => {
+                {questConfigs.map((gen) => {
                     return (
-                        <div
-                            key={key}
-                            header={key}
-                            className={`flex-order-${gen.questGenAlias} flex flex-grow-0`}
-                        >
-                            <GenCardQuest questGenAlias={gen.questGenAlias} />
-                        </div>
+                        <GenCardQuest
+                            updateQuestConfig={updateQuestConfig}
+                            deleteQuestConfig={deleteQuestConfig}
+                            state={gen}
+                            key={gen.questGenAlias}
+                        />
                     )
                 })}
             </div>
-        </div>
+        </React.Fragment>
     )
 }
 
 export const GenCardQuest = (props) => {
     const aliasAlert = useRef(null)
-    const questConfigs = useGeneratorStore((state) => state.questConfigs)
-    const [state, setState] = useState(
-        questConfigs.find((gen) => gen.questGenAlias === props.questGenAlias)
-    )
-    const updateQuestConfig = useGeneratorStore(updateQuestSelector)
-    const deleteQuestConfig = useGeneratorStore(deleteQuestSelector)
+    const [state, setState] = useState(props.state)
     const quests = useQuestStore((state) => state.quests)
 
     const defaultOption = [{ label: 'Select Quest', value: '' }]
@@ -607,7 +600,7 @@ export const GenCardQuest = (props) => {
         const alertRef = aliasAlert.current.getElement()
 
         if (state.questGenAlias.length > 0) {
-            updateQuestConfig(state)
+            props.updateQuestConfig(state)
             alertRef.style.display = 'none'
         } else {
             alertRef.style.display = 'block'
@@ -615,7 +608,7 @@ export const GenCardQuest = (props) => {
     }
 
     const handleDelete = (id) => {
-        deleteQuestConfig(id)
+        props.deleteQuestConfig(id)
     }
 
     return (
@@ -651,7 +644,7 @@ export const GenCardQuest = (props) => {
                     <Button
                         icon="pi pi-trash"
                         className="w-2rem h-2rem p-button-danger"
-                        onClick={() => handleDelete(props.questGenAlias)}
+                        onClick={() => handleDelete(props.state.questGenAlias)}
                     />
                 </div>
             </div>
