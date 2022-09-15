@@ -12,7 +12,8 @@ export const formSwapData = (
     action,
     totalAmountIn,
     totalAmountOut,
-    paths
+    paths,
+    day
 ) => {
     return {
         pool: pool && pool.name,
@@ -23,7 +24,8 @@ export const formSwapData = (
         tvl: pool.getType() === 'QUEST' ? pool.getTVL() : '',
         totalAmountIn: totalAmountIn ? totalAmountIn.toFixed(2) : '',
         totalAmountOut: totalAmountOut ? totalAmountOut.toFixed(2) : '',
-        paths: paths ? paths.join('-') : ''
+        paths: paths ? paths.join('-') : '',
+        day: day || ''
     }
 }
 

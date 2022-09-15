@@ -95,7 +95,7 @@ export const GeneratorRunner = () => {
                 }
             })
             stepData.actions.forEach((action) => {
-                if (['BOUGH', 'SOLD'].includes(action.action)) {
+                if (['BOUGHT', 'SOLD'].includes(action.action)) {
                     swap(action)
                 }
                 addLogObj(action)
@@ -671,9 +671,10 @@ export const GenCardQuest = (props) => {
             </div>
             <div className="column flex">
                 <span className="inplace-static-text">
-                    Initial numbers of tokens in USDC pool
+                    Initial numbers of tokens in USDC pool{' '}
+                    {state.poolSizeTokens}
                 </span>
-                <InPlaceElement
+                {/*<InPlaceElement
                     id="poolSizeTokens"
                     active={false}
                     display={state.poolSizeTokens}
@@ -681,7 +682,7 @@ export const GenCardQuest = (props) => {
                     component="input"
                     handleChange={handleChange}
                     state={state}
-                />
+                />*/}
             </div>
             <div className="column flex">
                 <span className="inplace-static-text">

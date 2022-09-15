@@ -10,7 +10,11 @@ const alternatePointRotation = (ctx) => {
 }
 
 const alternateBgColor = (ctx) => {
-    return ctx.raw && ctx.raw.action === 'BOUGHT' ? 'green' : 'red'
+    if (!ctx.raw) return
+
+    const poolFlip = ctx.raw.pool.split('-').reduce((p, c) => `${c}-${p}`)
+
+    return ctx.raw.action === 'BOUGHT' ? 'green' : 'red'
 }
 
 export const options = {
@@ -81,7 +85,6 @@ export const options = {
 
 export function PoolChart() {
     const swaps = usePoolStore((state) => state.swaps)
-    const logs = useLogsStore((state) => state.logs)
     const activePool = usePoolStore((state) => state.active)
 
     const data = {
@@ -98,16 +101,13 @@ export function PoolChart() {
     }
 
     const localSwaps = JSON.parse(JSON.stringify(swaps))
+
     const poolSwaps = localSwaps
         .map((swap) => (swap.pool === activePool ? swap : null))
         .filter((x) => x)
-    const filler = logs.length - swaps.length
     const slicedSwaps =
         poolSwaps.length <= 15 ? poolSwaps : poolSwaps.slice(-15)
-    const resSwaps = Array.from({ length: filler })
-        .fill(null)
-        .concat(slicedSwaps)
-    resSwaps.forEach((swap, idx) => {
+    slicedSwaps.forEach((swap, idx) => {
         if (swap && activePool === swap.pool) {
             swap['idx'] = idx
             data.datasets[0].data.push(swap)
