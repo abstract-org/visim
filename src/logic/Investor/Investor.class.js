@@ -140,17 +140,9 @@ export default class Investor {
         const citingPrice = citingQuestPool.currentPrice
         const citedPrice = citedQuestPool.currentPrice
 
-        const usdcPriceCiting = 1 / citingPrice
-        const usdcPriceCited = 1 / citedPrice
-
-        // Depositing cheap
-        if (usdcPriceCiting > usdcPriceCited) {
-            const AforB = usdcPriceCiting / usdcPriceCited
-            return { min: AforB, max: AforB * multiplier }
-        } else {
-            // Depositing luxury
-            const BforA = usdcPriceCiting / usdcPriceCited
-            return { min: BforA, max: BforA * multiplier }
-        }
+        let AforB = citingPrice / citedPrice
+        let min = AforB < citingPrice ? AforB / multiplier : AforB
+        let max = AforB >= citedPrice ? AforB * multiplier : AforB
+        return { min: min, max: max }
     }
 }

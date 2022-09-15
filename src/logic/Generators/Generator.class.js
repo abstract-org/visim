@@ -64,6 +64,10 @@ class Generator {
                         )
 
                         // Calculate probabilities
+                        if (!questConfig) {
+                            continue
+                        }
+
                         const questProbs =
                             this.calculateQuestProbabilities(questConfig)
                         this.#dayData[day]['questProbs'] = questProbs

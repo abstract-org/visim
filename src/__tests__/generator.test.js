@@ -21,17 +21,17 @@ afterEach(() => {
 })
 
 it('Generates investors', async () => {
-    const genDays = 15
+    const genDays = 30
     const invAuthor = {
         ...invGen,
         invGenAlias: 'AUTHOR',
-        createQuest: 'QTEST',
+        createQuest: 'AGRA',
         valueSellEveryDays: 7
     }
     const inv2Author = {
         ...invGen,
         invGenAlias: 'RESEARCHER',
-        createQuest: 'ARGL',
+        createQuest: 'QTEST',
         valueSellEveryDays: 10,
         excludeSingleName: 'AGORA'
     }
@@ -54,10 +54,11 @@ it('Generates investors', async () => {
         invGenAlias: 'WEEKLY',
         initialBalance: 50000,
         sellIncSumPerc: 5,
-        sellDecSumPerc: 30
+        sellDecSumPerc: 30,
+        excludeSingleName: 'AGORA'
     }
     const queAuthor = { ...questGen, questGenAlias: 'QTEST' }
-    const que2Author = { ...questGen, questGenAlias: 'ARGL' }
+    const que2Author = { ...questGen, questGenAlias: 'AGRA' }
     const daysData = []
 
     const creator = new Investor(1, 10000, 'creator')
