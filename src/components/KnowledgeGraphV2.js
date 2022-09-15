@@ -10,6 +10,7 @@ import {
 import '@react-sigma/core/lib/react-sigma.min.css'
 import { LayoutForceAtlas2Control } from '@react-sigma/layout-forceatlas2'
 import { MultiDirectedGraph } from 'graphology'
+import * as hilbertCurve from 'hilbert-curve'
 import { useEffect, useState } from 'react'
 
 import globalState from '../logic/GlobalState'
@@ -40,7 +41,13 @@ const Graph = (props) => {
             multi: true
         })
 
-        console.log(clickedNode)
+        // console.log(clickedNode)
+
+        // const data = []
+        // quests.forEach((quest, id) => {
+        //     data.push(id)
+        // })
+        // hilbertCurve.construct(data, 2)
 
         quests.forEach((quest, id) => {
             const pool = globalState.pools
@@ -66,18 +73,7 @@ const Graph = (props) => {
         if (citingPools.length > 0) {
             citingPools.forEach((poolName, id) => {
                 const [cited, citing] = poolName.split('-')
-                if (!graph.hasNode(poolName)) {
-                    graph.addNode(poolName, {
-                        size: 6,
-                        label: poolName,
-                        color: GREEN,
-                        x: Math.random(),
-                        y: Math.random()
-                    })
-                }
-
-                graph.addEdge(citing, poolName, { label: poolName, size: 5 })
-                graph.addEdge(poolName, cited, { label: poolName, size: 5 })
+                graph.addEdge(citing, cited, { label: poolName, size: 5 })
             })
         }
 

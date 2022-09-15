@@ -51,97 +51,59 @@ export function InvestorSelector() {
 }
 
 export function InvestorPoolBalance() {
-    const activePool = usePoolStore((state) => state.active)
-    const activeQuest = useQuestStore((state) => state.active)
     const activeInvestor = useInvestorStore((state) => state.active)
     const swaps = usePoolStore((state) => state.swaps)
 
     if (activeInvestor) {
         const investor = globalState.investors.get(activeInvestor)
 
-        const pool = {}
-
         return (
-            <div className="grid">
-                <div className="col-12">
-                    <div className="flex flex-wrap align-content-between justify-content-start">
-                        {Object.entries(investor.balances).map(
-                            (balance, key) => {
-                                return (
-                                    <BalanceBar
-                                        key={balance[0]}
-                                        token={balance[0]}
-                                        value={balance[1]}
-                                    />
-                                )
-                            }
-                        )}
-                    </div>
-                </div>
-            </div>
-        )
-
-        return (
-            <div>
+            <React.Fragment>
+                <NavBalance investor={investor} />
                 <div className="grid">
-                    <div className="col-6">
-                        <p>
-                            <b>{investor && pool.tokenLeft.name}</b>
-                            &nbsp;Balance
-                        </p>
-                        <BalanceBar
-                            value={
-                                (investor &&
-                                    Math.floor(
-                                        investor.balances[pool.tokenLeft.name]
-                                    )) ||
-                                0
-                            }
-                        />
-                    </div>
-                    <div className="col-6">
-                        <p>
-                            <b>{pool && pool.tokenRight.name}</b>&nbsp;Balance
-                        </p>
-                        <BalanceBar
-                            value={
-                                (investor &&
-                                    Math.floor(
-                                        investor.balances[pool.tokenRight.name]
-                                    )) ||
-                                0
-                            }
-                        />
-                    </div>
-                </div>
-                <div className="grid">
-                    <div className="col-12 h-full">
-                        <div>
+                    <div className="col-12">
+                        <div className="flex flex-wrap align-content-between justify-content-start">
                             {Object.entries(investor.balances).map(
-                                (balance, idx) => {
-                                    const floatClass =
-                                        idx % 2 === 0 ? 'right' : 'left'
-                                    if (
-                                        balance[0] !== pool.tokenLeft.name &&
-                                        balance[0] !== pool.tokenRight.name
-                                    ) {
-                                        return (
-                                            <InvestorSingleBalance
-                                                amount={balance[1]}
-                                                token={balance[0]}
-                                                key={idx}
-                                                floatClass={floatClass}
-                                            />
-                                        )
-                                    }
+                                (balance, key) => {
+                                    return (
+                                        <BalanceBar
+                                            key={balance[0]}
+                                            token={balance[0]}
+                                            value={balance[1]}
+                                        />
+                                    )
                                 }
                             )}
                         </div>
                     </div>
                 </div>
-            </div>
+            </React.Fragment>
         )
     }
+}
+
+export const NavBalance = (props) => {
+    const balances = props.investor.balances
+    const nav = globalState.pools.values().reduce((acc, pool) => {
+        acc = parseFloat(acc)
+        if (
+            pool.getType() === 'QUEST' &&
+            balances[pool.tokenRight.name] &&
+            pool.currentPrice > 0
+        ) {
+            return acc + pool.currentPrice * balances[pool.tokenRight.name]
+        }
+        return acc + 0
+    }, 0)
+    return (
+        <div className="grid">
+            <div className="col-12">
+                <div className="flex flex-wrap align-content-between justify-content-start">
+                    <BalanceBar value={nav} token="NAV USDC" />
+                </div>
+            </div>
+        </div>
+    )
 }
 
 export const InvestorSingleBalance = (props) => {

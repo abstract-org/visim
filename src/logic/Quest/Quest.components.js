@@ -110,6 +110,13 @@ export const QuestCitation = () => {
         }
 
         const citingQuest = globalState.quests.get(activeQuest)
+        const citingPool = globalState.pools
+            .values()
+            .find(
+                (pool) =>
+                    pool.tokenRight.name === citingQuest.name &&
+                    pool.getType() === 'QUEST'
+            )
 
         selectedQuests.forEach((questName) => {
             if (questName === activeQuest) {
@@ -131,11 +138,24 @@ export const QuestCitation = () => {
             }
 
             const citedQuest = globalState.quests.get(questName)
+            const citedPool = globalState.pools
+                .values()
+                .find(
+                    (pool) =>
+                        pool.tokenRight.name === citedQuest.name &&
+                        pool.getType() === 'QUEST'
+                )
             const crossPool = investor.createPool(citedQuest, citingQuest)
-            // @TODO: Change to calculated prices based on market price
-            const priceMin = 1
-            const priceMax = 10
-            investor.citeQuest(crossPool, priceMin, priceMax, calcAmountA)
+            const priceRange = investor.calculatePriceRange(
+                citingPool,
+                citedPool
+            )
+            investor.citeQuest(
+                crossPool,
+                priceRange.min,
+                priceRange.max,
+                calcAmountA
+            )
             investor.addBalance(citingQuest.name, -calcAmountA)
 
             globalState.pools.set(crossPool.name, crossPool)

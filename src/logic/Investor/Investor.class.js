@@ -123,6 +123,9 @@ export default class Investor {
             citingAmount,
             citedAmount
         )
+        console.log(
+            `Citing quest in ${crossPool.name} min/max: ${priceMin}/${priceMax}, in/out: ${totalIn}/${totalOut}`
+        )
         return [totalIn, totalOut]
     }
 

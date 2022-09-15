@@ -105,9 +105,8 @@ export function PoolChart() {
     const poolSwaps = localSwaps
         .map((swap) => (swap.pool === activePool ? swap : null))
         .filter((x) => x)
-    const slicedSwaps =
-        poolSwaps.length <= 15 ? poolSwaps : poolSwaps.slice(-15)
-    slicedSwaps.forEach((swap, idx) => {
+
+    poolSwaps.forEach((swap, idx) => {
         if (swap && activePool === swap.pool) {
             swap['idx'] = idx
             data.datasets[0].data.push(swap)

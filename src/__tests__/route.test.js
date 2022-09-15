@@ -196,7 +196,7 @@ it('Smart route with amount based on liquidity', () => {
     expect(results1[1]).toBeCloseTo(17160, 0)
 })
 
-it('Swaps USDC for D through a long chain with enough token supply', () => {
+fit('Swaps USDC for D through a long chain with enough token supply', () => {
     const defaultTokenASum = 100
     const [quests, pools] = prepareCrossPools(defaultTokenASum)
 
@@ -230,6 +230,8 @@ it('Swaps USDC for D through a long chain with enough token supply', () => {
         globalState.pools.values()
     )
     const res1 = router.smartSwap('USDC', 'AGORA_D', 25000)
+
+    console.log(res1)
 
     expect(res1[0]).toBeCloseTo(-25000)
     expect(res1[1]).toBeCloseTo(3948, 0)
