@@ -59,7 +59,6 @@ export default class Router {
             this.#_PRICED_PATHS = this.drySwapForPricedPaths(this.#FOUND_PATHS)
             if (this.#DEBUG) console.log(this.#_PRICED_PATHS, amountIn)
             if (!this.#_PRICED_PATHS.length) return []
-            console.log(this.#_PRICED_PATHS)
 
             //const sums = [amountIn < 10 ? -amountIn : -10, 10]
             const sums = this.swapBestPath(amountIn, this.#_PRICED_PATHS[0])
@@ -154,11 +153,6 @@ export default class Router {
             }
 
             const outPrice = this.#getOutInPrice(sums[0], sums[1])
-
-            // @TODO: Is it good removing paths with identical prices?
-            // if (existingPrices.indexOf(outPrice) !== -1) {
-            //     continue
-            // }
 
             pathPrices.push({
                 path,
