@@ -5,6 +5,7 @@ import React from 'react'
 import { BalanceBar } from '../../components/ExtraUiComponents'
 import globalState from '../GlobalState'
 import usePoolStore from '../Pool/pool.store'
+import UsdcToken from '../Quest/UsdcToken.class'
 import useQuestStore from '../Quest/quest.store'
 import { numericValue } from '../Utils/uiUtils'
 import { generateDefaultInvestors } from './Investor.generator'
@@ -84,7 +85,7 @@ export function InvestorPoolBalance() {
 
 export const NavBalance = (props) => {
     const balances = props.investor.balances
-    const nav = globalState.pools.values().reduce((acc, pool) => {
+    let nav = globalState.pools.values().reduce((acc, pool) => {
         acc = parseFloat(acc)
         if (
             pool.getType() === 'QUEST' &&
@@ -95,6 +96,7 @@ export const NavBalance = (props) => {
         }
         return acc + 0
     }, 0)
+    nav += balances['USDC']
     return (
         <div className="grid">
             <div className="col-12">
