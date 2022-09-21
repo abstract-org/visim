@@ -6,6 +6,13 @@ import UsdcToken from '../Quest/UsdcToken.class'
 import { p2pp, pp2p } from '../Utils/logicUtils'
 import globalConfig from '../config.global.json'
 
+// cosmetic constants to address left/right token balance
+const LEFT_TOKEN = 0
+const RIGHT_TOKEN = 1
+// cosmetic constants to address sell/buy result array items
+const TOTAL_IN = 0
+const TOTAL_OUT = 1
+
 let pp
 
 export default class Pool {
@@ -135,7 +142,7 @@ export default class Pool {
                     /**
                      * refactor to (TBD):
                     prev(c.l): (r: n.p) -> [-Inf.(1).1m]
-                    new(n): (l: prev, r: p) -> [0.(1).1m]    
+                    new(n): (l: prev, r: p) -> [0.(1).1m]
                     pos(c): (l: n) -> [1.(1ml).Inf]
                      */
 
@@ -710,8 +717,19 @@ export default class Pool {
 
     getMarketCap() {
         const swapInfo = this.getSwapInfo()
-        const totalTokens = Math.abs(swapInfo[0][1]) + Math.abs(swapInfo[1][0])
+        const totalTokens = Math.abs(swapInfo[LEFT_TOKEN][TOTAL_OUT]) + Math.abs(swapInfo[RIGHT_TOKEN][TOTAL_OUT])
 
         return Math.round(totalTokens * this.currentPrice)
+    }
+
+    getUSDCValue() {
+        if (this.tokenLeft.name === 'USDC') {
+            return this.getSwapInfo()[RIGHT_TOKEN][TOTAL_OUT]
+        }
+        if (this.tokenRight.name === 'USDC') {
+            return this.getSwapInfo()[LEFT_TOKEN][TOTAL_OUT]
+        }
+
+        return 0
     }
 }
