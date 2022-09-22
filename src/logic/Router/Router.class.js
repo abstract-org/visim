@@ -19,17 +19,10 @@ export default class Router {
     #_visitedForGraph = []
 
     // @param State state
-    constructor(
-        stateQuests,
-        statePools,
-        swapSum,
-        debug = false,
-        debugDry = false
-    ) {
+    constructor(stateQuests, statePools, debug = false, debugDry = false) {
         this.#state = { quests: stateQuests, pools: statePools }
         this.#DEBUG = debug
         this.#DEBUG_DRY = debugDry
-        this.#_DEFAULT_SWAP_SUM = swapSum ? swapSum : this.#_DEFAULT_SWAP_SUM
     }
 
     smartSwap(token0, token1, amountIn) {
@@ -83,11 +76,15 @@ export default class Router {
             this.#_PRICED_PATHS.length
         )
 
+        console.log('smart swap', token0, token1, totalInOut)
+
         return totalInOut
     }
 
     swapBestPath(amount, pricedPath) {
         if (!pricedPath) return
+
+        //const t1 = performance.now()
 
         const poolPairs = pricedPath.path
             .map((token, id) => [token, pricedPath.path[id + 1]])
@@ -140,10 +137,18 @@ export default class Router {
             lastOutPrice >= nextPricedPath.price
         )
 
+        // const t2 = performance.now()
+        // console.log(
+        //     `Executed smartSwap of ${amount} in ${pricedPath.path} in ${
+        //         t2 - t1
+        //     }ms`
+        // )
+
         return [allSums.in, allSums.out]
     }
 
     drySwapForPricedPaths(paths) {
+        //const t1 = performance.now()
         let pathPrices = []
         let existingPrices = []
         for (const path of paths) {
@@ -164,6 +169,9 @@ export default class Router {
 
         pathPrices.sort((a, b) => b.price - a.price)
 
+        // const t2 = performance.now()
+
+        // console.log(`Executed drySwapForPricedPaths in ${t2 - t1}ms`)
         return pathPrices
     }
 

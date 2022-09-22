@@ -16,14 +16,14 @@ export const formSwapData = (
     day
 ) => {
     return {
-        pool: pool && pool.name,
-        price: pool && pool.currentPrice.toFixed(2),
+        pool: pool ? pool.name : '',
+        price: pool ? pool.currentPrice.toFixed(3) : 0,
         investorHash: investor.hash,
         action: action,
         mcap: pool.getType() === 'QUEST' ? pool.getMarketCap() : '',
         tvl: pool.getType() === 'QUEST' ? pool.getTVL() : '',
-        totalAmountIn: totalAmountIn ? totalAmountIn.toFixed(2) : '',
-        totalAmountOut: totalAmountOut ? totalAmountOut.toFixed(2) : '',
+        totalAmountIn: totalAmountIn ? totalAmountIn.toFixed(3) : '',
+        totalAmountOut: totalAmountOut ? totalAmountOut.toFixed(3) : '',
         paths: paths ? paths.join('-') : '',
         day: day || ''
     }

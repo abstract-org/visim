@@ -36,7 +36,7 @@ rect.fill-inactive {
 }
 
 .gen-card {
-    min-width: 45rem;
+    min-width: 30rem;
     background-color: #f8f9fa;
 }
 
@@ -57,9 +57,8 @@ rect.fill-inactive {
 
 .gen-card .p-inputtext-sm,
 .gen-card .p-inputtext-sm > input {
-    width: 8rem;
+    width: 8em;
     height: 1.5rem;
-    font-size: 0.5rem;
     margin-left: 0.1rem;
 }
 

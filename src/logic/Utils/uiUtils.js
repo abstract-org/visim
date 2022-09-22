@@ -38,3 +38,7 @@ export const swapLog = (swapData) => {
             : ''
     return `${day}Investor ${investor.type} ${swapData.action} ${amounts} ${paths} ${numData}`
 }
+
+export const capitalize = (str) => {
+    return (str && str[0].toUpperCase() + str.slice(1)) || ''
+}

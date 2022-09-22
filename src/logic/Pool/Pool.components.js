@@ -61,7 +61,13 @@ export const PoolChartStats = () => {
         <div className="flex">
             <div className="flex-grow-1 flex flex-column">
                 <p>Current Price:</p>
-                <h1>{(currentPrice && currentPrice.toFixed(2)) || 0}</h1>
+                <h1>
+                    {(currentPrice &&
+                        currentPrice.toFixed(
+                            globalConfig.USDC_DECIMAL_POINTS
+                        )) ||
+                        0}
+                </h1>
             </div>
             {pool && pool.getType() === 'QUEST' ? (
                 <div className="flex-grow-1 flex flex-column">
@@ -164,6 +170,7 @@ export const SwapModule = () => {
 
     const investor = activeInvestor && globalState.investors.get(activeInvestor)
     const pool = activePool && globalState.pools.get(activePool)
+    const quest = activeQuest && globalState.quests.get(activeQuest)
 
     const handleBuy = () => {
         if (amount <= 0) {
@@ -191,9 +198,18 @@ export const SwapModule = () => {
             return
         }
 
+        let tradePool = pool
+        if (tradePool.tokenRight.name !== activeQuest) {
+            tradePool = quest.pools.find(
+                (qp) =>
+                    qp.getType() === 'QUEST' &&
+                    qp.tokenRight.name === activeQuest
+            )
+        }
+
         let [totalAmountIn, totalAmountOut] =
             swapMode === 'direct'
-                ? pool.buy(amount)
+                ? tradePool.buy(amount)
                 : router.smartSwap(
                       'USDC',
                       activeQuest,
