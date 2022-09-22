@@ -19,17 +19,10 @@ export default class Router {
     #_visitedForGraph = []
 
     // @param State state
-    constructor(
-        stateQuests,
-        statePools,
-        swapSum,
-        debug = false,
-        debugDry = false
-    ) {
+    constructor(stateQuests, statePools, debug = false, debugDry = false) {
         this.#state = { quests: stateQuests, pools: statePools }
         this.#DEBUG = debug
         this.#DEBUG_DRY = debugDry
-        this.#_DEFAULT_SWAP_SUM = swapSum ? swapSum : this.#_DEFAULT_SWAP_SUM
     }
 
     smartSwap(token0, token1, amountIn) {
@@ -82,6 +75,8 @@ export default class Router {
             !this.#isNearZero(amountIn) &&
             this.#_PRICED_PATHS.length
         )
+
+        console.log('smart swap', token0, token1, totalInOut)
 
         return totalInOut
     }

@@ -1,3 +1,5 @@
+import { faker } from '@faker-js/faker'
+
 import Investor from '../../logic/Investor/Investor.class'
 import UsdcToken from '../../logic/Quest/UsdcToken.class'
 import globalConfig from '../../logic/config.global.json'
@@ -11,7 +13,8 @@ export const preparePool = (
         initialPositions = globalConfig.INITIAL_LIQUIDITY
     }
 
-    const investor = new Investor(1, initialSum, investorType)
+    const name = faker.word.adjective()
+    const investor = new Investor(investorType, name, initialSum)
     const tokenRight = investor.createQuest('RP1')
     const tokenLeft = new UsdcToken()
     const pool = tokenRight.createPool({ tokenLeft, initialPositions })
@@ -20,7 +23,8 @@ export const preparePool = (
 }
 
 export const prepareCrossPools = (defaultTokenASum) => {
-    const creator = new Investor(1, 10000, 'creator')
+    const name = faker.word.adjective()
+    const creator = new Investor('creator', name, 10000)
     const quests = []
 
     // USDC Pools

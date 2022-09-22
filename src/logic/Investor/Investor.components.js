@@ -1,6 +1,6 @@
 import { Dropdown } from 'primereact/dropdown'
 import { ProgressBar } from 'primereact/progressbar'
-import React from 'react'
+import React, { useEffect } from 'react'
 
 import { BalanceBar } from '../../components/ExtraUiComponents'
 import globalState from '../GlobalState'
@@ -32,11 +32,13 @@ export function InvestorSelector() {
     const activeInvestor = useInvestorStore((state) => state.active)
 
     const investorsValues = investors.map((investorHash) => ({
-        label: `${globalState.investors.get(investorHash).type} (${
-            globalState.investors.get(investorHash).id
-        })`,
+        label: `${globalState.investors.get(investorHash).name}`,
         value: globalState.investors.get(investorHash).hash
     }))
+
+    useEffect(() => {
+        setActive(investors[0])
+    }, [investors, setActive])
 
     return (
         <div>

@@ -61,7 +61,7 @@ it('Generates investors', async () => {
     const que2Author = { ...questGen, questGenAlias: 'AGRA' }
     const daysData = []
 
-    const creator = new Investor(1, 10000, 'creator')
+    const creator = new Investor('creator', 'creator', 10000)
     const fndQuest = creator.createQuest('AGORA')
     const fndPool = fndQuest.createPool()
     globalState.quests.set(fndQuest.name, fndQuest)
