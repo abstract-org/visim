@@ -1,9 +1,8 @@
 import HashMap from 'hashmap'
 
-import Router from '../logic/Router/Router.class'
-import { p2pp, pp2p } from '../logic/Utils/logicUtils'
+import { p2pp } from '../logic/Utils/logicUtils'
 import globalConfig from '../logic/config.global.json'
-import { preparePool } from './helpers/poolManager'
+import { preparePool, prepareCrossPools } from './helpers/poolManager'
 
 let globalState = {
     pools: new HashMap(),
@@ -178,4 +177,23 @@ it('cites a quest with traded pool B', () => {
     expect(2 ** crossPool.pricePoints.get(p2pp(priceRange.max)).pp).toBeCloseTo(
         0.6967650591832242
     )
+})
+
+describe('getUSDCValue()', () => {
+    it('returns 0 for non-USDC crosspool', () => {
+        const [ , { AB, CA } ] = prepareCrossPools()
+
+        expect(AB.getUSDCValue()).toBe(0)
+        expect(CA.getUSDCValue()).toBe(0)
+    })
+
+    it('returns correct value of USDC in pool', () => {
+        const [ , { poolA } ] = prepareCrossPools()
+
+        poolA.buy(1000)
+        poolA.buy(2000)
+        poolA.buy(3000)
+
+        expect(poolA.getUSDCValue()).toBeCloseTo(6000, 5)
+    })
 })
