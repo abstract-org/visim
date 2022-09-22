@@ -11,10 +11,16 @@ import globalState from '../GlobalState'
 import useInvestorStore from '../Investor/investor.store'
 import useLogsStore from '../Logs/logs.store'
 import usePoolStore from '../Pool/pool.store'
+import UsdcToken from './UsdcToken.class'
 import useQuestStore from './quest.store'
 
 const addPoolSelector = (state) => state.addPool
 const addQuestSelector = (state) => state.addQuest
+
+const usdcToken = new UsdcToken()
+if (!globalState.quests.has(usdcToken.name)) {
+    globalState.quests.set(usdcToken.name, usdcToken)
+}
 
 export const QuestSelector = () => {
     const quests = useQuestStore((state) => state.quests)
@@ -27,11 +33,11 @@ export const QuestSelector = () => {
     const handleActiveQuest = (e) => {
         const questName = quests.find((questName) => questName === e.value)
         const quest = globalState.quests.get(questName)
-        // for (const pool of quest.pools) {
-        //     if (pool.getType() === 'QUEST') {
-        //         setActivePool(pool.name)
-        //     }
-        // }
+        for (const pool of quest.pools) {
+            if (pool.getType() === 'QUEST') {
+                setActivePool(pool.name)
+            }
+        }
 
         setActive(questName)
     }
@@ -186,6 +192,11 @@ export const QuestCitation = () => {
         }
     }
 
+    const showParentError = (obj) => {
+        console.log('No active investor')
+        msgs.current.show(obj)
+    }
+
     return (
         <div>
             <h3>Citing Quests</h3>
@@ -193,6 +204,7 @@ export const QuestCitation = () => {
                 <CitingQuestList
                     selectedQuests={selectedQuests}
                     setSelectedQuests={setSelectedQuests}
+                    showParentError={showParentError}
                 />
             </ScrollPanel>
             <CitingQuestLiquidity
@@ -228,8 +240,18 @@ export const QuestCitation = () => {
 export const CitingQuestList = (props) => {
     const quests = useQuestStore((state) => state.quests)
     const activeQuest = useQuestStore((state) => state.active)
+    const activeInvestor = useInvestorStore((state) => state.active)
+    const msgs = useRef(null)
 
     const handleQuestSelect = (e) => {
+        if (!activeInvestor) {
+            props.showParentError({
+                severity: 'warn',
+                detail: `You need to select investor before trying to cite a quest`
+            })
+            return
+        }
+
         let selectedQuests = [...props.selectedQuests]
 
         if (e.checked) {
@@ -250,31 +272,33 @@ export const CitingQuestList = (props) => {
     }
 
     return (
-        <div>
-            {quests
-                .filter((quest) => quest !== activeQuest)
-                .map((quest, idx) => {
-                    const questObj = globalState.quests.get(quest)
-                    // @TODO: Reduce
+        <React.Fragment>
+            <div>
+                {quests
+                    .filter((quest) => quest !== activeQuest)
+                    .map((quest, idx) => {
+                        const questObj = globalState.quests.get(quest)
+                        // @TODO: Reduce
 
-                    return (
-                        <div className="field-checkbox" key={idx}>
-                            <Checkbox
-                                inputId={`quest-${questObj.name}`}
-                                name={`quest-${questObj.name}`}
-                                value={questObj.name}
-                                onChange={handleQuestSelect}
-                                checked={props.selectedQuests.includes(
-                                    questObj.name
-                                )}
-                            />
-                            <label htmlFor={`quest-${questObj.name}`}>
-                                {questObj.name}
-                            </label>
-                        </div>
-                    )
-                })}
-        </div>
+                        return (
+                            <div className="field-checkbox" key={idx}>
+                                <Checkbox
+                                    inputId={`quest-${questObj.name}`}
+                                    name={`quest-${questObj.name}`}
+                                    value={questObj.name}
+                                    onChange={handleQuestSelect}
+                                    checked={props.selectedQuests.includes(
+                                        questObj.name
+                                    )}
+                                />
+                                <label htmlFor={`quest-${questObj.name}`}>
+                                    {questObj.name}
+                                </label>
+                            </div>
+                        )
+                    })}
+            </div>
+        </React.Fragment>
     )
 }
 
@@ -406,13 +430,11 @@ export const QuestCreation = () => {
         const tokenRight = investor.createQuest(questName)
         const pool = tokenRight.createPool()
 
-        if (!globalState.quests.has(pool.tokenLeft.name)) {
-            globalState.quests.set(pool.tokenLeft.name, pool.tokenLeft)
-        } else {
-            const exQuest = globalState.quests.get(pool.tokenLeft.name)
-            exQuest.addPool(pool)
-            globalState.quests.set(pool.tokenLeft.name, exQuest)
-        }
+        // Add USDC to pools
+        const exQuest = globalState.quests.get(pool.tokenLeft.name)
+        exQuest.addPool(pool)
+        globalState.quests.set(pool.tokenLeft.name, exQuest)
+
         globalState.quests.set(tokenRight.name, tokenRight)
         globalState.pools.set(pool.name, pool)
         addQuest(tokenRight.name)

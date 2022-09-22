@@ -1,10 +1,15 @@
 export const invGen = {
     invGenAlias: 'Type A',
+    invGenName: '',
     createQuest: '',
+    keepCreatingQuests: '',
+    keepCreatingPeriodDays: 0,
     dailySpawnProbability: 50,
     initialBalance: 10000,
     buySellPeriodDays: 0,
     excludeSingleName: '',
+    includeSingleName: '',
+    buySinglePerc: 0,
     buySumPerc: 10,
     buyQuestPerc: 50,
     buyGainerPerc: 20,
@@ -12,12 +17,13 @@ export const invGen = {
     sellIncByPerc: 10,
     sellDecSumPerc: 5,
     sellDecByPerc: 10,
-    valueSellEveryDays: 0,
+    valueSellPeriodDays: 0,
     valueSellAmount: 0
 }
 
 export const questGen = {
-    questGenAlias: 'Type S',
+    questGenAlias: 'Type Q',
+    questGenName: '',
     initialAuthorInvest: 5000,
     poolSizeTokens: 20000,
     startingPrice: 1,

@@ -56,8 +56,6 @@ export default class Pool {
         }
 
         this.initializePoolBoundaries()
-
-        pp = this.pricePoints
     }
 
     initializePoolBoundaries() {
@@ -717,7 +715,9 @@ export default class Pool {
 
     getMarketCap() {
         const swapInfo = this.getSwapInfo()
-        const totalTokens = Math.abs(swapInfo[LEFT_TOKEN][TOTAL_OUT]) + Math.abs(swapInfo[RIGHT_TOKEN][TOTAL_OUT])
+        const totalTokens =
+            Math.abs(swapInfo[LEFT_TOKEN][TOTAL_OUT]) +
+            Math.abs(swapInfo[RIGHT_TOKEN][TOTAL_OUT])
 
         return Math.round(totalTokens * this.currentPrice)
     }
