@@ -120,6 +120,7 @@ export const KnowledgeGraphStats = () => {
 
     let marketCap = 0
     let totalValueLocked = 0
+    let totalUSDCLocked = 0;
 
     pools.forEach((poolName) => {
         const pool = globalState.pools.get(poolName)
@@ -127,6 +128,7 @@ export const KnowledgeGraphStats = () => {
         if (pool.getType() === 'QUEST') {
             marketCap += pool.getMarketCap()
             totalValueLocked += pool.getTVL()
+            totalUSDCLocked += pool.getUSDCValue()
         }
     })
 
@@ -143,6 +145,10 @@ export const KnowledgeGraphStats = () => {
             <div className="flex-grow-1 flex flex-column">
                 <p>Total Value Locked:</p>
                 <h1>{nf.format(Number(totalValueLocked.toFixed(0))) || 0}</h1>
+            </div>
+            <div className="flex-grow-1 flex flex-column">
+                <p>Total USDC locked:</p>
+                <h1>{nf.format(Number(totalUSDCLocked.toFixed(0))) || 0}</h1>
             </div>
         </div>
     )
