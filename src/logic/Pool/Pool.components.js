@@ -61,7 +61,13 @@ export const PoolChartStats = () => {
         <div className="flex">
             <div className="flex-grow-1 flex flex-column">
                 <p>Current Price:</p>
-                <h1>{(currentPrice && currentPrice.toFixed(2)) || 0}</h1>
+                <h1>
+                    {(currentPrice &&
+                        currentPrice.toFixed(
+                            globalConfig.USDC_DECIMAL_POINTS
+                        )) ||
+                        0}
+                </h1>
             </div>
             {pool && pool.getType() === 'QUEST' ? (
                 <div className="flex-grow-1 flex flex-column">

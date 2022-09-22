@@ -89,6 +89,8 @@ export default class Router {
     swapBestPath(amount, pricedPath) {
         if (!pricedPath) return
 
+        //const t1 = performance.now()
+
         const poolPairs = pricedPath.path
             .map((token, id) => [token, pricedPath.path[id + 1]])
             .filter((pair) => pair[0] && pair[1])
@@ -140,10 +142,18 @@ export default class Router {
             lastOutPrice >= nextPricedPath.price
         )
 
+        // const t2 = performance.now()
+        // console.log(
+        //     `Executed smartSwap of ${amount} in ${pricedPath.path} in ${
+        //         t2 - t1
+        //     }ms`
+        // )
+
         return [allSums.in, allSums.out]
     }
 
     drySwapForPricedPaths(paths) {
+        //const t1 = performance.now()
         let pathPrices = []
         let existingPrices = []
         for (const path of paths) {
@@ -164,6 +174,9 @@ export default class Router {
 
         pathPrices.sort((a, b) => b.price - a.price)
 
+        // const t2 = performance.now()
+
+        // console.log(`Executed drySwapForPricedPaths in ${t2 - t1}ms`)
         return pathPrices
     }
 

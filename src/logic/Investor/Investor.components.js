@@ -97,6 +97,7 @@ export const NavBalance = (props) => {
         return acc + 0
     }, 0)
     nav += balances['USDC']
+    nav = Math.round(nav)
     return (
         <div className="grid">
             <div className="col-12">

@@ -1,5 +1,6 @@
 export const invGen = {
     invGenAlias: 'Type A',
+    invGenName: '',
     createQuest: '',
     dailySpawnProbability: 50,
     initialBalance: 10000,
@@ -17,7 +18,8 @@ export const invGen = {
 }
 
 export const questGen = {
-    questGenAlias: 'Type S',
+    questGenAlias: 'Type Q',
+    questGenName: '',
     initialAuthorInvest: 5000,
     poolSizeTokens: 20000,
     startingPrice: 1,

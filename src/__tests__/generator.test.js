@@ -21,7 +21,7 @@ afterEach(() => {
 })
 
 it('Generates investors', async () => {
-    const genDays = 30
+    const genDays = 5
     const invAuthor = {
         ...invGen,
         invGenAlias: 'AUTHOR',
