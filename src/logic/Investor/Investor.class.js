@@ -9,6 +9,7 @@ export default class Investor {
     id = null
     hash = null
     type = null
+    name = null
     balances = { USDC: 0 } // not like solidity, what's better -> balances here or in tokens
     positions = new HashMap()
     questsCreated = []
@@ -122,9 +123,6 @@ export default class Investor {
             priceMax,
             citingAmount,
             citedAmount
-        )
-        console.log(
-            `Citing quest in ${crossPool.name} min/max: ${priceMin}/${priceMax}, in/out: ${totalIn}/${totalOut}`
         )
         return [totalIn, totalOut]
     }

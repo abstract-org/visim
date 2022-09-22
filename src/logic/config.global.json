@@ -3,6 +3,8 @@
     "PRICE_MIN": 0,
     "PRICE_MAX": 1000000,
     "CHUNK_SIZE": 5,
+    "USDC_DECIMAL_POINTS": 3,
+    "API_URL": "https://kfxrx7whx2.execute-api.eu-central-1.amazonaws.com",
     "INITIAL_LIQUIDITY": [
         {
             "priceMin": 1,

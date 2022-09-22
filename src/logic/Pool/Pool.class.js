@@ -6,8 +6,6 @@ import UsdcToken from '../Quest/UsdcToken.class'
 import { p2pp, pp2p } from '../Utils/logicUtils'
 import globalConfig from '../config.global.json'
 
-let pp
-
 export default class Pool {
     name
 
@@ -49,8 +47,6 @@ export default class Pool {
         }
 
         this.initializePoolBoundaries()
-
-        pp = this.pricePoints
     }
 
     initializePoolBoundaries() {

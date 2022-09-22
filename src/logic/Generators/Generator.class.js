@@ -35,7 +35,6 @@ class Generator {
             pools: [],
             actions: []
         }
-
         this.#invConfigs.forEach((inv) => {
             // Calculate probabilities
             const invProbs = this.calculateInvProbabilities(inv)
@@ -175,6 +174,7 @@ class Generator {
                                     citeSingleAmount,
                                     0
                                 )
+
                                 this.#dayData[day].actions.push({
                                     pool: citedSinglePool.name,
                                     investorHash: investor.hash,
@@ -303,13 +303,12 @@ class Generator {
                 } // end of inv spawner loop
             } // end of inv spawner if
         })
-
-        //
         const router = new Router(this.#cachedQuests, this.#cachedPools)
 
         // Every X days - buy by investors
         const tradingDayKeys = Object.keys(this.#tradingInvs)
         tradingDayKeys.forEach((dayKey) => {
+            // start day should be 0 so spawn day is included
             if (day % dayKey === 0) {
                 const investors = this.#tradingInvs[dayKey]
                 investors.forEach((investorObj, idx) => {
@@ -328,16 +327,21 @@ class Generator {
                         (investor.balances[this.#DEFAULT_TOKEN] / 100) *
                         conf.buySumPerc
 
-                    // Should be calculated before the loop?
+                    const tg0 = performance.now()
                     const topGainers = this.getTopGainers(
                         conf.buyQuestPerc,
                         conf.buyGainerPerc,
                         conf.excludeSingleName
                     )
+                    const tg1 = performance.now()
 
                     if (!topGainers) {
                         return
                     }
+
+                    console.log(
+                        `Got top gainers for day ${day} in ${tg1 - tg0}ms`
+                    )
 
                     const perPoolAmt = spendAmount / topGainers.length
                     if (perPoolAmt <= 0 || router.isZero(perPoolAmt)) {
@@ -346,14 +350,23 @@ class Generator {
                     }
 
                     topGainers.forEach((pool) => {
+                        const t0 = performance.now()
                         const [totalIn, totalOut] = router.smartSwap(
                             this.#DEFAULT_TOKEN,
                             pool.tokenRight.name,
                             perPoolAmt
                         )
+                        const t1 = performance.now()
+                        console.log(
+                            `Traded top gainer in ${
+                                pool.name
+                            } amount ${perPoolAmt} for ${t1 - t0}ms`
+                        )
+
                         // collect pool price movements here and in other calls of router.smartSwap
                         this.storeTradedPool(day, pool)
 
+                        // That would be an edge case, rare, but if happens, need to debug why
                         if (
                             router.isZero(totalIn) ||
                             totalOut <= 0 ||
@@ -382,19 +395,33 @@ class Generator {
                     })
 
                     // Sell own tokens
+                    const cp0 = performance.now()
                     const sellPools = this.getChangedPriceQuests(
                         investor.balances,
                         conf
+                    )
+                    const cp1 = performance.now()
+                    console.log(
+                        `Got changed price pools on day ${day} in ${
+                            cp1 - cp0
+                        }ms`
                     )
 
                     if (sellPools && sellPools.length) {
                         sellPools.forEach((poolData) => {
                             const { pool, amount } = poolData
 
+                            const sp0 = performance.now()
                             const [totalIn, totalOut] = router.smartSwap(
                                 pool.tokenRight.name,
                                 pool.tokenLeft.name,
                                 amount
+                            )
+                            const sp1 = performance.now()
+                            console.log(
+                                `Sold tokens on day ${day} into ${
+                                    pool.name
+                                } amount ${amount} in ${sp1 - sp0}ms`
                             )
 
                             // collect pool price movements here and in other calls of router.smartSwap
