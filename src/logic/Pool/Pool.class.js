@@ -723,13 +723,8 @@ export default class Pool {
     }
 
     getUSDCValue() {
-        if (this.tokenLeft.name === 'USDC') {
-            return this.getSwapInfo()[RIGHT_TOKEN][TOTAL_OUT]
-        }
-        if (this.tokenRight.name === 'USDC') {
-            return this.getSwapInfo()[LEFT_TOKEN][TOTAL_OUT]
-        }
-
-        return 0
+        return this.getType() === 'QUEST'
+            ? this.getSwapInfo()[RIGHT_TOKEN][TOTAL_OUT]
+            : 0
     }
 }
