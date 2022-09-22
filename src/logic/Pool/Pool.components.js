@@ -164,6 +164,7 @@ export const SwapModule = () => {
 
     const investor = activeInvestor && globalState.investors.get(activeInvestor)
     const pool = activePool && globalState.pools.get(activePool)
+    const quest = activeQuest && globalState.quests.get(activeQuest)
 
     const handleBuy = () => {
         if (amount <= 0) {
@@ -191,9 +192,18 @@ export const SwapModule = () => {
             return
         }
 
+        let tradePool = pool
+        if (tradePool.tokenRight.name !== activeQuest) {
+            tradePool = quest.pools.find(
+                (qp) =>
+                    qp.getType() === 'QUEST' &&
+                    qp.tokenRight.name === activeQuest
+            )
+        }
+
         let [totalAmountIn, totalAmountOut] =
             swapMode === 'direct'
-                ? pool.buy(amount)
+                ? tradePool.buy(amount)
                 : router.smartSwap(
                       'USDC',
                       activeQuest,

@@ -6,7 +6,6 @@ import Token from '../Quest/Token.class'
 import { p2pp } from '../Utils/logicUtils'
 
 export default class Investor {
-    id = null
     hash = null
     type = null
     name = null
@@ -17,11 +16,11 @@ export default class Investor {
     #canCreate = false
     #PRICE_RANGE_MULTIPLIER = 2
 
-    constructor(id, usdcBalance = 10000, type = 'creator') {
-        this.id = id
-        this.hash = '0x' + sha256(`${id.toString()} + ${type}`)
+    constructor(type, name, usdcBalance = 10000) {
+        this.hash = '0x' + sha256(`${name} + ${type}`)
         this.balances.USDC = parseFloat(usdcBalance)
         this.type = type
+        this.name = name
         this.#canCreate = type === 'creator'
     }
 
@@ -33,7 +32,7 @@ export default class Investor {
 
     addBalance(tokenName, balance) {
         if (isNaN(balance)) {
-            console.log('Trying to pass NaN amount')
+            console.log('Trying to pass NaN amount', tokenName, balance)
             return
         }
 

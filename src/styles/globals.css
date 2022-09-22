@@ -57,7 +57,7 @@ rect.fill-inactive {
 
 .gen-card .p-inputtext-sm,
 .gen-card .p-inputtext-sm > input {
-    width: 14rem;
+    width: 8em;
     height: 1.5rem;
     margin-left: 0.1rem;
 }

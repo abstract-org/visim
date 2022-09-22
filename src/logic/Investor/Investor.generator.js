@@ -1,42 +1,47 @@
+import { faker } from '@faker-js/faker'
 
-import InvestorTypes from './Investor.types';
-import Investor from './Investor.class';
+import Investor from './Investor.class'
+import InvestorTypes from './Investor.types'
 
 export function generateRandomInvestors(amount) {
-    const investors = [];
+    const investors = []
 
     if (amount <= 0) {
-        console.error('Provide valid amount of desired investors to be generated');
+        console.error(
+            'Provide valid amount of desired investors to be generated'
+        )
     }
 
-    for(let i = 0; i < amount; i++) {
-        let randomIndex = Math.floor(Math.random() * ((InvestorTypes.length-1) - 0 +1) + 0);
-        let randomInvestorType = InvestorTypes[randomIndex];
+    for (let i = 0; i < amount; i++) {
+        let randomIndex = Math.floor(
+            Math.random() * (InvestorTypes.length - 1 - 0 + 1) + 0
+        )
+        let randomInvestorType = InvestorTypes[randomIndex]
 
         let newInvestor = new Investor(
-            i+1,
-            randomInvestorType.usdcBalance,
-            randomInvestorType.type
+            randomInvestorType.type,
+            randomInvestorType.name,
+            randomInvestorType.usdcBalance
         )
 
         investors.push(newInvestor)
     }
 
-    return investors;
+    return investors
 }
 
 export function generateDefaultInvestors() {
-    const investors = [];
+    const investors = []
 
     InvestorTypes.forEach((investorType, i) => {
         let newInvestor = new Investor(
-            i+1,
-            investorType.usdcBalance,
-            investorType.type
+            investorType.type,
+            investorType.name,
+            investorType.usdcBalance
         )
 
-        investors.push(newInvestor);
-    });
+        investors.push(newInvestor)
+    })
 
-    return investors;
+    return investors
 }
