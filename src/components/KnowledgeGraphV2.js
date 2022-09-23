@@ -79,9 +79,11 @@ const Graph = (props) => {
 
         registerEvents({
             clickNode: (event) => {
-                const poolName = `USDC-${event.node}`
-                if (globalState.pools.get(poolName).getType() === 'QUEST') {
-                     setActivePool(poolName)
+                const questPool = globalState.pools.values()
+                  .find(pool => pool.getType() === 'QUEST' && pool.tokenRight.name === event.node)
+
+                if (questPool) {
+                  setActivePool(questPool.name)
                 }
             },
             clickEdge: (event) => {
