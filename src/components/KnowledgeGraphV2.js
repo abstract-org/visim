@@ -78,6 +78,14 @@ const Graph = (props) => {
         }
 
         registerEvents({
+            clickNode: (event) => {
+                const questPool = globalState.pools.values()
+                  .find(pool => pool.getType() === 'QUEST' && pool.tokenRight.name === event.node)
+
+                if (questPool) {
+                  setActivePool(questPool.name)
+                }
+            },
             clickEdge: (event) => {
                 const edgeSource = graph.source(event.edge)
                 const edgeTarget = graph.target(event.edge)
