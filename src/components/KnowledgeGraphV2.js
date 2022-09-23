@@ -77,11 +77,19 @@ const Graph = (props) => {
             })
         }
 
+        registerEvents({
+            clickEdge: (event) => {
+                const edgeSource = graph.source(event.edge)
+                const edgeTarget = graph.target(event.edge)
+                const poolName = `${edgeTarget}-${edgeSource}`
+                if (globalState.pools.get(poolName).getType() === 'VALUE_LINK') {
+                    setActivePool(poolName)
+                }
+            }
+        })
+
         loadGraph(graph)
 
-        // registerEvents({
-        //     clickNode: (event) => setClickNode(event.node)
-        // })
     }, [registerEvents, loadGraph, humanQuests, pools, quests, clickedNode])
 
     return null
@@ -90,7 +98,10 @@ const Graph = (props) => {
 export const KnowledgeGraphV2 = () => {
     return (
         <SigmaContainer
-            initialSettings={{ allowInvalidContainer: true }}
+            initialSettings={{
+                allowInvalidContainer: true,
+                enableEdgeClickEvents: true,
+            }}
             style={{ height: '500px' }}
         >
             <Graph />
