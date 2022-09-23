@@ -78,6 +78,12 @@ const Graph = (props) => {
         }
 
         registerEvents({
+            clickNode: (event) => {
+                const poolName = `USDC-${event.node}`
+                if (globalState.pools.get(poolName).getType() === 'QUEST') {
+                     setActivePool(poolName)
+                }
+            },
             clickEdge: (event) => {
                 const edgeSource = graph.source(event.edge)
                 const edgeTarget = graph.target(event.edge)
