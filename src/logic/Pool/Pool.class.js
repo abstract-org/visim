@@ -630,6 +630,10 @@ export default class Pool {
         return this.#type
     }
 
+    isQuest() {
+        return this.#type === 'QUEST'
+    }
+
     getSwapInfo(logOut = false) {
         const leftBalance = this.dryBuy(100000000000)
         const rightBalance = this.drySell(100000000000)
