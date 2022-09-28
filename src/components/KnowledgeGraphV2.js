@@ -41,25 +41,19 @@ const Graph = (props) => {
             multi: true
         })
 
-        // console.log(clickedNode)
-
-        // const data = []
-        // quests.forEach((quest, id) => {
-        //     data.push(id)
-        // })
-        // hilbertCurve.construct(data, 2)
-
+        const hOrder = Array.isArray(quests) && Math.log(quests.length)
         quests.forEach((quest, id) => {
             const pool = globalState.pools
                 .values()
                 .find((p) => p.tokenRight.name === quest)
             if (!graph.hasNode(quest)) {
+                const { x, y } = hilbertCurve.indexToPoint(id, hOrder)
                 graph.addNode(quest, {
                     size: Math.log(pool.getMarketCap()),
                     label: quest,
                     color: humanQuests.includes(quest) ? BLUE : RED,
-                    x: Math.random(),
-                    y: Math.random()
+                    x,
+                    y
                 })
             }
         })
