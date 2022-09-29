@@ -42,3 +42,14 @@ export const swapLog = (swapData) => {
 export const capitalize = (str) => {
     return (str && str[0].toUpperCase() + str.slice(1)) || ''
 }
+
+export const calcCrossPoolThickness = (crossPool, citedPool, citingPool) => {
+    const thicknessBy = {
+        citingUsdcValue: citingPool && Math.log(citingPool.getUSDCValue()),
+        citingMarketCap: Math.log(citingPool.getMarketCap()),
+        citingTokenPrice: Math.log(citingPool.currentPrice) * 10,
+        crossPoolUsdcLocked: Math.log(citedPool.getUSDCValue()+citingPool.getUSDCValue())
+    }
+
+    return thicknessBy.crossPoolUsdcLocked
+}
