@@ -5,7 +5,9 @@ import {
     SigmaContainer,
     ZoomControl,
     useLoadGraph,
-    useRegisterEvents
+    useRegisterEvents,
+    useSetSettings,
+    useSigma
 } from '@react-sigma/core'
 import '@react-sigma/core/lib/react-sigma.min.css'
 import { LayoutForceAtlas2Control } from '@react-sigma/layout-forceatlas2'
@@ -30,6 +32,60 @@ const Graph = (props) => {
 
     const registerEvents = useRegisterEvents()
     const loadGraph = useLoadGraph()
+
+    const setSettings = useSetSettings()
+    const [ hoveredNode, setHoveredNode ] = useState(null)
+    const [ hoveredEdge, setHoveredEdge ] = useState(null)
+    const sigma = useSigma()
+
+    useEffect(() => {
+        const COLORS = {
+            edgeDefault: '#EEEEEE',
+            edgeConnected: '#AAAAEE',
+            edgeHighlighted: '#FF4444'
+        }
+        setSettings({
+            enableEdgeHoverEvents: 'debounce',
+            zIndex: true,
+            nodeReducer: (node, data) => {
+                const graph = sigma.getGraph()
+                const newData = {
+                    ...data,
+                    highlighted: data.highlighted || false
+                }
+
+                if (hoveredNode) {
+                    newData.highlighted = (node === hoveredNode) || graph.neighbors(hoveredNode).includes(node)
+                }
+
+                if (hoveredEdge) {
+                    const hoveredEdgeNodes = [graph.source(hoveredEdge), graph.target(hoveredEdge)]
+                    newData.highlighted = hoveredEdgeNodes.includes(node)
+                }
+
+                return newData
+            },
+            edgeReducer: (edge, data) => {
+                const graph = sigma.getGraph()
+                const newEdgeData = {
+                    ...data,
+                    color: COLORS.edgeDefault,
+                    zIndex: 1,
+                }
+                if (hoveredNode && graph.extremities(edge).includes(hoveredNode)) {
+                    newEdgeData.color = COLORS.edgeConnected
+                    newEdgeData.zIndex = 99
+                }
+
+                if (hoveredEdge && edge === hoveredEdge) {
+                    newEdgeData.color = COLORS.edgeHighlighted
+                    newEdgeData.zIndex = 99
+                }
+
+                return newEdgeData
+            },
+        })
+    }, [ hoveredNode, hoveredEdge ])
 
     useEffect(() => {
         const RED = '#FA4F40'
@@ -93,12 +149,16 @@ const Graph = (props) => {
                 if (globalState.pools.get(poolName).getType() === 'VALUE_LINK') {
                     setActivePool(poolName)
                 }
-            }
+            },
+            enterNode: event => setHoveredNode(event.node),
+            leaveNode: () => setHoveredNode(null),
+            enterEdge: event => setHoveredEdge(event.edge),
+            leaveEdge: () => setHoveredEdge(null)
         })
 
         loadGraph(graph)
 
-    }, [registerEvents, loadGraph, humanQuests, pools, quests, clickedNode])
+    }, [setHoveredEdge, registerEvents, loadGraph, humanQuests, pools, quests, clickedNode])
 
     return null
 }
