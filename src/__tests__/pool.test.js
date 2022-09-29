@@ -3,6 +3,7 @@ import HashMap from 'hashmap'
 import { p2pp } from '../logic/Utils/logicUtils'
 import globalConfig from '../logic/config.global.json'
 import { preparePool, prepareCrossPools } from './helpers/poolManager'
+import UsdcToken from "../logic/Quest/UsdcToken.class";
 
 let globalState = {
     pools: new HashMap(),
@@ -195,5 +196,26 @@ describe('getUSDCValue()', () => {
         poolA.buy(3000)
 
         expect(poolA.getUSDCValue()).toBeCloseTo(6000, 5)
+    })
+})
+
+describe('isQuest()', () => {
+    it('returns true for QUEST pool', () => {
+        const { pool } = preparePool()
+
+        expect(pool.tokenLeft).toBeInstanceOf(UsdcToken)
+        expect(pool.isQuest()).toBe(true)
+    })
+
+    it('returns true for USDC pool', () => {
+        const { pool } = preparePool()
+
+        expect(pool.isQuest()).toBe(true)
+    })
+
+    it('returns false for cross-pools', () => {
+        const [ , { AB } ] = prepareCrossPools()
+
+        expect(AB.isQuest()).toBe(false)
     })
 })

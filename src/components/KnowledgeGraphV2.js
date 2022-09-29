@@ -18,6 +18,7 @@ import { useEffect, useState } from 'react'
 import globalState from '../logic/GlobalState'
 import usePoolStore from '../logic/Pool/pool.store'
 import useQuestStore from '../logic/Quest/quest.store'
+import { calcCrossPoolThickness } from '../logic/Utils/uiUtils'
 
 const Graph = (props) => {
     const [clickedNode, setClickNode] = useState(null)
@@ -97,14 +98,6 @@ const Graph = (props) => {
             multi: true
         })
 
-        // console.log(clickedNode)
-
-        // const data = []
-        // quests.forEach((quest, id) => {
-        //     data.push(id)
-        // })
-        // hilbertCurve.construct(data, 2)
-
         quests.forEach((quest, id) => {
             const pool = globalState.pools
                 .values()
@@ -127,9 +120,19 @@ const Graph = (props) => {
         )
 
         if (citingPools.length > 0) {
-            citingPools.forEach((poolName, id) => {
+            citingPools.forEach((poolName) => {
                 const [cited, citing] = poolName.split('-')
-                graph.addEdge(citing, cited, { label: poolName, size: 5 })
+
+                const crossPool = globalState.pools.get(poolName)
+                const citedPool = globalState.pools.values()
+                    .find((p) => p.tokenRight.name === cited && p.isQuest())
+                const citingPool = globalState.pools.values()
+                    .find((p) => p.tokenRight.name === citing && p.isQuest())
+
+                graph.addEdge(citing, cited, {
+                    size: calcCrossPoolThickness(crossPool, citedPool, citingPool),
+                    label: poolName
+                })
             })
         }
 
@@ -158,9 +161,9 @@ const Graph = (props) => {
 
         loadGraph(graph)
 
-    }, [setHoveredEdge, registerEvents, loadGraph, humanQuests, pools, quests, clickedNode])
+    }, [setActivePool, registerEvents, loadGraph, humanQuests, pools, quests, clickedNode])
 
-    return null
+return null
 }
 
 export const KnowledgeGraphV2 = () => {
