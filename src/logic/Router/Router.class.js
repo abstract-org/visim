@@ -37,6 +37,8 @@ export default class Router {
 
         const totalInOut = [0, 0]
 
+        this.calculatePairPaths(token0, token1)
+
         if (amountIn > this.#_SWAP_SUM_STEPPER) {
             this.#_DEFAULT_SWAP_SUM = amountIn / this.#_SWAP_SUM_MAX_CHUNKS
         } else {
@@ -72,8 +74,6 @@ export default class Router {
             !this.#isNearZero(amountIn) &&
             this.#_PRICED_PATHS.length
         )
-
-        console.log('smart swap', token0, token1, totalInOut)
 
         return totalInOut
     }

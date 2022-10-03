@@ -1,5 +1,7 @@
 import HashMap from 'hashmap'
 
+import Generator from '../logic/Generators/Generator.class'
+import { invGen, questGen } from '../logic/Generators/initialState'
 import Investor from '../logic/Investor/Investor.class'
 import Router from '../logic/Router/Router.class'
 import { prepareCrossPools } from './helpers/poolManager'
@@ -57,6 +59,42 @@ it('Chunks amounts below chunk size', () => {
 
     const chunks = router.chunkAmountBy(30, 38)
     expect(chunks[0]).toBe(30)
+})
+
+fit('Finds paths for pair', async () => {
+    const gen = new Generator()
+    const router = new Router()
+
+    const genDays = 20
+    const invAuthor = {
+        ...invGen,
+        dailySpawnProbability: 100,
+        invGenAlias: 'AUTHOR',
+        createQuest: 'AGORA',
+        initialBalance: 10000000
+    }
+    const queAuthor = {
+        ...questGen,
+        questGenAlias: 'AGORA',
+        initialAuthorInvest: 1000
+    }
+
+    const genManager = new Generator(
+        [invAuthor],
+        [queAuthor],
+        globalState.pools.values(),
+        globalState.quests.values()
+    )
+
+    for (let day = 1; day <= genDays; day++) {
+        await genManager.step(day)
+    }
+
+    globalState.pools = genManager.getPools()
+    globalState.quests = genManager.getQuests()
+    globalState.investors = genManager.getInvestors()
+
+    console.log(globalState.quests)
 })
 
 it('Smart route with single pool', () => {
@@ -196,7 +234,7 @@ it('Smart route with amount based on liquidity', () => {
     expect(results1[1]).toBeCloseTo(17160, 0)
 })
 
-fit('Swaps USDC for D through a long chain with enough token supply', () => {
+it('Swaps USDC for D through a long chain with enough token supply', () => {
     const defaultTokenASum = 100
     const [quests, pools] = prepareCrossPools(defaultTokenASum)
 
