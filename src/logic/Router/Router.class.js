@@ -8,6 +8,7 @@ export default class Router {
     #_PRICED_PATHS = []
     #_VISITED_PATHS = []
     #_SWAPS = []
+    #_PAIR_PATHS = {}
     #_DEFAULT_SWAP_SUM = 10
     #_SWAP_SUM_MAX_CHUNKS = 100
     #_SWAP_SUM_STEPPER = 10000
@@ -35,12 +36,8 @@ export default class Router {
         this.#_visitedForGraph = []
 
         const totalInOut = [0, 0]
-        const poolList = this.findPoolsFor(token0)
-        if (this.#DEBUG) console.log(poolList)
-        const graph = this.graphPools(poolList)
-        if (this.#DEBUG) console.log(graph)
-        this.#FOUND_PATHS = graph.buildPathways(token0, token1)
-        if (this.#DEBUG) console.log(this.#FOUND_PATHS)
+
+        this.calculatePairPaths(token0, token1)
 
         if (amountIn > this.#_SWAP_SUM_STEPPER) {
             this.#_DEFAULT_SWAP_SUM = amountIn / this.#_SWAP_SUM_MAX_CHUNKS
@@ -49,7 +46,9 @@ export default class Router {
         }
 
         do {
-            this.#_PRICED_PATHS = this.drySwapForPricedPaths(this.#FOUND_PATHS)
+            this.#_PRICED_PATHS = this.drySwapForPricedPaths(
+                this.getPairPaths(token0, token1)
+            )
             if (this.#DEBUG) console.log(this.#_PRICED_PATHS, amountIn)
             if (!this.#_PRICED_PATHS.length) return []
 
@@ -76,9 +75,22 @@ export default class Router {
             this.#_PRICED_PATHS.length
         )
 
-        console.log('smart swap', token0, token1, totalInOut)
-
         return totalInOut
+    }
+
+    calculatePairPaths(token0, token1) {
+        const poolList = this.findPoolsFor(token0)
+        if (this.#DEBUG) console.log(poolList)
+        const graph = this.graphPools(poolList)
+        if (this.#DEBUG) console.log(graph)
+        const paths = graph.buildPathways(token0, token1)
+        this.#_PAIR_PATHS[`${token0}-${token1}`] = paths
+
+        return paths
+    }
+
+    getPairPaths(token0, token1) {
+        return this.#_PAIR_PATHS[`${token0}-${token1}`]
     }
 
     swapBestPath(amount, pricedPath) {
