@@ -18,14 +18,14 @@ export const swapLog = (swapData) => {
     const amounts =
         swapData.action === 'BOUGHT'
             ? `${Math.abs(swapData.totalAmountOut).toLocaleString()} ${
-                  pool.tokenRight.name
+                  pool.tokenRight
               } for ${Math.abs(swapData.totalAmountIn).toLocaleString()} ${
-                  pool.tokenLeft.name
+                  pool.tokenLeft
               }`
             : `${Math.abs(swapData.totalAmountIn).toLocaleString()} ${
-                  pool.tokenRight.name
+                  pool.tokenRight
               } for ${Math.abs(swapData.totalAmountOut).toLocaleString()} ${
-                  pool.tokenLeft.name
+                  pool.tokenLeft
               }`
 
     const paths = swapData.paths ? `through: ${swapData.paths}` : ''

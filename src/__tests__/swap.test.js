@@ -222,8 +222,8 @@ it('Three investors one tick (buy during liquidity shift)', () => {
     fomo.addBalance(tokenLeft.name, totalAmountIn3)
     fomo.addBalance(tokenRight.name, totalAmountOut3)
 
-    expect(fomo.balances[pool.tokenLeft.name]).toBe(0)
-    expect(fomo.balances[pool.tokenRight.name]).toBe(106)
+    expect(fomo.balances[pool.tokenLeft]).toBe(0)
+    expect(fomo.balances[pool.tokenRight]).toBe(106)
 })
 
 it('Buy all the way to the right', () => {
@@ -258,7 +258,7 @@ it('Swaps RP1 for USDC and updates current price', () => {
     investor.addBalance(tokenLeft.name, totalAmountOut2)
     investor.addBalance(tokenRight.name, totalAmountIn2)
 
-    expect(investor.balances[pool.tokenLeft.name]).toBe(10000)
+    expect(investor.balances[pool.tokenLeft]).toBe(10000)
     expect(pool.currentPrice).toBe(1)
 })
 
@@ -330,15 +330,15 @@ it('Calculates reserves properly by swapping in different directions in both USD
     const swap4 = pool4.getSwapInfo()
 
     const AB = investor.createPool(quest2, quest)
-    investor.citeQuest(AB, 1, 2, 1000, 0)
+    investor.citeQuest(AB, quest2, quest, 1, 2, 1000, 0)
     const swap5 = AB.getSwapInfo()
 
     const AC = investor.createPool(quest3, quest)
-    investor.citeQuest(AC, 1, 2, 1000, 0)
+    investor.citeQuest(AC, quest3, quest, 1, 2, 1000, 0)
     const swap6 = AC.getSwapInfo()
 
     const AD = investor.createPool(quest4, quest)
-    investor.citeQuest(AD, 1, 2, 1000, 1000)
+    investor.citeQuest(AD, quest4, quest,1, 2, 1000, 1000)
     const swap7 = AD.getSwapInfo()
 
     expect(Math.abs(swap1[1][0])).toBe(20000)

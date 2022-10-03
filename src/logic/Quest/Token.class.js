@@ -21,24 +21,24 @@ export default class Token {
         initialPositions = null,
         totalTokensProvisioned = null
     } = {}) {
-        if (tokenLeft === null) {
-            tokenLeft = new UsdcToken()
-        }
-
-        const pool = new Pool(tokenLeft, this, startingPrice)
+        const tokenLeftInstance = tokenLeft || new UsdcToken()
+        const pool = new Pool(tokenLeftInstance, this, startingPrice)
 
         this.addPool(pool)
-        tokenLeft.addPool(pool)
+        tokenLeftInstance.addPool(pool)
 
         this.initializePoolPositions(pool, initialPositions)
 
         return pool
     }
 
+    /**
+     * @param {Object} pool
+     */
     addPool(pool) {
-        if (this.pools.find((exPool) => exPool.name === pool.name)) return
+        if (this.pools.find((existingPoolName) => existingPoolName === pool.name)) return
 
-        this.pools.push(pool)
+        this.pools.push(pool.name)
     }
 
     initializePoolPositions(pool, initialPositions) {

@@ -90,7 +90,7 @@ export const NavBalance = (props) => {
     let nav = globalState.pools.values().reduce((acc, pool) => {
         acc = parseFloat(acc)
         if (
-            pool.getType() === 'QUEST' &&
+            pool.isQuest() &&
             balances[pool.tokenRight.name] &&
             pool.currentPrice > 0
         ) {

@@ -34,14 +34,19 @@ export default class Pool {
     #type = 'VALUE_LINK'
     #dryState = {}
 
+    /**
+     * @param {Object} tokenLeft
+     * @param {Object} tokenRight
+     * @param {number} startingPrice
+     */
     constructor(tokenLeft, tokenRight, startingPrice) {
         if (typeof tokenLeft !== 'object' || typeof tokenRight !== 'object')
             throw new Error('Tokens must be an instance of a Token')
         if (tokenLeft.name === tokenRight.name)
             throw new Error('Tokens should not match')
 
-        this.tokenLeft = tokenLeft
-        this.tokenRight = tokenRight
+        this.tokenLeft = tokenLeft.name
+        this.tokenRight = tokenRight.name
 
         this.id = '0x' + sha256(tokenLeft.name + '-' + tokenRight.name)
         this.name = `${tokenLeft.name}-${tokenRight.name}`
@@ -175,8 +180,7 @@ export default class Pool {
 
         let newPosition = {}
         const point = this.pricePoints.get(price)
-        const removeAllLiq =
-            Math.abs(liquidity) >= Math.abs(point.liquidity) ? true : false
+        const removeAllLiq = Math.abs(liquidity) >= Math.abs(point.liquidity)
 
         if (!removeAllLiq) {
             newPosition = this.pricePoints.get(price)
@@ -640,26 +644,26 @@ export default class Pool {
 
         if (logOut) {
             console.log(`Pool: (cited/USDC)${this.name}(citing)
-            buy(amt): ${this.tokenLeft.name} in (deduct from amt), ${
-                this.tokenRight.name
+            buy(amt): ${this.tokenLeft} in (deduct from amt), ${
+                this.tokenRight
             } out (add to balance)
-            sell(amt): ${this.tokenRight.name} in (deduct from amt), ${
-                this.tokenLeft.name
+            sell(amt): ${this.tokenRight} in (deduct from amt), ${
+                this.tokenLeft
             } out (add to balance)
             --
-            total ${this.tokenLeft.name}: ${
+            total ${this.tokenLeft}: ${
                 rightBalance[1] > 0 ? rightBalance[1] : 0
             }
-            total ${this.tokenRight.name}: ${
+            total ${this.tokenRight}: ${
                 leftBalance[1] > 0 ? leftBalance[1] : 0
             }
             ---
             can buy(take in) ${Math.abs(leftBalance[0])} ${
-                this.tokenLeft.name
-            } for(give out) ${Math.abs(leftBalance[1])} ${this.tokenRight.name}
+                this.tokenLeft
+            } for(give out) ${Math.abs(leftBalance[1])} ${this.tokenRight}
             can sell(give) ${Math.abs(rightBalance[1])} ${
-                this.tokenLeft.name
-            } for(take) ${Math.abs(rightBalance[0])} ${this.tokenRight.name}`)
+                this.tokenLeft
+            } for(take) ${Math.abs(rightBalance[0])} ${this.tokenRight}`)
         }
 
         return [leftBalance, rightBalance]
@@ -727,7 +731,7 @@ export default class Pool {
     }
 
     getUSDCValue() {
-        return this.getType() === 'QUEST'
+        return this.isQuest()
             ? this.getSwapInfo()[RIGHT_TOKEN][TOTAL_OUT]
             : 0
     }
