@@ -182,7 +182,7 @@ it('Smart route with amount based on liquidity', () => {
     const BC = creator.createPool(questC, questB)
     globalState.pools.set(BC.name, BC)
     const pr = creator.calculatePriceRange(poolB, poolC)
-    creator.citeQuest(BC, pr.min, pr.max, 10000)
+    creator.citeQuest(BC, poolB, poolC, pr.min, pr.max, 10000)
 
     // Different chunk should yield the same results
     const router = new Router(
@@ -227,7 +227,9 @@ fit('Swaps USDC for D through a long chain with enough token supply', () => {
 
     const router = new Router(
         globalState.quests.values(),
-        globalState.pools.values()
+        globalState.pools.values(),
+        true,
+        true
     )
     const res1 = router.smartSwap('USDC', 'AGORA_D', 25000)
 
@@ -318,7 +320,7 @@ it('Smart route with one citation selling USDC/TEST1', () => {
 
     // [TEST 2, TEST 1] (cited/citing)
     const AB = creator.createPool(questB, questA)
-    creator.citeQuest(AB, priceMin, priceMax, citeAmount, 0)
+    creator.citeQuest(AB, questB, questA, priceMin, priceMax, citeAmount, 0)
     globalState.pools.set(AB.name, AB)
 
     const router = new Router(
@@ -392,7 +394,7 @@ it('Smart route with USDC buying citing', () => {
 
     // [TEST 1, TEST 2] (cited/citing)
     const AB = creator.createPool(questB, questA)
-    creator.citeQuest(AB, priceMin, priceMax, citeAmount, 0)
+    creator.citeQuest(AB, questB, questA, priceMin, priceMax, citeAmount, 0)
     globalState.pools.set(AB.name, AB)
     AB.buy(25)
 
@@ -431,7 +433,7 @@ it('Smart route with USDC buying cited', () => {
 
     // [TEST 1, TEST 2] (cited/citing)
     const AB = creator.createPool(questB, questA)
-    creator.citeQuest(AB, priceMin, priceMax, citeAmount, 0)
+    creator.citeQuest(AB, questB, questA, priceMin, priceMax, citeAmount, 0)
     globalState.pools.set(AB.name, AB)
     AB.buy(25)
 
@@ -465,7 +467,7 @@ it('Smart route for token through cited cross pool', () => {
 
     const AB = creator.createPool(questB, questA)
     const priceRange = creator.calculatePriceRange(poolA, poolB, 2)
-    creator.citeQuest(AB, priceRange.min, priceRange.max, 1005, 0)
+    creator.citeQuest(AB, questB, questA, priceRange.min, priceRange.max, 1005, 0)
     globalState.pools.set(AB.name, AB)
 
     const router = new Router(
@@ -498,7 +500,7 @@ it('Smart route for token through cited cross pool with multiple smart swaps', (
 
     const AB = creator.createPool(questB, questA)
     const priceRange = creator.calculatePriceRange(poolA, poolB, 2)
-    creator.citeQuest(AB, priceRange.min, priceRange.max, 1005, 0)
+    creator.citeQuest(AB, questB, questA, priceRange.min, priceRange.max, 1005, 0)
     globalState.pools.set(AB.name, AB)
 
     const router = new Router(

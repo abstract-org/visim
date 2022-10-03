@@ -1,4 +1,5 @@
 import { Graph } from './Graph.class'
+import { byName } from "../Utils/logicUtils";
 
 export default class Router {
     #state = { quests: [], pools: [] }
@@ -25,6 +26,12 @@ export default class Router {
         this.#DEBUG_DRY = debugDry
     }
 
+    /**
+     * @param {string} token0
+     * @param {string} token1
+     * @param {number} amountIn
+     * @returns {*[]|number[]}
+     */
     smartSwap(token0, token1, amountIn) {
         if (this.#DEBUG)
             console.log(
@@ -104,7 +111,7 @@ export default class Router {
             let pathSums = []
             pools.forEach((pool, id) => {
                 const zeroForOne =
-                    pool.tokenLeft.name === poolPairs[id][0] ? true : false
+                    pool.tokenLeft === poolPairs[id][0] ? true : false
                 const sum = pathSums.length
                     ? pathSums[id - 1][1]
                     : amount < this.#_DEFAULT_SWAP_SUM
@@ -178,22 +185,27 @@ export default class Router {
     graphPools(poolList) {
         const graph = new Graph()
         poolList.forEach((pool) => {
-            if (!graph.adjList.has(pool.tokenLeft)) {
-                graph.addVertex(pool.tokenLeft)
+            if (!graph.adjList.has(pool.tokenLeft.name)) {
+                graph.addVertex(pool.tokenLeft.name)
             }
 
-            if (!graph.adjList.has(pool.tokenRight)) {
-                graph.addVertex(pool.tokenRight)
+            if (!graph.adjList.has(pool.tokenRight.name)) {
+                graph.addVertex(pool.tokenRight.name)
             }
         })
 
         poolList.forEach((pool) => {
-            graph.addEdge(pool.tokenLeft, pool.tokenRight)
+            graph.addEdge(pool.tokenLeft.name, pool.tokenRight)
         })
 
         return graph
     }
 
+    /**
+     * @param {string} tokenName
+     * @param {number} depth
+     * @returns {[]|*[]}
+     */
     findPoolsFor(tokenName, depth = 0) {
         let results = this.#processTokenForPath(tokenName)
 
@@ -203,8 +215,8 @@ export default class Router {
         }
 
         results.forEach((res) => {
-            const leftPools = this.findPoolsFor(res.tokenLeft, depth + 1)
-            const rightPools = this.findPoolsFor(res.tokenRight, depth + 1)
+            const leftPools = this.findPoolsFor(res.tokenLeft.name, depth + 1)
+            const rightPools = this.findPoolsFor(res.tokenRight.name, depth + 1)
 
             results = Array.prototype.concat(results, leftPools, rightPools)
         })
@@ -330,7 +342,7 @@ export default class Router {
                     : null
 
             const zeroForOne =
-                pool.tokenLeft.name === poolTokens[0] ? true : false
+                pool.tokenLeft === poolTokens[0] ? true : false
 
             sums = dry
                 ? pool.drySwap(amount, zeroForOne)
@@ -382,8 +394,8 @@ export default class Router {
             swaps.push({
                 path,
                 pool: pool.name,
-                token0: pool.tokenLeft.name,
-                token1: pool.tokenRight.name,
+                token0: pool.tokenLeft,
+                token1: pool.tokenRight,
                 price: pool.currentPrice,
                 next: nextPool ? nextPool.name : null,
                 op: zeroForOne ? 'buy' : 'sell',
@@ -408,7 +420,7 @@ export default class Router {
     }
 
     #processTokenForPath(tokenName) {
-        let quest = this.#state.quests.find((quest) => quest.name === tokenName)
+        let quest = this.#state.quests.find(byName(tokenName))
         if (!quest) {
             return []
         }
@@ -420,20 +432,18 @@ export default class Router {
         }
 
         const result = []
-        candidatePools.forEach((pool) => {
+        candidatePools.forEach((candidate) => {
+            const pool = this.#state.pools.find(byName(candidate))
             if (this.#_visitedForGraph.includes(pool.name)) {
                 return
             }
-
-            const tokenLeft = pool.tokenLeft.name
-            const tokenRight = pool.tokenRight.name
 
             this.#_visitedForGraph.push(pool.name)
 
             result.push({
                 for: tokenName,
-                tokenLeft,
-                tokenRight
+                tokenLeft: this.#state.quests.find(byName(pool.tokenLeft)),
+                tokenRight: this.#state.quests.find(byName(pool.tokenRight)),
             })
         })
 
@@ -460,13 +470,9 @@ export default class Router {
     }
 
     #getPoolByTokens(tokenA, tokenB) {
-        return this.#state.pools.some((p) => p.name === `${tokenA}-${tokenB}`)
-            ? this.#state.pools.find(
-                  (pool) => pool.name === `${tokenA}-${tokenB}`
-              )
-            : this.#state.pools.find(
-                  (pool) => pool.name === `${tokenB}-${tokenA}`
-              )
+        return this.#state.pools.some(byName(`${tokenA}-${tokenB}`))
+            ? this.#state.pools.find(byName(`${tokenA}-${tokenB}`))
+            : this.#state.pools.find(byName`${tokenB}-${tokenA}`)
     }
 
     chunkAmountBy(amount, by) {

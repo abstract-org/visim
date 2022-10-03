@@ -232,8 +232,8 @@ class Generator {
         if (citeSingleAmount) {
             const singleUsdcPool = this.#cachedPools.find(
                 (pool) =>
-                    pool.tokenLeft.name === this.#DEFAULT_TOKEN &&
-                    pool.tokenRight.name === singleQuest.name
+                    pool.tokenLeft === this.#DEFAULT_TOKEN &&
+                    pool.tokenRight === singleQuest.name
             )
 
             if (!singleUsdcPool) {
@@ -249,8 +249,8 @@ class Generator {
 
             let citedSinglePool = this.#cachedPools.find(
                 (pool) =>
-                    pool.tokenLeft.name === singleQuest.name &&
-                    pool.tokenRight.name === quest.name
+                    pool.tokenLeft === singleQuest.name &&
+                    pool.tokenRight === quest.name
             )
 
             if (!citedSinglePool) {
@@ -266,6 +266,8 @@ class Generator {
 
             const [totalIn, totalOut] = investor.citeQuest(
                 citedSinglePool,
+                singleQuest,
+                quest,
                 priceRange.min,
                 priceRange.max,
                 citeSingleAmount,
@@ -317,11 +319,7 @@ class Generator {
                     questProbs.citeOtherQuantity
                 )
 
-                const citedPool = this.#cachedPools.find(
-                    (pool) =>
-                        pool.getType() === 'QUEST' &&
-                        pool.tokenRight.name === randomQuest.name
-                )
+                const citedPool = this.#cachedPools.find(p => p.isQuest() && p.tokenRight === randomQuest.name)
 
                 if (!citedPool || citedPool.name === pool.name) {
                     console.log(
@@ -337,8 +335,8 @@ class Generator {
 
                 let crossPool = this.#cachedPools.find(
                     (pool) =>
-                        pool.tokenLeft.name === randomQuest.name &&
-                        pool.tokenRight.name === quest.name
+                        pool.tokenLeft === randomQuest.name &&
+                        pool.tokenRight === quest.name
                 )
 
                 if (!crossPool) {
@@ -354,6 +352,8 @@ class Generator {
 
                 const [totalIn, totalOut] = investor.citeQuest(
                     crossPool,
+                    randomQuest,
+                    quest,
                     priceRange.min,
                     priceRange.max,
                     citeOtherAmount
@@ -426,14 +426,14 @@ class Generator {
 
                         const tradePool = this.#cachedPools.find(
                             (pool) =>
-                                pool.getType() === 'QUEST' &&
-                                pool.tokenRight.name === conf.includeSingleName
+                                pool.isQuest() &&
+                                pool.tokenRight === conf.includeSingleName
                         )
 
                         const t0 = performance.now()
                         const [totalIn, totalOut] = router.smartSwap(
                             this.#DEFAULT_TOKEN,
-                            tradePool.tokenRight.name,
+                            tradePool.tokenRight,
                             spendAmount
                         )
                         const t1 = performance.now()
@@ -468,8 +468,8 @@ class Generator {
                             return
                         }
                         this.#processSwapData(investor, router.getSwaps(), day)
-                        investor.addBalance(tradePool.tokenLeft.name, totalIn)
-                        investor.addBalance(tradePool.tokenRight.name, totalOut)
+                        investor.addBalance(tradePool.tokenLeft, totalIn)
+                        investor.addBalance(tradePool.tokenRight, totalOut)
                     }
 
                     // Buy top gainers/random
@@ -502,7 +502,7 @@ class Generator {
                             const t0 = performance.now()
                             const [totalIn, totalOut] = router.smartSwap(
                                 this.#DEFAULT_TOKEN,
-                                pool.tokenRight.name,
+                                pool.tokenRight,
                                 perPoolAmt
                             )
                             const t1 = performance.now()
@@ -543,8 +543,8 @@ class Generator {
                                 router.getSwaps(),
                                 day
                             )
-                            investor.addBalance(pool.tokenLeft.name, totalIn)
-                            investor.addBalance(pool.tokenRight.name, totalOut)
+                            investor.addBalance(pool.tokenLeft, totalIn)
+                            investor.addBalance(pool.tokenRight, totalOut)
                         })
                     }
 
@@ -560,8 +560,8 @@ class Generator {
 
                             const sp0 = performance.now()
                             const [totalIn, totalOut] = router.smartSwap(
-                                pool.tokenRight.name,
-                                pool.tokenLeft.name,
+                                pool.tokenRight,
+                                pool.tokenLeft,
                                 amount
                             )
                             const sp1 = performance.now()
@@ -601,8 +601,8 @@ class Generator {
                                 router.getSwaps(),
                                 day
                             )
-                            investor.addBalance(pool.tokenRight.name, totalIn)
-                            investor.addBalance(pool.tokenLeft.name, totalOut)
+                            investor.addBalance(pool.tokenRight, totalIn)
+                            investor.addBalance(pool.tokenLeft, totalOut)
                         })
                     }
                 })
@@ -694,8 +694,8 @@ class Generator {
             .map((q) =>
                 this.#cachedPools.find(
                     (cp) =>
-                        cp.tokenRight.name === q &&
-                        cp.tokenLeft.name === this.#DEFAULT_TOKEN
+                        cp.tokenRight === q &&
+                        cp.tokenLeft === this.#DEFAULT_TOKEN
                 )
             )
             .filter((x) => x)
@@ -729,7 +729,7 @@ class Generator {
                     const pool = invQuestPools.find(
                         (iqp) => iqp.name === poolData[0]
                     )
-                    const tokenBalance = invBalances[pool.tokenRight.name]
+                    const tokenBalance = invBalances[pool.tokenRight]
                     const amountToSell =
                         (tokenBalance / 100) *
                         (growthRate > 0
@@ -779,8 +779,8 @@ class Generator {
         if (excludeSingleName) {
             finalResult.filter(
                 (pool) =>
-                    pool.getType() === 'QUEST' &&
-                    pool.tokenRight.name !== excludeSingleName
+                    pool.isQuest() &&
+                    pool.tokenRight !== excludeSingleName
             )
         }
 
@@ -845,8 +845,8 @@ class Generator {
             .map((quest) =>
                 this.#cachedPools.find(
                     (pool) =>
-                        pool.tokenLeft.name === this.#DEFAULT_TOKEN &&
-                        pool.tokenRight.name === quest.name
+                        pool.tokenLeft === this.#DEFAULT_TOKEN &&
+                        pool.tokenRight === quest.name
                 )
             )
             .filter((x) => x)

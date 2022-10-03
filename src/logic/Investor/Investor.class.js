@@ -16,6 +16,11 @@ export default class Investor {
     #canCreate = false
     #PRICE_RANGE_MULTIPLIER = 2
 
+    /**
+     * @param {string} type
+     * @param {string} name
+     * @param {number} usdcBalance
+     */
     constructor(type, name, usdcBalance = 10000) {
         this.hash = '0x' + sha256(`${name} + ${type}`)
         this.balances.USDC = parseFloat(usdcBalance)
@@ -64,6 +69,7 @@ export default class Investor {
         )
     }
 
+    // TODO: delete this method if not usable
     removePosition(pool, priceMin, priceMax, amountLeft = 0, amountRight = 0) {
         return this.#modifyPosition(
             pool,
@@ -106,15 +112,27 @@ export default class Investor {
         return new Pool(citedToken, citingToken, startingPrice)
     }
 
+    /**
+     * @param {Object} crossPool
+     * @param {Object} tokenLeft
+     * @param {Object} tokenRight
+     * @param {number} priceMin
+     * @param {number} priceMax
+     * @param {number} citingAmount
+     * @param {number} citedAmount
+     * @returns {*[]}
+     */
     citeQuest(
         crossPool,
+        tokenLeft,
+        tokenRight,
         priceMin = 1,
         priceMax = 10,
         citingAmount = 0,
         citedAmount = 0
     ) {
-        crossPool.tokenLeft.addPool(crossPool)
-        crossPool.tokenRight.addPool(crossPool)
+        tokenLeft.addPool(crossPool)
+        tokenRight.addPool(crossPool)
 
         // Set "positions" for value link pool
         const [totalIn, totalOut] = crossPool.openPosition(
@@ -131,14 +149,11 @@ export default class Investor {
         citedQuestPool,
         multiplier = this.#PRICE_RANGE_MULTIPLIER
     ) {
-        if (!citingQuestPool.currentPrice || !citingQuestPool.currentPrice) {
-            throw new Error(
-                'Did you pass quest instead of a pool for citation?'
-            )
-        }
-
         const citingPrice = citingQuestPool.currentPrice
         const citedPrice = citedQuestPool.currentPrice
+        if (!citingPrice || !citedPrice) {
+            throw new Error('Did you pass quest instead of a pool for citation?')
+        }
 
         let AforB = citingPrice / citedPrice
         let min = AforB < citingPrice ? AforB / multiplier : AforB

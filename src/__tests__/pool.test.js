@@ -89,7 +89,7 @@ it('cites a quest with fresh pools', () => {
     const citedPool = citedQuest.createPool()
     const crossPool = investor.createPool(citedQuest, tokenRight)
     const priceRange = investor.calculatePriceRange(pool, citedPool, 2)
-    investor.citeQuest(crossPool, priceRange.min, priceRange.max, 1000, 0)
+    investor.citeQuest(crossPool, citedQuest, tokenRight, priceRange.min, priceRange.max, 1000, 0)
 
     tokenRight.addPool(crossPool)
     citedQuest.addPool(crossPool)
@@ -119,6 +119,8 @@ it('cites a quest with traded pool A', () => {
     const priceRange = investor.calculatePriceRange(pool, citedPool, 2)
     const [totalIn, totalOut] = investor.citeQuest(
         crossPool,
+        citedQuest,
+        tokenRight,
         priceRange.min,
         priceRange.max,
         1000,
@@ -156,7 +158,7 @@ it('cites a quest with traded pool B', () => {
 
     const priceRange = investor.calculatePriceRange(pool, citedPool, 2)
 
-    investor.citeQuest(crossPool, priceRange.min, priceRange.max, 100, 0)
+    investor.citeQuest(crossPool, citedQuest, tokenRight, priceRange.min, priceRange.max, 100, 0)
 
     tokenRight.addPool(crossPool)
     citedQuest.addPool(crossPool)
@@ -203,7 +205,7 @@ describe('isQuest()', () => {
     it('returns true for QUEST pool', () => {
         const { pool } = preparePool()
 
-        expect(pool.tokenLeft).toBeInstanceOf(UsdcToken)
+        expect(pool.tokenLeft).toBe('USDC')
         expect(pool.isQuest()).toBe(true)
     })
 

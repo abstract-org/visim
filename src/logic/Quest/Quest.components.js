@@ -34,8 +34,8 @@ export const QuestSelector = () => {
         const questName = quests.find((questName) => questName === e.value)
         const quest = globalState.quests.get(questName)
         for (const pool of quest.pools) {
-            if (pool.getType() === 'QUEST') {
-                setActivePool(pool.name)
+            if (globalState.pools.get(pool).isQuest()) {
+                setActivePool(pool)
             }
         }
 
@@ -120,8 +120,8 @@ export const QuestCitation = () => {
             .values()
             .find(
                 (pool) =>
-                    pool.tokenRight.name === citingQuest.name &&
-                    pool.getType() === 'QUEST'
+                    pool.tokenRight === citingQuest.name &&
+                    pool.isQuest()
             )
 
         selectedQuests.forEach((questName) => {
@@ -148,8 +148,8 @@ export const QuestCitation = () => {
                 .values()
                 .find(
                     (pool) =>
-                        pool.tokenRight.name === citedQuest.name &&
-                        pool.getType() === 'QUEST'
+                        pool.tokenRight === citedQuest.name &&
+                        pool.isQuest()
                 )
             const crossPool = investor.createPool(citedQuest, citingQuest)
             const priceRange = investor.calculatePriceRange(
@@ -431,9 +431,9 @@ export const QuestCreation = () => {
         const pool = tokenRight.createPool()
 
         // Add USDC to pools
-        const exQuest = globalState.quests.get(pool.tokenLeft.name)
+        const exQuest = globalState.quests.get(pool.tokenLeft)
         exQuest.addPool(pool)
-        globalState.quests.set(pool.tokenLeft.name, exQuest)
+        globalState.quests.set(pool.tokenLeft, exQuest)
 
         globalState.quests.set(tokenRight.name, tokenRight)
         globalState.pools.set(pool.name, pool)
