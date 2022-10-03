@@ -20,17 +20,18 @@ afterEach(() => {
     }
 })
 
-it('Generates investors', async () => {
-    const genDays = 5
+fit('Generates investors', async () => {
     const invAuthor = {
         ...invGen,
         invGenAlias: 'AUTHOR',
+        invGenName: 'Researchers',
         createQuest: 'AGRA',
         valueSellEveryDays: 7
     }
     const inv2Author = {
         ...invGen,
         invGenAlias: 'RESEARCHER',
+        invGenName: 'Authors',
         createQuest: 'QTEST',
         valueSellEveryDays: 10,
         excludeSingleName: 'AGORA'
@@ -38,6 +39,7 @@ it('Generates investors', async () => {
     const invInvestor = {
         ...invGen,
         invGenAlias: 'TWODAY',
+        invGenName: 'Twodays',
         buySellPeriodDays: 2,
         buyGainerPerc: 30,
         buyQuestPerc: 100,
@@ -52,14 +54,23 @@ it('Generates investors', async () => {
         buyQuestPerc: 80,
         buyGainerPerc: 45,
         invGenAlias: 'WEEKLY',
+        invGenName: 'Weeklies',
         initialBalance: 50000,
         sellIncSumPerc: 5,
         sellDecSumPerc: 30,
-        excludeSingleName: 'AGORA'
+        includeSingleName: 'AGORA',
+        buySinglePerc: 10
     }
-    const queAuthor = { ...questGen, questGenAlias: 'QTEST' }
-    const que2Author = { ...questGen, questGenAlias: 'AGRA' }
-    const daysData = []
+    const queAuthor = {
+        ...questGen,
+        questGenAlias: 'QTEST',
+        questGenName: 'Cookie'
+    }
+    const que2Author = {
+        ...questGen,
+        questGenAlias: 'AGRA',
+        questGenName: 'Agorka'
+    }
 
     const creator = new Investor('creator', 'creator', 10000)
     const fndQuest = creator.createQuest('AGORA')
@@ -74,43 +85,57 @@ it('Generates investors', async () => {
         globalState.quests.values()
     )
 
+    let dayPerf = []
+
+    const genDays = 5
     for (let day = 1; day <= genDays; day++) {
-        console.log(`Simulating day ${day}`)
-        const dayData = await genManager.step(day)
-        daysData.push(dayData)
+        const d0 = performance.now()
+        await genManager.step(day)
+        const d1 = performance.now()
+
+        const daySec = d1 - d0 >= 1000 ? true : false
+        dayPerf.push({
+            day,
+            ms: !daySec ? `${(d1 - d0).toFixed(2)}ms` : null,
+            sec: daySec ? `${((d1 - d0) / 1000).toFixed(2)}sec` : null
+        })
     }
 
     globalState.pools = genManager.getPools()
     globalState.quests = genManager.getQuests()
     globalState.investors = genManager.getInvestors()
 
-    console.log(
-        'gen output:',
-        'pools:',
-        globalState.pools.length,
-        'invs:',
-        globalState.investors.length,
-        'quests:',
-        globalState.quests.length
-    )
+    console.log(`||| TOTAL TRADING OPERATIONS: ${genManager.getOps()} |||`)
+    console.log(`Days performance`)
+    console.table(dayPerf)
 
-    const poolPrices = []
-    globalState.pools.forEach((pool) => {
-        poolPrices.push({
-            name: pool.name,
-            price: pool.currentPrice
-        })
-    })
-    console.table(poolPrices)
+    // console.log(
+    //     'gen output:',
+    //     'pools:',
+    //     globalState.pools.length,
+    //     'invs:',
+    //     globalState.investors.length,
+    //     'quests:',
+    //     globalState.quests.length
+    // )
 
-    const investorBalances = []
-    globalState.investors.forEach((investor) => {
-        investorBalances.push({
-            name: investor.type,
-            balances: JSON.stringify(investor.balances)
-        })
-    })
-    console.table(investorBalances)
+    // const poolPrices = []
+    // globalState.pools.forEach((pool) => {
+    //     poolPrices.push({
+    //         name: pool.name,
+    //         price: pool.currentPrice
+    //     })
+    // })
+    // console.table(poolPrices)
+
+    // const investorBalances = []
+    // globalState.investors.forEach((investor) => {
+    //     investorBalances.push({
+    //         name: investor.type,
+    //         balances: JSON.stringify(investor.balances)
+    //     })
+    // })
+    // console.table(investorBalances)
 })
 
 it('Generates quests', () => {})

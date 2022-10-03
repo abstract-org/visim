@@ -12,6 +12,7 @@ class Generator {
     #dayData = {}
     #DEFAULT_TOKEN = 'USDC'
     #PRICE_RANGE_MULTIPLIER = 2
+    #_OPS = 0
 
     #cachedInvestors = []
     #cachedQuests = []
@@ -212,7 +213,6 @@ class Generator {
         this.storeTradedPool(day, pool)
         investor.addBalance(this.#DEFAULT_TOKEN, totalIn)
         investor.addBalance(quest.name, totalOut)
-        console.log(investor.name, totalIn, totalOut, investor.balances)
     }
 
     citeSingleQuest(questConfig, day, pool, quest, investor) {
@@ -229,6 +229,7 @@ class Generator {
             questConfig.singleCitePerc
         )
 
+        // pool.tokenLeft.name => globalState.quests.get(pool.tokenLeft).name
         if (citeSingleAmount) {
             const singleUsdcPool = this.#cachedPools.find(
                 (pool) =>
@@ -240,8 +241,6 @@ class Generator {
                 return
             }
 
-            console.log(pool.name, pool)
-            console.log(singleUsdcPool.name, singleUsdcPool)
             const priceRange = investor.calculatePriceRange(
                 pool,
                 singleUsdcPool
@@ -301,15 +300,6 @@ class Generator {
             questProbs.citeOtherQuantity
         )
 
-        console.log(
-            'failure',
-            quest.name,
-            'would cite',
-            randomQuests,
-            'balance',
-            investor.balances[quest.name]
-        )
-
         if (randomQuests.length) {
             randomQuests.forEach((randomQuest) => {
                 const citeOtherAmount = this.calculateCiteAmount(
@@ -329,8 +319,6 @@ class Generator {
                     return
                 }
 
-                console.log(pool.name, pool)
-                console.log(citedPool.name, citedPool)
                 const priceRange = investor.calculatePriceRange(pool, citedPool)
 
                 let crossPool = this.#cachedPools.find(
@@ -357,15 +345,6 @@ class Generator {
                     priceRange.min,
                     priceRange.max,
                     citeOtherAmount
-                )
-
-                console.log(
-                    'Failing here',
-                    questProbs,
-                    investor,
-                    citeOtherAmount,
-                    priceRange,
-                    crossPool.name
                 )
 
                 this.#dayData[day].actions.push({
@@ -438,10 +417,11 @@ class Generator {
                         )
                         const t1 = performance.now()
                         console.log(
-                            `Invested directly in ${
+                            `[${day}][${investor.name}] Invested directly in ${
                                 conf.includeSingleName
                             } amount ${spendAmount} in ${t1 - t0}ms`
                         )
+                        this.#_OPS++
 
                         // collect pool price movements here and in other calls of router.smartSwap
                         this.storeTradedPool(day, tradePool)
@@ -499,18 +479,21 @@ class Generator {
                         }
 
                         tradePools.forEach((pool) => {
-                            const t0 = performance.now()
+                            //const t0 = performance.now()
                             const [totalIn, totalOut] = router.smartSwap(
                                 this.#DEFAULT_TOKEN,
                                 pool.tokenRight,
                                 perPoolAmt
                             )
-                            const t1 = performance.now()
-                            console.log(
-                                `Traded top gainer in ${
-                                    pool.name
-                                } amount ${perPoolAmt} in ${t1 - t0}ms`
-                            )
+                            //const t1 = performance.now()
+                            // console.log(
+                            //     `[${day}][${
+                            //         investor.name
+                            //     }] Traded top gainer in ${
+                            //         pool.name
+                            //     } amount ${perPoolAmt} in ${t1 - t0}ms`
+                            // )
+                            this.#_OPS++
 
                             // collect pool price movements here and in other calls of router.smartSwap
                             this.storeTradedPool(day, pool)
@@ -566,10 +549,13 @@ class Generator {
                             )
                             const sp1 = performance.now()
                             console.log(
-                                `Sold tokens on day ${day} into ${
+                                `[${day}][${
+                                    investor.name
+                                }] Sold tokens on day ${day} into ${
                                     pool.name
                                 } amount ${amount} in ${sp1 - sp0}ms`
                             )
+                            this.#_OPS++
 
                             // collect pool price movements here and in other calls of router.smartSwap
                             this.storeTradedPool(day, pool)
@@ -660,10 +646,13 @@ class Generator {
                         )
                         const t1 = performance.now()
                         console.log(
-                            `Widthdrawn amount ${amtOut} for ${amtIn}${
+                            `[${day}][${
+                                author.name
+                            }] Widthdrawn amount ${amtOut} for ${amtIn}${
                                 quest.name
                             } in ${t1 - t0}ms`
                         )
+                        this.#_OPS++
 
                         if (
                             isNaN(amtIn) ||
@@ -767,7 +756,6 @@ class Generator {
         let randomGainers = []
         if (topGainers.length < poolsAmount) {
             const randomAmountToGet = poolsAmount - topGainers.length
-            console.log('no gainers, find', randomAmountToGet)
             randomGainers = this.getRandomGainers(
                 buyQuestPerc,
                 randomAmountToGet
@@ -882,7 +870,6 @@ class Generator {
 
     spawnQuest(investor, name, totalTokensProvisioned = null) {
         const quest = investor.createQuest(name)
-        // @TODO: Could be an issue with USDC token not having all pools for trading, fix the issue first
         const pool = quest.createPool({ totalTokensProvisioned })
         this.#cachedQuests.push(quest)
 
@@ -1022,6 +1009,10 @@ class Generator {
 
     getDailyTradedPools() {
         return this.#dailyTradedPools
+    }
+
+    getOps() {
+        return this.#_OPS
     }
 }
 
