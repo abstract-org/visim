@@ -2,6 +2,7 @@ import { faker } from '@faker-js/faker'
 import Chance from 'chance'
 
 import Investor from '../Investor/Investor.class'
+import UsdcToken from '../Quest/UsdcToken.class'
 import Router from '../Router/Router.class'
 import { formSwapData, getCombinedSwaps } from '../Utils/logicUtils'
 
@@ -211,8 +212,8 @@ class Generator {
             paths: pool.name
         })
         this.storeTradedPool(day, pool)
-        investor.addBalance(this.#DEFAULT_TOKEN, totalIn)
-        investor.addBalance(quest.name, totalOut)
+        investor.addBalance(this.#DEFAULT_TOKEN, totalIn, 'initially investing')
+        investor.addBalance(quest.name, totalOut, 'initially investing')
     }
 
     citeSingleQuest(questConfig, day, pool, quest, investor) {
@@ -229,7 +230,6 @@ class Generator {
             questConfig.singleCitePerc
         )
 
-        // pool.tokenLeft.name => globalState.quests.get(pool.tokenLeft).name
         if (citeSingleAmount) {
             const singleUsdcPool = this.#cachedPools.find(
                 (pool) =>
@@ -265,13 +265,20 @@ class Generator {
 
             const [totalIn, totalOut] = investor.citeQuest(
                 citedSinglePool,
-                singleQuest,
-                quest,
                 priceRange.min,
                 priceRange.max,
                 citeSingleAmount,
                 0
             )
+            this.#cachedQuests.map((mapq) => {
+                if (
+                    mapq.name === quest.name ||
+                    mapq.name === singleQuest.name
+                ) {
+                    mapq.addPool(citedSinglePool)
+                }
+                return mapq
+            })
 
             this.#dayData[day].actions.push({
                 pool: citedSinglePool.name,
@@ -282,7 +289,7 @@ class Generator {
                 day
             })
 
-            investor.addBalance(quest.name, -totalIn)
+            investor.addBalance(quest.name, -totalIn, 'citing single quest')
 
             this.#cachedPools.push(citedSinglePool)
             this.#dayData[day]['pools'].push(citedSinglePool)
@@ -309,7 +316,9 @@ class Generator {
                     questProbs.citeOtherQuantity
                 )
 
-                const citedPool = this.#cachedPools.find(p => p.isQuest() && p.tokenRight === randomQuest.name)
+                const citedPool = this.#cachedPools.find(
+                    (p) => p.isQuest() && p.tokenRight === randomQuest.name
+                )
 
                 if (!citedPool || citedPool.name === pool.name) {
                     console.log(
@@ -340,12 +349,20 @@ class Generator {
 
                 const [totalIn, totalOut] = investor.citeQuest(
                     crossPool,
-                    randomQuest,
-                    quest,
                     priceRange.min,
                     priceRange.max,
                     citeOtherAmount
                 )
+
+                this.#cachedQuests.map((mapq) => {
+                    if (
+                        mapq.name === quest.name ||
+                        mapq.name === randomQuest.name
+                    ) {
+                        mapq.addPool(crossPool)
+                    }
+                    return mapq
+                })
 
                 this.#dayData[day].actions.push({
                     pool: crossPool.name,
@@ -355,7 +372,11 @@ class Generator {
                     totalAmountIn: citeOtherAmount.toFixed(3),
                     day
                 })
-                investor.addBalance(quest.name, -totalIn)
+                investor.addBalance(
+                    quest.name,
+                    -totalIn,
+                    'citing random quests'
+                )
 
                 this.#cachedPools.push(crossPool)
                 this.#dayData[day]['pools'].push(crossPool)
@@ -415,6 +436,7 @@ class Generator {
                             tradePool.tokenRight,
                             spendAmount
                         )
+
                         const t1 = performance.now()
                         console.log(
                             `[${day}][${investor.name}] Invested directly in ${
@@ -526,8 +548,16 @@ class Generator {
                                 router.getSwaps(),
                                 day
                             )
-                            investor.addBalance(pool.tokenLeft, totalIn)
-                            investor.addBalance(pool.tokenRight, totalOut)
+                            investor.addBalance(
+                                pool.tokenLeft,
+                                totalIn,
+                                'buying top traders'
+                            )
+                            investor.addBalance(
+                                pool.tokenRight,
+                                totalOut,
+                                'buying top traders'
+                            )
                         })
                     }
 
@@ -587,8 +617,16 @@ class Generator {
                                 router.getSwaps(),
                                 day
                             )
-                            investor.addBalance(pool.tokenRight, totalIn)
-                            investor.addBalance(pool.tokenLeft, totalOut)
+                            investor.addBalance(
+                                pool.tokenRight,
+                                totalIn,
+                                'selling gainers/losers'
+                            )
+                            investor.addBalance(
+                                pool.tokenLeft,
+                                totalOut,
+                                'selling gainers/losers'
+                            )
                         })
                     }
                 })
@@ -618,9 +656,9 @@ class Generator {
 
                     const questBalance =
                         quest &&
-                        author.balances[quest.name] &&
-                        author.balances[quest.name] > 0
-                            ? author.balances[quest.name]
+                        author.balances[quest] &&
+                        author.balances[quest] > 0
+                            ? author.balances[quest]
                             : null
 
                     if (!questBalance) {
@@ -631,16 +669,16 @@ class Generator {
                     let totalOut = 0
                     while (
                         totalOut < conf.valueSellAmount &&
-                        author.balances[quest.name] > 0
+                        author.balances[quest] > 0
                     ) {
                         const sumIn =
-                            author.balances[quest.name] >= 10
+                            author.balances[quest] >= 10
                                 ? 10
-                                : author.balances[quest.name]
+                                : author.balances[quest]
 
                         const t0 = performance.now()
                         const [amtIn, amtOut] = router.smartSwap(
-                            quest.name,
+                            quest,
                             this.#DEFAULT_TOKEN,
                             sumIn
                         )
@@ -648,9 +686,9 @@ class Generator {
                         console.log(
                             `[${day}][${
                                 author.name
-                            }] Widthdrawn amount ${amtOut} for ${amtIn}${
-                                quest.name
-                            } in ${t1 - t0}ms`
+                            }] Widthdrawn amount ${amtOut} for ${amtIn}${quest} in ${
+                                t1 - t0
+                            }ms`
                         )
                         this.#_OPS++
 
@@ -661,7 +699,7 @@ class Generator {
                             router.isZero(amtOut)
                         ) {
                             console.log(
-                                `Broke out of selling own value of ${quest.name} with requested amount ${conf.valueSellAmount}, currently got ${totalIn}/${totalOut}`
+                                `Broke out of selling own value of ${quest} with requested amount ${conf.valueSellAmount}, currently got ${totalIn}/${totalOut}`
                             )
                             break
                         }
@@ -670,8 +708,12 @@ class Generator {
 
                         totalIn += amtIn
                         totalOut += amtOut
-                        author.addBalance(quest.name, amtIn)
-                        author.addBalance(this.#DEFAULT_TOKEN, amtOut)
+                        author.addBalance(quest, amtIn, 'withdrawing own USDC')
+                        author.addBalance(
+                            this.#DEFAULT_TOKEN,
+                            amtOut,
+                            'withdrawing own USDC'
+                        )
                     }
                 })
             }
@@ -767,8 +809,7 @@ class Generator {
         if (excludeSingleName) {
             finalResult.filter(
                 (pool) =>
-                    pool.isQuest() &&
-                    pool.tokenRight !== excludeSingleName
+                    pool.isQuest() && pool.tokenRight !== excludeSingleName
             )
         }
 
@@ -876,13 +917,15 @@ class Generator {
         let leftSideQuest = this.#cachedQuests.find(
             (quest) => quest.name === this.#DEFAULT_TOKEN
         )
+
         if (leftSideQuest) {
             leftSideQuest.addPool(pool)
             this.#cachedQuests.map((quest) =>
                 quest.name === leftSideQuest.name ? leftSideQuest : quest
             )
         } else {
-            leftSideQuest = pool.tokenLeft
+            leftSideQuest = new UsdcToken()
+            leftSideQuest.addPool(pool)
             this.#cachedQuests.push(leftSideQuest)
         }
 

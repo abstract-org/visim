@@ -119,9 +119,7 @@ export const QuestCitation = () => {
         const citingPool = globalState.pools
             .values()
             .find(
-                (pool) =>
-                    pool.tokenRight === citingQuest.name &&
-                    pool.isQuest()
+                (pool) => pool.tokenRight === citingQuest.name && pool.isQuest()
             )
 
         selectedQuests.forEach((questName) => {
@@ -148,8 +146,7 @@ export const QuestCitation = () => {
                 .values()
                 .find(
                     (pool) =>
-                        pool.tokenRight === citedQuest.name &&
-                        pool.isQuest()
+                        pool.tokenRight === citedQuest.name && pool.isQuest()
                 )
             const crossPool = investor.createPool(citedQuest, citingQuest)
             const priceRange = investor.calculatePriceRange(
@@ -162,6 +159,10 @@ export const QuestCitation = () => {
                 priceRange.max,
                 calcAmountA
             )
+            citedQuest.addPool(crossPool)
+            citingQuest.addPool(crossPool)
+            globalState.quests.set(citedQuest.name, citedQuest)
+            globalState.quests.set(citingQuest.name, citingQuest)
             investor.addBalance(citingQuest.name, -calcAmountA)
 
             globalState.pools.set(crossPool.name, crossPool)

@@ -654,9 +654,7 @@ export default class Pool {
             total ${this.tokenLeft}: ${
                 rightBalance[1] > 0 ? rightBalance[1] : 0
             }
-            total ${this.tokenRight}: ${
-                leftBalance[1] > 0 ? leftBalance[1] : 0
-            }
+            total ${this.tokenRight}: ${leftBalance[1] > 0 ? leftBalance[1] : 0}
             ---
             can buy(take in) ${Math.abs(leftBalance[0])} ${
                 this.tokenLeft
@@ -731,8 +729,6 @@ export default class Pool {
     }
 
     getUSDCValue() {
-        return this.isQuest()
-            ? this.getSwapInfo()[RIGHT_TOKEN][TOTAL_OUT]
-            : 0
+        return this.isQuest() ? this.getSwapInfo()[RIGHT_TOKEN][TOTAL_OUT] : 0
     }
 }

@@ -1,9 +1,9 @@
 import HashMap from 'hashmap'
 
+import UsdcToken from '../logic/Quest/UsdcToken.class'
 import { p2pp } from '../logic/Utils/logicUtils'
 import globalConfig from '../logic/config.global.json'
-import { preparePool, prepareCrossPools } from './helpers/poolManager'
-import UsdcToken from "../logic/Quest/UsdcToken.class";
+import { prepareCrossPools, preparePool } from './helpers/poolManager'
 
 let globalState = {
     pools: new HashMap(),
@@ -89,7 +89,7 @@ it('cites a quest with fresh pools', () => {
     const citedPool = citedQuest.createPool()
     const crossPool = investor.createPool(citedQuest, tokenRight)
     const priceRange = investor.calculatePriceRange(pool, citedPool, 2)
-    investor.citeQuest(crossPool, citedQuest, tokenRight, priceRange.min, priceRange.max, 1000, 0)
+    investor.citeQuest(crossPool, priceRange.min, priceRange.max, 1000, 0)
 
     tokenRight.addPool(crossPool)
     citedQuest.addPool(crossPool)
@@ -119,8 +119,6 @@ it('cites a quest with traded pool A', () => {
     const priceRange = investor.calculatePriceRange(pool, citedPool, 2)
     const [totalIn, totalOut] = investor.citeQuest(
         crossPool,
-        citedQuest,
-        tokenRight,
         priceRange.min,
         priceRange.max,
         1000,
@@ -158,7 +156,7 @@ it('cites a quest with traded pool B', () => {
 
     const priceRange = investor.calculatePriceRange(pool, citedPool, 2)
 
-    investor.citeQuest(crossPool, citedQuest, tokenRight, priceRange.min, priceRange.max, 100, 0)
+    investor.citeQuest(crossPool, priceRange.min, priceRange.max, 100, 0)
 
     tokenRight.addPool(crossPool)
     citedQuest.addPool(crossPool)
@@ -184,14 +182,14 @@ it('cites a quest with traded pool B', () => {
 
 describe('getUSDCValue()', () => {
     it('returns 0 for non-USDC crosspool', () => {
-        const [ , { AB, CA } ] = prepareCrossPools()
+        const [, { AB, CA }] = prepareCrossPools()
 
         expect(AB.getUSDCValue()).toBe(0)
         expect(CA.getUSDCValue()).toBe(0)
     })
 
     it('returns correct value of USDC in pool', () => {
-        const [ , { poolA } ] = prepareCrossPools()
+        const [, { poolA }] = prepareCrossPools()
 
         poolA.buy(1000)
         poolA.buy(2000)
@@ -216,7 +214,7 @@ describe('isQuest()', () => {
     })
 
     it('returns false for cross-pools', () => {
-        const [ , { AB } ] = prepareCrossPools()
+        const [, { AB }] = prepareCrossPools()
 
         expect(AB.isQuest()).toBe(false)
     })

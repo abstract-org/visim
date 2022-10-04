@@ -31,13 +31,13 @@ export default class Investor {
 
     createQuest(name) {
         const quest = new Token(name)
-        this.questsCreated.push(quest)
+        this.questsCreated.push(quest.name)
         return quest
     }
 
-    addBalance(tokenName, balance) {
+    addBalance(tokenName, balance, msg = null) {
         if (isNaN(balance)) {
-            console.log('Trying to pass NaN amount', tokenName, balance)
+            console.log('Trying to pass NaN amount', tokenName, balance, msg)
             return
         }
 
@@ -60,17 +60,6 @@ export default class Investor {
     }
 
     removeLiquidity(pool, priceMin, priceMax, amountLeft = 0, amountRight = 0) {
-        return this.#modifyPosition(
-            pool,
-            priceMin,
-            priceMax,
-            amountLeft,
-            amountRight
-        )
-    }
-
-    // TODO: delete this method if not usable
-    removePosition(pool, priceMin, priceMax, amountLeft = 0, amountRight = 0) {
         return this.#modifyPosition(
             pool,
             priceMin,
@@ -109,13 +98,12 @@ export default class Investor {
         if (!citedToken || !citingToken) {
             throw new Error('You must provide both tokens to create cross pool')
         }
+
         return new Pool(citedToken, citingToken, startingPrice)
     }
 
     /**
      * @param {Object} crossPool
-     * @param {Object} tokenLeft
-     * @param {Object} tokenRight
      * @param {number} priceMin
      * @param {number} priceMax
      * @param {number} citingAmount
@@ -124,16 +112,11 @@ export default class Investor {
      */
     citeQuest(
         crossPool,
-        tokenLeft,
-        tokenRight,
         priceMin = 1,
         priceMax = 10,
         citingAmount = 0,
         citedAmount = 0
     ) {
-        tokenLeft.addPool(crossPool)
-        tokenRight.addPool(crossPool)
-
         // Set "positions" for value link pool
         const [totalIn, totalOut] = crossPool.openPosition(
             priceMin,
@@ -152,7 +135,9 @@ export default class Investor {
         const citingPrice = citingQuestPool.currentPrice
         const citedPrice = citedQuestPool.currentPrice
         if (!citingPrice || !citedPrice) {
-            throw new Error('Did you pass quest instead of a pool for citation?')
+            throw new Error(
+                'Did you pass quest instead of a pool for citation?'
+            )
         }
 
         let AforB = citingPrice / citedPrice

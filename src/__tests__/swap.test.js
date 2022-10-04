@@ -214,7 +214,6 @@ it('Three investors one tick (buy during liquidity shift)', () => {
     investor.addBalance(tokenRight.name, totalAmountOut)
 
     let [totalAmountIn2, totalAmountOut2] = pool.buy(5000)
-    console.log(totalAmountIn2, totalAmountOut2, longTerm.balances)
     longTerm.addBalance(tokenLeft.name, totalAmountIn2)
     longTerm.addBalance(tokenRight.name, totalAmountOut2)
 
@@ -330,15 +329,21 @@ it('Calculates reserves properly by swapping in different directions in both USD
     const swap4 = pool4.getSwapInfo()
 
     const AB = investor.createPool(quest2, quest)
-    investor.citeQuest(AB, quest2, quest, 1, 2, 1000, 0)
+    investor.citeQuest(AB, 1, 2, 1000, 0)
+    quest.addPool(AB)
+    quest2.addPool(AB)
     const swap5 = AB.getSwapInfo()
 
     const AC = investor.createPool(quest3, quest)
-    investor.citeQuest(AC, quest3, quest, 1, 2, 1000, 0)
+    investor.citeQuest(AC, 1, 2, 1000, 0)
+    quest.addPool(AC)
+    quest3.addPool(AC)
     const swap6 = AC.getSwapInfo()
 
     const AD = investor.createPool(quest4, quest)
-    investor.citeQuest(AD, quest4, quest,1, 2, 1000, 1000)
+    investor.citeQuest(AD, 1, 2, 1000, 1000)
+    quest.addPool(AD)
+    quest4.addPool(AD)
     const swap7 = AD.getSwapInfo()
 
     expect(Math.abs(swap1[1][0])).toBe(20000)
