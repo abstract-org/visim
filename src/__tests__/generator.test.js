@@ -20,7 +20,7 @@ afterEach(() => {
     }
 })
 
-fit('Generates investors', async () => {
+it('Generates investors', async () => {
     const invAuthor = {
         ...invGen,
         invGenAlias: 'AUTHOR',
@@ -108,34 +108,6 @@ fit('Generates investors', async () => {
     console.log(`||| TOTAL TRADING OPERATIONS: ${genManager.getOps()} |||`)
     console.log(`Days performance`)
     console.table(dayPerf)
-
-    // console.log(
-    //     'gen output:',
-    //     'pools:',
-    //     globalState.pools.length,
-    //     'invs:',
-    //     globalState.investors.length,
-    //     'quests:',
-    //     globalState.quests.length
-    // )
-
-    // const poolPrices = []
-    // globalState.pools.forEach((pool) => {
-    //     poolPrices.push({
-    //         name: pool.name,
-    //         price: pool.currentPrice
-    //     })
-    // })
-    // console.table(poolPrices)
-
-    // const investorBalances = []
-    // globalState.investors.forEach((investor) => {
-    //     investorBalances.push({
-    //         name: investor.type,
-    //         balances: JSON.stringify(investor.balances)
-    //     })
-    // })
-    // console.table(investorBalances)
 })
 
 it('Generates quests', () => {})

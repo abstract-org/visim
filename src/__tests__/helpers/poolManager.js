@@ -52,42 +52,58 @@ export const prepareCrossPools = (defaultTokenASum) => {
     // [A,B]
     const { min: pmin1, max: pmax1 } = creator.calculatePriceRange(poolB, poolA)
     const AB = creator.createPool(questB, questA)
-    creator.citeQuest(AB, questB, questA, pmin1, pmax1, defaultTokenASum, 0) // deposit A (citing)
+    questA.addPool(AB)
+    questB.addPool(AB)
+    creator.citeQuest(AB, pmin1, pmax1, defaultTokenASum, 0) // deposit A (citing)
 
     // [C,A]
     const { min: pmin2, max: pmax2 } = creator.calculatePriceRange(poolC, poolA)
     const CA = creator.createPool(questA, questC)
-    creator.citeQuest(CA, questA, questC, pmin2, pmax2, defaultTokenASum, 0) // deposit C (citing)
+    questA.addPool(CA)
+    questC.addPool(CA)
+    creator.citeQuest(CA, pmin2, pmax2, defaultTokenASum, 0) // deposit C (citing)
 
     // [C,B]
     const { min: pmin3, max: pmax3 } = creator.calculatePriceRange(poolB, poolC)
     const CB = creator.createPool(questC, questB)
-    creator.citeQuest(CB, questC, questB, pmin3, pmax3, defaultTokenASum, 0) // deposit B (citing)
+    questB.addPool(CB)
+    questC.addPool(CB)
+    creator.citeQuest(CB, pmin3, pmax3, defaultTokenASum, 0) // deposit B (citing)
 
     // [C,E]
     const { min: pmin4, max: pmax4 } = creator.calculatePriceRange(poolC, poolE)
     const CE = creator.createPool(questE, questC)
-    creator.citeQuest(CE, questE, questC, pmin4, pmax4, defaultTokenASum, 0) // deposit C (citing)
+    questC.addPool(CE)
+    questE.addPool(CE)
+    creator.citeQuest(CE, pmin4, pmax4, defaultTokenASum, 0) // deposit C (citing)
 
-    // [A,D]
+    // [D,A]
     const { min: pmin5, max: pmax5 } = creator.calculatePriceRange(poolA, poolD)
-    const AD = creator.createPool(questD, questA)
-    creator.citeQuest(AD, questD, questA, pmin5, pmax5, defaultTokenASum, 0) // deposit A (citing)
+    const DA = creator.createPool(questD, questA)
+    questA.addPool(DA)
+    questD.addPool(DA)
+    creator.citeQuest(DA, pmin5, pmax5, defaultTokenASum, 0) // deposit A (citing)
 
     // [D,E]
     const { min: pmin6, max: pmax6 } = creator.calculatePriceRange(poolD, poolE)
     const DE = creator.createPool(questE, questD)
-    creator.citeQuest(DE, questE, questD, pmin6, pmax6, defaultTokenASum, 0) // deposit D (citing)
+    questD.addPool(DE)
+    questE.addPool(DE)
+    creator.citeQuest(DE, pmin6, pmax6, defaultTokenASum, 0) // deposit D (citing)
 
     // [D,C]
     const { min: pmin7, max: pmax7 } = creator.calculatePriceRange(poolD, poolC)
     const DC = creator.createPool(questC, questD)
-    creator.citeQuest(DC, questC, questD, pmin7, pmax7, defaultTokenASum, 0) // deposit D (citing)
+    questC.addPool(DC)
+    questD.addPool(DC)
+    creator.citeQuest(DC, pmin7, pmax7, defaultTokenASum, 0) // deposit D (citing)
 
     // [E,B]
     const { min: pmin8, max: pmax8 } = creator.calculatePriceRange(poolE, poolB)
     const EB = creator.createPool(questB, questE)
-    creator.citeQuest(EB, questB, questE, pmin8, pmax8, defaultTokenASum, 0) // deposit E (citing)
+    questB.addPool(EB)
+    questE.addPool(EB)
+    creator.citeQuest(EB, pmin8, pmax8, defaultTokenASum, 0) // deposit E (citing)
 
     return [
         quests,
@@ -101,7 +117,7 @@ export const prepareCrossPools = (defaultTokenASum) => {
             CA,
             CB,
             CE,
-            AD,
+            DA,
             DE,
             DC,
             EB

@@ -1,5 +1,6 @@
+import Pool from '../Pool/Pool.class'
+import { byName } from '../Utils/logicUtils'
 import { Graph } from './Graph.class'
-import { byName } from "../Utils/logicUtils";
 
 export default class Router {
     #state = { quests: [], pools: [] }
@@ -56,21 +57,15 @@ export default class Router {
             this.#_PRICED_PATHS = this.drySwapForPricedPaths(
                 this.getPairPaths(token0, token1)
             )
+
             if (this.#DEBUG) console.log(this.#_PRICED_PATHS, amountIn)
             if (!this.#_PRICED_PATHS.length) return []
 
-            //const sums = [amountIn < 10 ? -amountIn : -10, 10]
             const sums = this.swapBestPath(amountIn, this.#_PRICED_PATHS[0])
 
             amountIn += sums[0]
             totalInOut[0] += sums[0]
             totalInOut[1] += sums[1]
-            // console.log('visited_graph', this.#_visitedForGraph.length)
-            // console.log('paths', this.#FOUND_PATHS.length)
-            // console.log('priced_paths', this.#_PRICED_PATHS.length)
-            // console.log('visited_swap', this.#_VISITED_PATHS.length)
-            // console.log('swaps', this.#_SWAPS.length)
-            // console.log('amountIn', amountIn)
 
             if (!this.#_VISITED_PATHS.includes(this.#_PRICED_PATHS[0])) {
                 this.#_VISITED_PATHS.push(this.#_PRICED_PATHS[0])
@@ -92,6 +87,7 @@ export default class Router {
         if (this.#DEBUG) console.log(graph)
         const paths = graph.buildPathways(token0, token1)
         this.#_PAIR_PATHS[`${token0}-${token1}`] = paths
+        if (this.#DEBUG) console.log(this.#_PAIR_PATHS)
 
         return paths
     }
@@ -102,8 +98,6 @@ export default class Router {
 
     swapBestPath(amount, pricedPath) {
         if (!pricedPath) return
-
-        //const t1 = performance.now()
 
         const poolPairs = pricedPath.path
             .map((token, id) => [token, pricedPath.path[id + 1]])
@@ -156,18 +150,10 @@ export default class Router {
             lastOutPrice >= nextPricedPath.price
         )
 
-        // const t2 = performance.now()
-        // console.log(
-        //     `Executed smartSwap of ${amount} in ${pricedPath.path} in ${
-        //         t2 - t1
-        //     }ms`
-        // )
-
         return [allSums.in, allSums.out]
     }
 
     drySwapForPricedPaths(paths) {
-        //const t1 = performance.now()
         let pathPrices = []
         let existingPrices = []
         for (const path of paths) {
@@ -187,27 +173,23 @@ export default class Router {
         }
 
         pathPrices.sort((a, b) => b.price - a.price)
-
-        // const t2 = performance.now()
-
-        // console.log(`Executed drySwapForPricedPaths in ${t2 - t1}ms`)
         return pathPrices
     }
 
     graphPools(poolList) {
         const graph = new Graph()
         poolList.forEach((pool) => {
-            if (!graph.adjList.has(pool.tokenLeft.name)) {
-                graph.addVertex(pool.tokenLeft.name)
+            if (!graph.adjList.has(pool.tokenLeft)) {
+                graph.addVertex(pool.tokenLeft)
             }
 
-            if (!graph.adjList.has(pool.tokenRight.name)) {
-                graph.addVertex(pool.tokenRight.name)
+            if (!graph.adjList.has(pool.tokenRight)) {
+                graph.addVertex(pool.tokenRight)
             }
         })
 
         poolList.forEach((pool) => {
-            graph.addEdge(pool.tokenLeft.name, pool.tokenRight)
+            graph.addEdge(pool.tokenLeft, pool.tokenRight)
         })
 
         return graph
@@ -227,8 +209,8 @@ export default class Router {
         }
 
         results.forEach((res) => {
-            const leftPools = this.findPoolsFor(res.tokenLeft.name, depth + 1)
-            const rightPools = this.findPoolsFor(res.tokenRight.name, depth + 1)
+            const leftPools = this.findPoolsFor(res.tokenLeft, depth + 1)
+            const rightPools = this.findPoolsFor(res.tokenRight, depth + 1)
 
             results = Array.prototype.concat(results, leftPools, rightPools)
         })
@@ -255,84 +237,6 @@ export default class Router {
         return [sortedPrices, pricedPaths]
     }
 
-    smartSwapPaths(pricedPaths, sortedPrices, amount, chunkSize = 10) {
-        let chunks = this.chunkAmountBy(amount, chunkSize)
-        let balancesResult = []
-
-        let curPricePoint = sortedPrices.length - 1
-        let maxPricePoint = 0
-        let price = sortedPrices[curPricePoint]
-        let nextPrice = sortedPrices[curPricePoint - 1]
-            ? sortedPrices[curPricePoint - 1]
-            : null
-        let outPrice = 0
-
-        let path = Object.keys(pricedPaths)
-            .find((key) => pricedPaths[key] === price)
-            .split(',')
-
-        for (const [id, chunk] of chunks.entries()) {
-            // traverse sortedPrices
-            const { sums, swaps } = this.swapInPath(path, chunk, false)
-
-            if (!sums) {
-                return balancesResult
-            }
-
-            if (this.#DEBUG) {
-                console.log(
-                    'Single swap',
-                    sums,
-                    path,
-                    'swaps length',
-                    swaps.length
-                )
-            }
-
-            outPrice = this.#getOutInPrice(sums[0], sums[1])
-
-            if ((nextPrice && outPrice <= nextPrice) || isNaN(outPrice)) {
-                curPricePoint -= 1
-                if (curPricePoint < maxPricePoint) {
-                    if (this.#DEBUG) console.log('Peaked sorted prices')
-                    return balancesResult
-                }
-
-                price = sortedPrices[curPricePoint]
-                nextPrice = sortedPrices[curPricePoint - 1]
-                    ? sortedPrices[curPricePoint - 1]
-                    : null
-                path = Object.keys(pricedPaths)
-                    .find((key) => pricedPaths[key] === price)
-                    .split(',')
-            }
-
-            balancesResult = this.#calculateBalances(
-                balancesResult,
-                sums[1],
-                sums[0]
-            )
-
-            // @TODO: We want to record only paths that yielded results, we skip abrupted chains
-            if (sums && !(sums[0] === 0 && sums[1] === 0)) {
-                let pathString = path.join('-')
-                if (!this.#_VISITED_PATHS.includes(pathString)) {
-                    this.#_VISITED_PATHS.push(pathString)
-                }
-            }
-
-            amount += sums[0]
-            this.#_SWAPS = [...this.#_SWAPS, ...swaps]
-
-            // @TODO: Extends chunks until runs out of amount (not optimal, needs amount per path formula)
-            if (amount >= chunkSize && id + 1 === chunks.length) {
-                chunks.push(chunkSize)
-            }
-        }
-
-        return balancesResult
-    }
-
     swapInPath(path, amount, dry = false) {
         const poolPairs = path
             .map((token, id) => [token, path[id + 1]])
@@ -353,8 +257,7 @@ export default class Router {
                       )
                     : null
 
-            const zeroForOne =
-                pool.tokenLeft === poolTokens[0] ? true : false
+            const zeroForOne = pool.tokenLeft === poolTokens[0] ? true : false
 
             sums = dry
                 ? pool.drySwap(amount, zeroForOne)
@@ -433,6 +336,7 @@ export default class Router {
 
     #processTokenForPath(tokenName) {
         let quest = this.#state.quests.find(byName(tokenName))
+
         if (!quest) {
             return []
         }
@@ -446,7 +350,7 @@ export default class Router {
         const result = []
         candidatePools.forEach((candidate) => {
             const pool = this.#state.pools.find(byName(candidate))
-            if (this.#_visitedForGraph.includes(pool.name)) {
+            if (!pool || this.#_visitedForGraph.includes(pool.name)) {
                 return
             }
 
@@ -454,27 +358,12 @@ export default class Router {
 
             result.push({
                 for: tokenName,
-                tokenLeft: this.#state.quests.find(byName(pool.tokenLeft)),
-                tokenRight: this.#state.quests.find(byName(pool.tokenRight)),
+                tokenLeft: pool.tokenLeft,
+                tokenRight: pool.tokenRight
             })
         })
 
         return result
-    }
-
-    #calculateBalances(balancesResult, out, chunk) {
-        if (!balancesResult[0]) {
-            balancesResult[0] = 0
-        }
-
-        if (!balancesResult[1]) {
-            balancesResult[1] = 0
-        }
-
-        balancesResult[0] -= chunk
-        balancesResult[1] += out
-
-        return balancesResult
     }
 
     #getOutInPrice(inAmt, outAmt) {
@@ -482,9 +371,13 @@ export default class Router {
     }
 
     #getPoolByTokens(tokenA, tokenB) {
-        return this.#state.pools.some(byName(`${tokenA}-${tokenB}`))
-            ? this.#state.pools.find(byName(`${tokenA}-${tokenB}`))
-            : this.#state.pools.find(byName`${tokenB}-${tokenA}`)
+        return this.#state.pools.some((p) => p.name === `${tokenA}-${tokenB}`)
+            ? this.#state.pools.find(
+                  (pool) => pool.name === `${tokenA}-${tokenB}`
+              )
+            : this.#state.pools.find(
+                  (pool) => pool.name === `${tokenB}-${tokenA}`
+              )
     }
 
     chunkAmountBy(amount, by) {
