@@ -902,7 +902,11 @@ class Generator {
 
     spawnInvestor(type, name, initialBalance) {
         const id = this.#cachedInvestors.length + 1
-        const investor = new Investor(type, `${name} (${id})`, initialBalance)
+        const investor = Investor.create(
+            type,
+            `${name} (${id})`,
+            initialBalance
+        )
 
         this.#cachedInvestors.push(investor)
 

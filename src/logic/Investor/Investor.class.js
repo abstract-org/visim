@@ -16,21 +16,34 @@ export default class Investor {
     #canCreate = false
     #PRICE_RANGE_MULTIPLIER = 2
 
+    constructor(...args) {
+        if (args > 0) {
+            throw new Error(
+                'Please instantiate Investor via Investor.create(type,name,[usdcBalance])'
+            )
+        }
+    }
+
     /**
+     * @description Instantiates new Investor with params
      * @param {string} type
      * @param {string} name
      * @param {number} usdcBalance
+     * @returns {Investor}
      */
-    constructor(type, name, usdcBalance = 10000) {
-        this.hash = '0x' + sha256(`${name} + ${type}`)
-        this.balances.USDC = parseFloat(usdcBalance)
-        this.type = type
-        this.name = name
-        this.#canCreate = type === 'creator'
+    static create(type, name, usdcBalance = 10000) {
+        const thisInvestor = new Investor()
+        thisInvestor.hash = '0x' + sha256(`${name} + ${type}`)
+        thisInvestor.balances.USDC = parseFloat(usdcBalance)
+        thisInvestor.type = type
+        thisInvestor.name = name
+        thisInvestor.#canCreate = type === 'creator'
+
+        return thisInvestor
     }
 
     createQuest(name) {
-        const quest = new Token(name)
+        const quest = Token.create(name)
         this.questsCreated.push(quest.name)
         return quest
     }
@@ -99,7 +112,7 @@ export default class Investor {
             throw new Error('You must provide both tokens to create cross pool')
         }
 
-        return new Pool(citedToken, citingToken, startingPrice)
+        return Pool.create(citedToken, citingToken, startingPrice)
     }
 
     /**
