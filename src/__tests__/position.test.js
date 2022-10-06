@@ -228,7 +228,7 @@ it('Deletes fully an open position and removes liquidity', () => {
     const oldPosition = pool.pricePoints.get(p2pp(50))
     expect(oldPosition.liquidity).toBeCloseTo(38045.566)
 
-    investor.removePosition(pool, 50, 10000, 5000)
+    investor.removeLiquidity(pool, 50, 10000, 5000)
 
     const deletedPosition = pool.pricePoints.get(50)
     expect(deletedPosition).toBeUndefined()

@@ -18,7 +18,7 @@ export function generateRandomInvestors(amount) {
         )
         let randomInvestorType = InvestorTypes[randomIndex]
 
-        let newInvestor = new Investor(
+        let newInvestor = Investor.create(
             randomInvestorType.type,
             randomInvestorType.name,
             randomInvestorType.usdcBalance
@@ -34,7 +34,7 @@ export function generateDefaultInvestors() {
     const investors = []
 
     InvestorTypes.forEach((investorType, i) => {
-        let newInvestor = new Investor(
+        let newInvestor = Investor.create(
             investorType.type,
             investorType.name,
             investorType.usdcBalance
