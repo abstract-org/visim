@@ -11,8 +11,22 @@ export default class Token {
     pools = []
     positions = new HashMap()
 
-    constructor(name) {
-        this.name = name
+    constructor(...args) {
+        if (args > 0) {
+            throw new Error('Please instantiate Token via Token.create(name)')
+        }
+    }
+
+    /**
+     * @description Instantiates new Token with name
+     * @param {string} name
+     * @returns {Token}
+     */
+    static create(name) {
+        const thisToken = new Token()
+        thisToken.name = name
+
+        return thisToken
     }
 
     createPool({
@@ -22,7 +36,7 @@ export default class Token {
         totalTokensProvisioned = null
     } = {}) {
         const tokenLeftInstance = tokenLeft || new UsdcToken()
-        const pool = new Pool(tokenLeftInstance, this, startingPrice)
+        const pool = Pool.create(tokenLeftInstance, this, startingPrice)
 
         this.addPool(pool)
         tokenLeftInstance.addPool(pool)
@@ -36,7 +50,12 @@ export default class Token {
      * @param {Object} pool
      */
     addPool(pool) {
-        if (this.pools.find((existingPoolName) => existingPoolName === pool.name)) return
+        if (
+            this.pools.find(
+                (existingPoolName) => existingPoolName === pool.name
+            )
+        )
+            return
 
         this.pools.push(pool.name)
     }

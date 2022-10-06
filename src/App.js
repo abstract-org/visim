@@ -3,6 +3,7 @@ import 'primeicons/primeicons.css'
 import { Card } from 'primereact/card'
 import 'primereact/resources/primereact.min.css'
 import 'primereact/resources/themes/lara-light-indigo/theme.css'
+import { useState } from 'react'
 
 import { KnowledgeGraphV2 } from './components/KnowledgeGraphV2'
 import { PoolChart } from './components/PoolChart'
@@ -21,11 +22,26 @@ import {
     SwapModule
 } from './logic/Pool/Pool.components'
 import { QuestCitation, QuestCreation } from './logic/Quest/Quest.components'
+import { StatesSidebar } from './logic/States/StatesSidebar.component'
+import { TopMenu } from './logic/TopMenu.component'
 
 export default function Home() {
+    const [sidebarVisible, setSidebarVisible] = useState(false)
+    const setVisibleSidebar = (isVisible) => setSidebarVisible(() => isVisible)
+
     return (
         <div>
             <div className="grid">
+                <div className="col-12">
+                    <TopMenu
+                        sidebarVisible={sidebarVisible}
+                        setVisibleSidebar={setVisibleSidebar}
+                    />
+                </div>
+                <StatesSidebar
+                    visible={sidebarVisible}
+                    setVisibleSidebar={setVisibleSidebar}
+                />
                 <div className="col-8">
                     <Card className="h-full">
                         <PoolSelector />
