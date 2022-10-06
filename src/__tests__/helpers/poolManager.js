@@ -14,7 +14,7 @@ export const preparePool = (
     }
 
     const name = faker.word.adjective()
-    const investor = new Investor(investorType, name, initialSum)
+    const investor = Investor.create(investorType, name, initialSum)
     const tokenRight = investor.createQuest('RP1')
     const tokenLeft = new UsdcToken()
     const pool = tokenRight.createPool({ tokenLeft, initialPositions })
@@ -24,7 +24,7 @@ export const preparePool = (
 
 export const prepareCrossPools = (defaultTokenASum) => {
     const name = faker.word.adjective()
-    const creator = new Investor('creator', name, 10000)
+    const creator = Investor.create('creator', name, 10000)
     const quests = []
 
     // USDC Pools

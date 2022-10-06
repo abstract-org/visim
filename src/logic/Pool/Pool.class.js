@@ -31,36 +31,49 @@ export default class Pool {
 
     pricePoints = new HashMap()
 
-    #type = 'VALUE_LINK'
+    type = 'VALUE_LINK'
     #dryState = {}
 
+    constructor(...args) {
+        if (args > 0) {
+            throw new Error(
+                'Please instantiate Pool via Pool.create(tokenLeft,tokenRight,startingPrice)'
+            )
+        }
+    }
+
     /**
+     * @description Instantiates new Pool with params
      * @param {Object} tokenLeft
      * @param {Object} tokenRight
      * @param {number} startingPrice
+     * @returns {Pool}
      */
-    constructor(tokenLeft, tokenRight, startingPrice) {
+    static create(tokenLeft, tokenRight, startingPrice) {
+        const thisPool = new Pool()
         if (typeof tokenLeft !== 'object' || typeof tokenRight !== 'object')
             throw new Error('Tokens must be an instance of a Token')
         if (tokenLeft.name === tokenRight.name)
             throw new Error('Tokens should not match')
 
-        this.tokenLeft = tokenLeft.name
-        this.tokenRight = tokenRight.name
+        thisPool.tokenLeft = tokenLeft.name
+        thisPool.tokenRight = tokenRight.name
 
-        this.id = '0x' + sha256(tokenLeft.name + '-' + tokenRight.name)
-        this.name = `${tokenLeft.name}-${tokenRight.name}`
+        thisPool.id = '0x' + sha256(tokenLeft.name + '-' + tokenRight.name)
+        thisPool.name = `${tokenLeft.name}-${tokenRight.name}`
 
         // By shifting default price we also move the pointer to the right of the entire pool
         if (startingPrice && typeof startingPrice === 'number') {
-            this.currentPrice = startingPrice
+            thisPool.currentPrice = startingPrice
         }
 
         if (tokenLeft instanceof UsdcToken || tokenRight instanceof UsdcToken) {
-            this.#type = 'QUEST'
+            thisPool.type = 'QUEST'
         }
 
-        this.initializePoolBoundaries()
+        thisPool.initializePoolBoundaries()
+
+        return thisPool
     }
 
     initializePoolBoundaries() {
@@ -631,11 +644,11 @@ export default class Pool {
     }
 
     getType() {
-        return this.#type
+        return this.type
     }
 
     isQuest() {
-        return this.#type === 'QUEST'
+        return this.type === 'QUEST'
     }
 
     getSwapInfo(logOut = false) {

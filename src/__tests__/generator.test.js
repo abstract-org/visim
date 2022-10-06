@@ -72,7 +72,7 @@ it('Generates investors', async () => {
         questGenName: 'Agorka'
     }
 
-    const creator = new Investor('creator', 'creator', 10000)
+    const creator = Investor.create('creator', 'creator', 10000)
     const fndQuest = creator.createQuest('AGORA')
     const fndPool = fndQuest.createPool()
     globalState.quests.set(fndQuest.name, fndQuest)

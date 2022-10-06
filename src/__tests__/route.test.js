@@ -24,7 +24,7 @@ afterEach(() => {
 })
 
 it('Graphs single pool properly', () => {
-    const creator = new Investor('creator', 'creator', 10000)
+    const creator = Investor.create('creator', 'creator', 10000)
     const questA = creator.createQuest('TEST_1')
     const poolA = questA.createPool() // Deposit A
     globalState.quests.set(poolA.tokenLeft.name, poolA.tokenLeft)
@@ -97,7 +97,7 @@ xit('Finds paths for pair', async () => {
 })
 
 it('Smart route with single pool', () => {
-    const creator = new Investor('creator', 'creator', 10000)
+    const creator = Investor.create('creator', 'creator', 10000)
 
     const questX = creator.createQuest('TEST_X')
     const poolTest = questX.createPool()
@@ -127,7 +127,7 @@ it('Smart route with single pool', () => {
 })
 
 it('Smart route with single pool and high amount', () => {
-    const creator = new Investor('creator', 'creator', 10000)
+    const creator = Investor.create('creator', 'creator', 10000)
 
     const questA = creator.createQuest('TEST_1')
     const poolA = questA.createPool() // Mint TEST_1
@@ -149,7 +149,7 @@ it('Smart route with single pool and high amount', () => {
 })
 
 it('Smart route with amount above 100 with high chunk size', () => {
-    const creator = new Investor('creator', 'creator', 10000)
+    const creator = Investor.create('creator', 'creator', 10000)
 
     const questA = creator.createQuest('TEST_1')
     const poolA = questA.createPool() // Mint TEST_1
@@ -168,7 +168,7 @@ it('Smart route with amount above 100 with high chunk size', () => {
 })
 
 it('Smart route with amount below 100 with sliced chunk', () => {
-    const creator = new Investor('creator', 'creator', 10000)
+    const creator = Investor.create('creator', 'creator', 10000)
 
     const questA = creator.createQuest('TEST_1')
     const poolA = questA.createPool() // Mint TEST_1
@@ -187,7 +187,7 @@ it('Smart route with amount below 100 with sliced chunk', () => {
 })
 
 it('Smart route with amount based on liquidity', () => {
-    const creator = new Investor('creator', 'creator', 10000)
+    const creator = Investor.create('creator', 'creator', 10000)
 
     const questA = creator.createQuest('TEST_1')
     const poolA = questA.createPool() // Mint TEST_1
@@ -332,7 +332,7 @@ it('Smart route with one citation selling USDC/TEST1', () => {
     const priceMax = 10
     const citeAmount = 27
 
-    const creator = new Investor('creator', 'creator', 10000)
+    const creator = Investor.create('creator', 'creator', 10000)
 
     const questA = creator.createQuest('TEST_1')
     const poolA = questA.createPool() // Deposit A
@@ -376,7 +376,7 @@ it('Smart route with USDC buying citing', () => {
     const amount = 100
     const citeAmount = 25
 
-    const creator = new Investor('creator', 'creator', 10000)
+    const creator = Investor.create('creator', 'creator', 10000)
 
     const questA = creator.createQuest('TEST_1')
     const poolA = questA.createPool() // Deposit A
@@ -414,7 +414,7 @@ it('Smart route with USDC buying cited', () => {
     const amount = 100
     const citeAmount = 25
 
-    const creator = new Investor('creator', 'creator', 10000)
+    const creator = Investor.create('creator', 'creator', 10000)
 
     const questA = creator.createQuest('TEST_1')
     const poolA = questA.createPool() // Deposit A
@@ -447,7 +447,7 @@ it('Smart route with USDC buying cited', () => {
 })
 
 it('Smart route for token through cited cross pool', () => {
-    const creator = new Investor('creator', 'creator', 10000)
+    const creator = Investor.create('creator', 'creator', 10000)
 
     const questA = creator.createQuest('TEST')
     const poolA = questA.createPool() // Deposit A
@@ -479,7 +479,7 @@ it('Smart route for token through cited cross pool', () => {
 })
 
 it('Smart route for token through cited cross pool with multiple smart swaps', () => {
-    const creator = new Investor('creator', 'creator', 10000)
+    const creator = Investor.create('creator', 'creator', 10000)
 
     const questA = creator.createQuest('TEST')
     const poolA = questA.createPool() // Deposit A
