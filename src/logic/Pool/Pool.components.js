@@ -120,7 +120,7 @@ export const KnowledgeGraphStats = () => {
 
     let marketCap = 0
     let totalValueLocked = 0
-    let totalUSDCLocked = 0;
+    let totalUSDCLocked = 0
 
     pools.forEach((poolName) => {
         const pool = globalState.pools.get(poolName)
@@ -165,8 +165,7 @@ export const SwapModule = () => {
     const swapMode = usePoolStore((state) => state.swapMode)
     const router = new Router(
         globalState.quests.values(),
-        globalState.pools.values(),
-        true
+        globalState.pools.values()
     )
 
     const investor = activeInvestor && globalState.investors.get(activeInvestor)
@@ -201,8 +200,12 @@ export const SwapModule = () => {
 
         let tradePool = pool
         if (tradePool.tokenRight !== activeQuest) {
-            const poolsOfQuest = globalState.pools.values().filter(p => quest.pools.includes(p))
-            tradePool = poolsOfQuest.find((qp) => qp.isQuest() && qp.tokenRight === activeQuest)
+            const poolsOfQuest = globalState.pools
+                .values()
+                .filter((p) => quest.pools.includes(p))
+            tradePool = poolsOfQuest.find(
+                (qp) => qp.isQuest() && qp.tokenRight === activeQuest
+            )
         }
 
         let [totalAmountIn, totalAmountOut] =

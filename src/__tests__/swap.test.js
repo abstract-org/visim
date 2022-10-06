@@ -206,8 +206,8 @@ it('Buys until runs out of USDC', () => {
 
 it('Three investors one tick (buy during liquidity shift)', () => {
     const { pool, investor, tokenLeft, tokenRight } = preparePool()
-    const longTerm = new Investor('long-term', 'long-term', 1000000)
-    const fomo = new Investor('fomo', 'fomo', 1000, 'fomo')
+    const longTerm = Investor.create('long-term', 'long-term', 1000000)
+    const fomo = Investor.create('fomo', 'fomo', 1000, 'fomo')
 
     let [totalAmountIn, totalAmountOut] = pool.buy(5000)
     investor.addBalance(tokenLeft.name, totalAmountIn)
@@ -304,7 +304,7 @@ it('sells with a price limit down to X by jumping through liquidity', () => {
 })
 
 it('Calculates reserves properly by swapping in different directions in both USDC and cross pools', () => {
-    const investor = new Investor('creator', 'creator', 500000)
+    const investor = Investor.create('creator', 'creator', 500000)
     const quest = investor.createQuest('AGORA')
     const quest2 = investor.createQuest('AGORA2')
     const quest3 = investor.createQuest('AGORA3')
