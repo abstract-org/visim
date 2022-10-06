@@ -7,6 +7,9 @@ export const invGen = {
     dailySpawnProbability: 50,
     initialBalance: 10000,
     buySellPeriodDays: 0,
+    buyGainersFrequency: 30,
+    buyGrowthFrequency: 7,
+    sellFallFrequency: 7,
     excludeSingleName: '',
     includeSingleName: '',
     buySinglePerc: 0,
@@ -18,7 +21,8 @@ export const invGen = {
     sellDecSumPerc: 5,
     sellDecByPerc: 10,
     valueSellPeriodDays: 0,
-    valueSellAmount: 0
+    valueSellAmount: 0,
+    smartRouteDepth: 3
 }
 
 export const questGen = {
@@ -30,8 +34,10 @@ export const questGen = {
     citeSingleName: '',
     probCiteSingle: 90,
     singleCitePerc: 2,
-    probOtherCite: 500,
-    otherCitePerc: 5
+    citeSingleMultiplier: 2,
+    probRandomCite: 500,
+    randomCitePerc: 5,
+    citeRandomMultiplier: 3
 }
 
 export const dayData = {
