@@ -206,15 +206,14 @@ it('Buys until runs out of USDC', () => {
 
 it('Three investors one tick (buy during liquidity shift)', () => {
     const { pool, investor, tokenLeft, tokenRight } = preparePool()
-    const longTerm = new Investor('long-term', 'long-term', 1000000)
-    const fomo = new Investor('fomo', 'fomo', 1000, 'fomo')
+    const longTerm = Investor.create('long-term', 'long-term', 1000000)
+    const fomo = Investor.create('fomo', 'fomo', 1000, 'fomo')
 
     let [totalAmountIn, totalAmountOut] = pool.buy(5000)
     investor.addBalance(tokenLeft.name, totalAmountIn)
     investor.addBalance(tokenRight.name, totalAmountOut)
 
     let [totalAmountIn2, totalAmountOut2] = pool.buy(5000)
-    console.log(totalAmountIn2, totalAmountOut2, longTerm.balances)
     longTerm.addBalance(tokenLeft.name, totalAmountIn2)
     longTerm.addBalance(tokenRight.name, totalAmountOut2)
 
@@ -222,8 +221,8 @@ it('Three investors one tick (buy during liquidity shift)', () => {
     fomo.addBalance(tokenLeft.name, totalAmountIn3)
     fomo.addBalance(tokenRight.name, totalAmountOut3)
 
-    expect(fomo.balances[pool.tokenLeft.name]).toBe(0)
-    expect(fomo.balances[pool.tokenRight.name]).toBe(106)
+    expect(fomo.balances[pool.tokenLeft]).toBe(0)
+    expect(fomo.balances[pool.tokenRight]).toBe(106)
 })
 
 it('Buy all the way to the right', () => {
@@ -258,7 +257,7 @@ it('Swaps RP1 for USDC and updates current price', () => {
     investor.addBalance(tokenLeft.name, totalAmountOut2)
     investor.addBalance(tokenRight.name, totalAmountIn2)
 
-    expect(investor.balances[pool.tokenLeft.name]).toBe(10000)
+    expect(investor.balances[pool.tokenLeft]).toBe(10000)
     expect(pool.currentPrice).toBe(1)
 })
 
@@ -305,7 +304,7 @@ it('sells with a price limit down to X by jumping through liquidity', () => {
 })
 
 it('Calculates reserves properly by swapping in different directions in both USDC and cross pools', () => {
-    const investor = new Investor('creator', 'creator', 500000)
+    const investor = Investor.create('creator', 'creator', 500000)
     const quest = investor.createQuest('AGORA')
     const quest2 = investor.createQuest('AGORA2')
     const quest3 = investor.createQuest('AGORA3')
@@ -331,14 +330,20 @@ it('Calculates reserves properly by swapping in different directions in both USD
 
     const AB = investor.createPool(quest2, quest)
     investor.citeQuest(AB, 1, 2, 1000, 0)
+    quest.addPool(AB)
+    quest2.addPool(AB)
     const swap5 = AB.getSwapInfo()
 
     const AC = investor.createPool(quest3, quest)
     investor.citeQuest(AC, 1, 2, 1000, 0)
+    quest.addPool(AC)
+    quest3.addPool(AC)
     const swap6 = AC.getSwapInfo()
 
     const AD = investor.createPool(quest4, quest)
     investor.citeQuest(AD, 1, 2, 1000, 1000)
+    quest.addPool(AD)
+    quest4.addPool(AD)
     const swap7 = AD.getSwapInfo()
 
     expect(Math.abs(swap1[1][0])).toBe(20000)

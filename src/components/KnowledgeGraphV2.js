@@ -101,7 +101,7 @@ const Graph = (props) => {
         quests.forEach((quest, id) => {
             const pool = globalState.pools
                 .values()
-                .find((p) => p.tokenRight.name === quest)
+                .find((p) => p.tokenRight === quest)
             if (!graph.hasNode(quest)) {
                 graph.addNode(quest, {
                     size: Math.log(pool.getMarketCap()),
@@ -125,9 +125,9 @@ const Graph = (props) => {
 
                 const crossPool = globalState.pools.get(poolName)
                 const citedPool = globalState.pools.values()
-                    .find((p) => p.tokenRight.name === cited && p.isQuest())
+                    .find((p) => p.tokenRight === cited && p.isQuest())
                 const citingPool = globalState.pools.values()
-                    .find((p) => p.tokenRight.name === citing && p.isQuest())
+                    .find((p) => p.tokenRight === citing && p.isQuest())
 
                 graph.addEdge(citing, cited, {
                     size: calcCrossPoolThickness(crossPool, citedPool, citingPool),
@@ -139,7 +139,7 @@ const Graph = (props) => {
         registerEvents({
             clickNode: (event) => {
                 const questPool = globalState.pools.values()
-                  .find(pool => pool.getType() === 'QUEST' && pool.tokenRight.name === event.node)
+                  .find(pool => pool.isQuest() && pool.tokenRight === event.node)
 
                 if (questPool) {
                   setActivePool(questPool.name)

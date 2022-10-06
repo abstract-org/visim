@@ -17,16 +17,11 @@ export class Graph {
     }
 
     buildPathways(tokenA, tokenB) {
-        //const t1 = performance.now()
         let isVisited = new Array(this.vertices)
 
         // Call recursive utility
         this.buildPathwaysUtil(tokenA, tokenB, isVisited, [tokenA])
 
-        // const t2 = performance.now()
-        // console.log(
-        //     `${tokenA}/${tokenB} Executed buildPathways in ${t2 - t1}ms`
-        // )
         return this.getPathway()
     }
 

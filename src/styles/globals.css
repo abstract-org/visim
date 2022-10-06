@@ -229,3 +229,7 @@ rect.fill-inactive {
     padding: 0 0.75rem;
     font-size: 0.875rem;
 }
+
+.p-sidebar-left .p-sidebar {
+    width: 80%;
+}

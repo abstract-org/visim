@@ -16,23 +16,41 @@ export default class Investor {
     #canCreate = false
     #PRICE_RANGE_MULTIPLIER = 2
 
-    constructor(type, name, usdcBalance = 10000) {
-        this.hash = '0x' + sha256(`${name} + ${type}`)
-        this.balances.USDC = parseFloat(usdcBalance)
-        this.type = type
-        this.name = name
-        this.#canCreate = type === 'creator'
+    constructor(...args) {
+        if (args > 0) {
+            throw new Error(
+                'Please instantiate Investor via Investor.create(type,name,[usdcBalance])'
+            )
+        }
+    }
+
+    /**
+     * @description Instantiates new Investor with params
+     * @param {string} type
+     * @param {string} name
+     * @param {number} usdcBalance
+     * @returns {Investor}
+     */
+    static create(type, name, usdcBalance = 10000) {
+        const thisInvestor = new Investor()
+        thisInvestor.hash = '0x' + sha256(`${name} + ${type}`)
+        thisInvestor.balances.USDC = parseFloat(usdcBalance)
+        thisInvestor.type = type
+        thisInvestor.name = name
+        thisInvestor.#canCreate = type === 'creator'
+
+        return thisInvestor
     }
 
     createQuest(name) {
-        const quest = new Token(name)
-        this.questsCreated.push(quest)
+        const quest = Token.create(name)
+        this.questsCreated.push(quest.name)
         return quest
     }
 
-    addBalance(tokenName, balance) {
+    addBalance(tokenName, balance, msg = null) {
         if (isNaN(balance)) {
-            console.log('Trying to pass NaN amount', tokenName, balance)
+            console.log('Trying to pass NaN amount', tokenName, balance, msg)
             return
         }
 
@@ -55,16 +73,6 @@ export default class Investor {
     }
 
     removeLiquidity(pool, priceMin, priceMax, amountLeft = 0, amountRight = 0) {
-        return this.#modifyPosition(
-            pool,
-            priceMin,
-            priceMax,
-            amountLeft,
-            amountRight
-        )
-    }
-
-    removePosition(pool, priceMin, priceMax, amountLeft = 0, amountRight = 0) {
         return this.#modifyPosition(
             pool,
             priceMin,
@@ -103,9 +111,18 @@ export default class Investor {
         if (!citedToken || !citingToken) {
             throw new Error('You must provide both tokens to create cross pool')
         }
-        return new Pool(citedToken, citingToken, startingPrice)
+
+        return Pool.create(citedToken, citingToken, startingPrice)
     }
 
+    /**
+     * @param {Object} crossPool
+     * @param {number} priceMin
+     * @param {number} priceMax
+     * @param {number} citingAmount
+     * @param {number} citedAmount
+     * @returns {*[]}
+     */
     citeQuest(
         crossPool,
         priceMin = 1,
@@ -113,9 +130,6 @@ export default class Investor {
         citingAmount = 0,
         citedAmount = 0
     ) {
-        crossPool.tokenLeft.addPool(crossPool)
-        crossPool.tokenRight.addPool(crossPool)
-
         // Set "positions" for value link pool
         const [totalIn, totalOut] = crossPool.openPosition(
             priceMin,
@@ -131,14 +145,13 @@ export default class Investor {
         citedQuestPool,
         multiplier = this.#PRICE_RANGE_MULTIPLIER
     ) {
-        if (!citingQuestPool.currentPrice || !citingQuestPool.currentPrice) {
+        const citingPrice = citingQuestPool.currentPrice
+        const citedPrice = citedQuestPool.currentPrice
+        if (!citingPrice || !citedPrice) {
             throw new Error(
                 'Did you pass quest instead of a pool for citation?'
             )
         }
-
-        const citingPrice = citingQuestPool.currentPrice
-        const citedPrice = citedQuestPool.currentPrice
 
         let AforB = citingPrice / citedPrice
         let min = AforB < citingPrice ? AforB / multiplier : AforB

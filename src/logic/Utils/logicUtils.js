@@ -20,8 +20,8 @@ export const formSwapData = (
         price: pool ? pool.currentPrice.toFixed(3) : 0,
         investorHash: investor.hash,
         action: action,
-        mcap: pool.getType() === 'QUEST' ? pool.getMarketCap() : '',
-        tvl: pool.getType() === 'QUEST' ? pool.getTVL() : '',
+        mcap: pool.isQuest() ? pool.getMarketCap() : '',
+        tvl: pool.isQuest() ? pool.getTVL() : '',
         totalAmountIn: totalAmountIn ? totalAmountIn.toFixed(3) : '',
         totalAmountOut: totalAmountOut ? totalAmountOut.toFixed(3) : '',
         paths: paths ? paths.join('-') : '',
@@ -39,7 +39,7 @@ export const getCombinedSwaps = (smSwaps, pools) => {
             combSwaps[smSwap.pool] = {}
         }
         if (!combSwaps[smSwap.pool][smSwap.op]) {
-            const pool = pools.find((pool) => pool.name === smSwap.pool)
+            const pool = pools.find(byName(smSwap.pool))
             combSwaps[smSwap.pool][smSwap.op] = {
                 pool,
                 totalAmountIn: 0,
@@ -55,3 +55,5 @@ export const getCombinedSwaps = (smSwaps, pools) => {
 
     return combSwaps
 }
+
+export const byName = (name) => (item) => item.name === name

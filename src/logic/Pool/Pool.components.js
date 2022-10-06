@@ -31,8 +31,8 @@ export const PoolSelector = () => {
             placeholder="Choose Pool"
             onChange={handleChoosePool}
             options={pools.map((pool) => ({
-                label: `${globalState.pools.get(pool).tokenLeft.name} / ${
-                    globalState.pools.get(pool).tokenRight.name
+                label: `${globalState.pools.get(pool).tokenLeft} / ${
+                    globalState.pools.get(pool).tokenRight
                 }`,
                 value: globalState.pools.get(pool).name
             }))}
@@ -69,7 +69,7 @@ export const PoolChartStats = () => {
                         0}
                 </h1>
             </div>
-            {pool && pool.getType() === 'QUEST' ? (
+            {pool && pool.isQuest() ? (
                 <div className="flex-grow-1 flex flex-column">
                     <p>Current Market Cap:</p>
                     <h1>{marketCap || 0}</h1>
@@ -77,7 +77,7 @@ export const PoolChartStats = () => {
             ) : (
                 ''
             )}
-            {pool && pool.getType() === 'QUEST' ? (
+            {pool && pool.isQuest() ? (
                 <div className="flex-grow-1 flex flex-column">
                     <p>Total Value Locked:</p>
                     <h1>{nf.format(totalValueLocked) || 0}</h1>
@@ -90,7 +90,7 @@ export const PoolChartStats = () => {
                     <p>Reserves:</p>
                     <span>
                         <h4 className="m-1">
-                            {pool.tokenLeft.name}{' '}
+                            {pool.tokenLeft}{' '}
                             {reserves[1][1] > 0
                                 ? nf.format(Math.round(reserves[1][1]))
                                 : 0}
@@ -120,12 +120,12 @@ export const KnowledgeGraphStats = () => {
 
     let marketCap = 0
     let totalValueLocked = 0
-    let totalUSDCLocked = 0;
+    let totalUSDCLocked = 0
 
     pools.forEach((poolName) => {
         const pool = globalState.pools.get(poolName)
 
-        if (pool.getType() === 'QUEST') {
+        if (pool.isQuest()) {
             marketCap += pool.getMarketCap()
             totalValueLocked += pool.getTVL()
             totalUSDCLocked += pool.getUSDCValue()
@@ -199,11 +199,12 @@ export const SwapModule = () => {
         }
 
         let tradePool = pool
-        if (tradePool.tokenRight.name !== activeQuest) {
-            tradePool = quest.pools.find(
-                (qp) =>
-                    qp.getType() === 'QUEST' &&
-                    qp.tokenRight.name === activeQuest
+        if (tradePool.tokenRight !== activeQuest) {
+            const poolsOfQuest = globalState.pools
+                .values()
+                .filter((p) => quest.pools.includes(p))
+            tradePool = poolsOfQuest.find(
+                (qp) => qp.isQuest() && qp.tokenRight === activeQuest
             )
         }
 
