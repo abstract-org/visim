@@ -303,7 +303,7 @@ class Generator {
                 const citeOtherAmount = this.calculateCiteAmount(
                     investor,
                     quest.name,
-                    questConfig.otherCitePerc,
+                    questConfig.randomCitePerc,
                     questProbs.citeOtherQuantity
                 )
 
@@ -899,11 +899,11 @@ class Generator {
         }
 
         chances.citeSingle = this.calcProb(questConfig.probCiteSingle)
-        chances.citeOther = this.calcProb(questConfig.probOtherCite)
+        chances.citeOther = this.calcProb(questConfig.probRandomCite)
 
         chances.citeOtherQuantity =
-            chances.citeOther && questConfig.probOtherCite > 100
-                ? Math.floor(questConfig.probOtherCite / 100)
+            chances.citeOther && questConfig.probRandomCite > 100
+                ? Math.floor(questConfig.probRandomCite / 100)
                 : 1
 
         return chances
