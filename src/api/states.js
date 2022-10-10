@@ -58,21 +58,14 @@ export const getStates = async () => {
     }
 }
 
-export const createState = async (
-    stateId,
-    { quests, pools, investors, scenarioId = null }
-) => {
+export const createState = async (stateId, state, scenarioId = null) => {
     if (!stateId) {
         return {
             status: 400,
             body: 'State name is not provided'
         }
     }
-    const serializedState = Serializer.serialize({
-        quests,
-        pools,
-        investors
-    })
+    const serializedState = Serializer.serialize(state)
 
     const requestBody = {
         stateId,

@@ -9,19 +9,31 @@ const useQuestStore = create(
         selectedQuests: [],
         active: null,
         proMode: false,
-        setActive: (quest) => set(() => ({ active: quest })),
-        setProMode: (proMode) => set(() => ({ proMode })),
         addQuest: (quest) =>
             set((state) => ({ quests: [...state.quests, quest] })),
+        addHumanQuest: (quest) =>
+            set((state) => ({ humanQuests: [...state.humanQuests, quest] })),
+        setSelectedQuests: (quests) => set(() => ({ selectedQuests: quests })),
+        setActive: (quest) => set(() => ({ active: quest })),
+        setProMode: (proMode) => set(() => ({ proMode })),
+        override: (newData) =>
+            set((state) => {
+                if (newData) {
+                    state.quests = newData.quests || []
+                    state.humanQuests = newData.humanQuests || []
+                    state.selectedQuests = newData.selectedQuests || []
+                    state.active = newData.active
+                    state.proMode = !!newData.proMode
+                }
+
+                return state
+            }),
         addMultipleQuest: (quests) =>
             set(
                 produce((state) => ({
                     investors: [...state.quests, ...quests]
                 }))
-            ),
-        addHumanQuest: (quest) =>
-            set((state) => ({ humanQuests: [...state.humanQuests, quest] })),
-        setSelectedQuests: (quests) => set(() => ({ selectedQuests: quests }))
+            )
     }))
 )
 

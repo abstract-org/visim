@@ -246,6 +246,7 @@ export const GeneratorRunner = () => {
                 if (!globalState.quests.has(quest.name)) {
                     globalState.quests.set(quest.name, quest)
                     addQuest(quest.name)
+                    globalState.questStore.quests.push(quest.name)
                 }
             })
             stepData.pools.forEach((pool) => {
@@ -259,6 +260,7 @@ export const GeneratorRunner = () => {
                     swap(action)
                 }
                 addLogObj(action)
+                globalState.logs.push(action)
             })
             await genManager.sleep(100)
         }

@@ -1,3 +1,4 @@
+import { globals } from 'chance/.eslintrc'
 import { Button } from 'primereact/button'
 import { Checkbox } from 'primereact/checkbox'
 import { Dropdown } from 'primereact/dropdown'
@@ -40,6 +41,7 @@ export const QuestSelector = () => {
         }
 
         setActive(questName)
+        globalState.questStore.active = questName
     }
 
     return (
@@ -74,6 +76,8 @@ export const QuestCitation = () => {
     if (selectedQuests.includes(activeQuest)) {
         selectedQuests.splice(activeQuest, 1)
         setSelectedQuests(selectedQuests)
+        globalState.questStore.selectedQuests = selectedQuests || []
+        // FIXME: might be not needed here - seem like selectedQuests are not being updated in zustand
     }
 
     const handleCiteQuest = () => {
@@ -182,11 +186,13 @@ export const QuestCitation = () => {
                 totalAmountIn: calcAmountA
             }
             addLogObj(logData)
+            globalState.logs.push(logData)
         })
     }
 
     const handleModifyParameters = () => {
         setProMode(!proMode)
+        globalState.questStore.proMode = !proMode
 
         if (!proMode) {
             handleCitationRange(5)
@@ -439,12 +445,15 @@ export const QuestCreation = () => {
         globalState.quests.set(tokenRight.name, tokenRight)
         globalState.pools.set(pool.name, pool)
         addQuest(tokenRight.name)
+        globalState.questStore.quests.push(tokenRight.name)
         addHumanQuest(tokenRight.name)
+        globalState.questStore.humanQuests.push(tokenRight.name)
         addPool(pool.name)
 
         setQuestName('')
 
         setActiveQuest(questName)
+        globalState.questStore.active = questName
         setActivePool(pool.name)
 
         const logData = {
@@ -453,6 +462,7 @@ export const QuestCreation = () => {
             action: `CREATED`
         }
         addLogObj(logData)
+        globalState.logs.push(logData)
     }
 
     return (

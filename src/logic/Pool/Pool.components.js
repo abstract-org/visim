@@ -232,6 +232,7 @@ export const SwapModule = () => {
             )
             swap(swapData)
             addLogObj(swapData)
+            globalState.logs.push(swapData)
         } else {
             const smSwaps = router.getSwaps()
             const combSwaps = getCombinedSwaps(
@@ -252,6 +253,7 @@ export const SwapModule = () => {
                     )
                     swap(swapData)
                     addLogObj(swapData)
+                    globalState.logs.push(swapData)
                 })
             })
         }
@@ -309,6 +311,7 @@ export const SwapModule = () => {
             )
             swap(swapData)
             addLogObj(swapData)
+            globalState.logs.push(swapData)
         } else {
             const smSwaps = router.getSwaps()
             const combSwaps = getCombinedSwaps(
@@ -329,6 +332,7 @@ export const SwapModule = () => {
                     )
                     swap(swapData)
                     addLogObj(swapData)
+                    globalState.logs.push(swapData)
                 })
             })
         }
