@@ -7,10 +7,7 @@ import Serializer, {
 
 const isValidSnapshot = (snapshot) => snapshot && snapshot.stateId
 
-export const createState = async (
-    stateId,
-    { quests, pools, investors, scenarioId = null }
-) => {
+export const createState = async (stateId, state, scenarioId = null) => {
     if (!stateId) {
         return {
             status: 400,
@@ -24,11 +21,7 @@ export const createState = async (
         }
     }
 
-    const serializedState = Serializer.serialize({
-        quests,
-        pools,
-        investors
-    })
+    const serializedState = Serializer.serialize(state)
 
     const lsValue = JSON.stringify({
         stateId,
@@ -77,11 +70,11 @@ export const getStates = async () => {
 
     const snapshotList = lsValues.filter(isValidSnapshot).map((snapshotObj) => {
         const parsedState = parseEncodedObj(snapshotObj.state)
-        // console.log('###DEBUG parsedState', parsedState)
+
         return (
             parsedState && {
-                scenarioId: snapshotObj.scenarioId,
                 stateId: snapshotObj.stateId,
+                scenarioId: snapshotObj.scenarioId,
                 state: rehydrateState(parsedState)
             }
         )

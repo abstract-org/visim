@@ -8,9 +8,10 @@ import { Sidebar } from 'primereact/sidebar'
 import { Toast } from 'primereact/toast'
 import React, { useEffect, useRef, useState } from 'react'
 
-// import StorageApi from '../../api/localStorage'
-import StorageApi from '../../api/states'
+import StorageApi from '../../api/localStorage'
+// import StorageApi from '../../api/states'
 import globalState from '../GlobalState'
+import useLogsStore from '../Logs/logs.store'
 import usePoolStore from '../Pool/pool.store'
 import useQuestStore from '../Quest/quest.store'
 import {
@@ -18,6 +19,8 @@ import {
     aggregateSnapshotTotals,
     overrideStateBySnapshot
 } from './states.service'
+
+const overrideSelector = (state) => state.override
 
 export const StatesSidebar = (props) => {
     return (
@@ -38,6 +41,8 @@ export const StatesSidebar = (props) => {
 const StatesTable = () => {
     const quests = useQuestStore((state) => state.quests)
     const pools = usePoolStore((state) => state.pools)
+    const overrideLogs = useLogsStore(overrideSelector)
+    const overrideQuests = useQuestStore(overrideSelector)
     const [snapshots, setSnapshots] = useState([])
     const [statesData, setStatesData] = useState([])
     const [currentStateInfo, setCurrentStateInfo] = useState({})
@@ -50,15 +55,13 @@ const StatesTable = () => {
         const stateId = newStateName || `@${new Date().toISOString()}`
         setNewStateName(stateId)
 
-        // localStorage save
-        const lsResponse = await StorageApi.createState(stateId, {
-            ...globalState,
-            scenarioId: 'tbd' // TODO: getCurrentScenarioId)
+        const response = await StorageApi.createState(stateId, {
+            ...globalState
         })
         toast.current.show({
-            severity: lsResponse.status === 201 ? 'success' : 'error',
-            summary: lsResponse.status === 201 ? 'Success' : 'Error',
-            detail: lsResponse.body
+            severity: response.status === 201 ? 'success' : 'error',
+            summary: response.status === 201 ? 'Success' : 'Error',
+            detail: response.body
         })
     }
 
@@ -99,10 +102,18 @@ const StatesTable = () => {
         updateSnapshots(snapshotsLoaded)
     }
 
-    const loadState = async ({ stateId }) => {
+    const loadState = ({ stateId }) => {
         const snapshot = statesData.find((s) => s.stateId === stateId)
 
+        overrideLogs(snapshot.state.logs)
+        overrideQuests(snapshot.state.questStore)
         overrideStateBySnapshot(snapshot)
+
+        toast.current.show({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Current state was overriden by snapshot'
+        })
     }
 
     const textEditor = (options) => {

@@ -74,9 +74,12 @@ export const rehydrateState = (state) => {
         investors.set(key, hydratedItem)
     })
 
-    // TODO: extend rehydration for additional classes
+    // logs - array of plain objects - no need to rehydrate
+    // questStore - object with primitive arrays - no need to rehydrate
 
-    return { pools, quests, investors }
+    // TODO: extend rehydration for additional classes if needed
+
+    return state
 }
 
 /**
@@ -87,6 +90,8 @@ export const overrideStateBySnapshot = ({ state }) => {
     globalState.pools = new HashMap(state.pools)
     globalState.quests = new HashMap(state.quests)
     globalState.investors = new HashMap(state.investors)
+    globalState.logs = state.logs
+    globalState.questStore = state.questStore
 
-    // TODO: update zustand store
+    // FIXME: add globalState props here
 }
