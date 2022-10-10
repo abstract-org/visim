@@ -1,22 +1,12 @@
-import { isValidSnapshot, rehydrateState } from '../logic/States/states.service'
+import { rehydrateState } from '../logic/States/states.service'
+import Serializer, {
+    fromBase64,
+    parseEncodedObj,
+    toBase64
+} from '../logic/Utils/serializer'
 import globalConfig from '../logic/config.global.json'
 
 const STATES_URI = `${globalConfig.API_URL}/states`
-
-const btoaEncode = (str) => window.btoa(encodeURIComponent(str))
-
-const atobDecode = (b64) => decodeURIComponent(window.atob(b64))
-
-const parseEncodedObj = (objStr) => {
-    try {
-        const decodedStr = atobDecode(objStr)
-        return JSON.parse(decodedStr)
-    } catch (err) {
-        console.log(err)
-    }
-
-    return undefined
-}
 
 export const getState = async (stateId) => {
     const response = await fetch(`${STATES_URI}/${stateId}`, {
@@ -25,12 +15,7 @@ export const getState = async (stateId) => {
 
     if (response.status === 200) {
         const body = await response.json()
-        let deserializedState
-        try {
-            deserializedState = JSON.parse(atobDecode(body.state))
-        } catch (err) {
-            console.log(err)
-        }
+        const deserializedState = Serializer.deserialize(fromBase64(body.state))
 
         return {
             scenarioId: body.scenarioId,
@@ -45,53 +30,53 @@ export const getStates = async () => {
         cache: 'no-cache'
     })
 
-    if (response.status === 200) {
-        const body = await response.json()
+    const respBody = await response.json()
 
-        const statesList = body.map((stateObj) => {
-            const parsedState = parseEncodedObj(stateObj.state)
-            const state = rehydrateState(parsedState)
+    let snapshotList
+    if (response.status === 200) {
+        snapshotList = respBody.map((snapshotObj) => {
+            const parsedState = parseEncodedObj(snapshotObj.state)
 
             return (
-                state && {
-                    scenarioId: stateObj.scenarioId,
-                    stateId: stateObj.stateId,
-                    state
+                parsedState && {
+                    scenarioId: snapshotObj.scenarioId,
+                    stateId: snapshotObj.stateId,
+                    state: rehydrateState(parsedState)
                 }
             )
         })
 
-        return statesList.filter(isValidSnapshot)
+        return {
+            status: response.status,
+            body: snapshotList
+        }
+    }
+
+    return {
+        status: response.status,
+        body: respBody.body
     }
 }
 
-export const createState = async (
-    stateId,
-    { quests, pools, investors, scenarioId = null }
-) => {
+export const createState = async (stateId, state, scenarioId = null) => {
     if (!stateId) {
         return {
             status: 400,
             body: 'State name is not provided'
         }
     }
+    const serializedState = Serializer.serialize(state)
 
-    const requestBody = JSON.stringify({
+    const requestBody = {
         stateId,
         scenarioId,
-        state: btoaEncode(
-            JSON.stringify({
-                quests,
-                pools,
-                investors
-            })
-        )
-    })
+        state: toBase64(serializedState)
+    }
 
     const response = await fetch(STATES_URI, {
         cache: 'no-cache',
         method: 'post',
-        body: requestBody
+        body: JSON.stringify(requestBody)
     })
 
     if (response.status === 201) {

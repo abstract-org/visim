@@ -8,18 +8,20 @@ import { Sidebar } from 'primereact/sidebar'
 import { Toast } from 'primereact/toast'
 import React, { useEffect, useRef, useState } from 'react'
 
-import StatesApi from '../../api/states'
+// import StorageApi from '../../api/localStorage'
+import StorageApi from '../../api/states'
+import useGeneratorStore from '../Generators/generator.store'
 import globalState from '../GlobalState'
+import useLogsStore from '../Logs/logs.store'
 import usePoolStore from '../Pool/pool.store'
 import useQuestStore from '../Quest/quest.store'
 import {
-    DEFAULT_AGGREGATED_STATES,
+    // DEFAULT_AGGREGATED_STATES,
     aggregateSnapshotTotals,
-    isValidStateList,
-    overrideStateBySnapshot,
-    rehydrateState,
-    serializeState
+    overrideStateBySnapshot
 } from './states.service'
+
+const overrideSelector = (state) => state.override
 
 export const StatesSidebar = (props) => {
     return (
@@ -40,7 +42,11 @@ export const StatesSidebar = (props) => {
 const StatesTable = () => {
     const quests = useQuestStore((state) => state.quests)
     const pools = usePoolStore((state) => state.pools)
-    const [snapshots, setSnapshots] = useState(DEFAULT_AGGREGATED_STATES)
+    const overrideLogs = useLogsStore(overrideSelector)
+    const overrideQuests = useQuestStore(overrideSelector)
+    const overridePools = usePoolStore(overrideSelector)
+    const overrideGenerators = useGeneratorStore(overrideSelector)
+    const [snapshots, setSnapshots] = useState([])
     const [statesData, setStatesData] = useState([])
     const [currentStateInfo, setCurrentStateInfo] = useState({})
     const isMounted = useRef(null)
@@ -50,21 +56,10 @@ const StatesTable = () => {
 
     const saveCurrentState = async () => {
         const stateId = newStateName || `@${new Date().toISOString()}`
-        const serializedState = serializeState(globalState)
-
-        localStorage.setItem(String(stateId), serializedState)
-        toast.current.show({
-            severity: 'success',
-            summary: 'Success',
-            detail: `State with name [ ${stateId} ] saved locally`
-        })
-
         setNewStateName(stateId)
-        const response = await StatesApi.createState(stateId, {
-            quests: globalState.quests.values(),
-            pools: globalState.pools.values(),
-            investors: globalState.investors.values(),
-            scenarioId: 'tbd' // TODO: getCurrentScenarioId
+
+        const response = await StorageApi.createState(stateId, {
+            ...globalState
         })
         toast.current.show({
             severity: response.status === 201 ? 'success' : 'error',
@@ -74,56 +69,63 @@ const StatesTable = () => {
     }
 
     const updateSnapshots = (snapshotsLoaded) => {
-        const snapshotsHydrated = snapshotsLoaded.map((snapshot) => ({
-            stateId: snapshot.stateId,
-            scenarioId: snapshot.scenarioId,
-            state: rehydrateState(snapshot.state)
-        }))
-        setStatesData(snapshotsHydrated)
-
-        if (isValidStateList(snapshotsHydrated)) {
-            setSnapshots(snapshotsHydrated.map(aggregateSnapshotTotals))
+        if (snapshotsLoaded.status === 200) {
+            setStatesData(snapshotsLoaded.body)
+            setSnapshots(snapshotsLoaded.body.map(aggregateSnapshotTotals))
+        } else {
+            toast.current.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: snapshotsLoaded.body
+            })
         }
     }
 
     useEffect(() => {
         isMounted.current = true
 
-        StatesApi.getStates().then((snapshotsLoaded) => {
+        StorageApi.getStates().then((snapshotsLoaded) => {
             updateSnapshots(snapshotsLoaded)
         })
     }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         const snapshot = {
-            stateId: newStateName || 'none',
+            stateId: newStateName || 'snapshotName',
             scenarioId: 0,
-            state: {
-                pools: globalState.pools.values(),
-                quests: globalState.quests.values(),
-                investors: globalState.investors.values()
-            }
+            state: { ...globalState }
         }
 
         setCurrentStateInfo(aggregateSnapshotTotals(snapshot))
     }, [newStateName, quests, pools])
 
     const handleStatesLoaded = async () => {
-        const snapshotsLoaded = await StatesApi.getStates()
+        const snapshotsLoaded = await StorageApi.getStates()
 
         updateSnapshots(snapshotsLoaded)
     }
-    const loadState = async ({ stateId }) => {
-        const stateData = statesData.find((s) => (s.stateId = stateId))
 
-        overrideStateBySnapshot(stateData)
+    const loadState = ({ stateId }) => {
+        const snapshot = statesData.find((s) => s.stateId === stateId)
+
+        overrideLogs(snapshot.state.logs)
+        overrideQuests(snapshot.state.questStore)
+        overridePools(snapshot.state.poolStore)
+        overrideGenerators(snapshot.state.generators)
+        overrideStateBySnapshot(snapshot)
+
+        toast.current.show({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Current state was overriden by snapshot'
+        })
     }
 
     const textEditor = (options) => {
         return (
             <InputText
                 type="text"
-                value={options.value}
+                value={options.value || ''}
                 onChange={(e) => options.editorCallback(e.target.value)}
             />
         )
@@ -149,7 +151,7 @@ const StatesTable = () => {
                 <Button
                     icon="pi pi-cloud-download"
                     iconPos="left"
-                    label={`Load state ${rowData.stateId}`}
+                    label={'Load state'}
                     className="p-button-danger mr-2"
                     onClick={() => loadState(rowData)}
                 />
@@ -172,7 +174,6 @@ const StatesTable = () => {
                         field="stateId"
                         header="Name"
                         style={{ width: '20%' }}
-                        // body={stateNameEditorBody}
                         editor={(options) => textEditor(options)}
                         onCellEditComplete={(e) => {
                             setNewStateName(e.newValue)
