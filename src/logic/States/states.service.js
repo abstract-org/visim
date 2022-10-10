@@ -15,7 +15,7 @@ export const aggregateSnapshotTotals = (snapshot) => {
     if (!snapshot) return {}
 
     // FIXME: ERROR HERE
-    //  TypeError: this.pricePoints.get is not a function
+    //  TypeError: this.pos.get is not a function
     //     at Pool.buy (Pool.class.js:345:1)
     // snapshot.state.pools.forEach((pool) => {
     //     if (pool.isQuest()) {

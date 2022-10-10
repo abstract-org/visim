@@ -148,34 +148,51 @@ export const QuestCitation = () => {
                 !globalState.pools.has(invPoolName)
             ) {
                 crossPool = investor.createPool(citedQuest, citingQuest)
+            } else {
+                crossPool = globalState.pools
+                    .values()
+                    .find(
+                        (pool) =>
+                            pool.name === poolName || pool.name === invPoolName
+                    )
             }
 
+            const amt0 = activeQuest === crossPool.tokenLeft ? calcAmountA : 0
+            const amt1 = amt0 === 0 ? calcAmountA : 0
+
             const priceRange = investor.calculatePriceRange(
+                citedPool,
                 citingPool,
-                citedPool
+                citationMultiplier
             )
             investor.citeQuest(
                 crossPool,
                 priceRange.min,
                 priceRange.max,
-                calcAmountA
+                amt0,
+                amt1,
+                activeQuest
             )
-            citedQuest.addPool(crossPool)
-            citingQuest.addPool(crossPool)
-            globalState.quests.set(citedQuest.name, citedQuest)
-            globalState.quests.set(citingQuest.name, citingQuest)
             investor.addBalance(citingQuest.name, -calcAmountA)
 
-            globalState.pools.set(crossPool.name, crossPool)
-            addPool(crossPool.name)
-
-            createValueLink({
-                investor: investor.hash,
-                vl: crossPool.name,
-                initialAmount: calcAmountA,
-                initialToken: citingQuest.name
-            })
-            setActivePool(crossPool.name)
+            if (
+                !globalState.pools.has(poolName) &&
+                !globalState.pools.has(invPoolName)
+            ) {
+                citedQuest.addPool(crossPool)
+                citingQuest.addPool(crossPool)
+                globalState.pools.set(crossPool.name, crossPool)
+                globalState.quests.set(citedQuest.name, citedQuest)
+                globalState.quests.set(citingQuest.name, citingQuest)
+                addPool(crossPool.name)
+                createValueLink({
+                    investor: investor.hash,
+                    vl: crossPool.name,
+                    initialAmount: calcAmountA,
+                    initialToken: citingQuest.name
+                })
+                setActivePool(crossPool.name)
+            }
 
             const logData = {
                 pool: crossPool.name,

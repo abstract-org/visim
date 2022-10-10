@@ -111,10 +111,11 @@ export const GeneratorRunner = () => {
         ...dayData
     })
 
+    const swap = usePoolStore((state) => state.swap)
+
     const addPool = usePoolStore((state) => state.addPool)
     const addInvestor = useInvestorStore((state) => state.addInvestor)
     const addQuest = useQuestStore((state) => state.addQuest)
-    const swap = usePoolStore((state) => state.swap)
     const addLogObj = useLogsStore((state) => state.addLogObj)
 
     const addInvConfig = useGeneratorStore((state) => state.addInvConfig)
