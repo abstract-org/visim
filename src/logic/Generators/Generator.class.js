@@ -242,8 +242,8 @@ class Generator {
             }
 
             const priceRange = investor.calculatePriceRange(
-                pool,
-                singleUsdcPool
+                singleUsdcPool,
+                pool
             )
 
             let citedSinglePool = this.#cachedPools.find(
@@ -263,12 +263,16 @@ class Generator {
             }
             this.#dayData[day].pools.push(citedSinglePool)
 
-            const [totalIn, totalOut] = investor.citeQuest(
+            const citeAmount0 =
+                citedSinglePool.tokenLeft === singleQuest ? citeSingleAmount : 0
+            const citeAmount1 = citeAmount0 === 0 ? citeSingleAmount : 0
+
+            const [totalIn, _] = investor.citeQuest(
                 citedSinglePool,
                 priceRange.min,
                 priceRange.max,
-                citeSingleAmount,
-                0
+                citeAmount0,
+                citeAmount1
             )
             this.#cachedQuests.map((mapq) => {
                 if (
@@ -328,7 +332,7 @@ class Generator {
                     return
                 }
 
-                const priceRange = investor.calculatePriceRange(pool, citedPool)
+                const priceRange = investor.calculatePriceRange(citedPool, pool)
 
                 let crossPool = this.#cachedPools.find(
                     (pool) =>
@@ -347,11 +351,18 @@ class Generator {
                 }
                 this.#dayData[day].pools.push(crossPool)
 
-                const [totalIn, totalOut] = investor.citeQuest(
+                const citeAmount0 =
+                    crossPool.tokenLeft === randomQuest.name
+                        ? citeOtherAmount
+                        : 0
+                const citeAmount1 = citeAmount0 === 0 ? citeOtherAmount : 0
+
+                const [totalIn, _] = investor.citeQuest(
                     crossPool,
                     priceRange.min,
                     priceRange.max,
-                    citeOtherAmount
+                    citeAmount0,
+                    citeAmount1
                 )
 
                 this.#cachedQuests.map((mapq) => {

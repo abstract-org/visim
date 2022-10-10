@@ -1,5 +1,4 @@
 import Chance from 'chance'
-import { omit } from 'lodash'
 import create from 'zustand'
 import { devtools } from 'zustand/middleware'
 

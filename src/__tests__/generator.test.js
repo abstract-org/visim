@@ -20,7 +20,7 @@ afterEach(() => {
     }
 })
 
-it('Generates investors', async () => {
+test.skip('Generates investors', async () => {
     const invAuthor = {
         ...invGen,
         invGenAlias: 'AUTHOR',

@@ -317,7 +317,7 @@ export default class Router {
                 in: Math.abs(sums[0]),
                 out: Math.abs(sums[1]),
                 cLiq: pool.currentLiquidity,
-                cPricePoint: pool.currentPricePoint,
+                cPricePoint: pool.curPP,
                 cPrice: pool.currentPrice,
                 cLeft: pool.currentLeft,
                 cRight: pool.currentRight
