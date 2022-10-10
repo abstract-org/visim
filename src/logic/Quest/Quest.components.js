@@ -37,6 +37,7 @@ export const QuestSelector = () => {
         for (const pool of quest.pools) {
             if (globalState.pools.get(pool).isQuest()) {
                 setActivePool(pool)
+                globalState.poolStore.active = pool
             }
         }
 
@@ -171,13 +172,17 @@ export const QuestCitation = () => {
 
             globalState.pools.set(crossPool.name, crossPool)
             addPool(crossPool.name)
-            createValueLink({
+            globalState.poolStore.pools.push(crossPool.name)
+            const valueLink = {
                 investor: investor.hash,
                 vl: crossPool.name,
                 initialAmount: calcAmountA,
                 initialToken: citingQuest.name
-            })
+            }
+            createValueLink(valueLink)
+            globalState.poolStore.valueLinks.push(valueLink)
             setActivePool(crossPool.name)
+            globalState.poolStore.active = crossPool.name
 
             const logData = {
                 pool: crossPool.name,
@@ -449,12 +454,14 @@ export const QuestCreation = () => {
         addHumanQuest(tokenRight.name)
         globalState.questStore.humanQuests.push(tokenRight.name)
         addPool(pool.name)
+        globalState.poolStore.pools.push(pool.name)
 
         setQuestName('')
 
         setActiveQuest(questName)
         globalState.questStore.active = questName
         setActivePool(pool.name)
+        globalState.poolStore.active = pool.name
 
         const logData = {
             pool: pool.name,

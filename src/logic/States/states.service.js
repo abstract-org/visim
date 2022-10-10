@@ -92,6 +92,7 @@ export const overrideStateBySnapshot = ({ state }) => {
     globalState.investors = new HashMap(state.investors)
     globalState.logs = state.logs
     globalState.questStore = state.questStore
+    globalState.poolStore = state.poolStore
 
     // FIXME: add globalState props here
 }

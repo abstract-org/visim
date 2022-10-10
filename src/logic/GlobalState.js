@@ -18,6 +18,13 @@ const globalState = {
         selectedQuests: [],
         active: null,
         proMode: false
+    },
+    poolStore: {
+        pools: [],
+        swaps: [],
+        valueLinks: [],
+        active: null,
+        swapMode: 'smart'
     }
 }
 
