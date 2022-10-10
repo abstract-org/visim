@@ -1,5 +1,4 @@
 import Chance from 'chance'
-import { omit } from 'lodash'
 import create from 'zustand'
 import { devtools } from 'zustand/middleware'
 
@@ -64,7 +63,16 @@ const useGeneratorStore = create(
                     (gen) => gen.questGenAlias !== questGenAlias
                 )
             })),
-        resetQuestConfigs: () => set((state) => ({ questConfigs: [] }))
+        resetQuestConfigs: () => set((state) => ({ questConfigs: [] })),
+        override: (newData) =>
+            set((state) => {
+                if (newData) {
+                    state.invConfigs = newData.invConfigs || []
+                    state.questConfigs = newData.questConfigs || []
+                }
+
+                return state
+            })
     }))
 )
 

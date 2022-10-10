@@ -19,6 +19,12 @@ import useInvestorStore from '../Investor/investor.store'
 import useLogsStore from '../Logs/logs.store'
 import usePoolStore from '../Pool/pool.store'
 import useQuestStore from '../Quest/quest.store'
+import {
+    deleteStateInvestorConfig,
+    deleteStateQuestConfig,
+    updateStateInvestorConfig,
+    updateStateQuestConfig
+} from '../Utils/logicUtils'
 import { capitalize } from '../Utils/uiUtils'
 import Generator from './Generator.class'
 import useGeneratorStore from './generator.store'
@@ -115,7 +121,7 @@ export const GeneratorRunner = () => {
     const addPool = usePoolStore((state) => state.addPool)
     const addInvestor = useInvestorStore((state) => state.addInvestor)
     const addQuest = useQuestStore((state) => state.addQuest)
-    const swap = usePoolStore((state) => state.swap)
+    const addSwap = usePoolStore((state) => state.addSwap)
     const addLogObj = useLogsStore((state) => state.addLogObj)
 
     const addInvConfig = useGeneratorStore((state) => state.addInvConfig)
@@ -140,11 +146,13 @@ export const GeneratorRunner = () => {
             resetInvConfigs()
             currentScenario.scenario.invConfigs.forEach((invGen) => {
                 addInvConfig(invGen)
+                globalState.generators.invConfigs.push(invGen)
             })
 
             resetQuestConfigs()
             currentScenario.scenario.questConfigs.forEach((questGen) => {
                 addQuestConfig(questGen)
+                globalState.generators.questConfigs.push(questGen)
             })
         }
     }, [
@@ -246,19 +254,23 @@ export const GeneratorRunner = () => {
                 if (!globalState.quests.has(quest.name)) {
                     globalState.quests.set(quest.name, quest)
                     addQuest(quest.name)
+                    globalState.questStore.quests.push(quest.name)
                 }
             })
             stepData.pools.forEach((pool) => {
                 if (!globalState.pools.has(pool.name)) {
                     globalState.pools.set(pool.name, pool)
                     addPool(pool.name)
+                    globalState.poolStore.pools.push(pool.name)
                 }
             })
             stepData.actions.forEach((action) => {
                 if (['BOUGHT', 'SOLD'].includes(action.action)) {
-                    swap(action)
+                    addSwap(action)
+                    globalState.poolStore.swaps.push(action)
                 }
                 addLogObj(action)
+                globalState.logs.push(action)
             })
             await genManager.sleep(100)
         }
@@ -380,6 +392,7 @@ export const InvestorRandomGenerator = () => {
         })
 
         addInvConfig(newInvGen)
+        globalState.generators.invConfigs.push(newInvGen)
     }
 
     return (
@@ -436,10 +449,15 @@ export const GenCardInvestor = (props) => {
     const handleChange = (evt) => {
         const newState = { ...props.state, [evt.target.id]: evt.target.value }
         props.updateInvConfig(newState)
+        updateStateInvestorConfig(globalState.generators.invConfigs, newState)
     }
 
     const handleDelete = (invGenAlias) => {
         props.deleteInvConfig(invGenAlias)
+        deleteStateInvestorConfig(
+            globalState.generators.invConfigs,
+            invGenAlias
+        )
     }
 
     return (
@@ -764,6 +782,7 @@ export const QuestRandomGenerator = () => {
             }`
         })
         addQuestConfig(newQuestGen)
+        globalState.generators.questConfigs.push(newQuestGen)
     }
 
     return (
@@ -807,10 +826,12 @@ export const GenCardQuest = (props) => {
     const handleChange = (evt) => {
         const newState = { ...props.state, [evt.target.id]: evt.target.value }
         props.updateQuestConfig(newState)
+        updateStateQuestConfig(globalState.generators.questConfigs, newState)
     }
 
     const handleDelete = (id) => {
         props.deleteQuestConfig(id)
+        deleteStateQuestConfig(globalState.generators.questConfigs, id)
     }
 
     return (

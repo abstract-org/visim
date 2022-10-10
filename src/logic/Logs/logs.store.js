@@ -6,7 +6,12 @@ const useLogsStore = create(
     devtools((set, get) => ({
         logObjs: [],
         addLogObj: (logObj) =>
-            set(produce((state) => ({ logObjs: [...state.logObjs, logObj] })))
+            set(produce((state) => ({ logObjs: [...state.logObjs, logObj] }))),
+        override: (logsList) =>
+            set((state) => {
+                state.logObjs = logsList
+                return state
+            })
     }))
 )
 

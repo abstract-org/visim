@@ -10,7 +10,26 @@ import HashMap from 'hashmap'
 const globalState = {
     pools: new HashMap(),
     quests: new HashMap(), // tokens
-    investors: new HashMap()
+    investors: new HashMap(),
+    logs: [],
+    questStore: {
+        quests: [],
+        humanQuests: [],
+        selectedQuests: [],
+        active: null,
+        proMode: false
+    },
+    poolStore: {
+        pools: [],
+        swaps: [],
+        valueLinks: [],
+        active: null,
+        swapMode: 'smart'
+    },
+    generators: {
+        invConfigs: [],
+        questConfigs: []
+    }
 }
 
 window.globalState = globalState
