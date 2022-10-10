@@ -115,7 +115,7 @@ export const GeneratorRunner = () => {
     const addPool = usePoolStore((state) => state.addPool)
     const addInvestor = useInvestorStore((state) => state.addInvestor)
     const addQuest = useQuestStore((state) => state.addQuest)
-    const swap = usePoolStore((state) => state.swap)
+    const addSwap = usePoolStore((state) => state.addSwap)
     const addLogObj = useLogsStore((state) => state.addLogObj)
 
     const addInvConfig = useGeneratorStore((state) => state.addInvConfig)
@@ -253,11 +253,13 @@ export const GeneratorRunner = () => {
                 if (!globalState.pools.has(pool.name)) {
                     globalState.pools.set(pool.name, pool)
                     addPool(pool.name)
+                    globalState.poolStore.pools.push(pool.name)
                 }
             })
             stepData.actions.forEach((action) => {
                 if (['BOUGHT', 'SOLD'].includes(action.action)) {
-                    swap(action)
+                    addSwap(action)
+                    globalState.poolStore.swaps.push(action)
                 }
                 addLogObj(action)
                 globalState.logs.push(action)

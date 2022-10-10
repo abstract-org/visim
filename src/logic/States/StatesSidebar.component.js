@@ -8,8 +8,8 @@ import { Sidebar } from 'primereact/sidebar'
 import { Toast } from 'primereact/toast'
 import React, { useEffect, useRef, useState } from 'react'
 
-import StorageApi from '../../api/localStorage'
-// import StorageApi from '../../api/states'
+// import StorageApi from '../../api/localStorage'
+import StorageApi from '../../api/states'
 import globalState from '../GlobalState'
 import useLogsStore from '../Logs/logs.store'
 import usePoolStore from '../Pool/pool.store'
@@ -43,6 +43,7 @@ const StatesTable = () => {
     const pools = usePoolStore((state) => state.pools)
     const overrideLogs = useLogsStore(overrideSelector)
     const overrideQuests = useQuestStore(overrideSelector)
+    const overridePools = usePoolStore(overrideSelector)
     const [snapshots, setSnapshots] = useState([])
     const [statesData, setStatesData] = useState([])
     const [currentStateInfo, setCurrentStateInfo] = useState({})
@@ -107,6 +108,7 @@ const StatesTable = () => {
 
         overrideLogs(snapshot.state.logs)
         overrideQuests(snapshot.state.questStore)
+        overridePools(snapshot.state.poolStore)
         overrideStateBySnapshot(snapshot)
 
         toast.current.show({

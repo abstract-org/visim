@@ -18,10 +18,11 @@ import usePoolStore from './pool.store'
 export const PoolSelector = () => {
     const pools = usePoolStore((state) => state.pools)
     const activePool = usePoolStore((state) => state.active)
-    const setActive = usePoolStore((state) => state.setActive)
+    const setActivePool = usePoolStore((state) => state.setActive)
 
     const handleChoosePool = (e) => {
-        setActive(e.value)
+        setActivePool(e.value)
+        globalState.poolStore.active = e.value
     }
 
     return (
@@ -160,7 +161,7 @@ export const SwapModule = () => {
     const activeInvestor = useInvestorStore((state) => state.active)
     const activePool = usePoolStore((state) => state.active)
     const activeQuest = useQuestStore((state) => state.active)
-    const swap = usePoolStore((state) => state.swap)
+    const addSwap = usePoolStore((state) => state.addSwap)
     const addLogObj = useLogsStore((state) => state.addLogObj)
     const swapMode = usePoolStore((state) => state.swapMode)
     const router = new Router(
@@ -230,7 +231,8 @@ export const SwapModule = () => {
                 totalAmountIn,
                 totalAmountOut
             )
-            swap(swapData)
+            addSwap(swapData)
+            globalState.poolStore.swaps.push(swapData)
             addLogObj(swapData)
             globalState.logs.push(swapData)
         } else {
@@ -251,7 +253,8 @@ export const SwapModule = () => {
                         op[1].totalAmountOut,
                         op[1].path
                     )
-                    swap(swapData)
+                    addSwap(swapData)
+                    globalState.poolStore.swaps.push(swapData)
                     addLogObj(swapData)
                     globalState.logs.push(swapData)
                 })
@@ -309,7 +312,8 @@ export const SwapModule = () => {
                 totalAmountIn,
                 totalAmountOut
             )
-            swap(swapData)
+            addSwap(swapData)
+            globalState.poolStore.swaps.push(swapData)
             addLogObj(swapData)
             globalState.logs.push(swapData)
         } else {
@@ -330,7 +334,8 @@ export const SwapModule = () => {
                         op[1].totalAmountOut,
                         op[1].path
                     )
-                    swap(swapData)
+                    addSwap(swapData)
+                    globalState.poolStore.swaps.push(swapData)
                     addLogObj(swapData)
                     globalState.logs.push(swapData)
                 })
@@ -395,6 +400,7 @@ export const SwapMode = () => {
     const handleSwapMode = (e) => {
         setValue(e.value)
         setSwapMode(e.value)
+        globalState.poolStore.swapMode = e.value
     }
 
     return (
