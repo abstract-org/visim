@@ -93,6 +93,7 @@ export const overrideStateBySnapshot = ({ state }) => {
     globalState.logs = state.logs
     globalState.questStore = state.questStore
     globalState.poolStore = state.poolStore
+    globalState.generators = state.generators
 
     // FIXME: add globalState props here
 }

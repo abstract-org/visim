@@ -25,6 +25,10 @@ const globalState = {
         valueLinks: [],
         active: null,
         swapMode: 'smart'
+    },
+    generators: {
+        invConfigs: [],
+        questConfigs: []
     }
 }
 

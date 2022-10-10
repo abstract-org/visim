@@ -19,6 +19,12 @@ import useInvestorStore from '../Investor/investor.store'
 import useLogsStore from '../Logs/logs.store'
 import usePoolStore from '../Pool/pool.store'
 import useQuestStore from '../Quest/quest.store'
+import {
+    deleteStateInvestorConfig,
+    deleteStateQuestConfig,
+    updateStateInvestorConfig,
+    updateStateQuestConfig
+} from '../Utils/logicUtils'
 import { capitalize } from '../Utils/uiUtils'
 import Generator from './Generator.class'
 import useGeneratorStore from './generator.store'
@@ -140,11 +146,13 @@ export const GeneratorRunner = () => {
             resetInvConfigs()
             currentScenario.scenario.invConfigs.forEach((invGen) => {
                 addInvConfig(invGen)
+                globalState.generators.invConfigs.push(invGen)
             })
 
             resetQuestConfigs()
             currentScenario.scenario.questConfigs.forEach((questGen) => {
                 addQuestConfig(questGen)
+                globalState.generators.questConfigs.push(questGen)
             })
         }
     }, [
@@ -384,6 +392,7 @@ export const InvestorRandomGenerator = () => {
         })
 
         addInvConfig(newInvGen)
+        globalState.generators.invConfigs.push(newInvGen)
     }
 
     return (
@@ -440,10 +449,15 @@ export const GenCardInvestor = (props) => {
     const handleChange = (evt) => {
         const newState = { ...props.state, [evt.target.id]: evt.target.value }
         props.updateInvConfig(newState)
+        updateStateInvestorConfig(globalState.generators.invConfigs, newState)
     }
 
     const handleDelete = (invGenAlias) => {
         props.deleteInvConfig(invGenAlias)
+        deleteStateInvestorConfig(
+            globalState.generators.invConfigs,
+            invGenAlias
+        )
     }
 
     return (
@@ -768,6 +782,7 @@ export const QuestRandomGenerator = () => {
             }`
         })
         addQuestConfig(newQuestGen)
+        globalState.generators.questConfigs.push(newQuestGen)
     }
 
     return (
@@ -811,10 +826,12 @@ export const GenCardQuest = (props) => {
     const handleChange = (evt) => {
         const newState = { ...props.state, [evt.target.id]: evt.target.value }
         props.updateQuestConfig(newState)
+        updateStateQuestConfig(globalState.generators.questConfigs, newState)
     }
 
     const handleDelete = (id) => {
         props.deleteQuestConfig(id)
+        deleteStateQuestConfig(globalState.generators.questConfigs, id)
     }
 
     return (
