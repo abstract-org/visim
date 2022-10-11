@@ -1,9 +1,9 @@
 import HashMap from 'hashmap'
 
+import UsdcToken from '../logic/Quest/UsdcToken.class'
 import { p2pp } from '../logic/Utils/logicUtils'
 import globalConfig from '../logic/config.global.json'
-import { preparePool, prepareCrossPools } from './helpers/poolManager'
-import UsdcToken from "../logic/Quest/UsdcToken.class";
+import { prepareCrossPools, preparePool } from './helpers/poolManager'
 
 let globalState = {
     pools: new HashMap(),
@@ -182,14 +182,14 @@ it('cites a quest with traded pool B', () => {
 
 describe('getUSDCValue()', () => {
     it('returns 0 for non-USDC crosspool', () => {
-        const [ , { AB, CA } ] = prepareCrossPools()
+        const [, { AB, CA }] = prepareCrossPools()
 
         expect(AB.getUSDCValue()).toBe(0)
         expect(CA.getUSDCValue()).toBe(0)
     })
 
     it('returns correct value of USDC in pool', () => {
-        const [ , { poolA } ] = prepareCrossPools()
+        const [, { poolA }] = prepareCrossPools()
 
         poolA.buy(1000)
         poolA.buy(2000)
@@ -203,7 +203,7 @@ describe('isQuest()', () => {
     it('returns true for QUEST pool', () => {
         const { pool } = preparePool()
 
-        expect(pool.tokenLeft).toBeInstanceOf(UsdcToken)
+        expect(pool.tokenLeft).toBe('USDC')
         expect(pool.isQuest()).toBe(true)
     })
 
@@ -214,7 +214,7 @@ describe('isQuest()', () => {
     })
 
     it('returns false for cross-pools', () => {
-        const [ , { AB } ] = prepareCrossPools()
+        const [, { AB }] = prepareCrossPools()
 
         expect(AB.isQuest()).toBe(false)
     })

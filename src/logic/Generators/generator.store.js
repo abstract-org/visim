@@ -1,14 +1,18 @@
-import Chance from 'chance'
-import { omit } from 'lodash'
 import create from 'zustand'
 import { devtools } from 'zustand/middleware'
 
-const chance = Chance()
+import { overrideState } from '../Utils/logicUtils'
+
+const INITIAL_STATE = {
+    invConfigs: [],
+    questConfigs: [],
+    scenarioId: 0
+}
 
 const useGeneratorStore = create(
     devtools((set, get) => ({
-        invConfigs: [],
-        questConfigs: [],
+        ...INITIAL_STATE,
+        setScenarioId: (scenarioId) => set((state) => ({ scenarioId })),
         addInvConfig: (stateConfig) =>
             set((state) => ({
                 invConfigs: [
@@ -64,7 +68,9 @@ const useGeneratorStore = create(
                     (gen) => gen.questGenAlias !== questGenAlias
                 )
             })),
-        resetQuestConfigs: () => set((state) => ({ questConfigs: [] }))
+        resetQuestConfigs: () => set(() => ({ questConfigs: [] })),
+        override: (newData) =>
+            set(() => overrideState(get(), newData, INITIAL_STATE))
     }))
 )
 

@@ -4,12 +4,27 @@ export default class UsdcToken {
     pools = []
 
     constructor() {
-        this.name = 'USDC'
+        if (!UsdcToken._instance) {
+            // singleton
+            this.name = 'USDC'
+            UsdcToken._instance = this
+        }
+
+        return UsdcToken._instance
     }
 
     addPool(pool) {
-        if (this.pools.find((exPool) => exPool.name === pool.name)) return
+        if (
+            this.pools.find(
+                (existingPoolName) => existingPoolName === pool.name
+            )
+        )
+            return
 
-        this.pools.push(pool)
+        this.pools.push(pool.name)
+    }
+
+    truncate() {
+        this.pools = []
     }
 }

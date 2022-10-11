@@ -35,8 +35,8 @@ const Graph = (props) => {
     const loadGraph = useLoadGraph()
 
     const setSettings = useSetSettings()
-    const [ hoveredNode, setHoveredNode ] = useState(null)
-    const [ hoveredEdge, setHoveredEdge ] = useState(null)
+    const [hoveredNode, setHoveredNode] = useState(null)
+    const [hoveredEdge, setHoveredEdge] = useState(null)
     const sigma = useSigma()
 
     useEffect(() => {
@@ -56,11 +56,16 @@ const Graph = (props) => {
                 }
 
                 if (hoveredNode) {
-                    newData.highlighted = (node === hoveredNode) || graph.neighbors(hoveredNode).includes(node)
+                    newData.highlighted =
+                        node === hoveredNode ||
+                        graph.neighbors(hoveredNode).includes(node)
                 }
 
                 if (hoveredEdge) {
-                    const hoveredEdgeNodes = [graph.source(hoveredEdge), graph.target(hoveredEdge)]
+                    const hoveredEdgeNodes = [
+                        graph.source(hoveredEdge),
+                        graph.target(hoveredEdge)
+                    ]
                     newData.highlighted = hoveredEdgeNodes.includes(node)
                 }
 
@@ -71,9 +76,12 @@ const Graph = (props) => {
                 const newEdgeData = {
                     ...data,
                     color: COLORS.edgeDefault,
-                    zIndex: 1,
+                    zIndex: 1
                 }
-                if (hoveredNode && graph.extremities(edge).includes(hoveredNode)) {
+                if (
+                    hoveredNode &&
+                    graph.extremities(edge).includes(hoveredNode)
+                ) {
                     newEdgeData.color = COLORS.edgeConnected
                     newEdgeData.zIndex = 99
                 }
@@ -84,9 +92,9 @@ const Graph = (props) => {
                 }
 
                 return newEdgeData
-            },
+            }
         })
-    }, [ hoveredNode, hoveredEdge ])
+    }, [hoveredNode, hoveredEdge])
 
     useEffect(() => {
         const RED = '#FA4F40'
@@ -101,7 +109,7 @@ const Graph = (props) => {
         quests.forEach((quest, id) => {
             const pool = globalState.pools
                 .values()
-                .find((p) => p.tokenRight.name === quest)
+                .find((p) => p.tokenRight === quest)
             if (!graph.hasNode(quest)) {
                 graph.addNode(quest, {
                     size: Math.log(pool.getMarketCap()),
@@ -124,13 +132,19 @@ const Graph = (props) => {
                 const [cited, citing] = poolName.split('-')
 
                 const crossPool = globalState.pools.get(poolName)
-                const citedPool = globalState.pools.values()
-                    .find((p) => p.tokenRight.name === cited && p.isQuest())
-                const citingPool = globalState.pools.values()
-                    .find((p) => p.tokenRight.name === citing && p.isQuest())
+                const citedPool = globalState.pools
+                    .values()
+                    .find((p) => p.tokenRight === cited && p.isQuest())
+                const citingPool = globalState.pools
+                    .values()
+                    .find((p) => p.tokenRight === citing && p.isQuest())
 
                 graph.addEdge(citing, cited, {
-                    size: calcCrossPoolThickness(crossPool, citedPool, citingPool),
+                    size: calcCrossPoolThickness(
+                        crossPool,
+                        citedPool,
+                        citingPool
+                    ),
                     label: poolName
                 })
             })
@@ -138,32 +152,47 @@ const Graph = (props) => {
 
         registerEvents({
             clickNode: (event) => {
-                const questPool = globalState.pools.values()
-                  .find(pool => pool.getType() === 'QUEST' && pool.tokenRight.name === event.node)
+                const questPool = globalState.pools
+                    .values()
+                    .find(
+                        (pool) =>
+                            pool.isQuest() && pool.tokenRight === event.node
+                    )
 
                 if (questPool) {
-                  setActivePool(questPool.name)
+                    setActivePool(questPool.name)
+                    globalState.poolStore.active = questPool.name
                 }
             },
             clickEdge: (event) => {
                 const edgeSource = graph.source(event.edge)
                 const edgeTarget = graph.target(event.edge)
                 const poolName = `${edgeTarget}-${edgeSource}`
-                if (globalState.pools.get(poolName).getType() === 'VALUE_LINK') {
+                if (
+                    globalState.pools.get(poolName).getType() === 'VALUE_LINK'
+                ) {
                     setActivePool(poolName)
+                    globalState.poolStore.active = poolName
                 }
             },
-            enterNode: event => setHoveredNode(event.node),
+            enterNode: (event) => setHoveredNode(event.node),
             leaveNode: () => setHoveredNode(null),
-            enterEdge: event => setHoveredEdge(event.edge),
+            enterEdge: (event) => setHoveredEdge(event.edge),
             leaveEdge: () => setHoveredEdge(null)
         })
 
         loadGraph(graph)
+    }, [
+        setActivePool,
+        registerEvents,
+        loadGraph,
+        humanQuests,
+        pools,
+        quests,
+        clickedNode
+    ])
 
-    }, [setActivePool, registerEvents, loadGraph, humanQuests, pools, quests, clickedNode])
-
-return null
+    return null
 }
 
 export const KnowledgeGraphV2 = () => {
@@ -171,7 +200,7 @@ export const KnowledgeGraphV2 = () => {
         <SigmaContainer
             initialSettings={{
                 allowInvalidContainer: true,
-                enableEdgeClickEvents: true,
+                enableEdgeClickEvents: true
             }}
             style={{ height: '500px' }}
         >

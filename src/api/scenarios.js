@@ -1,7 +1,5 @@
 import globalConfig from '../logic/config.global.json'
 
-export const getScenario = (scenarioId) => {}
-
 export const getScenarios = async () => {
     const response = await fetch(`${globalConfig.API_URL}/scenarios`, {
         cache: 'no-cache'
@@ -16,12 +14,7 @@ export const getScenarios = async () => {
     }
 }
 
-export const createScenario = async (
-    scenarioId,
-    invConfigs,
-    questConfigs,
-    stateId = null
-) => {
+export const createScenario = async (scenarioId, invConfigs, questConfigs) => {
     if (!scenarioId) {
         return { status: 400, body: 'Scenario name is not provided' }
     }

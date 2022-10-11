@@ -1,3 +1,4 @@
+import { globals } from 'chance/.eslintrc'
 import { Button } from 'primereact/button'
 import { Checkbox } from 'primereact/checkbox'
 import { Dropdown } from 'primereact/dropdown'
@@ -34,12 +35,14 @@ export const QuestSelector = () => {
         const questName = quests.find((questName) => questName === e.value)
         const quest = globalState.quests.get(questName)
         for (const pool of quest.pools) {
-            if (pool.getType() === 'QUEST') {
-                setActivePool(pool.name)
+            if (globalState.pools.get(pool).isQuest()) {
+                setActivePool(pool)
+                globalState.poolStore.active = pool
             }
         }
 
         setActive(questName)
+        globalState.questStore.active = questName
     }
 
     return (
@@ -119,9 +122,7 @@ export const QuestCitation = () => {
         const citingPool = globalState.pools
             .values()
             .find(
-                (pool) =>
-                    pool.tokenRight.name === citingQuest.name &&
-                    pool.getType() === 'QUEST'
+                (pool) => pool.tokenRight === citingQuest.name && pool.isQuest()
             )
 
         selectedQuests.forEach((questName) => {
@@ -148,8 +149,7 @@ export const QuestCitation = () => {
                 .values()
                 .find(
                     (pool) =>
-                        pool.tokenRight.name === citedQuest.name &&
-                        pool.getType() === 'QUEST'
+                        pool.tokenRight === citedQuest.name && pool.isQuest()
                 )
             const crossPool = investor.createPool(citedQuest, citingQuest)
             const priceRange = investor.calculatePriceRange(
@@ -162,17 +162,25 @@ export const QuestCitation = () => {
                 priceRange.max,
                 calcAmountA
             )
+            citedQuest.addPool(crossPool)
+            citingQuest.addPool(crossPool)
+            globalState.quests.set(citedQuest.name, citedQuest)
+            globalState.quests.set(citingQuest.name, citingQuest)
             investor.addBalance(citingQuest.name, -calcAmountA)
 
             globalState.pools.set(crossPool.name, crossPool)
             addPool(crossPool.name)
-            createValueLink({
+            globalState.poolStore.pools.push(crossPool.name)
+            const valueLink = {
                 investor: investor.hash,
                 vl: crossPool.name,
                 initialAmount: calcAmountA,
                 initialToken: citingQuest.name
-            })
+            }
+            createValueLink(valueLink)
+            globalState.poolStore.valueLinks.push(valueLink)
             setActivePool(crossPool.name)
+            globalState.poolStore.active = crossPool.name
 
             const logData = {
                 pool: crossPool.name,
@@ -181,11 +189,13 @@ export const QuestCitation = () => {
                 totalAmountIn: calcAmountA
             }
             addLogObj(logData)
+            globalState.logStore.logObjs.push(logData)
         })
     }
 
     const handleModifyParameters = () => {
         setProMode(!proMode)
+        globalState.questStore.proMode = !proMode
 
         if (!proMode) {
             handleCitationRange(5)
@@ -431,20 +441,25 @@ export const QuestCreation = () => {
         const pool = tokenRight.createPool()
 
         // Add USDC to pools
-        const exQuest = globalState.quests.get(pool.tokenLeft.name)
+        const exQuest = globalState.quests.get(pool.tokenLeft)
         exQuest.addPool(pool)
-        globalState.quests.set(pool.tokenLeft.name, exQuest)
+        globalState.quests.set(pool.tokenLeft, exQuest)
 
         globalState.quests.set(tokenRight.name, tokenRight)
         globalState.pools.set(pool.name, pool)
         addQuest(tokenRight.name)
+        globalState.questStore.quests.push(tokenRight.name)
         addHumanQuest(tokenRight.name)
+        globalState.questStore.humanQuests.push(tokenRight.name)
         addPool(pool.name)
+        globalState.poolStore.pools.push(pool.name)
 
         setQuestName('')
 
         setActiveQuest(questName)
+        globalState.questStore.active = questName
         setActivePool(pool.name)
+        globalState.poolStore.active = pool.name
 
         const logData = {
             pool: pool.name,
@@ -452,6 +467,7 @@ export const QuestCreation = () => {
             action: `CREATED`
         }
         addLogObj(logData)
+        globalState.logStore.logObjs.push(logData)
     }
 
     return (
