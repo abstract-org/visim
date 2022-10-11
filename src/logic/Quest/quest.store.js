@@ -2,13 +2,18 @@ import produce from 'immer'
 import create from 'zustand'
 import { devtools } from 'zustand/middleware'
 
+import { overrideState } from '../Utils/logicUtils'
+
+const INITIAL_STATE = {
+    quests: [],
+    humanQuests: [],
+    selectedQuests: [],
+    active: null,
+    proMode: false
+}
 const useQuestStore = create(
-    devtools((set) => ({
-        quests: [],
-        humanQuests: [],
-        selectedQuests: [],
-        active: null,
-        proMode: false,
+    devtools((set, get) => ({
+        ...INITIAL_STATE,
         addQuest: (quest) =>
             set((state) => ({ quests: [...state.quests, quest] })),
         addHumanQuest: (quest) =>
@@ -17,17 +22,7 @@ const useQuestStore = create(
         setActive: (quest) => set(() => ({ active: quest })),
         setProMode: (proMode) => set(() => ({ proMode })),
         override: (newData) =>
-            set((state) => {
-                if (newData) {
-                    state.quests = newData.quests || []
-                    state.humanQuests = newData.humanQuests || []
-                    state.selectedQuests = newData.selectedQuests || []
-                    state.active = newData.active
-                    state.proMode = !!newData.proMode
-                }
-
-                return state
-            }),
+            set((state) => overrideState(get(), newData, INITIAL_STATE)),
         addMultipleQuest: (quests) =>
             set(
                 produce((state) => ({

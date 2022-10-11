@@ -2,13 +2,19 @@ import Chance from 'chance'
 import create from 'zustand'
 import { devtools } from 'zustand/middleware'
 
+import { overrideState } from '../Utils/logicUtils'
+
 const chance = Chance()
+
+const INITIAL_STATE = {
+    invConfigs: [],
+    questConfigs: [],
+    scenarioId: 0
+}
 
 const useGeneratorStore = create(
     devtools((set, get) => ({
-        invConfigs: [],
-        questConfigs: [],
-        scenarioId: 0,
+        ...INITIAL_STATE,
         setScenarioId: (scenarioId) => set((state) => ({ scenarioId })),
         addInvConfig: (stateConfig) =>
             set((state) => ({
@@ -67,14 +73,7 @@ const useGeneratorStore = create(
             })),
         resetQuestConfigs: () => set((state) => ({ questConfigs: [] })),
         override: (newData) =>
-            set((state) => {
-                if (newData) {
-                    state.invConfigs = newData.invConfigs || []
-                    state.questConfigs = newData.questConfigs || []
-                }
-
-                return state
-            })
+            set((state) => overrideState(get(), newData, INITIAL_STATE))
     }))
 )
 

@@ -89,3 +89,16 @@ export const formatBytes = (bytes, decimals = 2) => {
 
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
 }
+
+export const overrideState = (stateObj, newData = {}, initialState = {}) => {
+    let newState = initialState
+    if (newData) {
+        Object.entries(newData).forEach(([key, newValue]) => {
+            if (stateObj[key] && newData[key]) {
+                newState[key] = newValue
+            }
+        })
+    }
+
+    return newState
+}
