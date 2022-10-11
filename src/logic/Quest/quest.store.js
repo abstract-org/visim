@@ -22,7 +22,7 @@ const useQuestStore = create(
         setActive: (quest) => set(() => ({ active: quest })),
         setProMode: (proMode) => set(() => ({ proMode })),
         override: (newData) =>
-            set((state) => overrideState(get(), newData, INITIAL_STATE)),
+            set(() => overrideState(get(), newData, INITIAL_STATE)),
         addMultipleQuest: (quests) =>
             set(
                 produce((state) => ({

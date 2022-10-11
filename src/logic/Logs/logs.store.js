@@ -14,7 +14,7 @@ const useLogsStore = create(
         addLogObj: (logObj) =>
             set(produce((state) => ({ logObjs: [...state.logObjs, logObj] }))),
         override: (newData) =>
-            set((state) => overrideState(get(), newData, INITIAL_STATE))
+            set(() => overrideState(get(), newData, INITIAL_STATE))
     }))
 )
 
