@@ -101,7 +101,5 @@ export const overrideState = (stateObj, newData = {}, initialState = {}) => {
         })
     }
 
-    console.log(newState)
-
     return newState
 }
