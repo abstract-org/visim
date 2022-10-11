@@ -2,10 +2,16 @@ import produce from 'immer'
 import create from 'zustand'
 import { devtools } from 'zustand/middleware'
 
+import { overrideState } from '../Utils/logicUtils'
+
+const INITIAL_STATE = {
+    active: null,
+    investors: []
+}
+
 const useInvestorStore = create(
     devtools((set, get) => ({
-        active: null,
-        investors: [],
+        ...INITIAL_STATE,
         addInvestor: (hash) =>
             set(
                 produce((state) => ({
@@ -35,27 +41,7 @@ const useInvestorStore = create(
         getByHash: (investorHash) =>
             get().investors.find((hash) => hash === investorHash),
         override: (newData) =>
-            set((state) => {
-                let newState = {}
-                /*if (newData) {
-                    const stateObj = get()
-                    Object.entries(newData).forEach((entry) => {
-                        if (stateObj[entry[0]] && newData[entry[0]]) {
-                            newState[entry[0]] = entry[1]
-                        }
-                    })
-                }
-
-                return newState*/
-                console.log(newData)
-                if (newData) {
-                    console.log(newData)
-                    newState.investors = newData.investors || []
-                    newState.active = newData.active || null
-                }
-
-                return newState
-            })
+            set((state) => overrideState(get(), newData, INITIAL_STATE))
     }))
 )
 
