@@ -7,7 +7,7 @@ import globalState from '../GlobalState'
 import usePoolStore from '../Pool/pool.store'
 import UsdcToken from '../Quest/UsdcToken.class'
 import useQuestStore from '../Quest/quest.store'
-import { numericValue } from '../Utils/uiUtils'
+import { numericValue, pushIfNotExist } from '../Utils/uiUtils'
 import { generateDefaultInvestors } from './Investor.generator'
 import useInvestorStore from './investor.store'
 
@@ -17,10 +17,9 @@ const setActiveSelector = (state) => state.setActive
 export function InvestorModule({ children }) {
     const addInvestors = useInvestorStore(addInvestorsSelector)
     const investors = generateDefaultInvestors()
-
     investors.forEach((investor) => {
         globalState.investors.set(investor.hash, investor)
-        globalState.investorStore.investors.push(investor.hash)
+        pushIfNotExist(globalState.investorStore.investors, investor.hash)
     })
     addInvestors(investors.map((investor) => investor.hash))
 
