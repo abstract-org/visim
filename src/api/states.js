@@ -5,23 +5,6 @@ import globalConfig from '../logic/config.global.json'
 
 const STATES_URI = `${globalConfig.API_URL}/states`
 
-export const getState = async (stateId) => {
-    const response = await fetch(`${STATES_URI}/${stateId}`, {
-        cache: 'no-cache'
-    })
-
-    if (response.status === 200) {
-        const body = await response.json()
-        const deserializedState = Serializer.deserialize(fromBase64(body.state))
-
-        return {
-            scenarioId: body.scenarioId,
-            stateId: body.stateId,
-            state: rehydrateState(deserializedState)
-        }
-    }
-}
-
 export const getStates = async () => {
     const response = await fetch(STATES_URI, {
         cache: 'no-cache'
@@ -89,7 +72,6 @@ export const createState = async (stateId, state, scenarioId = null) => {
 }
 
 const StatesApi = {
-    getState,
     getStates,
     createState
 }
