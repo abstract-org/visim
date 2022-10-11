@@ -101,8 +101,6 @@ export const overrideStateBySnapshot = (state) => {
     globalState.poolStore = state.poolStore
     globalState.generatorStore = state.generatorStore
     globalState.investorStore = state.investorStore
-
-    // FIXME: add globalState props here
 }
 
 export const base64ToState = (base64st) => {

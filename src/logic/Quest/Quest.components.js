@@ -77,8 +77,6 @@ export const QuestCitation = () => {
     if (selectedQuests.includes(activeQuest)) {
         selectedQuests.splice(activeQuest, 1)
         setSelectedQuests(selectedQuests)
-        globalState.questStore.selectedQuests = selectedQuests || []
-        // FIXME: might be not needed here - seem like selectedQuests are not being updated in zustand
     }
 
     const handleCiteQuest = () => {

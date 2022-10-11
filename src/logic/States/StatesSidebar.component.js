@@ -125,8 +125,6 @@ const StatesTable = () => {
         const b64Content = await downloadStateFrom(stateLocation)
         const snapshot = base64ToState(b64Content)
 
-        console.log(snapshot)
-
         overrideInvestors(snapshot.investorStore)
         overrideQuests(snapshot.questStore)
         overridePools(snapshot.poolStore)
