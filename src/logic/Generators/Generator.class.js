@@ -424,7 +424,7 @@ class Generator {
                             (investor.balances[this.#DEFAULT_TOKEN] / 100) *
                             conf.buySinglePerc
 
-                        const tradePool = this.#cachedPools.find(
+                        let tradePool = this.#cachedPools.find(
                             (pool) =>
                                 pool.isQuest() &&
                                 pool.tokenRight === conf.includeSingleName
@@ -436,6 +436,8 @@ class Generator {
                             tradePool.tokenRight,
                             spendAmount
                         )
+
+                        console.log(tradePool)
 
                         const t1 = performance.now()
                         console.log(

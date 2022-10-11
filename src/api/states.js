@@ -1,9 +1,6 @@
 import { rehydrateState } from '../logic/States/states.service'
-import Serializer, {
-    fromBase64,
-    parseEncodedObj,
-    toBase64
-} from '../logic/Utils/serializer'
+import { fromBase64, toBase64 } from '../logic/Utils/logicUtils'
+import Serializer, { deserialize } from '../logic/Utils/serializer'
 import globalConfig from '../logic/config.global.json'
 
 const STATES_URI = `${globalConfig.API_URL}/states`
@@ -28,23 +25,19 @@ export const getState = async (stateId) => {
 export const getStates = async () => {
     const response = await fetch(STATES_URI, {
         cache: 'no-cache'
+    }).catch((err) => {
+        console.log(err)
+        return {
+            status: 400,
+            body: err
+        }
     })
 
     const respBody = await response.json()
 
     let snapshotList
     if (response.status === 200) {
-        snapshotList = respBody.map((snapshotObj) => {
-            const parsedState = parseEncodedObj(snapshotObj.state)
-
-            return (
-                parsedState && {
-                    scenarioId: snapshotObj.scenarioId,
-                    stateId: snapshotObj.stateId,
-                    state: rehydrateState(parsedState)
-                }
-            )
-        })
+        snapshotList = respBody
 
         return {
             status: response.status,
@@ -65,11 +58,12 @@ export const createState = async (stateId, state, scenarioId = null) => {
             body: 'State name is not provided'
         }
     }
-    const serializedState = Serializer.serialize(state)
+    const serializedState = Serializer.serialize(state.state)
 
     const requestBody = {
         stateId,
         scenarioId,
+        stateDetails: state.stateDetails,
         state: toBase64(serializedState)
     }
 

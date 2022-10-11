@@ -1,9 +1,6 @@
 import { rehydrateState } from '../logic/States/states.service'
-import Serializer, {
-    fromBase64,
-    parseEncodedObj,
-    toBase64
-} from '../logic/Utils/serializer'
+import { fromBase64, toBase64 } from '../logic/Utils/logicUtils'
+import Serializer, { parseEncodedObj } from '../logic/Utils/serializer'
 
 const isValidSnapshot = (snapshot) => snapshot && snapshot.stateId
 

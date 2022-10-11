@@ -8,6 +8,8 @@ const useGeneratorStore = create(
     devtools((set, get) => ({
         invConfigs: [],
         questConfigs: [],
+        scenarioId: 0,
+        setScenarioId: (scenarioId) => set((state) => ({ scenarioId })),
         addInvConfig: (stateConfig) =>
             set((state) => ({
                 invConfigs: [

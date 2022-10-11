@@ -4,20 +4,23 @@ import { DataTable } from 'primereact/datatable'
 import { Divider } from 'primereact/divider'
 import { Fieldset } from 'primereact/fieldset'
 import { InputText } from 'primereact/inputtext'
+import { ProgressSpinner } from 'primereact/progressspinner'
 import { Sidebar } from 'primereact/sidebar'
 import { Toast } from 'primereact/toast'
 import React, { useEffect, useRef, useState } from 'react'
 
-// import StorageApi from '../../api/localStorage'
 import StorageApi from '../../api/states'
 import useGeneratorStore from '../Generators/generator.store'
 import globalState from '../GlobalState'
+import useInvestorStore from '../Investor/investor.store'
 import useLogsStore from '../Logs/logs.store'
 import usePoolStore from '../Pool/pool.store'
 import useQuestStore from '../Quest/quest.store'
+import { formatBytes } from '../Utils/logicUtils'
+import { downloadStateFrom, getContentLength } from './download.service'
 import {
-    // DEFAULT_AGGREGATED_STATES,
     aggregateSnapshotTotals,
+    base64ToState,
     overrideStateBySnapshot
 } from './states.service'
 
@@ -42,14 +45,16 @@ export const StatesSidebar = (props) => {
 const StatesTable = () => {
     const quests = useQuestStore((state) => state.quests)
     const pools = usePoolStore((state) => state.pools)
+    const scenarioId = useGeneratorStore((state) => state.scenarioId)
     const overrideLogs = useLogsStore(overrideSelector)
     const overrideQuests = useQuestStore(overrideSelector)
     const overridePools = usePoolStore(overrideSelector)
     const overrideGenerators = useGeneratorStore(overrideSelector)
+    const overrideInvestors = useInvestorStore(overrideSelector)
     const [snapshots, setSnapshots] = useState([])
-    const [statesData, setStatesData] = useState([])
     const [currentStateInfo, setCurrentStateInfo] = useState({})
     const isMounted = useRef(null)
+    const [fileSize, setFileSize] = useState(0)
 
     const [newStateName, setNewStateName] = useState('')
     const toast = useRef(null)
@@ -58,20 +63,26 @@ const StatesTable = () => {
         const stateId = newStateName || `@${new Date().toISOString()}`
         setNewStateName(stateId)
 
+        const state = { state: globalState, stateId, scenarioId }
+        const stateDetails = aggregateSnapshotTotals(state)
+        const size = JSON.stringify(state)
+
+        setFileSize(size)
         const response = await StorageApi.createState(stateId, {
-            ...globalState
+            stateDetails,
+            state: { ...globalState }
         })
         toast.current.show({
             severity: response.status === 201 ? 'success' : 'error',
             summary: response.status === 201 ? 'Success' : 'Error',
             detail: response.body
         })
+        setFileSize(0)
     }
 
     const updateSnapshots = (snapshotsLoaded) => {
         if (snapshotsLoaded.status === 200) {
-            setStatesData(snapshotsLoaded.body)
-            setSnapshots(snapshotsLoaded.body.map(aggregateSnapshotTotals))
+            setSnapshots(snapshotsLoaded.body)
         } else {
             toast.current.show({
                 severity: 'error',
@@ -85,19 +96,21 @@ const StatesTable = () => {
         isMounted.current = true
 
         StorageApi.getStates().then((snapshotsLoaded) => {
-            updateSnapshots(snapshotsLoaded)
+            if (snapshotsLoaded) {
+                updateSnapshots(snapshotsLoaded)
+            }
         })
     }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         const snapshot = {
             stateId: newStateName || 'snapshotName',
-            scenarioId: 0,
+            scenarioId,
             state: { ...globalState }
         }
 
         setCurrentStateInfo(aggregateSnapshotTotals(snapshot))
-    }, [newStateName, quests, pools])
+    }, [newStateName, quests, pools, scenarioId])
 
     const handleStatesLoaded = async () => {
         const snapshotsLoaded = await StorageApi.getStates()
@@ -105,20 +118,30 @@ const StatesTable = () => {
         updateSnapshots(snapshotsLoaded)
     }
 
-    const loadState = ({ stateId }) => {
-        const snapshot = statesData.find((s) => s.stateId === stateId)
+    const loadState = async ({ stateId, scenarioId, stateLocation }) => {
+        const size = await getContentLength(stateLocation)
+        setFileSize(size)
 
-        overrideLogs(snapshot.state.logs)
-        overrideQuests(snapshot.state.questStore)
-        overridePools(snapshot.state.poolStore)
-        overrideGenerators(snapshot.state.generators)
+        const b64Content = await downloadStateFrom(stateLocation)
+        const snapshot = base64ToState(b64Content)
+
+        console.log(snapshot)
+
+        overrideInvestors(snapshot.investorStore)
+        overrideQuests(snapshot.questStore)
+        overridePools(snapshot.poolStore)
+        overrideGenerators(snapshot.generatorStore)
+        overrideLogs(snapshot.logStore)
+
         overrideStateBySnapshot(snapshot)
 
         toast.current.show({
             severity: 'success',
             summary: 'Success',
-            detail: 'Current state was overriden by snapshot'
+            detail: `Current state was overriden by snapshot ${stateId}`
         })
+
+        setFileSize(0)
     }
 
     const textEditor = (options) => {
@@ -131,7 +154,7 @@ const StatesTable = () => {
         )
     }
 
-    const actionSaveButton = (rowData) => {
+    const actionSaveButton = () => {
         return (
             <React.Fragment>
                 <Button
@@ -160,7 +183,8 @@ const StatesTable = () => {
     }
 
     return (
-        <>
+        <React.Fragment>
+            <Loader action="Downloading" fileSize={fileSize} />
             <Toast ref={toast} />
             <Fieldset legend="Current state">
                 <DataTable
@@ -173,16 +197,20 @@ const StatesTable = () => {
                         key="stateId"
                         field="stateId"
                         header="Name"
-                        style={{ width: '20%' }}
+                        style={{ width: '18rem' }}
                         editor={(options) => textEditor(options)}
                         onCellEditComplete={(e) => {
                             setNewStateName(e.newValue)
                         }}
                     />
-                    <Column field="totals" header="Totals" />
+                    <Column field="scenarioId" header="Scenario" />
+                    <Column field="totalQuests" header="Total Quests" />
+                    <Column field="totalCrossPools" header="Total CrossPools" />
+                    <Column field="totalInvestors" header="Total Investors" />
                     <Column field="totalTVL" header="Total TVL" />
                     <Column field="totalMCAP" header="Total MCAP" />
                     <Column field="totalUSDC" header="Total USDC" />
+                    <Column field="stateLocation" header="Total USDC" hidden />
                     <Column
                         field="executionDate"
                         header="Execution Date"
@@ -212,12 +240,20 @@ const StatesTable = () => {
                     paginator
                     rows={10}
                 >
-                    <Column field="stateId" header="Name" sortable />
+                    <Column
+                        field="stateId"
+                        header="Name"
+                        style={{ width: '18rem' }}
+                        sortable
+                    />
                     <Column field="scenarioId" header="Scenario" sortable />
-                    <Column field="totals" header="Totals" sortable />
+                    <Column field="totalQuests" header="Total Quests" />
+                    <Column field="totalCrossPools" header="Total CrossPools" />
+                    <Column field="totalInvestors" header="Total Investors" />
                     <Column field="totalTVL" header="Total TVL" sortable />
                     <Column field="totalMCAP" header="Total MCAP" sortable />
                     <Column field="totalUSDC" header="Total USDC" sortable />
+                    <Column field="stateLocation" header="Total USDC" hidden />
                     <Column
                         field="executionDate"
                         header="Execution Date"
@@ -231,6 +267,29 @@ const StatesTable = () => {
                     />
                 </DataTable>
             </Fieldset>
-        </>
+        </React.Fragment>
+    )
+}
+
+const Loader = (props) => {
+    if (!props.fileSize || props.fileSize === 0) {
+        return
+    }
+
+    return (
+        <React.Fragment>
+            <div className="global-loading">
+                <div className="global-loader flex w-20rem flex-column justify-content-center align-content-center">
+                    <ProgressSpinner className="flex" />
+                    <div className="flex align-items-center justify-content-center">
+                        <span>
+                            {props.action} state of size{' '}
+                            {formatBytes(props.fileSize)}
+                        </span>
+                    </div>
+                </div>
+                <div className="global-shutter"></div>
+            </div>
+        </React.Fragment>
     )
 }

@@ -191,7 +191,7 @@ export const QuestCitation = () => {
                 totalAmountIn: calcAmountA
             }
             addLogObj(logData)
-            globalState.logs.push(logData)
+            globalState.logStore.push(logData)
         })
     }
 
@@ -469,7 +469,7 @@ export const QuestCreation = () => {
             action: `CREATED`
         }
         addLogObj(logData)
-        globalState.logs.push(logData)
+        globalState.logStore.push(logData)
     }
 
     return (

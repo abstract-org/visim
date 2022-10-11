@@ -73,3 +73,19 @@ export const deleteStateInvestorConfig = (arr, invGenAlias) =>
 
 export const deleteStateQuestConfig = (arr, questGenAlias) =>
     arr.filter((item) => item.questGenAlias !== questGenAlias)
+
+export const toBase64 = (str) => window.btoa(encodeURIComponent(str))
+
+export const fromBase64 = (b64) => decodeURIComponent(window.atob(b64))
+
+export const formatBytes = (bytes, decimals = 2) => {
+    if (!+bytes) return '0 Bytes'
+
+    const k = 1024
+    const dm = decimals < 0 ? 0 : decimals
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
+}

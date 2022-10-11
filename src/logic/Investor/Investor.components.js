@@ -20,6 +20,7 @@ export function InvestorModule({ children }) {
 
     investors.forEach((investor) => {
         globalState.investors.set(investor.hash, investor)
+        globalState.investorStore.investors.push(investor.hash)
     })
     addInvestors(investors.map((investor) => investor.hash))
 
@@ -38,6 +39,7 @@ export function InvestorSelector() {
 
     useEffect(() => {
         setActive(investors[0])
+        globalState.investorStore.active = investors[0]
     }, [investors, setActive])
 
     return (

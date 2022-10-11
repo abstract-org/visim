@@ -33,7 +33,29 @@ const useInvestorStore = create(
                 active: get().investors.find((hash) => hash === investorHash)
             }),
         getByHash: (investorHash) =>
-            get().investors.find((hash) => hash === investorHash)
+            get().investors.find((hash) => hash === investorHash),
+        override: (newData) =>
+            set((state) => {
+                let newState = {}
+                /*if (newData) {
+                    const stateObj = get()
+                    Object.entries(newData).forEach((entry) => {
+                        if (stateObj[entry[0]] && newData[entry[0]]) {
+                            newState[entry[0]] = entry[1]
+                        }
+                    })
+                }
+
+                return newState*/
+                console.log(newData)
+                if (newData) {
+                    console.log(newData)
+                    newState.investors = newData.investors || []
+                    newState.active = newData.active || null
+                }
+
+                return newState
+            })
     }))
 )
 
