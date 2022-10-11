@@ -31,31 +31,49 @@ export default class Pool {
 
     pricePoints = new HashMap()
 
-    #type = 'VALUE_LINK'
+    type = 'VALUE_LINK'
     #dryState = {}
 
-    constructor(tokenLeft, tokenRight, startingPrice) {
+    constructor(...args) {
+        if (args > 0) {
+            throw new Error(
+                'Please instantiate Pool via Pool.create(tokenLeft,tokenRight,startingPrice)'
+            )
+        }
+    }
+
+    /**
+     * @description Instantiates new Pool with params
+     * @param {Object} tokenLeft
+     * @param {Object} tokenRight
+     * @param {number} startingPrice
+     * @returns {Pool}
+     */
+    static create(tokenLeft, tokenRight, startingPrice) {
+        const thisPool = new Pool()
         if (typeof tokenLeft !== 'object' || typeof tokenRight !== 'object')
             throw new Error('Tokens must be an instance of a Token')
         if (tokenLeft.name === tokenRight.name)
             throw new Error('Tokens should not match')
 
-        this.tokenLeft = tokenLeft
-        this.tokenRight = tokenRight
+        thisPool.tokenLeft = tokenLeft.name
+        thisPool.tokenRight = tokenRight.name
 
-        this.id = '0x' + sha256(tokenLeft.name + '-' + tokenRight.name)
-        this.name = `${tokenLeft.name}-${tokenRight.name}`
+        thisPool.id = '0x' + sha256(tokenLeft.name + '-' + tokenRight.name)
+        thisPool.name = `${tokenLeft.name}-${tokenRight.name}`
 
         // By shifting default price we also move the pointer to the right of the entire pool
         if (startingPrice && typeof startingPrice === 'number') {
-            this.currentPrice = startingPrice
+            thisPool.currentPrice = startingPrice
         }
 
         if (tokenLeft instanceof UsdcToken || tokenRight instanceof UsdcToken) {
-            this.#type = 'QUEST'
+            thisPool.type = 'QUEST'
         }
 
-        this.initializePoolBoundaries()
+        thisPool.initializePoolBoundaries()
+
+        return thisPool
     }
 
     initializePoolBoundaries() {
@@ -175,8 +193,7 @@ export default class Pool {
 
         let newPosition = {}
         const point = this.pricePoints.get(price)
-        const removeAllLiq =
-            Math.abs(liquidity) >= Math.abs(point.liquidity) ? true : false
+        const removeAllLiq = Math.abs(liquidity) >= Math.abs(point.liquidity)
 
         if (!removeAllLiq) {
             newPosition = this.pricePoints.get(price)
@@ -627,11 +644,11 @@ export default class Pool {
     }
 
     getType() {
-        return this.#type
+        return this.type
     }
 
     isQuest() {
-        return this.#type === 'QUEST'
+        return this.type === 'QUEST'
     }
 
     getSwapInfo(logOut = false) {
@@ -640,26 +657,24 @@ export default class Pool {
 
         if (logOut) {
             console.log(`Pool: (cited/USDC)${this.name}(citing)
-            buy(amt): ${this.tokenLeft.name} in (deduct from amt), ${
-                this.tokenRight.name
+            buy(amt): ${this.tokenLeft} in (deduct from amt), ${
+                this.tokenRight
             } out (add to balance)
-            sell(amt): ${this.tokenRight.name} in (deduct from amt), ${
-                this.tokenLeft.name
+            sell(amt): ${this.tokenRight} in (deduct from amt), ${
+                this.tokenLeft
             } out (add to balance)
             --
-            total ${this.tokenLeft.name}: ${
+            total ${this.tokenLeft}: ${
                 rightBalance[1] > 0 ? rightBalance[1] : 0
             }
-            total ${this.tokenRight.name}: ${
-                leftBalance[1] > 0 ? leftBalance[1] : 0
-            }
+            total ${this.tokenRight}: ${leftBalance[1] > 0 ? leftBalance[1] : 0}
             ---
             can buy(take in) ${Math.abs(leftBalance[0])} ${
-                this.tokenLeft.name
-            } for(give out) ${Math.abs(leftBalance[1])} ${this.tokenRight.name}
+                this.tokenLeft
+            } for(give out) ${Math.abs(leftBalance[1])} ${this.tokenRight}
             can sell(give) ${Math.abs(rightBalance[1])} ${
-                this.tokenLeft.name
-            } for(take) ${Math.abs(rightBalance[0])} ${this.tokenRight.name}`)
+                this.tokenLeft
+            } for(take) ${Math.abs(rightBalance[0])} ${this.tokenRight}`)
         }
 
         return [leftBalance, rightBalance]
@@ -727,8 +742,6 @@ export default class Pool {
     }
 
     getUSDCValue() {
-        return this.getType() === 'QUEST'
-            ? this.getSwapInfo()[RIGHT_TOKEN][TOTAL_OUT]
-            : 0
+        return this.isQuest() ? this.getSwapInfo()[RIGHT_TOKEN][TOTAL_OUT] : 0
     }
 }
