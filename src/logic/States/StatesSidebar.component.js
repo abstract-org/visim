@@ -9,6 +9,7 @@ import { Sidebar } from 'primereact/sidebar'
 import { Toast } from 'primereact/toast'
 import React, { useEffect, useRef, useState } from 'react'
 
+import { getPresignedUrl } from '../../api/s3'
 import StorageApi from '../../api/states'
 import useGeneratorStore from '../Generators/generator.store'
 import globalState from '../GlobalState'
@@ -23,26 +24,27 @@ import {
     base64ToState,
     overrideStateBySnapshot
 } from './states.service'
+import { uploadStateTo } from './upload.service'
 
 const overrideSelector = (state) => state.override
 
 export const StatesSidebar = (props) => {
     return (
         <Sidebar
-            visible={props.visible}
+            visible={props.sidebarVisible}
             position="left"
             dismissable
             closeOnEscape
-            onHide={() => props.setVisibleSidebar()}
+            onHide={() => props.setSidebarVisible(false)}
             modal={true}
         >
             <h1>States</h1>
-            <StatesTable />
+            <StatesTable setSidebarVisible={props.setSidebarVisible} />
         </Sidebar>
     )
 }
 
-const StatesTable = () => {
+const StatesTable = (props) => {
     const quests = useQuestStore((state) => state.quests)
     const pools = usePoolStore((state) => state.pools)
     const scenarioId = useGeneratorStore((state) => state.scenarioId)
@@ -54,8 +56,11 @@ const StatesTable = () => {
     const [snapshots, setSnapshots] = useState([])
     const [currentStateInfo, setCurrentStateInfo] = useState({})
     const isMounted = useRef(null)
-    const [fileSize, setFileSize] = useState(0)
-
+    const [loaderData, setLoaderData] = useState({
+        fileSize: 0,
+        active: false,
+        message: ''
+    })
     const [newStateName, setNewStateName] = useState('')
     const toast = useRef(null)
 
@@ -65,25 +70,85 @@ const StatesTable = () => {
 
         const state = { state: globalState, stateId, scenarioId }
         const stateDetails = aggregateSnapshotTotals(state)
-        const size = JSON.stringify(state)
 
-        setFileSize(size)
-        const response = await StorageApi.createState(stateId, {
+        setLoaderData({
+            active: true,
+            message: 'Getting presigned URL'
+        })
+        const s3Response = await getPresignedUrl(stateId)
+
+        if (!s3Response || s3Response.status !== 201) {
+            setLoaderData({ active: false })
+            console.log('Error getting presigned URL')
+            toast.current.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Error getting presigned URL'
+            })
+            return
+        }
+
+        const stateBody = {
             stateDetails,
             state: { ...globalState }
+        }
+        const size = JSON.stringify(stateBody).length
+
+        setLoaderData({
+            active: true,
+            fileSize: size,
+            message: 'Uploading state'
         })
+
+        const presignedUrl = s3Response.body
+        const s3UploadResult = await uploadStateTo(presignedUrl, stateBody)
+
+        if (!s3UploadResult.ok) {
+            setLoaderData({ active: false })
+            console.log('Error uploading file')
+            toast.current.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Error uploading file'
+            })
+            return
+        }
+
+        const strippedStateLocation = s3UploadResult.url.split('?')[0]
+
+        const response = await StorageApi.createStateRecord(
+            stateId,
+            stateDetails,
+            strippedStateLocation,
+            scenarioId
+        )
+
+        if (!response || response.status !== 201) {
+            console.log(response)
+            toast.current.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Error setting state record'
+            })
+        }
+
         toast.current.show({
             severity: response.status === 201 ? 'success' : 'error',
             summary: response.status === 201 ? 'Success' : 'Error',
             detail: response.body
         })
-        setFileSize(0)
+        setLoaderData({ active: false })
     }
 
     const updateSnapshots = (snapshotsLoaded) => {
         if (snapshotsLoaded.status === 200) {
             setSnapshots(snapshotsLoaded.body)
         } else {
+            if (snapshotsLoaded.status === 404) {
+                // Empty list is not an error
+                return
+            }
+
             toast.current.show({
                 severity: 'error',
                 summary: 'Error',
@@ -95,11 +160,15 @@ const StatesTable = () => {
     useEffect(() => {
         isMounted.current = true
 
-        StorageApi.getStates().then((snapshotsLoaded) => {
-            if (snapshotsLoaded) {
-                updateSnapshots(snapshotsLoaded)
-            }
-        })
+        StorageApi.getStates()
+            .then((snapshotsLoaded) => {
+                if (snapshotsLoaded) {
+                    updateSnapshots(snapshotsLoaded)
+                }
+            })
+            .catch((err) => {
+                console.log(err)
+            })
     }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
@@ -118,9 +187,13 @@ const StatesTable = () => {
         updateSnapshots(snapshotsLoaded)
     }
 
-    const loadState = async ({ stateId, scenarioId, stateLocation }) => {
+    const loadState = async ({ stateId, stateLocation }) => {
         const size = await getContentLength(stateLocation)
-        setFileSize(size)
+        setLoaderData({
+            active: true,
+            message: 'Downloading state',
+            fileSize: size
+        })
 
         const b64Content = await downloadStateFrom(stateLocation)
         const snapshot = base64ToState(b64Content)
@@ -139,7 +212,8 @@ const StatesTable = () => {
             detail: `Current state was overriden by snapshot ${stateId}`
         })
 
-        setFileSize(0)
+        setLoaderData({ active: false })
+        props.setSidebarVisible(false)
     }
 
     const textEditor = (options) => {
@@ -182,7 +256,7 @@ const StatesTable = () => {
 
     return (
         <React.Fragment>
-            <Loader action="Downloading" fileSize={fileSize} />
+            <Loader loaderData={loaderData} />
             <Toast ref={toast} />
             <Fieldset legend="Current state">
                 <DataTable
@@ -208,7 +282,7 @@ const StatesTable = () => {
                     <Column field="totalTVL" header="Total TVL" />
                     <Column field="totalMCAP" header="Total MCAP" />
                     <Column field="totalUSDC" header="Total USDC" />
-                    <Column field="stateLocation" header="Total USDC" hidden />
+                    <Column field="stateLocation" hidden />
                     <Column
                         field="executionDate"
                         header="Execution Date"
@@ -251,7 +325,7 @@ const StatesTable = () => {
                     <Column field="totalTVL" header="Total TVL" sortable />
                     <Column field="totalMCAP" header="Total MCAP" sortable />
                     <Column field="totalUSDC" header="Total USDC" sortable />
-                    <Column field="stateLocation" header="Total USDC" hidden />
+                    <Column field="stateLocation" hidden />
                     <Column
                         field="executionDate"
                         header="Execution Date"
@@ -270,7 +344,7 @@ const StatesTable = () => {
 }
 
 const Loader = (props) => {
-    if (!props.fileSize || props.fileSize === 0) {
+    if (!props.loaderData.active) {
         return
     }
 
@@ -281,8 +355,10 @@ const Loader = (props) => {
                     <ProgressSpinner className="flex" />
                     <div className="flex align-items-center justify-content-center">
                         <span>
-                            {props.action} state of size{' '}
-                            {formatBytes(props.fileSize)}
+                            {props.loaderData.message}{' '}
+                            {props.loaderData.fileSize
+                                ? formatBytes(props.loaderData.fileSize)
+                                : ''}
                         </span>
                     </div>
                 </div>

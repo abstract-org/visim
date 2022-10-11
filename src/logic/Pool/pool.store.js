@@ -22,7 +22,7 @@ const usePoolStore = create(
         setActive: (pool) => set(() => ({ active: pool })),
         setSwapMode: (mode) => set((state) => ({ swapMode: mode })),
         override: (newData) =>
-            set((state) => overrideState(get(), newData, INITIAL_STATE)),
+            set(() => overrideState(get(), newData, INITIAL_STATE)),
         addMultiplePools: (pools) =>
             set(
                 produce((state) => ({

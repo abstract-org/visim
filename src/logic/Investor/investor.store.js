@@ -41,7 +41,7 @@ const useInvestorStore = create(
         getByHash: (investorHash) =>
             get().investors.find((hash) => hash === investorHash),
         override: (newData) =>
-            set((state) => overrideState(get(), newData, INITIAL_STATE))
+            set(() => overrideState(get(), newData, INITIAL_STATE))
     }))
 )
 

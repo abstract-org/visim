@@ -235,7 +235,7 @@ export const SwapModule = () => {
             addSwap(swapData)
             globalState.poolStore.swaps.push(swapData)
             addLogObj(swapData)
-            globalState.logStore.push(swapData)
+            globalState.logStore.logObjs.push(swapData)
         } else {
             const smSwaps = router.getSwaps()
             const combSwaps = getCombinedSwaps(
@@ -257,7 +257,7 @@ export const SwapModule = () => {
                     addSwap(swapData)
                     globalState.poolStore.swaps.push(swapData)
                     addLogObj(swapData)
-                    globalState.logStore.push(swapData)
+                    globalState.logStore.logObjs.push(swapData)
                 })
             })
         }
@@ -316,7 +316,7 @@ export const SwapModule = () => {
             addSwap(swapData)
             globalState.poolStore.swaps.push(swapData)
             addLogObj(swapData)
-            globalState.logStore.push(swapData)
+            globalState.logStore.logObjs.push(swapData)
         } else {
             const smSwaps = router.getSwaps()
             const combSwaps = getCombinedSwaps(
@@ -338,7 +338,7 @@ export const SwapModule = () => {
                     addSwap(swapData)
                     globalState.poolStore.swaps.push(swapData)
                     addLogObj(swapData)
-                    globalState.logStore.push(swapData)
+                    globalState.logStore.logObjs.push(swapData)
                 })
             })
         }

@@ -279,7 +279,7 @@ export const GeneratorRunner = () => {
                     globalState.poolStore.swaps.push(action)
                 }
                 addLogObj(action)
-                globalState.logStore.push(action)
+                globalState.logStore.logObjs.push(action)
             })
             await genManager.sleep(100)
         }
