@@ -11,7 +11,7 @@ const globalState = {
     pools: new HashMap(),
     quests: new HashMap(), // tokens
     investors: new HashMap(),
-    logs: [],
+    logStore: [],
     questStore: {
         quests: [],
         humanQuests: [],
@@ -26,7 +26,11 @@ const globalState = {
         active: null,
         swapMode: 'smart'
     },
-    generators: {
+    investorStore: {
+        investors: [],
+        active: null
+    },
+    generatorStore: {
         invConfigs: [],
         questConfigs: []
     }

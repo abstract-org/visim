@@ -222,7 +222,7 @@ export const SwapModule = () => {
         investor.addBalance('USDC', totalAmountIn)
         investor.addBalance(activeQuest, totalAmountOut)
         globalState.investors.set(investor.hash, investor)
-
+        globalState.investorStore.investors.push(investor.hash)
         if (swapMode === 'direct') {
             const swapData = formSwapData(
                 pool,
@@ -234,7 +234,7 @@ export const SwapModule = () => {
             addSwap(swapData)
             globalState.poolStore.swaps.push(swapData)
             addLogObj(swapData)
-            globalState.logs.push(swapData)
+            globalState.logStore.push(swapData)
         } else {
             const smSwaps = router.getSwaps()
             const combSwaps = getCombinedSwaps(
@@ -256,7 +256,7 @@ export const SwapModule = () => {
                     addSwap(swapData)
                     globalState.poolStore.swaps.push(swapData)
                     addLogObj(swapData)
-                    globalState.logs.push(swapData)
+                    globalState.logStore.push(swapData)
                 })
             })
         }
@@ -303,7 +303,7 @@ export const SwapModule = () => {
         investor.addBalance('USDC', totalAmountOut)
         investor.addBalance(activeQuest, totalAmountIn)
         globalState.investors.set(investor.hash, investor)
-
+        globalState.investorStore.investors.push(investor.hash)
         if (swapMode === 'direct') {
             const swapData = formSwapData(
                 pool,
@@ -315,7 +315,7 @@ export const SwapModule = () => {
             addSwap(swapData)
             globalState.poolStore.swaps.push(swapData)
             addLogObj(swapData)
-            globalState.logs.push(swapData)
+            globalState.logStore.push(swapData)
         } else {
             const smSwaps = router.getSwaps()
             const combSwaps = getCombinedSwaps(
@@ -337,7 +337,7 @@ export const SwapModule = () => {
                     addSwap(swapData)
                     globalState.poolStore.swaps.push(swapData)
                     addLogObj(swapData)
-                    globalState.logs.push(swapData)
+                    globalState.logStore.push(swapData)
                 })
             })
         }

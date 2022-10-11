@@ -110,6 +110,7 @@ const NewScenario = (props) => {
 export const GeneratorRunner = () => {
     const invConfigs = useGeneratorStore((state) => state.invConfigs)
     const questConfigs = useGeneratorStore((state) => state.questConfigs)
+    const setScenarioId = useGeneratorStore((state) => state.setScenarioId)
     const [genDays, setGenDays] = useState(10)
     const [passedDays, setPassedDays] = useState(0)
     const [genActive, setGenActive] = useState(false)
@@ -146,14 +147,16 @@ export const GeneratorRunner = () => {
             resetInvConfigs()
             currentScenario.scenario.invConfigs.forEach((invGen) => {
                 addInvConfig(invGen)
-                globalState.generators.invConfigs.push(invGen)
+                globalState.generatorStore.invConfigs.push(invGen)
             })
 
             resetQuestConfigs()
             currentScenario.scenario.questConfigs.forEach((questGen) => {
                 addQuestConfig(questGen)
-                globalState.generators.questConfigs.push(questGen)
+                globalState.generatorStore.questConfigs.push(questGen)
             })
+
+            setScenarioId(currentScenario.scenarioId)
         }
     }, [
         addInvConfig,
@@ -161,7 +164,8 @@ export const GeneratorRunner = () => {
         addQuestConfig,
         resetQuestConfigs,
         scenario,
-        scenarios
+        scenarios,
+        setScenarioId
     ])
 
     const handleNewScenario = async () => {
@@ -194,6 +198,7 @@ export const GeneratorRunner = () => {
         )
 
         if (response.status === 201) {
+            setScenarioId(newScenarioName)
             toast.current.show({
                 severity: 'success',
                 detail: response.body,
@@ -247,6 +252,7 @@ export const GeneratorRunner = () => {
             stepData.investors.forEach((investor) => {
                 if (!globalState.investors.has(investor.hash)) {
                     globalState.investors.set(investor.hash, investor)
+                    globalState.investorStore.investors.push(investor.hash)
                     addInvestor(investor.hash)
                 }
             })
@@ -270,7 +276,7 @@ export const GeneratorRunner = () => {
                     globalState.poolStore.swaps.push(action)
                 }
                 addLogObj(action)
-                globalState.logs.push(action)
+                globalState.logStore.push(action)
             })
             await genManager.sleep(100)
         }
@@ -392,7 +398,7 @@ export const InvestorRandomGenerator = () => {
         })
 
         addInvConfig(newInvGen)
-        globalState.generators.invConfigs.push(newInvGen)
+        globalState.generatorStore.invConfigs.push(newInvGen)
     }
 
     return (
@@ -449,13 +455,16 @@ export const GenCardInvestor = (props) => {
     const handleChange = (evt) => {
         const newState = { ...props.state, [evt.target.id]: evt.target.value }
         props.updateInvConfig(newState)
-        updateStateInvestorConfig(globalState.generators.invConfigs, newState)
+        updateStateInvestorConfig(
+            globalState.generatorStore.invConfigs,
+            newState
+        )
     }
 
     const handleDelete = (invGenAlias) => {
         props.deleteInvConfig(invGenAlias)
         deleteStateInvestorConfig(
-            globalState.generators.invConfigs,
+            globalState.generatorStore.invConfigs,
             invGenAlias
         )
     }
@@ -782,7 +791,7 @@ export const QuestRandomGenerator = () => {
             }`
         })
         addQuestConfig(newQuestGen)
-        globalState.generators.questConfigs.push(newQuestGen)
+        globalState.generatorStore.questConfigs.push(newQuestGen)
     }
 
     return (
@@ -826,12 +835,15 @@ export const GenCardQuest = (props) => {
     const handleChange = (evt) => {
         const newState = { ...props.state, [evt.target.id]: evt.target.value }
         props.updateQuestConfig(newState)
-        updateStateQuestConfig(globalState.generators.questConfigs, newState)
+        updateStateQuestConfig(
+            globalState.generatorStore.questConfigs,
+            newState
+        )
     }
 
     const handleDelete = (id) => {
         props.deleteQuestConfig(id)
-        deleteStateQuestConfig(globalState.generators.questConfigs, id)
+        deleteStateQuestConfig(globalState.generatorStore.questConfigs, id)
     }
 
     return (

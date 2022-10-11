@@ -5,6 +5,7 @@ import Investor from '../Investor/Investor.class'
 import Pool from '../Pool/Pool.class'
 import Token from '../Quest/Token.class'
 import UsdcToken from '../Quest/UsdcToken.class'
+import { fromBase64 } from '../Utils/logicUtils'
 import Serializer from '../Utils/serializer.js'
 
 /**
@@ -13,6 +14,8 @@ import Serializer from '../Utils/serializer.js'
  * @returns {{}|{totalTVL: number, totalUSDC: number, stateId: (string|*), executionDate: string, totalMCAP: number, totals: string, scenarioId: (string|number|*)}}
  */
 export const aggregateSnapshotTotals = (snapshot) => {
+    const nf = new Intl.NumberFormat('en-US')
+
     let marketCap = 0
     let totalValueLocked = 0
     let totalUSDCLocked = 0
@@ -30,14 +33,17 @@ export const aggregateSnapshotTotals = (snapshot) => {
     const stateCrossPools = state.pools
         .values()
         .filter((p) => !p.isQuest()).length
+    const stateInvestors = state.investors.values().length
 
     return {
         stateId: snapshot.stateId,
         scenarioId: snapshot.scenarioId,
-        totals: `${stateCrossPools} Pools / ${stateQuests} Quests`,
-        totalTVL: totalValueLocked,
-        totalMCAP: marketCap,
-        totalUSDC: totalUSDCLocked,
+        totalQuests: stateQuests,
+        totalCrossPools: stateCrossPools,
+        totalInvestors: stateInvestors,
+        totalTVL: nf.format(totalValueLocked),
+        totalMCAP: nf.format(marketCap),
+        totalUSDC: nf.format(totalUSDCLocked),
         executionDate: new Date().toDateString() // TODO: find out where it comes from
     }
 }
@@ -86,14 +92,21 @@ export const rehydrateState = (state) => {
  * @description Recreates globalState
  * @param {Object} state
  */
-export const overrideStateBySnapshot = ({ state }) => {
+export const overrideStateBySnapshot = (state) => {
     globalState.pools = new HashMap(state.pools)
     globalState.quests = new HashMap(state.quests)
     globalState.investors = new HashMap(state.investors)
-    globalState.logs = state.logs
+    globalState.logStore = state.logs
     globalState.questStore = state.questStore
     globalState.poolStore = state.poolStore
-    globalState.generators = state.generators
+    globalState.generatorStore = state.generatorStore
+    globalState.investorStore = state.investorStore
 
     // FIXME: add globalState props here
+}
+
+export const base64ToState = (base64st) => {
+    const deserializedState = Serializer.deserialize(fromBase64(base64st))
+
+    return rehydrateState(deserializedState)
 }

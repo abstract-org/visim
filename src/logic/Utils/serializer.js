@@ -12,15 +12,6 @@ const _KNOWN_CLASSES = {
     Investor: Investor
 }
 
-export const toBase64 = (str) => window.btoa(encodeURIComponent(str))
-
-export const fromBase64 = (b64) => decodeURIComponent(window.atob(b64))
-
-export const parseEncodedObj = (objStr) => {
-    const decodedStr = fromBase64(objStr)
-    return deserialize(decodedStr)
-}
-
 /**
  * @description instantiates from assigned Class and rehydrate with functions and HashMaps
  * @param {*} Cls
@@ -91,8 +82,6 @@ const serialize = (instance) => {
     return JSON.stringify(Object.assign({ $class }, instance), _replacer)
 }
 
-const DEFAULT_HASHMAP_FIELDS = ['positions', 'pricePoints']
-
 const convertObjToHashMap = (obj) => {
     // converting { [string]: value } ==> [ [string1,value1], [string2,value2] ]
     const objEntriesConverted = Object.entries(obj).reduce((Arr2D, [k, v]) => {
@@ -123,12 +112,11 @@ const _reviverWithHashMaps = (key, value) => {
     }
 }
 
-const deserialize = (jsonStr) => {
+export const deserialize = (jsonStr) => {
     return JSON.parse(jsonStr, _reviverWithHashMaps)
 }
 
 const Serializer = {
-    DEFAULT_HASHMAP_FIELDS,
     serialize,
     deserialize,
     rehydrate,
