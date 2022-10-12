@@ -325,17 +325,19 @@ it('Calculates reserves properly by swapping in different directions in both USD
     pool4.buy(100000000000000)
     pool4.sell(10000)
 
-    const BA = investor.createPool(quest2, quest)
+    const startingPrice1 = pool.currentPrice / pool2.curentPrice
+    const BA = investor.createPool(quest2, quest, startingPrice1)
     const priceRange1 = investor.calculatePriceRange(BA, pool2, pool)
     investor.citeQuest(BA, priceRange1.min, priceRange1.max, 0, 1000)
     quest.addPool(BA)
     quest2.addPool(BA)
 
-    const AC = investor.createPool(quest3, quest)
-    const priceRange2 = investor.calculatePriceRange(AC, pool3, pool)
-    investor.citeQuest(AC, priceRange2.min, priceRange2.max, 1000, 0)
-    quest.addPool(AC)
-    quest3.addPool(AC)
+    const startingPrice2 = pool.currentPrice / pool3.currentPrice
+    const CA = investor.createPool(quest3, quest, startingPrice2)
+    const priceRange2 = investor.calculatePriceRange(CA, pool, pool3)
+    investor.citeQuest(CA, priceRange2.min, priceRange2.max, 1000, 0)
+    quest.addPool(CA)
+    quest3.addPool(CA)
 
     const AD = investor.createPool(quest4, quest)
     const priceRange3 = investor.calculatePriceRange(AD, pool4, pool)
@@ -362,8 +364,8 @@ it('Calculates reserves properly by swapping in different directions in both USD
     expect(Math.abs(BA.volumeToken1)).toBe(1000)
     expect(Math.abs(BA.volumeToken0)).toBe(0)
 
-    expect(Math.abs(AC.volumeToken1)).toBe(0)
-    expect(Math.abs(AC.volumeToken0)).toBe(1000)
+    expect(Math.abs(CA.volumeToken1)).toBe(0)
+    expect(Math.abs(CA.volumeToken0)).toBe(1000)
 
     expect(Math.abs(AD.volumeToken1)).toBeCloseTo(600)
     expect(Math.abs(AD.volumeToken0)).toBeCloseTo(1000)

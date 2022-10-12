@@ -165,8 +165,7 @@ class Generator {
         const questSum = this.#cachedQuests.length
         const { pool, quest } = this.spawnQuest(
             investor,
-            `${questConfig.questGenName} (${questSum + 1})`,
-            questConfig.poolSizeTokens
+            `${questConfig.questGenName} (${questSum + 1})`
         )
         this.#dayData[day].actions.push({
             pool: pool.name,
@@ -241,34 +240,40 @@ class Generator {
                 return
             }
 
-            let citedSinglePool = this.#cachedPools.find(
+            let crossPool = this.#cachedPools.find(
                 (pool) =>
                     pool.tokenLeft === singleQuest.name &&
                     pool.tokenRight === quest.name
             )
 
-            if (!citedSinglePool) {
-                citedSinglePool = investor.createPool(singleQuest, quest)
+            if (!crossPool) {
+                const startingPrice =
+                    pool.currentPrice / singleUsdcPool.curentPrice
+                crossPool = investor.createPool(
+                    singleQuest,
+                    quest,
+                    startingPrice
+                )
                 this.#dayData[day].actions.push({
-                    pool: citedSinglePool.name,
+                    pool: crossPool.name,
                     investorHash: investor.hash,
                     action: 'CREATED',
                     day
                 })
             }
             const priceRange = investor.calculatePriceRange(
-                citedSinglePool,
+                crossPool,
                 singleUsdcPool,
                 pool
             )
-            this.#dayData[day].pools.push(citedSinglePool)
+            this.#dayData[day].pools.push(crossPool)
 
             const citeAmount0 =
-                citedSinglePool.tokenLeft === singleQuest ? citeSingleAmount : 0
+                crossPool.tokenLeft === singleQuest ? citeSingleAmount : 0
             const citeAmount1 = citeAmount0 === 0 ? citeSingleAmount : 0
 
             const [totalIn, _] = investor.citeQuest(
-                citedSinglePool,
+                crossPool,
                 priceRange.min,
                 priceRange.max,
                 citeAmount0,
@@ -279,13 +284,13 @@ class Generator {
                     mapq.name === quest.name ||
                     mapq.name === singleQuest.name
                 ) {
-                    mapq.addPool(citedSinglePool)
+                    mapq.addPool(crossPool)
                 }
                 return mapq
             })
 
             this.#dayData[day].actions.push({
-                pool: citedSinglePool.name,
+                pool: crossPool.name,
                 price: pool.currentPrice,
                 investorHash: investor.hash,
                 action: 'CITED',
@@ -295,8 +300,8 @@ class Generator {
 
             investor.addBalance(quest.name, -totalIn, 'citing single quest')
 
-            this.#cachedPools.push(citedSinglePool)
-            this.#dayData[day]['pools'].push(citedSinglePool)
+            this.#cachedPools.push(crossPool)
+            this.#dayData[day]['pools'].push(crossPool)
         }
     }
 
@@ -339,7 +344,13 @@ class Generator {
                 )
 
                 if (!crossPool) {
-                    crossPool = investor.createPool(randomQuest, quest)
+                    const startingPrice =
+                        pool.currentPrice / citedPool.curentPrice
+                    crossPool = investor.createPool(
+                        randomQuest,
+                        quest,
+                        startingPrice
+                    )
                     this.#dayData[day].actions.push({
                         pool: crossPool.name,
                         investorHash: investor.hash,
@@ -929,9 +940,9 @@ class Generator {
         return investor
     }
 
-    spawnQuest(investor, name, totalTokensProvisioned = null) {
+    spawnQuest(investor, name) {
         const quest = investor.createQuest(name)
-        const pool = quest.createPool({ totalTokensProvisioned })
+        const pool = quest.createPool()
         this.#cachedQuests.push(quest)
 
         let leftSideQuest = this.#cachedQuests.find(

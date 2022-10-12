@@ -150,7 +150,13 @@ export const QuestCitation = () => {
                 !globalState.pools.has(poolName) &&
                 !globalState.pools.has(invPoolName)
             ) {
-                crossPool = investor.createPool(citedQuest, citingQuest)
+                const startingPrice =
+                    citingPool.currentPrice / citedPool.currentPrice
+                crossPool = investor.createPool(
+                    citedQuest,
+                    citingQuest,
+                    startingPrice
+                )
             } else {
                 crossPool = globalState.pools
                     .values()
