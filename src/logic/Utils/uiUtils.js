@@ -56,8 +56,8 @@ export const calcCrossPoolThickness = (crossPool, citedPool, citingPool) => {
     return thicknessBy.crossPoolUsdcLocked
 }
 
-export const pushIfNotExist = (arr, item) => {
-    if (arr.indexOf(item) === -1) {
-        arr.push(item)
-    }
+export const appendIfNotExist = (arr, item) => {
+    return Array.isArray(arr) && arr.indexOf(item) === -1
+        ? arr.concat([item])
+        : arr
 }
