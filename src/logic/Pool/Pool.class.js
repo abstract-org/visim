@@ -58,7 +58,7 @@ export default class Pool {
      * @param {Object} tokenRight
      * @returns {Pool}
      */
-    static create(tokenLeft, tokenRight) {
+    static create(tokenLeft, tokenRight, startingPrice) {
         const thisPool = new Pool()
         if (typeof tokenLeft !== 'object' || typeof tokenRight !== 'object')
             throw new Error('Tokens must be an instance of a Token')
@@ -73,6 +73,10 @@ export default class Pool {
 
         if (tokenLeft instanceof UsdcToken || tokenRight instanceof UsdcToken) {
             thisPool.type = 'QUEST'
+        }
+
+        if (startingPrice) {
+            thisPool.currentPrice = startingPrice
         }
 
         thisPool.initializePoolBoundaries()
@@ -232,6 +236,8 @@ export default class Pool {
             Math.sqrt(priceMax),
             Math.sqrt(this.currentPrice)
         )
+
+        //console.log(priceMin, priceMax, liquidity)
 
         if (liquidity === 0) {
             return []
