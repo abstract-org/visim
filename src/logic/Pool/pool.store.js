@@ -12,24 +12,31 @@ const INITIAL_STATE = {
     swapMode: 'smart'
 }
 
+const devToolsOptions = { name: 'PoolStore' }
+
 const usePoolStore = create(
-    devtools((set, get) => ({
-        ...INITIAL_STATE,
-        addPool: (pool) => set((state) => ({ pools: [...state.pools, pool] })),
-        addSwap: (swap) => set((state) => ({ swaps: [...state.swaps, swap] })),
-        createValueLink: (vl) =>
-            set((state) => ({ valueLinks: [...state.valueLinks, vl] })),
-        setActive: (pool) => set(() => ({ active: pool })),
-        setSwapMode: (mode) => set((state) => ({ swapMode: mode })),
-        override: (newData) =>
-            set(() => overrideState(get(), newData, INITIAL_STATE)),
-        addMultiplePools: (pools) =>
-            set(
-                produce((state) => ({
-                    investors: [...state.pools, ...pools]
-                }))
-            )
-    }))
+    devtools(
+        (set, get) => ({
+            ...INITIAL_STATE,
+            addPool: (pool) =>
+                set((state) => ({ pools: [...state.pools, pool] })),
+            addSwap: (swap) =>
+                set((state) => ({ swaps: [...state.swaps, swap] })),
+            createValueLink: (vl) =>
+                set((state) => ({ valueLinks: [...state.valueLinks, vl] })),
+            setActive: (pool) => set(() => ({ active: pool })),
+            setSwapMode: (mode) => set((state) => ({ swapMode: mode })),
+            override: (newData) =>
+                set(() => overrideState(get(), newData, INITIAL_STATE)),
+            addMultiplePools: (pools) =>
+                set(
+                    produce((state) => ({
+                        investors: [...state.pools, ...pools]
+                    }))
+                )
+        }),
+        devToolsOptions
+    )
 )
 
 export default usePoolStore
