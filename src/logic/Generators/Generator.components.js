@@ -25,7 +25,7 @@ import {
     updateStateInvestorConfig,
     updateStateQuestConfig
 } from '../Utils/logicUtils'
-import { capitalize, pushIfNotExist } from '../Utils/uiUtils'
+import { appendIfNotExist, capitalize } from '../Utils/uiUtils'
 import Generator from './Generator.class'
 import useGeneratorStore from './generator.store'
 import { dayData, invGen, questGen } from './initialState'
@@ -253,7 +253,7 @@ export const GeneratorRunner = () => {
                 if (!globalState.investors.has(investor.hash)) {
                     globalState.investors.set(investor.hash, investor)
                     addInvestor(investor.hash)
-                    pushIfNotExist(
+                    globalState.investorStore.investors = appendIfNotExist(
                         globalState.investorStore.investors,
                         investor.hash
                     )
