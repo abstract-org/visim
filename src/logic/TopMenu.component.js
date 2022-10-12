@@ -7,7 +7,7 @@ export const TopMenu = (props) => {
             label: `${props.sidebarVisible ? 'Hide' : 'Show'} states`,
             icon: 'pi pi-fw pi-list',
             command: () => {
-                props.setVisibleSidebar(!props.sidebarVisible)
+                props.setSidebarVisible(!props.sidebarVisible)
             }
         }
     ]

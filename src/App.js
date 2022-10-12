@@ -28,7 +28,7 @@ import { TopMenu } from './logic/TopMenu.component'
 
 export default function Home() {
     const [sidebarVisible, setSidebarVisible] = useState(false)
-    const setVisibleSidebar = (isVisible) => setSidebarVisible(() => isVisible)
+    //const setVisibleSidebar = (isVisible) => setSidebarVisible(() => isVisible)
 
     return (
         <div>
@@ -36,12 +36,12 @@ export default function Home() {
                 <div className="col-12">
                     <TopMenu
                         sidebarVisible={sidebarVisible}
-                        setVisibleSidebar={setVisibleSidebar}
+                        setSidebarVisible={setSidebarVisible}
                     />
                 </div>
                 <StatesSidebar
-                    visible={sidebarVisible}
-                    setVisibleSidebar={setVisibleSidebar}
+                    sidebarVisible={sidebarVisible}
+                    setSidebarVisible={setSidebarVisible}
                 />
                 <div className="col-8">
                     <Card className="h-full">

@@ -245,6 +245,33 @@ rect.fill-inactive {
     width: 80%;
 }
 
+.global-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.global-shutter {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #7a7a7a;
+    z-index: 100;
+    opacity: 0.5;
+}
+
+.global-loader {
+    background-color: #fff;
+    z-index: 101;
+    position: relative;
+    top: 20vh;
+    left: 40vw;
+    border-radius: 2rem;
+    padding: 2rem;
+}
+
 .p-chip.investor-position {
     background: #b1b2dd;
     color: #fff;

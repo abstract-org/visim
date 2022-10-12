@@ -435,25 +435,27 @@ class Generator {
                             (investor.balances[this.#DEFAULT_TOKEN] / 100) *
                             conf.buySinglePerc
 
-                        const tradePool = this.#cachedPools.find(
+                        let tradePool = this.#cachedPools.find(
                             (pool) =>
                                 pool.isQuest() &&
                                 pool.tokenRight === conf.includeSingleName
                         )
 
-                        const t0 = performance.now()
+                        //const t0 = performance.now()
                         const [totalIn, totalOut] = router.smartSwap(
                             this.#DEFAULT_TOKEN,
                             tradePool.tokenRight,
                             spendAmount
                         )
 
-                        const t1 = performance.now()
-                        console.log(
-                            `[${day}][${investor.name}] Invested directly in ${
-                                conf.includeSingleName
-                            } amount ${spendAmount} in ${t1 - t0}ms`
-                        )
+                        // console.log(tradePool)
+
+                        // const t1 = performance.now()
+                        // console.log(
+                        //     `[${day}][${investor.name}] Invested directly in ${
+                        //         conf.includeSingleName
+                        //     } amount ${spendAmount} in ${t1 - t0}ms`
+                        // )
                         this.#_OPS++
 
                         // collect pool price movements here and in other calls of router.smartSwap
@@ -582,20 +584,20 @@ class Generator {
                         sellPools.forEach((poolData) => {
                             const { pool, amount } = poolData
 
-                            const sp0 = performance.now()
+                            //const sp0 = performance.now()
                             const [totalIn, totalOut] = router.smartSwap(
                                 pool.tokenRight,
                                 pool.tokenLeft,
                                 amount
                             )
-                            const sp1 = performance.now()
-                            console.log(
-                                `[${day}][${
-                                    investor.name
-                                }] Sold tokens on day ${day} into ${
-                                    pool.name
-                                } amount ${amount} in ${sp1 - sp0}ms`
-                            )
+                            // const sp1 = performance.now()
+                            // console.log(
+                            //     `[${day}][${
+                            //         investor.name
+                            //     }] Sold tokens on day ${day} into ${
+                            //         pool.name
+                            //     } amount ${amount} in ${sp1 - sp0}ms`
+                            // )
                             this.#_OPS++
 
                             // collect pool price movements here and in other calls of router.smartSwap
@@ -687,20 +689,20 @@ class Generator {
                                 ? 10
                                 : author.balances[quest]
 
-                        const t0 = performance.now()
+                        //const t0 = performance.now()
                         const [amtIn, amtOut] = router.smartSwap(
                             quest,
                             this.#DEFAULT_TOKEN,
                             sumIn
                         )
-                        const t1 = performance.now()
-                        console.log(
-                            `[${day}][${
-                                author.name
-                            }] Widthdrawn amount ${amtOut} for ${amtIn}${quest} in ${
-                                t1 - t0
-                            }ms`
-                        )
+                        // const t1 = performance.now()
+                        // console.log(
+                        //     `[${day}][${
+                        //         author.name
+                        //     }] Widthdrawn amount ${amtOut} for ${amtIn}${quest} in ${
+                        //         t1 - t0
+                        //     }ms`
+                        // )
                         this.#_OPS++
 
                         if (

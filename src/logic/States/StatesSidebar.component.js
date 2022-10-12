@@ -4,132 +4,229 @@ import { DataTable } from 'primereact/datatable'
 import { Divider } from 'primereact/divider'
 import { Fieldset } from 'primereact/fieldset'
 import { InputText } from 'primereact/inputtext'
+import { ProgressSpinner } from 'primereact/progressspinner'
 import { Sidebar } from 'primereact/sidebar'
 import { Toast } from 'primereact/toast'
 import React, { useEffect, useRef, useState } from 'react'
 
-import StatesApi from '../../api/states'
+import { getPresignedUrl } from '../../api/s3'
+import StorageApi from '../../api/states'
+import useGeneratorStore from '../Generators/generator.store'
 import globalState from '../GlobalState'
+import useInvestorStore from '../Investor/investor.store'
+import useLogsStore from '../Logs/logs.store'
 import usePoolStore from '../Pool/pool.store'
 import useQuestStore from '../Quest/quest.store'
+import { formatBytes } from '../Utils/logicUtils'
+import { downloadStateFrom, getContentLength } from './download.service'
 import {
-    DEFAULT_AGGREGATED_STATES,
     aggregateSnapshotTotals,
-    isValidStateList,
-    overrideStateBySnapshot,
-    rehydrateState,
-    serializeState
+    base64ToState,
+    overrideStateBySnapshot
 } from './states.service'
+import { uploadStateTo } from './upload.service'
+
+const overrideSelector = (state) => state.override
 
 export const StatesSidebar = (props) => {
     return (
         <Sidebar
-            visible={props.visible}
+            visible={props.sidebarVisible}
             position="left"
             dismissable
             closeOnEscape
-            onHide={() => props.setVisibleSidebar()}
+            onHide={() => props.setSidebarVisible(false)}
             modal={true}
         >
             <h1>States</h1>
-            <StatesTable />
+            <StatesTable setSidebarVisible={props.setSidebarVisible} />
         </Sidebar>
     )
 }
 
-const StatesTable = () => {
+const StatesTable = (props) => {
     const quests = useQuestStore((state) => state.quests)
     const pools = usePoolStore((state) => state.pools)
-    const [snapshots, setSnapshots] = useState(DEFAULT_AGGREGATED_STATES)
-    const [statesData, setStatesData] = useState([])
+    const scenarioId = useGeneratorStore((state) => state.scenarioId)
+    const overrideLogs = useLogsStore(overrideSelector)
+    const overrideQuests = useQuestStore(overrideSelector)
+    const overridePools = usePoolStore(overrideSelector)
+    const overrideGenerators = useGeneratorStore(overrideSelector)
+    const overrideInvestors = useInvestorStore(overrideSelector)
+    const [snapshots, setSnapshots] = useState([])
     const [currentStateInfo, setCurrentStateInfo] = useState({})
     const isMounted = useRef(null)
-
+    const [loaderData, setLoaderData] = useState({
+        fileSize: 0,
+        active: false,
+        message: ''
+    })
     const [newStateName, setNewStateName] = useState('')
     const toast = useRef(null)
 
     const saveCurrentState = async () => {
         const stateId = newStateName || `@${new Date().toISOString()}`
-        const serializedState = serializeState(globalState)
-
-        localStorage.setItem(String(stateId), serializedState)
-        toast.current.show({
-            severity: 'success',
-            summary: 'Success',
-            detail: `State with name [ ${stateId} ] saved locally`
-        })
-
         setNewStateName(stateId)
-        const response = await StatesApi.createState(stateId, {
-            quests: globalState.quests.values(),
-            pools: globalState.pools.values(),
-            investors: globalState.investors.values(),
-            scenarioId: 'tbd' // TODO: getCurrentScenarioId
+
+        const state = { state: globalState, stateId, scenarioId }
+        const stateDetails = aggregateSnapshotTotals(state)
+
+        setLoaderData({
+            active: true,
+            message: 'Getting presigned URL'
         })
+        const s3Response = await getPresignedUrl(stateId)
+
+        if (!s3Response || s3Response.status !== 201) {
+            setLoaderData({ active: false })
+            console.log('Error getting presigned URL')
+            toast.current.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Error getting presigned URL'
+            })
+            return
+        }
+
+        const stateBody = {
+            stateDetails,
+            state: { ...globalState }
+        }
+        const size = JSON.stringify(stateBody).length
+
+        setLoaderData({
+            active: true,
+            fileSize: size,
+            message: 'Uploading state'
+        })
+
+        const presignedUrl = s3Response.body
+        const s3UploadResult = await uploadStateTo(presignedUrl, stateBody)
+
+        if (!s3UploadResult.ok) {
+            setLoaderData({ active: false })
+            console.log('Error uploading file')
+            toast.current.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Error uploading file'
+            })
+            return
+        }
+
+        const strippedStateLocation = s3UploadResult.url.split('?')[0]
+
+        const response = await StorageApi.createStateRecord(
+            stateId,
+            stateDetails,
+            strippedStateLocation,
+            scenarioId
+        )
+
+        if (!response || response.status !== 201) {
+            console.log(response)
+            toast.current.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Error setting state record'
+            })
+        }
+
         toast.current.show({
             severity: response.status === 201 ? 'success' : 'error',
             summary: response.status === 201 ? 'Success' : 'Error',
             detail: response.body
         })
+        setLoaderData({ active: false })
     }
 
     const updateSnapshots = (snapshotsLoaded) => {
-        const snapshotsHydrated = snapshotsLoaded.map((snapshot) => ({
-            stateId: snapshot.stateId,
-            scenarioId: snapshot.scenarioId,
-            state: rehydrateState(snapshot.state)
-        }))
-        setStatesData(snapshotsHydrated)
+        if (snapshotsLoaded.status === 200) {
+            setSnapshots(snapshotsLoaded.body)
+        } else {
+            if (snapshotsLoaded.status === 404) {
+                // Empty list is not an error
+                return
+            }
 
-        if (isValidStateList(snapshotsHydrated)) {
-            setSnapshots(snapshotsHydrated.map(aggregateSnapshotTotals))
+            toast.current.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: snapshotsLoaded.body
+            })
         }
     }
 
     useEffect(() => {
         isMounted.current = true
 
-        StatesApi.getStates().then((snapshotsLoaded) => {
-            updateSnapshots(snapshotsLoaded)
-        })
+        StorageApi.getStates()
+            .then((snapshotsLoaded) => {
+                if (snapshotsLoaded) {
+                    updateSnapshots(snapshotsLoaded)
+                }
+            })
+            .catch((err) => {
+                console.log(err)
+            })
     }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         const snapshot = {
-            stateId: newStateName || 'none',
-            scenarioId: 0,
-            state: {
-                pools: globalState.pools.values(),
-                quests: globalState.quests.values(),
-                investors: globalState.investors.values()
-            }
+            stateId: newStateName || 'snapshotName',
+            scenarioId,
+            state: { ...globalState }
         }
 
         setCurrentStateInfo(aggregateSnapshotTotals(snapshot))
-    }, [newStateName, quests, pools])
+    }, [newStateName, quests, pools, scenarioId])
 
     const handleStatesLoaded = async () => {
-        const snapshotsLoaded = await StatesApi.getStates()
+        const snapshotsLoaded = await StorageApi.getStates()
 
         updateSnapshots(snapshotsLoaded)
     }
-    const loadState = async ({ stateId }) => {
-        const stateData = statesData.find((s) => (s.stateId = stateId))
 
-        overrideStateBySnapshot(stateData)
+    const loadState = async ({ stateId, stateLocation }) => {
+        const size = await getContentLength(stateLocation)
+        setLoaderData({
+            active: true,
+            message: 'Downloading state',
+            fileSize: size
+        })
+
+        const b64Content = await downloadStateFrom(stateLocation)
+        const snapshot = base64ToState(b64Content)
+
+        overrideInvestors(snapshot.investorStore)
+        overrideQuests(snapshot.questStore)
+        overridePools(snapshot.poolStore)
+        overrideGenerators(snapshot.generatorStore)
+        overrideLogs(snapshot.logStore)
+
+        overrideStateBySnapshot(snapshot)
+
+        toast.current.show({
+            severity: 'success',
+            summary: 'Success',
+            detail: `Current state was overriden by snapshot ${stateId}`
+        })
+
+        setLoaderData({ active: false })
+        props.setSidebarVisible(false)
     }
 
     const textEditor = (options) => {
         return (
             <InputText
                 type="text"
-                value={options.value}
+                value={options.value || ''}
                 onChange={(e) => options.editorCallback(e.target.value)}
             />
         )
     }
 
-    const actionSaveButton = (rowData) => {
+    const actionSaveButton = () => {
         return (
             <React.Fragment>
                 <Button
@@ -149,7 +246,7 @@ const StatesTable = () => {
                 <Button
                     icon="pi pi-cloud-download"
                     iconPos="left"
-                    label={`Load state ${rowData.stateId}`}
+                    label={'Load state'}
                     className="p-button-danger mr-2"
                     onClick={() => loadState(rowData)}
                 />
@@ -158,7 +255,8 @@ const StatesTable = () => {
     }
 
     return (
-        <>
+        <React.Fragment>
+            <Loader loaderData={loaderData} />
             <Toast ref={toast} />
             <Fieldset legend="Current state">
                 <DataTable
@@ -171,17 +269,20 @@ const StatesTable = () => {
                         key="stateId"
                         field="stateId"
                         header="Name"
-                        style={{ width: '20%' }}
-                        // body={stateNameEditorBody}
+                        style={{ width: '18rem' }}
                         editor={(options) => textEditor(options)}
                         onCellEditComplete={(e) => {
                             setNewStateName(e.newValue)
                         }}
                     />
-                    <Column field="totals" header="Totals" />
+                    <Column field="scenarioId" header="Scenario" />
+                    <Column field="totalQuests" header="Total Quests" />
+                    <Column field="totalCrossPools" header="Total CrossPools" />
+                    <Column field="totalInvestors" header="Total Investors" />
                     <Column field="totalTVL" header="Total TVL" />
                     <Column field="totalMCAP" header="Total MCAP" />
                     <Column field="totalUSDC" header="Total USDC" />
+                    <Column field="stateLocation" hidden />
                     <Column
                         field="executionDate"
                         header="Execution Date"
@@ -211,12 +312,20 @@ const StatesTable = () => {
                     paginator
                     rows={10}
                 >
-                    <Column field="stateId" header="Name" sortable />
+                    <Column
+                        field="stateId"
+                        header="Name"
+                        style={{ width: '18rem' }}
+                        sortable
+                    />
                     <Column field="scenarioId" header="Scenario" sortable />
-                    <Column field="totals" header="Totals" sortable />
+                    <Column field="totalQuests" header="Total Quests" />
+                    <Column field="totalCrossPools" header="Total CrossPools" />
+                    <Column field="totalInvestors" header="Total Investors" />
                     <Column field="totalTVL" header="Total TVL" sortable />
                     <Column field="totalMCAP" header="Total MCAP" sortable />
                     <Column field="totalUSDC" header="Total USDC" sortable />
+                    <Column field="stateLocation" hidden />
                     <Column
                         field="executionDate"
                         header="Execution Date"
@@ -230,6 +339,31 @@ const StatesTable = () => {
                     />
                 </DataTable>
             </Fieldset>
-        </>
+        </React.Fragment>
+    )
+}
+
+const Loader = (props) => {
+    if (!props.loaderData.active) {
+        return
+    }
+
+    return (
+        <React.Fragment>
+            <div className="global-loading">
+                <div className="global-loader flex w-20rem flex-column justify-content-center align-content-center">
+                    <ProgressSpinner className="flex" />
+                    <div className="flex align-items-center justify-content-center">
+                        <span>
+                            {props.loaderData.message}{' '}
+                            {props.loaderData.fileSize
+                                ? formatBytes(props.loaderData.fileSize)
+                                : ''}
+                        </span>
+                    </div>
+                </div>
+                <div className="global-shutter"></div>
+            </div>
+        </React.Fragment>
     )
 }
