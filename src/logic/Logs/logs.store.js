@@ -8,14 +8,23 @@ const INITIAL_STATE = {
     logObjs: []
 }
 
+const devToolsOptions = { name: 'LogsStore' }
+
 const useLogsStore = create(
-    devtools((set, get) => ({
-        ...INITIAL_STATE,
-        addLogObj: (logObj) =>
-            set(produce((state) => ({ logObjs: [...state.logObjs, logObj] }))),
-        override: (newData) =>
-            set(() => overrideState(get(), newData, INITIAL_STATE))
-    }))
+    devtools(
+        (set, get) => ({
+            ...INITIAL_STATE,
+            addLogObj: (logObj) =>
+                set(
+                    produce((state) => ({
+                        logObjs: [...state.logObjs, logObj]
+                    }))
+                ),
+            override: (newData) =>
+                set(() => overrideState(get(), newData, INITIAL_STATE))
+        }),
+        devToolsOptions
+    )
 )
 
 export default useLogsStore
