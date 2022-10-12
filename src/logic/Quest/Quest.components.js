@@ -1,3 +1,4 @@
+import { globals } from 'chance/.eslintrc'
 import { Button } from 'primereact/button'
 import { Checkbox } from 'primereact/checkbox'
 import { Dropdown } from 'primereact/dropdown'
@@ -37,10 +38,12 @@ export const QuestSelector = () => {
         for (const pool of quest.pools) {
             if (globalState.pools.get(pool).isQuest()) {
                 setActivePool(pool)
+                globalState.poolStore.active = pool
             }
         }
 
         setActive(questName)
+        globalState.questStore.active = questName
     }
 
     return (
@@ -173,26 +176,25 @@ export const QuestCitation = () => {
                 amt1,
                 activeQuest
             )
+            citedQuest.addPool(crossPool)
+            citingQuest.addPool(crossPool)
+            globalState.quests.set(citedQuest.name, citedQuest)
+            globalState.quests.set(citingQuest.name, citingQuest)
             investor.addBalance(citingQuest.name, -calcAmountA)
 
-            if (
-                !globalState.pools.has(poolName) &&
-                !globalState.pools.has(invPoolName)
-            ) {
-                citedQuest.addPool(crossPool)
-                citingQuest.addPool(crossPool)
-                globalState.pools.set(crossPool.name, crossPool)
-                globalState.quests.set(citedQuest.name, citedQuest)
-                globalState.quests.set(citingQuest.name, citingQuest)
-                addPool(crossPool.name)
-                createValueLink({
-                    investor: investor.hash,
-                    vl: crossPool.name,
-                    initialAmount: calcAmountA,
-                    initialToken: citingQuest.name
-                })
-                setActivePool(crossPool.name)
+            globalState.pools.set(crossPool.name, crossPool)
+            addPool(crossPool.name)
+            globalState.poolStore.pools.push(crossPool.name)
+            const valueLink = {
+                investor: investor.hash,
+                vl: crossPool.name,
+                initialAmount: calcAmountA,
+                initialToken: citingQuest.name
             }
+            createValueLink(valueLink)
+            globalState.poolStore.valueLinks.push(valueLink)
+            setActivePool(crossPool.name)
+            globalState.poolStore.active = crossPool.name
 
             const logData = {
                 pool: crossPool.name,
@@ -201,11 +203,13 @@ export const QuestCitation = () => {
                 totalAmountIn: calcAmountA
             }
             addLogObj(logData)
+            globalState.logStore.logObjs.push(logData)
         })
     }
 
     const handleModifyParameters = () => {
         setProMode(!proMode)
+        globalState.questStore.proMode = !proMode
 
         if (!proMode) {
             handleCitationRange(5)
@@ -468,13 +472,18 @@ export const QuestCreation = () => {
         globalState.quests.set(tokenRight.name, tokenRight)
         globalState.pools.set(pool.name, pool)
         addQuest(tokenRight.name)
+        globalState.questStore.quests.push(tokenRight.name)
         addHumanQuest(tokenRight.name)
+        globalState.questStore.humanQuests.push(tokenRight.name)
         addPool(pool.name)
+        globalState.poolStore.pools.push(pool.name)
 
         setQuestName('')
 
         setActiveQuest(questName)
+        globalState.questStore.active = questName
         setActivePool(pool.name)
+        globalState.poolStore.active = pool.name
 
         const logData = {
             pool: pool.name,
@@ -482,6 +491,7 @@ export const QuestCreation = () => {
             action: `CREATED`
         }
         addLogObj(logData)
+        globalState.logStore.logObjs.push(logData)
     }
 
     return (

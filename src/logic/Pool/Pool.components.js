@@ -13,16 +13,18 @@ import { QuestSelector } from '../Quest/Quest.components'
 import useQuestStore from '../Quest/quest.store'
 import Router from '../Router/Router.class'
 import { formSwapData, getCombinedSwaps, p2pp, pp2p } from '../Utils/logicUtils'
+import { pushIfNotExist } from '../Utils/uiUtils'
 import globalConfig from '../config.global.json'
 import usePoolStore from './pool.store'
 
 export const PoolSelector = () => {
     const pools = usePoolStore((state) => state.pools)
     const activePool = usePoolStore((state) => state.active)
-    const setActive = usePoolStore((state) => state.setActive)
+    const setActivePool = usePoolStore((state) => state.setActive)
 
     const handleChoosePool = (e) => {
-        setActive(e.value)
+        setActivePool(e.value)
+        globalState.poolStore.active = e.value
     }
 
     return (
@@ -150,7 +152,7 @@ export const SwapModule = () => {
     const activeInvestor = useInvestorStore((state) => state.active)
     const activePool = usePoolStore((state) => state.active)
     const activeQuest = useQuestStore((state) => state.active)
-    const swap = usePoolStore((state) => state.swap)
+    const addSwap = usePoolStore((state) => state.addSwap)
     const addLogObj = useLogsStore((state) => state.addLogObj)
     const swapMode = usePoolStore((state) => state.swapMode)
     const router = new Router(
@@ -211,7 +213,7 @@ export const SwapModule = () => {
         investor.addBalance('USDC', totalAmountIn)
         investor.addBalance(activeQuest, totalAmountOut)
         globalState.investors.set(investor.hash, investor)
-
+        pushIfNotExist(globalState.investorStore.investors, investor.hash)
         if (swapMode === 'direct') {
             const swapData = formSwapData(
                 pool,
@@ -220,8 +222,10 @@ export const SwapModule = () => {
                 totalAmountIn,
                 totalAmountOut
             )
-            swap(swapData)
+            addSwap(swapData)
+            globalState.poolStore.swaps.push(swapData)
             addLogObj(swapData)
+            globalState.logStore.logObjs.push(swapData)
         } else {
             const smSwaps = router.getSwaps()
             const combSwaps = getCombinedSwaps(
@@ -240,8 +244,10 @@ export const SwapModule = () => {
                         op[1].totalAmountOut,
                         op[1].path
                     )
-                    swap(swapData)
+                    addSwap(swapData)
+                    globalState.poolStore.swaps.push(swapData)
                     addLogObj(swapData)
+                    globalState.logStore.logObjs.push(swapData)
                 })
             })
         }
@@ -288,7 +294,7 @@ export const SwapModule = () => {
         investor.addBalance('USDC', totalAmountOut)
         investor.addBalance(activeQuest, totalAmountIn)
         globalState.investors.set(investor.hash, investor)
-
+        pushIfNotExist(globalState.investorStore.investors, investor.hash)
         if (swapMode === 'direct') {
             const swapData = formSwapData(
                 pool,
@@ -297,8 +303,10 @@ export const SwapModule = () => {
                 totalAmountIn,
                 totalAmountOut
             )
-            swap(swapData)
+            addSwap(swapData)
+            globalState.poolStore.swaps.push(swapData)
             addLogObj(swapData)
+            globalState.logStore.logObjs.push(swapData)
         } else {
             const smSwaps = router.getSwaps()
             const combSwaps = getCombinedSwaps(
@@ -317,8 +325,10 @@ export const SwapModule = () => {
                         op[1].totalAmountOut,
                         op[1].path
                     )
-                    swap(swapData)
+                    addSwap(swapData)
+                    globalState.poolStore.swaps.push(swapData)
                     addLogObj(swapData)
+                    globalState.logStore.logObjs.push(swapData)
                 })
             })
         }
@@ -382,6 +392,7 @@ export const SwapMode = () => {
     const handleSwapMode = (e) => {
         setValue(e.value)
         setSwapMode(e.value)
+        globalState.poolStore.swapMode = e.value
     }
 
     return (

@@ -1,3 +1,4 @@
+import { ProgressSpinner } from 'primereact/progressspinner'
 import React from 'react'
 
 import globalState from '../GlobalState'
@@ -13,7 +14,6 @@ export const swapLog = (swapData) => {
 
     const investor = globalState.investors.get(swapData.investorHash)
     const pool = globalState.pools.get(swapData.pool)
-    const poolFlip = pool.name.split('-').reduce((p, c) => `${c}-${p}`)
 
     const amounts =
         swapData.action === 'BOUGHT'
@@ -48,8 +48,16 @@ export const calcCrossPoolThickness = (crossPool, citedPool, citingPool) => {
         citingUsdcValue: citingPool && Math.log(citingPool.getUSDCValue()),
         citingMarketCap: Math.log(citingPool.getMarketCap()),
         citingTokenPrice: Math.log(citingPool.currentPrice) * 10,
-        crossPoolUsdcLocked: Math.log(citedPool.getUSDCValue()+citingPool.getUSDCValue())
+        crossPoolUsdcLocked: Math.log(
+            citedPool.getUSDCValue() + citingPool.getUSDCValue()
+        )
     }
 
     return thicknessBy.crossPoolUsdcLocked
+}
+
+export const pushIfNotExist = (arr, item) => {
+    if (arr.indexOf(item) === -1) {
+        arr.push(item)
+    }
 }
