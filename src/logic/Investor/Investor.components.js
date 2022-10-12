@@ -7,7 +7,7 @@ import globalState from '../GlobalState'
 import usePoolStore from '../Pool/pool.store'
 import UsdcToken from '../Quest/UsdcToken.class'
 import useQuestStore from '../Quest/quest.store'
-import { numericValue, pushIfNotExist } from '../Utils/uiUtils'
+import { appendIfNotExist, numericValue } from '../Utils/uiUtils'
 import { generateDefaultInvestors } from './Investor.generator'
 import useInvestorStore from './investor.store'
 
@@ -19,7 +19,10 @@ export function InvestorModule({ children }) {
     const investors = generateDefaultInvestors()
     investors.forEach((investor) => {
         globalState.investors.set(investor.hash, investor)
-        pushIfNotExist(globalState.investorStore.investors, investor.hash)
+        globalState.investorStore.investors = appendIfNotExist(
+            globalState.investorStore.investors,
+            investor.hash
+        )
     })
     addInvestors(investors.map((investor) => investor.hash))
 

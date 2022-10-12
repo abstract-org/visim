@@ -19,10 +19,11 @@ import useQuestStore from '../Quest/quest.store'
 import {
     deleteStateInvestorConfig,
     deleteStateQuestConfig,
+    sanitizeRemoteScenario,
     updateStateInvestorConfig,
     updateStateQuestConfig
 } from '../Utils/logicUtils'
-import { capitalize, pushIfNotExist } from '../Utils/uiUtils'
+import { appendIfNotExist, capitalize } from '../Utils/uiUtils'
 import Generator from './Generator.class'
 import { InvestorModuleComponent } from './InvestorModuleComponent'
 import { QuestModuleComponent } from './QuestModuleComponent'
@@ -56,7 +57,7 @@ const RemoteScenarios = (props) => {
         const scenarios = await getScenarios()
         if (scenarios) {
             props.setScenario(null)
-            props.setScenarios(scenarios)
+            props.setScenarios(scenarios.map(sanitizeRemoteScenario))
         }
         setLazyLoading(false)
     }
@@ -254,7 +255,7 @@ export const GeneratorRunner = () => {
                 if (!globalState.investors.has(investor.hash)) {
                     globalState.investors.set(investor.hash, investor)
                     addInvestor(investor.hash)
-                    pushIfNotExist(
+                    globalState.investorStore.investors = appendIfNotExist(
                         globalState.investorStore.investors,
                         investor.hash
                     )
