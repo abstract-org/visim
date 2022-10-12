@@ -103,3 +103,28 @@ export const overrideState = (stateObj, newData = {}, initialState = {}) => {
 
     return newState
 }
+
+const _resetObjProps =
+    (propsToReset, resetValue = '') =>
+    (obj) => {
+        return Object.entries(obj).reduce(
+            (resultObj, [k, v]) => ({
+                ...resultObj,
+                [k]: propsToReset.includes(k) ? resetValue : v
+            }),
+            {}
+        )
+    }
+
+export const sanitizeRemoteScenario = (loadedObj) => ({
+    ...loadedObj,
+    scenario: {
+        ...loadedObj.scenario,
+        invConfigs: loadedObj.scenario.invConfigs.map(
+            _resetObjProps(['excludeSingleName', 'includeSingleName'], '')
+        ),
+        questConfigs: loadedObj.scenario.questConfigs.map(
+            _resetObjProps(['citeSingleName'], '')
+        )
+    }
+})

@@ -11,25 +11,34 @@ const INITIAL_STATE = {
     active: null,
     proMode: false
 }
+
+const devToolsOptions = { name: 'QuestStore' }
+
 const useQuestStore = create(
-    devtools((set, get) => ({
-        ...INITIAL_STATE,
-        addQuest: (quest) =>
-            set((state) => ({ quests: [...state.quests, quest] })),
-        addHumanQuest: (quest) =>
-            set((state) => ({ humanQuests: [...state.humanQuests, quest] })),
-        setSelectedQuests: (quests) => set(() => ({ selectedQuests: quests })),
-        setActive: (quest) => set(() => ({ active: quest })),
-        setProMode: (proMode) => set(() => ({ proMode })),
-        override: (newData) =>
-            set(() => overrideState(get(), newData, INITIAL_STATE)),
-        addMultipleQuest: (quests) =>
-            set(
-                produce((state) => ({
-                    investors: [...state.quests, ...quests]
-                }))
-            )
-    }))
+    devtools(
+        (set, get) => ({
+            ...INITIAL_STATE,
+            addQuest: (quest) =>
+                set((state) => ({ quests: [...state.quests, quest] })),
+            addHumanQuest: (quest) =>
+                set((state) => ({
+                    humanQuests: [...state.humanQuests, quest]
+                })),
+            setSelectedQuests: (quests) =>
+                set(() => ({ selectedQuests: quests })),
+            setActive: (quest) => set(() => ({ active: quest })),
+            setProMode: (proMode) => set(() => ({ proMode })),
+            override: (newData) =>
+                set(() => overrideState(get(), newData, INITIAL_STATE)),
+            addMultipleQuest: (quests) =>
+                set(
+                    produce((state) => ({
+                        investors: [...state.quests, ...quests]
+                    }))
+                )
+        }),
+        devToolsOptions
+    )
 )
 
 export default useQuestStore
