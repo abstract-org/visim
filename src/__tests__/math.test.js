@@ -1,3 +1,7 @@
+import Investor from '../logic/Investor/Investor.class'
+import UsdcToken from '../logic/Quest/UsdcToken.class'
+import { p2pp, pp2p } from '../logic/Utils/logicUtils'
+
 it('constant product value is maintained when trading', () => {
     const x = 2000
     const y = 300

@@ -10,6 +10,10 @@ let globalState = {
     quests: new HashMap()
 }
 
+/**
+ * @TODO: Add many tests :)
+ */
+
 beforeAll(() => {})
 
 afterEach(() => {
