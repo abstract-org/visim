@@ -96,7 +96,7 @@ export const overrideStateBySnapshot = (state) => {
     globalState.pools = new HashMap(state.pools)
     globalState.quests = new HashMap(state.quests)
     globalState.investors = new HashMap(state.investors)
-    globalState.logStore = state.logs
+    globalState.logStore = state.logStore
     globalState.questStore = state.questStore
     globalState.poolStore = state.poolStore
     globalState.generatorStore = state.generatorStore

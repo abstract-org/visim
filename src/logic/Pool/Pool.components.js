@@ -12,7 +12,7 @@ import { QuestSelector } from '../Quest/Quest.components'
 import useQuestStore from '../Quest/quest.store'
 import Router from '../Router/Router.class'
 import { formSwapData, getCombinedSwaps } from '../Utils/logicUtils'
-import { pushIfNotExist } from '../Utils/uiUtils'
+import { appendIfNotExist } from '../Utils/uiUtils'
 import globalConfig from '../config.global.json'
 import usePoolStore from './pool.store'
 
@@ -223,7 +223,10 @@ export const SwapModule = () => {
         investor.addBalance('USDC', totalAmountIn)
         investor.addBalance(activeQuest, totalAmountOut)
         globalState.investors.set(investor.hash, investor)
-        pushIfNotExist(globalState.investorStore.investors, investor.hash)
+        globalState.investorStore.investors = appendIfNotExist(
+            globalState.investorStore.investors,
+            investor.hash
+        )
         if (swapMode === 'direct') {
             const swapData = formSwapData(
                 pool,
@@ -304,7 +307,10 @@ export const SwapModule = () => {
         investor.addBalance('USDC', totalAmountOut)
         investor.addBalance(activeQuest, totalAmountIn)
         globalState.investors.set(investor.hash, investor)
-        pushIfNotExist(globalState.investorStore.investors, investor.hash)
+        globalState.investorStore.investors = appendIfNotExist(
+            globalState.investorStore.investors,
+            investor.hash
+        )
         if (swapMode === 'direct') {
             const swapData = formSwapData(
                 pool,
