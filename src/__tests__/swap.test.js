@@ -326,19 +326,19 @@ it('Calculates reserves properly by swapping in different directions in both USD
     pool4.sell(10000)
 
     const BA = investor.createPool(quest2, quest)
-    const priceRange1 = investor.calculatePriceRange(pool2, pool)
+    const priceRange1 = investor.calculatePriceRange(BA, pool2, pool)
     investor.citeQuest(BA, priceRange1.min, priceRange1.max, 0, 1000)
     quest.addPool(BA)
     quest2.addPool(BA)
 
     const AC = investor.createPool(quest3, quest)
-    const priceRange2 = investor.calculatePriceRange(pool3, pool)
+    const priceRange2 = investor.calculatePriceRange(AC, pool3, pool)
     investor.citeQuest(AC, priceRange2.min, priceRange2.max, 1000, 0)
     quest.addPool(AC)
     quest3.addPool(AC)
 
     const AD = investor.createPool(quest4, quest)
-    const priceRange3 = investor.calculatePriceRange(pool4, pool)
+    const priceRange3 = investor.calculatePriceRange(AD, pool4, pool)
     investor.citeQuest(AD, priceRange3.min, priceRange3.max, 1000, 600)
     quest.addPool(AD)
     quest4.addPool(AD)

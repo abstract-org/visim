@@ -241,11 +241,6 @@ class Generator {
                 return
             }
 
-            const priceRange = investor.calculatePriceRange(
-                singleUsdcPool,
-                pool
-            )
-
             let citedSinglePool = this.#cachedPools.find(
                 (pool) =>
                     pool.tokenLeft === singleQuest.name &&
@@ -261,6 +256,11 @@ class Generator {
                     day
                 })
             }
+            const priceRange = investor.calculatePriceRange(
+                citedSinglePool,
+                singleUsdcPool,
+                pool
+            )
             this.#dayData[day].pools.push(citedSinglePool)
 
             const citeAmount0 =
@@ -332,8 +332,6 @@ class Generator {
                     return
                 }
 
-                const priceRange = investor.calculatePriceRange(citedPool, pool)
-
                 let crossPool = this.#cachedPools.find(
                     (pool) =>
                         pool.tokenLeft === randomQuest.name &&
@@ -349,6 +347,11 @@ class Generator {
                         day
                     })
                 }
+                const priceRange = investor.calculatePriceRange(
+                    crossPool,
+                    citedPool,
+                    pool
+                )
                 this.#dayData[day].pools.push(crossPool)
 
                 const citeAmount0 =

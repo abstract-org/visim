@@ -23,7 +23,7 @@ export default class Pool {
 
     currentLeft = p2pp(globalConfig.PRICE_MIN)
     currentRight = p2pp(globalConfig.PRICE_MAX)
-    currentPrice = 1
+    currentPrice = 0
     curPP = Math.log2(1)
     currentLiquidity = 0
 
@@ -128,12 +128,6 @@ export default class Pool {
                     next.left = price
                     position.right = price
 
-                    /**
-                     * pos(c): (r: n) -> [Inf.(0).1]
-                        new(n): (l: p, r: p.r) -> [0.(1).10k]
-                        nxt(c+r): (l: n) -> [1.(10k).1m]
-                     */
-
                     this.pos.set(point, position)
                     this.pos.set(nextId, next)
                 }
@@ -158,13 +152,6 @@ export default class Pool {
                         pp: price,
                         right: point
                     }
-
-                    /**
-                     * refactor to (TBD):
-                    prev(c.l): (r: n.p) -> [-Inf.(1).1m]
-                    new(n): (l: prev, r: p) -> [0.(1).1m]
-                    pos(c): (l: n) -> [1.(1ml).Inf]
-                     */
 
                     const next = this.pos.get(point)
                     const prev = this.pos.get(next.left)
@@ -217,6 +204,104 @@ export default class Pool {
             this.pos.set(prevId, prev)
             this.pos.delete(price)
         }
+    }
+
+    /**
+     * @description Opens position in the provided price range and adding provided amount of tokens into pool with calculated liquidity
+     * @param {number} priceMin
+     * @param {number} priceMax
+     * @param {number} token0Amt
+     * @param {number} token1Amt
+     * @param {boolean} native
+     * @returns {[number, number]}
+     */
+    openPosition(
+        priceMin,
+        priceMax,
+        token0Amt = 0,
+        token1Amt = 0,
+        native = false
+    ) {
+        let amounts = []
+        let amount1 = 0
+
+        const liquidity = this.getLiquidityForAmounts(
+            token0Amt,
+            token1Amt,
+            Math.sqrt(priceMin),
+            Math.sqrt(priceMax),
+            Math.sqrt(this.currentPrice)
+        )
+
+        if (liquidity === 0) {
+            return []
+        }
+
+        this.volumeToken0 += token0Amt
+        this.volumeToken1 += token1Amt
+
+        this.setPositionSingle(p2pp(priceMin), liquidity)
+        this.setPositionSingle(p2pp(priceMax), -liquidity)
+
+        if (this.currentPrice >= priceMin && this.currentPrice <= priceMax) {
+            this.currentLiquidity += liquidity
+        }
+
+        amounts = this.getAmountsForLiquidity(
+            liquidity,
+            Math.sqrt(priceMin),
+            Math.sqrt(priceMax),
+            Math.sqrt(this.currentPrice)
+        )
+
+        if (amount1 > 0) {
+            amounts[1] = amount1
+        }
+
+        this.setActiveLiq(priceMin, priceMax)
+
+        return amounts
+    }
+
+    setActiveLiq(pMin, pMax) {
+        if (
+            this.currentLiquidity === 0 &&
+            (pMin < this.currentPrice || pMax > this.currentPrice)
+        ) {
+            const ppNext =
+                pMax > this.currentPrice ? this.seekActiveLiq('right') : null
+            const ppPrev = !ppNext ? this.seekActiveLiq('left') : null
+
+            const toPP = ppNext ? ppNext : ppPrev ? ppPrev : null
+
+            if (toPP) {
+                this.curPP = toPP.pp
+                this.currentLeft = toPP.left
+                this.currentRight = toPP.right
+                this.currentLiquidity = toPP.liquidity
+                this.currentPrice = pp2p(toPP.pp)
+                this.priceToken0 = 1 / this.currentPrice
+                this.priceToken1 = this.currentPrice
+            }
+        }
+    }
+
+    seekActiveLiq(dir) {
+        let localPP = this.curPP
+
+        while (
+            this.pos.get(localPP) &&
+            this.pos.get(localPP)[dir] !== 'undefined' &&
+            localPP !== this.pos.get(localPP)[dir]
+        ) {
+            if (this.pos.get(localPP).liquidity !== 0) {
+                return this.pos.get(localPP)
+            }
+
+            localPP = this.pos.get(localPP)[dir]
+        }
+
+        return null
     }
 
     getLiquidityForAmounts(
@@ -690,109 +775,6 @@ export default class Pool {
         }
 
         return [leftBalance, rightBalance]
-    }
-
-    openPosition(
-        priceMin,
-        priceMax,
-        token0Amt = 0,
-        token1Amt = 0,
-        native = false
-    ) {
-        let amounts = []
-        let amount1 = 0
-
-        let pmin = priceMin
-        let pmax = priceMax
-
-        // True if citing is token1 (right side)
-        if (native) {
-            pmin = 1 / priceMax
-            pmax = 1 / priceMin
-        }
-
-        if (priceMin < this.currentPrice) {
-            token0Amt += token1Amt
-            token1Amt = token0Amt - token1Amt
-        }
-
-        const liquidity = this.getLiquidityForAmounts(
-            token0Amt,
-            token1Amt,
-            Math.sqrt(pmin),
-            Math.sqrt(pmax),
-            Math.sqrt(this.currentPrice)
-        )
-
-        if (liquidity === 0) {
-            return []
-        }
-
-        this.volumeToken0 += token0Amt
-        this.volumeToken1 += token1Amt
-
-        this.setPositionSingle(p2pp(pmin), liquidity)
-        this.setPositionSingle(p2pp(pmax), -liquidity)
-
-        if (this.currentPrice <= pmax && this.currentPrice >= pmin) {
-            this.currentLiquidity += liquidity
-        }
-
-        amounts = this.getAmountsForLiquidity(
-            liquidity,
-            Math.sqrt(pmin),
-            Math.sqrt(pmax),
-            Math.sqrt(this.currentPrice)
-        )
-
-        if (amount1 > 0) {
-            amounts[1] = amount1
-        }
-
-        this.setActiveLiq(pmin, pmax)
-
-        return amounts
-    }
-
-    setActiveLiq(pMin, pMax) {
-        if (
-            this.currentLiquidity === 0 &&
-            (pMin < this.currentPrice || pMax > this.currentPrice)
-        ) {
-            const ppNext =
-                pMax > this.currentPrice ? this.seekActiveLiq('right') : null
-            const ppPrev = !ppNext ? this.seekActiveLiq('left') : null
-
-            const toPP = ppNext ? ppNext : ppPrev ? ppPrev : null
-
-            if (toPP) {
-                this.curPP = toPP.pp
-                this.currentLeft = toPP.left
-                this.currentRight = toPP.right
-                this.currentLiquidity = toPP.liquidity
-                this.currentPrice = pp2p(toPP.pp)
-                this.priceToken0 = 1 / this.currentPrice
-                this.priceToken1 = this.currentPrice
-            }
-        }
-    }
-
-    seekActiveLiq(dir) {
-        let localPP = this.curPP
-
-        while (
-            this.pos.get(localPP) &&
-            this.pos.get(localPP)[dir] !== 'undefined' &&
-            localPP !== this.pos.get(localPP)[dir]
-        ) {
-            if (this.pos.get(localPP).liquidity !== 0) {
-                return this.pos.get(localPP)
-            }
-
-            localPP = this.pos.get(localPP)[dir]
-        }
-
-        return null
     }
 
     getTVL() {

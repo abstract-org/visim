@@ -136,7 +136,7 @@ export default class Investor {
         token1Amt = 0,
         native
     ) {
-        // Set "positions" for value link pool
+        // Open "position" for value link pool
         const [totalIn, totalOut] = crossPool.openPosition(
             priceMin,
             priceMax,

@@ -1,57 +1,68 @@
-import HashMap from 'hashmap'
-
-import UsdcToken from '../logic/Quest/UsdcToken.class'
 import { p2pp } from '../logic/Utils/logicUtils'
 import globalConfig from '../logic/config.global.json'
 import { prepareCrossPools, preparePool } from './helpers/poolManager'
 
-let globalState = {
-    pools: new HashMap(),
-    investors: new HashMap(),
-    quests: new HashMap()
-}
+describe('Liquidity Manager', () => {
+    it('calculates liquidity for token0', () => {
+        const { pool } = preparePool()
 
-beforeAll(() => {})
+        const liquidity = pool.getLiquidityForAmounts(
+            0,
+            5000,
+            Math.sqrt(1),
+            Math.sqrt(10000),
+            1
+        )
+        expect(liquidity).toBeCloseTo(5050.505)
+    })
 
-afterEach(() => {
-    globalState = {
-        pools: new HashMap(),
-        investors: new HashMap(),
-        quests: new HashMap()
-    }
-})
+    it('calculates liquidity for token1', () => {
+        const { pool } = preparePool()
 
-it('calculates initial liquidity for token0', () => {
-    const { pool } = preparePool()
+        const liquidity = pool.getLiquidityForAmounts(
+            5000,
+            0,
+            Math.sqrt(0.0001),
+            Math.sqrt(0.0002),
+            1
+        )
+        expect(liquidity).toBeCloseTo(5050.505)
+    })
 
-    const liquidity = pool.getLiquidityForAmounts(
-        0,
-        5000,
-        Math.sqrt(1),
-        Math.sqrt(10000),
-        1
-    )
-    expect(liquidity).toBeCloseTo(5050.505)
-})
+    it('sets initial liquidity positions', () => {
+        const { pool } = preparePool()
+        expect(Math.round(pool.pos.get(p2pp(50)).liquidity)).toBeCloseTo(38046)
+    })
 
-it('sets initial liquidity positions', () => {
-    const { pool } = preparePool()
-    expect(Math.round(pool.pos.get(p2pp(50)).liquidity)).toBeCloseTo(38046)
-})
+    it('gets amount0 for liquidity', () => {
+        const { pool } = preparePool()
+        const firstPosition = globalConfig.INITIAL_LIQUIDITY[0]
 
-it('gets amount1 for liquidity', () => {
-    const { pool } = preparePool()
-    const firstPosition = globalConfig.INITIAL_LIQUIDITY[0]
+        const liquidity = pool.pos.get(p2pp(1)).liquidity
 
-    const liquidity = pool.pos.get(p2pp(1)).liquidity
+        const [amount0, _] = pool.getAmountsForLiquidity(
+            liquidity,
+            Math.sqrt(firstPosition.priceMin),
+            Math.sqrt(firstPosition.priceMax),
+            Math.sqrt(firstPosition.priceMin)
+        )
+        expect(amount0).toBe(firstPosition.tokenA)
+    })
 
-    const [_, amount1] = pool.getAmountsForLiquidity(
-        liquidity,
-        Math.sqrt(firstPosition.priceMin),
-        Math.sqrt(firstPosition.priceMax),
-        Math.sqrt(firstPosition.priceMin)
-    )
-    expect(amount1).toBe(firstPosition.tokenB)
+    it('gets amount1 for liquidity', () => {
+        const { pool } = preparePool()
+        const firstPosition = globalConfig.INITIAL_LIQUIDITY[0]
+
+        const liquidity = pool.pos.get(p2pp(1)).liquidity
+
+        const [_, amount1] = pool.getAmountsForLiquidity(
+            liquidity,
+            Math.sqrt(firstPosition.priceMin),
+            Math.sqrt(firstPosition.priceMax),
+            Math.sqrt(firstPosition.priceMin)
+        )
+        expect(amount1).toBe(firstPosition.tokenB)
+    })
 })
 
 describe('getUSDCValue()', () => {

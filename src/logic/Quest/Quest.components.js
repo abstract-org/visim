@@ -164,6 +164,7 @@ export const QuestCitation = () => {
             const amt1 = amt0 === 0 ? calcAmountA : 0
 
             const priceRange = investor.calculatePriceRange(
+                crossPool,
                 citedPool,
                 citingPool,
                 citationMultiplier
