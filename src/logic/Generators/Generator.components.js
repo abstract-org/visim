@@ -29,6 +29,7 @@ import { InvestorModuleComponent } from './InvestorModuleComponent'
 import { QuestModuleComponent } from './QuestModuleComponent'
 import useGeneratorStore from './generator.store'
 import { dayData, invGen, questGen } from './initialState'
+import useScenarioStore from './scenario.store'
 
 const updateInvSelector = (state) => state.updateInvConfig
 const deleteInvSelector = (state) => state.deleteInvConfig
@@ -42,11 +43,13 @@ const RemoteScenarios = (props) => {
     const [lazyLoading, setLazyLoading] = useState(false)
 
     let dropdownScenarios = []
-    if (props.scenarios) {
-        dropdownScenarios = props.scenarios.map((sc) => ({
-            label: sc.scenarioId,
-            value: sc.scenarioId
-        }))
+    if (props.scenarioList) {
+        dropdownScenarios = Object.keys(props.scenarioList).map(
+            (scenarioId) => ({
+                label: scenarioId,
+                value: scenarioId
+            })
+        )
     }
 
     useEffect(() => {
@@ -58,18 +61,18 @@ const RemoteScenarios = (props) => {
 
         const scenarios = await getScenarios()
         if (scenarios) {
-            props.setScenario(null)
-            props.setScenarios(scenarios.map(sanitizeRemoteScenario))
+            props.setScenarioChosen(null)
+            props.setScenarioList(scenarios.map(sanitizeRemoteScenario))
         }
         setLazyLoading(false)
     }
 
     return (
         <Dropdown
-            id={props.scenario}
-            value={props.scenario}
+            id={props.scenarioChosen}
+            value={props.scenarioChosen}
             options={dropdownScenarios}
-            onChange={(e) => props.setScenario(e.value)}
+            onChange={(e) => props.setScenarioChosen(e.value)}
             placeholder="Load Scenario"
             className="w-15rem"
             virtualScrollerOptions={{
@@ -112,6 +115,7 @@ const NewScenario = (props) => {
 export const GeneratorRunner = () => {
     const invConfigs = useGeneratorStore((state) => state.invConfigs)
     const questConfigs = useGeneratorStore((state) => state.questConfigs)
+    const scenarioId = useGeneratorStore((state) => state.scenarioId)
     const setScenarioId = useGeneratorStore((state) => state.setScenarioId)
     const [genDays, setGenDays] = useState(10)
     const [passedDays, setPassedDays] = useState(0)
@@ -129,6 +133,7 @@ export const GeneratorRunner = () => {
     const addSwap = usePoolStore((state) => state.addSwap)
     const addLogObj = useLogsStore((state) => state.addLogObj)
     const logObjs = useLogsStore(logObjsSelector)
+    const getScenarioById = useScenarioStore((state) => state.getScenarioById)
 
     const addInvConfig = useGeneratorStore((state) => state.addInvConfig)
     const addQuestConfig = useGeneratorStore((state) => state.addQuestConfig)
@@ -137,33 +142,32 @@ export const GeneratorRunner = () => {
         (state) => state.resetQuestConfigs
     )
 
-    const [scenarios, setScenarios] = useState([])
-    const [scenario, setScenario] = useState('')
+    const scenarioList = useScenarioStore((state) => state.scenarios)
+    const setScenarioList = useScenarioStore((state) => state.mergeScenarioList)
     const [newScenarioName, setNewScenarioName] = useState('')
 
     const toast = useRef(null)
 
     useEffect(() => {
-        if (scenario) {
-            const currentScenario = scenarios.find(
-                (sc) => sc.scenarioId === scenario
-            )
-
+        const currentScenario = getScenarioById(scenarioId)
+        if (currentScenario) {
             resetInvConfigs()
-            currentScenario.scenario.invConfigs.forEach((invGen) => {
-                addInvConfig(invGen)
-                globalState.generatorStore.invConfigs.push(invGen)
+            globalState.generatorStore.invConfigs = []
+            currentScenario.scenario.invConfigs.forEach((invCfg) => {
+                addInvConfig(invCfg)
+                globalState.generatorStore.invConfigs.push(invCfg)
             })
 
             resetQuestConfigs()
-            currentScenario.scenario.questConfigs.forEach((questGen) => {
-                addQuestConfig(questGen)
-                globalState.generatorStore.questConfigs.push(questGen)
+            globalState.generatorStore.questConfigs = []
+            currentScenario.scenario.questConfigs.forEach((questCfg) => {
+                addQuestConfig(questCfg)
+                globalState.generatorStore.questConfigs.push(questCfg)
             })
-
-            setScenarioId(currentScenario.scenarioId)
         }
+    }, [scenarioId])
 
+    useEffect(() => {
         let dayIter =
             (logObjs.length >= 1 && logObjs[logObjs.length - 1].day) ||
             passedDays
@@ -174,12 +178,17 @@ export const GeneratorRunner = () => {
         resetInvConfigs,
         addQuestConfig,
         resetQuestConfigs,
-        scenario,
-        scenarios,
+        scenarioList,
+        setScenarioId,
         setScenarioId,
         logObjs,
         passedDays
     ])
+
+    const setScenarioChosen = (id) => {
+        setScenarioId(id)
+        globalState.generatorStore.scenarioId = id
+    }
 
     const handleNewScenario = async () => {
         toast.current.clear()
@@ -212,6 +221,7 @@ export const GeneratorRunner = () => {
 
         if (response.status === 201) {
             setScenarioId(newScenarioName)
+            globalState.generatorStore.scenarioId = newScenarioName
             toast.current.show({
                 severity: 'success',
                 detail: response.body,
@@ -343,10 +353,12 @@ export const GeneratorRunner = () => {
                                     </div>
                                     <div className="flex flex-grow-0 mr-3">
                                         <RemoteScenarios
-                                            scenario={scenario}
-                                            scenarios={scenarios}
-                                            setScenario={setScenario}
-                                            setScenarios={setScenarios}
+                                            scenarioChosen={scenarioId}
+                                            scenarioList={scenarioList}
+                                            setScenarioChosen={
+                                                setScenarioChosen
+                                            }
+                                            setScenarioList={setScenarioList}
                                         />
                                     </div>
 
@@ -425,7 +437,7 @@ export const InvestorRandomGenerator = () => {
                 icon="pi pi-plus"
                 className="px-2 p-button-secondary"
                 onClick={handleNewInvestorGen}
-            ></Button>
+            />
             <div className="gen-wrapper flex flex-row flex-nowrap justify-content-start">
                 {invConfigs.map((gen) => {
                     return (
@@ -504,7 +516,7 @@ export const QuestRandomGenerator = () => {
                 icon="pi pi-plus"
                 className="px-2 p-button-secondary"
                 onClick={handleNewQuestGen}
-            ></Button>
+            />
             <div className="gen-wrapper flex flex-row flex-nowrap justify-content-start">
                 {questConfigs.map((gen) => {
                     return (

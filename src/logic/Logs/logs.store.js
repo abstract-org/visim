@@ -21,7 +21,11 @@ const useLogsStore = create(
                     }))
                 ),
             override: (newData) =>
-                set(() => overrideState(get(), newData, INITIAL_STATE))
+                set(
+                    () => overrideState(get(), newData, INITIAL_STATE),
+                    false,
+                    'override'
+                )
         }),
         devToolsOptions
     )

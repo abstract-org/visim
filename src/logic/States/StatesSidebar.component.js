@@ -11,14 +11,16 @@ import { Tooltip } from 'primereact/tooltip'
 import React, { useEffect, useRef, useState } from 'react'
 
 import { getPresignedUrl } from '../../api/s3'
+import { getScenarios } from '../../api/scenarios'
 import StorageApi from '../../api/states'
 import useGeneratorStore from '../Generators/generator.store'
+import useScenarioStore from '../Generators/scenario.store'
 import globalState from '../GlobalState'
 import useInvestorStore from '../Investor/investor.store'
 import useLogsStore from '../Logs/logs.store'
 import usePoolStore from '../Pool/pool.store'
 import useQuestStore from '../Quest/quest.store'
-import { formatBytes } from '../Utils/logicUtils'
+import { formatBytes, sanitizeRemoteScenario } from '../Utils/logicUtils'
 import { downloadStateFrom, getContentLength } from './download.service'
 import {
     aggregateSnapshotTotals,
@@ -58,6 +60,10 @@ const StatesTable = (props) => {
     const overridePools = usePoolStore(overrideSelector)
     const overrideGenerators = useGeneratorStore(overrideSelector)
     const overrideInvestors = useInvestorStore(overrideSelector)
+    const scenarios = useScenarioStore((state) => state.scenarios)
+    const getScenarioById = useScenarioStore((state) => state.getScenarioById)
+    const setScenarioList = useScenarioStore((state) => state.mergeScenarioList)
+    const setScenarioId = useGeneratorStore((state) => state.setScenarioId)
     const setNeedScrollUp = useGeneratorStore((state) => state.setNeedScrollUp)
     const [snapshots, setSnapshots] = useState([])
     const [currentStateInfo, setCurrentStateInfo] = useState({})
@@ -67,7 +73,7 @@ const StatesTable = (props) => {
         active: false,
         message: ''
     })
-    const [newStateName, setNewStateName] = useState('')
+    const [newStateName, setNewStateName] = useState(globalState.stateName)
     const toast = useRef(null)
 
     const saveCurrentState = async () => {
@@ -79,6 +85,7 @@ const StatesTable = (props) => {
             scenarioId
         })
         setNewStateName(stateDetails.stateName)
+        globalState.stateName = stateDetails.stateName
 
         setLoaderData({
             active: true,
@@ -182,13 +189,17 @@ const StatesTable = (props) => {
 
     useEffect(() => {
         const currentStateDetails = aggregateSnapshotTotals({
-            stateName: newStateName,
+            stateName: globalState.stateName,
             scenarioId,
             state: globalState
         })
         setCurrentStateInfo(currentStateDetails)
         setNewStateName(currentStateDetails.stateName)
     }, [quests, pools, scenarioId])
+
+    useEffect(() => {
+        globalState.stateName = newStateName
+    }, [newStateName])
 
     const handleStatesLoaded = async () => {
         const snapshotsLoaded = await StorageApi.getStates()
@@ -206,19 +217,33 @@ const StatesTable = (props) => {
 
         const b64Content = await downloadStateFrom(stateLocation)
         const snapshot = base64ToState(b64Content)
+        const snapshotScenarioId = snapshot.generatorStore.scenarioId
+
+        if (Object.keys(scenarios).length === 0) {
+            // try to fetch remote scenarios if we have none in store
+            const respScenarios = await getScenarios()
+            if (respScenarios) {
+                setScenarioList(respScenarios.map(sanitizeRemoteScenario))
+            }
+        }
+        const existedScenario = getScenarioById(snapshotScenarioId)
+        if (existedScenario) {
+            overrideGenerators(existedScenario.scenario)
+            setScenarioId(existedScenario.scenarioId)
+        } else {
+            overrideGenerators(snapshot.generatorStore)
+        }
 
         overrideInvestors(snapshot.investorStore)
         overrideQuests(snapshot.questStore)
         overridePools(snapshot.poolStore)
-        overrideGenerators(snapshot.generatorStore)
         overrideLogs(snapshot.logStore)
-
         overrideStateBySnapshot(snapshot)
-
+        setNewStateName(globalState.stateName)
         toast.current.show({
             severity: 'success',
             summary: 'Success',
-            detail: `Current state was overriden by snapshot ${stateId}`
+            detail: `Current state was overriden by snapshot ${globalState.stateName}`
         })
 
         setLoaderData({ active: false })
@@ -226,12 +251,17 @@ const StatesTable = (props) => {
         props.setSidebarVisible(false)
     }
 
+    const handleStateNameChange = (e) => {
+        setNewStateName(e.target.value)
+        globalState.stateName = e.target.value
+    }
+
     const stateNameEditor = () => {
         return (
             <InputText
                 type="text"
                 value={newStateName}
-                onChange={(e) => setNewStateName(e.target.value)}
+                onChange={handleStateNameChange}
             />
         )
     }
@@ -264,6 +294,23 @@ const StatesTable = (props) => {
         )
     }
 
+    const formatDate = (value) => {
+        const dateValue = new Date(value)
+        return dateValue instanceof Date
+            ? dateValue.toLocaleDateString('en-US', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric'
+              })
+            : value
+    }
+
+    const dateBodyTemplate = (rowData) => {
+        return formatDate(rowData.executionDate)
+    }
+
     const actionLoadButton = (rowData) => {
         return (
             <React.Fragment>
@@ -276,6 +323,14 @@ const StatesTable = (props) => {
                 />
             </React.Fragment>
         )
+    }
+
+    const [sortField, setSortField] = useState('executionDate')
+    const [sortOrder, setSortOrder] = useState(-1)
+
+    const onSort = (e) => {
+        setSortField(e.sortField)
+        setSortOrder(e.sortOrder)
     }
 
     return (
@@ -309,7 +364,8 @@ const StatesTable = (props) => {
                     <Column
                         field="executionDate"
                         header="Execution Date"
-                        sortable
+                        dataType="date"
+                        body={dateBodyTemplate}
                     />
 
                     <Column
@@ -322,48 +378,53 @@ const StatesTable = (props) => {
 
             <Divider />
 
-            <Fieldset
-                legend="Remote states"
-                toggleable
-                collapsed={false}
-                onExpand={handleStatesLoaded}
+            {/*<Fieldset*/}
+            {/*    legend="Remote states"*/}
+            {/*    toggleable*/}
+            {/*    collapsed={false}*/}
+            {/*    onExpand={handleStatesLoaded}*/}
+            {/*>*/}
+            <DataTable
+                value={snapshots}
+                selectionMode="single"
+                sortMode="single"
+                sortField={sortField}
+                sortOrder={sortOrder}
+                onSort={onSort}
+                paginator
+                rows={10}
+                size="small"
             >
-                <DataTable
-                    value={snapshots}
-                    selectionMode="single"
-                    sortMode="multiple"
-                    paginator
-                    rows={10}
-                    size="small"
-                >
-                    <Column
-                        field="stateName"
-                        header="Name"
-                        body={stateNameBody}
-                        style={{ width: '18rem' }}
-                        sortable
-                    />
-                    <Column field="scenarioId" header="Scenario" sortable />
-                    <Column field="totalQuests" header="Total Quests" />
-                    <Column field="totalCrossPools" header="Total CrossPools" />
-                    <Column field="totalInvestors" header="Total Investors" />
-                    <Column field="totalTVL" header="Total TVL" sortable />
-                    <Column field="totalMCAP" header="Total MCAP" sortable />
-                    <Column field="totalUSDC" header="Total USDC" sortable />
-                    <Column field="stateLocation" hidden />
-                    <Column
-                        field="executionDate"
-                        header="Execution Date"
-                        sortable
-                    />
+                <Column
+                    field="stateName"
+                    header="Name"
+                    body={stateNameBody}
+                    style={{ width: '18rem' }}
+                    sortable
+                />
+                <Column field="scenarioId" header="Scenario" sortable />
+                <Column field="totalQuests" header="Total Quests" />
+                <Column field="totalCrossPools" header="Total CrossPools" />
+                <Column field="totalInvestors" header="Total Investors" />
+                <Column field="totalTVL" header="Total TVL" sortable />
+                <Column field="totalMCAP" header="Total MCAP" sortable />
+                <Column field="totalUSDC" header="Total USDC" sortable />
+                <Column field="stateLocation" hidden />
+                <Column
+                    field="executionDate"
+                    header="Execution Date"
+                    dataType="date"
+                    body={dateBodyTemplate}
+                    sortable
+                />
 
-                    <Column
-                        body={actionLoadButton}
-                        exportable={false}
-                        style={{ minWidth: '8rem' }}
-                    />
-                </DataTable>
-            </Fieldset>
+                <Column
+                    body={actionLoadButton}
+                    exportable={false}
+                    style={{ minWidth: '8rem' }}
+                />
+            </DataTable>
+            {/*</Fieldset>*/}
         </React.Fragment>
     )
 }

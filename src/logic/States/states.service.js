@@ -52,7 +52,7 @@ export const aggregateSnapshotTotals = (snapshot) => {
         totalTVL: nf.format(totalValueLocked),
         totalMCAP: nf.format(marketCap),
         totalUSDC: nf.format(totalUSDCLocked),
-        executionDate: new Date().toDateString() // TODO: find out where it comes from
+        executionDate: new Date().toISOString()
     }
 }
 
@@ -88,11 +88,6 @@ export const rehydrateState = (state) => {
         investors.set(key, hydratedItem)
     })
 
-    // logs - array of plain objects - no need to rehydrate
-    // questStore - object with primitive arrays - no need to rehydrate
-
-    // TODO: extend rehydration for additional classes if needed
-
     return state
 }
 
@@ -101,6 +96,7 @@ export const rehydrateState = (state) => {
  * @param {Object} state
  */
 export const overrideStateBySnapshot = (state) => {
+    globalState.stateName = state.stateName || ''
     globalState.pools = new HashMap(state.pools)
     globalState.quests = new HashMap(state.quests)
     globalState.investors = new HashMap(state.investors)

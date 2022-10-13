@@ -8,6 +8,7 @@ import HashMap from 'hashmap'
 // Forgive me Charles Babbage for this atrocity
 
 const globalState = {
+    stateName: '',
     pools: new HashMap(),
     quests: new HashMap(), // tokens
     investors: new HashMap(),
