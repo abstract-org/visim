@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker'
 import HashMap from 'hashmap'
 
 import globalState from '../GlobalState'
@@ -7,20 +8,24 @@ import Token from '../Quest/Token.class'
 import UsdcToken from '../Quest/UsdcToken.class'
 import { fromBase64 } from '../Utils/logicUtils'
 import Serializer from '../Utils/serializer.js'
+import { capitalize } from '../Utils/uiUtils'
 
 /**
+ /**
  * @description Aggregates pools data to show totals
- * @param {stateId, scenarioId, state} snapshot
- * @returns {{}|{totalTVL: number, totalUSDC: number, stateId: (string|*), executionDate: string, totalMCAP: number, totals: string, scenarioId: (string|number|*)}}
+ * @param {stateId, stateName, scenarioId, state} snapshot
+ * @returns {{}|{totalCrossPools, totalTVL: string, totalQuests, stateName: string, totalUSDC: string, stateId: (string|*), executionDate: string, totalMCAP: string, scenarioId: (number|*), totalInvestors}}
  */
 export const aggregateSnapshotTotals = (snapshot) => {
+    if (!snapshot) return {}
+
     const nf = new Intl.NumberFormat('en-US')
 
     let marketCap = 0
     let totalValueLocked = 0
     let totalUSDCLocked = 0
-    if (!snapshot) return {}
-    const { state } = snapshot
+
+    const { stateId, stateName, state, scenarioId } = snapshot
 
     state.pools.values().forEach((pool) => {
         if (pool.isQuest()) {
@@ -36,8 +41,11 @@ export const aggregateSnapshotTotals = (snapshot) => {
     const stateInvestors = state.investors.values().length
 
     return {
-        stateId: snapshot.stateId,
-        scenarioId: snapshot.scenarioId,
+        stateId,
+        stateName:
+            stateName ||
+            `${capitalize(faker.word.adjective())} ${faker.word.noun()}`,
+        scenarioId,
         totalQuests: stateQuests,
         totalCrossPools: stateCrossPools,
         totalInvestors: stateInvestors,
