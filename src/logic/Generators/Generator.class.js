@@ -1,10 +1,20 @@
 import { faker } from '@faker-js/faker'
 import Chance from 'chance'
+import HashMap from 'hashmap'
 
 import Investor from '../Investor/Investor.class'
 import UsdcToken from '../Quest/UsdcToken.class'
 import Router from '../Router/Router.class'
 import { formSwapData, getCombinedSwaps } from '../Utils/logicUtils'
+import tradeTopGainers from './threads/master'
+
+const _OPS_TIME_INITIAL = {
+    invest: { time: 0, ops: 0 },
+    gainers: { time: 0, ops: 0 },
+    inc: { time: 0, ops: 0 },
+    dec: { time: 0, ops: 0 },
+    withdraw: { time: 0, ops: 0 }
+}
 
 class Generator {
     #invConfigs = []
@@ -14,23 +24,28 @@ class Generator {
     #DEFAULT_TOKEN = 'USDC'
     #PRICE_RANGE_MULTIPLIER = 2
     #_OPS = 0
+    #_OPS_TIME = _OPS_TIME_INITIAL
 
     #cachedInvestors = []
-    #cachedQuests = []
-    #cachedPools = []
+    #cachedQuests = new HashMap()
+    #cachedPools = new HashMap()
     #dailyTradedPools = []
 
     keepCreatingInvs = {}
     tradingInvs = {}
     sellValueInvs = {}
 
+    router
+
     constructor(invConfigs, questConfigs, globalPools = [], globalQuests = []) {
         this.#chance = Chance()
 
         this.#invConfigs = invConfigs
         this.#questConfigs = questConfigs
-        this.#cachedQuests = [...globalQuests]
-        this.#cachedPools = [...globalPools]
+        this.#cachedQuests = globalQuests.clone()
+        this.#cachedPools = globalPools.clone()
+
+        this.router = new Router(this.#cachedQuests, this.#cachedPools)
     }
 
     async step(day) {
@@ -87,16 +102,15 @@ class Generator {
                 } // end of inv spawner loop
             } // end of inv spawner if
         })
-        const router = new Router(this.#cachedQuests, this.#cachedPools)
 
         // Every X days - keep creating quests
         this.simulateKeepCreatingQuest(day)
 
         // Every X days - buy/sell top gainers/increased or decreased in prices
-        this.simulateTrade(day, router)
+        this.simulateTrade(day, this.router)
 
         // Every X days - withdraw X in USDC value
-        this.simulateWithdraw(day, router)
+        this.simulateWithdraw(day, this.router)
 
         return this.#dayData[day]
     }
@@ -109,6 +123,10 @@ class Generator {
         const questProbs = this.calculateQuestProbabilities(questConfig)
 
         const { pool, quest } = this.initializeQuest(questConfig, day, investor)
+        this.#cachedQuests.set(quest.name, quest)
+        this.#cachedPools.set(pool.name, pool)
+        this.#dayData[day]['pools'].push(pool)
+        this.#dayData[day]['quests'].push(quest)
 
         // Initial investment
         if (
@@ -116,9 +134,9 @@ class Generator {
             investor.balances[this.#DEFAULT_TOKEN] <
                 questConfig.initialAuthorInvest
         ) {
-            console.log(
-                `${investor.name} Ran out of USDC, cannot invest and cite further`
-            )
+            // console.log(
+            //     `${investor.name} Ran out of USDC, cannot invest and cite further`
+            // )
             return
         }
 
@@ -162,7 +180,7 @@ class Generator {
 
     initializeQuest(questConfig, day, investor) {
         // Generate quest by probability with config
-        const questSum = this.#cachedQuests.length
+        const questSum = this.#cachedQuests.size
         const { pool, quest } = this.spawnQuest(
             investor,
             `${questConfig.questGenName} (${questSum + 1})`
@@ -216,12 +234,12 @@ class Generator {
     }
 
     citeSingleQuest(questConfig, day, pool, quest, investor) {
-        const singleQuest = this.#cachedQuests.find(
-            (q) => q.name === questConfig.citeSingleName
-        )
+        console.log('tried citing')
+        const singleQuest = this.#cachedQuests.get(questConfig.citeSingleName)
         if (!singleQuest) {
             return
         }
+        console.log('Cite', singleQuest)
 
         const citeSingleAmount = this.calculateCiteAmount(
             investor,
@@ -230,25 +248,21 @@ class Generator {
         )
 
         if (citeSingleAmount) {
-            const singleUsdcPool = this.#cachedPools.find(
-                (pool) =>
-                    pool.tokenLeft === this.#DEFAULT_TOKEN &&
-                    pool.tokenRight === singleQuest.name
-            )
-
-            if (!singleUsdcPool) {
+            const pName = `${this.#DEFAULT_TOKEN}-${singleQuest.name}`
+            if (!this.#cachedPools.has(pName)) {
                 return
             }
 
-            let crossPool = this.#cachedPools.find(
-                (pool) =>
-                    pool.tokenLeft === singleQuest.name &&
-                    pool.tokenRight === quest.name
-            )
+            const singleUsdcPool = this.#cachedPools.get(pName)
+            let crossPool
 
-            if (!crossPool) {
+            if (
+                !this.#cachedPools.has(
+                    `${singleQuest.tokenLeft}-${quest.tokenRight}`
+                )
+            ) {
                 const startingPrice =
-                    pool.currentPrice / singleUsdcPool.curentPrice
+                    pool.currentPrice / singleUsdcPool.currentPrice
                 crossPool = investor.createPool(
                     singleQuest,
                     quest,
@@ -261,15 +275,17 @@ class Generator {
                     day
                 })
             }
+
             const priceRange = investor.calculatePriceRange(
                 crossPool,
                 singleUsdcPool,
-                pool
+                pool,
+                questConfig.citeSingleMultiplier
             )
             this.#dayData[day].pools.push(crossPool)
 
             const citeAmount0 =
-                crossPool.tokenLeft === singleQuest ? citeSingleAmount : 0
+                crossPool.tokenLeft === singleQuest ? 0 : citeSingleAmount
             const citeAmount1 = citeAmount0 === 0 ? citeSingleAmount : 0
 
             const [totalIn, _] = investor.citeQuest(
@@ -279,15 +295,12 @@ class Generator {
                 citeAmount0,
                 citeAmount1
             )
-            this.#cachedQuests.map((mapq) => {
-                if (
-                    mapq.name === quest.name ||
-                    mapq.name === singleQuest.name
-                ) {
-                    mapq.addPool(crossPool)
-                }
-                return mapq
-            })
+            const orgQuest = this.#cachedQuests.get(quest.name)
+            const sinQuest = this.#cachedQuests.get(singleQuest.name)
+            orgQuest.addPool(crossPool)
+            sinQuest.addPool(crossPool)
+            this.#cachedQuests.set(orgQuest.name, orgQuest)
+            this.#cachedQuests.set(sinQuest.name, sinQuest)
 
             this.#dayData[day].actions.push({
                 pool: crossPool.name,
@@ -300,17 +313,19 @@ class Generator {
 
             investor.addBalance(quest.name, -totalIn, 'citing single quest')
 
-            this.#cachedPools.push(crossPool)
+            this.#cachedPools.set(crossPool.name, crossPool)
             this.#dayData[day]['pools'].push(crossPool)
         }
     }
 
     citeRandomQuests(questConfig, day, pool, quest, investor, questProbs) {
-        const filteredQuests = this.#cachedQuests.filter(
-            (questIter) =>
-                questIter.name !== this.#DEFAULT_TOKEN &&
-                questIter.name !== quest.name
-        )
+        const filteredQuests = this.#cachedQuests
+            .values()
+            .filter(
+                (questIter) =>
+                    questIter.name !== this.#DEFAULT_TOKEN &&
+                    questIter.name !== quest.name
+            )
         const randomQuests = this.getRandomElements(
             filteredQuests,
             questProbs.citeOtherQuantity
@@ -325,8 +340,8 @@ class Generator {
                     questProbs.citeOtherQuantity
                 )
 
-                const citedPool = this.#cachedPools.find(
-                    (p) => p.isQuest() && p.tokenRight === randomQuest.name
+                const citedPool = this.#cachedPools.get(
+                    `${this.#DEFAULT_TOKEN}-${randomQuest.name}`
                 )
 
                 if (!citedPool || citedPool.name === pool.name) {
@@ -337,20 +352,19 @@ class Generator {
                     return
                 }
 
-                let crossPool = this.#cachedPools.find(
-                    (pool) =>
-                        pool.tokenLeft === randomQuest.name &&
-                        pool.tokenRight === quest.name
+                let crossPool = this.#cachedPools.get(
+                    `${randomQuest.tokenLeft}-${quest.name}`
                 )
 
                 if (!crossPool) {
                     const startingPrice =
-                        pool.currentPrice / citedPool.curentPrice
+                        pool.currentPrice / citedPool.currentPrice
                     crossPool = investor.createPool(
                         randomQuest,
                         quest,
                         startingPrice
                     )
+
                     this.#dayData[day].actions.push({
                         pool: crossPool.name,
                         investorHash: investor.hash,
@@ -358,17 +372,19 @@ class Generator {
                         day
                     })
                 }
+
                 const priceRange = investor.calculatePriceRange(
                     crossPool,
                     citedPool,
-                    pool
+                    pool,
+                    questConfig.citeRandomMultiplier
                 )
                 this.#dayData[day].pools.push(crossPool)
 
                 const citeAmount0 =
                     crossPool.tokenLeft === randomQuest.name
-                        ? citeOtherAmount
-                        : 0
+                        ? 0
+                        : citeOtherAmount
                 const citeAmount1 = citeAmount0 === 0 ? citeOtherAmount : 0
 
                 const [totalIn, _] = investor.citeQuest(
@@ -376,18 +392,16 @@ class Generator {
                     priceRange.min,
                     priceRange.max,
                     citeAmount0,
-                    citeAmount1
+                    citeAmount1,
+                    priceRange.native
                 )
 
-                this.#cachedQuests.map((mapq) => {
-                    if (
-                        mapq.name === quest.name ||
-                        mapq.name === randomQuest.name
-                    ) {
-                        mapq.addPool(crossPool)
-                    }
-                    return mapq
-                })
+                const orgQuest = this.#cachedQuests.get(quest.name)
+                const ranQuest = this.#cachedQuests.get(randomQuest.name)
+                orgQuest.addPool(crossPool)
+                ranQuest.addPool(crossPool)
+                this.#cachedQuests.set(orgQuest.name, orgQuest)
+                this.#cachedQuests.set(ranQuest.name, ranQuest)
 
                 this.#dayData[day].actions.push({
                     pool: crossPool.name,
@@ -403,7 +417,7 @@ class Generator {
                     'citing random quests'
                 )
 
-                this.#cachedPools.push(crossPool)
+                this.#cachedPools.set(crossPool.name, crossPool)
                 this.#dayData[day]['pools'].push(crossPool)
             })
         }
@@ -436,7 +450,6 @@ class Generator {
     simulateTrade(day, router) {
         const tradingDayKeys = Object.keys(this.tradingInvs)
         tradingDayKeys.forEach((dayKey) => {
-            // start day should be 0 so spawn day is included
             if (day % dayKey === 0) {
                 const investors = this.tradingInvs[dayKey]
                 investors.forEach((investorObj, idx) => {
@@ -449,28 +462,26 @@ class Generator {
                             (investor.balances[this.#DEFAULT_TOKEN] / 100) *
                             conf.buySinglePerc
 
-                        let tradePool = this.#cachedPools.find(
-                            (pool) =>
-                                pool.isQuest() &&
-                                pool.tokenRight === conf.includeSingleName
+                        let tradePool = this.#cachedPools.get(
+                            `${this.#DEFAULT_TOKEN}-${conf.includeSingleName}`
                         )
 
-                        //const t0 = performance.now()
+                        const t0 = performance.now()
                         const [totalIn, totalOut] = router.smartSwap(
                             this.#DEFAULT_TOKEN,
                             tradePool.tokenRight,
-                            spendAmount
+                            spendAmount,
+                            conf.smartRouteDepth
                         )
-
-                        // console.log(tradePool)
-
-                        // const t1 = performance.now()
+                        const t1 = performance.now()
                         // console.log(
                         //     `[${day}][${investor.name}] Invested directly in ${
                         //         conf.includeSingleName
                         //     } amount ${spendAmount} in ${t1 - t0}ms`
                         // )
                         this.#_OPS++
+                        this.#_OPS_TIME.invest.ops++
+                        this.#_OPS_TIME.invest.time += t1 - t0
 
                         // collect pool price movements here and in other calls of router.smartSwap
                         this.storeTradedPool(day, tradePool)
@@ -484,16 +495,8 @@ class Generator {
                             isNaN(totalOut)
                         ) {
                             console.log(
-                                `Bad trade at: ${tradePool.name} ${totalIn} ${totalOut} ${spendAmount}`
+                                `[BUY SINGLE] Bad trade at: ${tradePool.name} ${totalIn} ${totalOut} ${spendAmount}`
                             )
-                            console.log(
-                                tradePool.currentLiquidity,
-                                tradePool.currentPrice,
-                                investor.balances,
-                                router.getPaths(),
-                                router.getSwaps()
-                            )
-                            console.log(tradePool)
                             return
                         }
                         this.#processSwapData(investor, router.getSwaps(), day)
@@ -514,7 +517,8 @@ class Generator {
                         const tradePools = this.getTradePools(
                             conf.buyQuestPerc,
                             conf.buyGainerPerc,
-                            conf.excludeSingleName
+                            conf.excludeSingleName,
+                            conf.buyGainersFrequency
                         )
 
                         if (!tradePools.length) {
@@ -528,13 +532,14 @@ class Generator {
                         }
 
                         tradePools.forEach((pool) => {
-                            //const t0 = performance.now()
+                            const t0 = performance.now()
                             const [totalIn, totalOut] = router.smartSwap(
                                 this.#DEFAULT_TOKEN,
                                 pool.tokenRight,
-                                perPoolAmt
+                                perPoolAmt,
+                                conf.smartRouteDepth
                             )
-                            //const t1 = performance.now()
+                            const t1 = performance.now()
                             // console.log(
                             //     `[${day}][${
                             //         investor.name
@@ -543,6 +548,8 @@ class Generator {
                             //     } amount ${perPoolAmt} in ${t1 - t0}ms`
                             // )
                             this.#_OPS++
+                            this.#_OPS_TIME.gainers.ops++
+                            this.#_OPS_TIME.gainers.time += t1 - t0
 
                             // collect pool price movements here and in other calls of router.smartSwap
                             this.storeTradedPool(day, pool)
@@ -556,18 +563,8 @@ class Generator {
                                 isNaN(totalOut)
                             ) {
                                 console.log(
-                                    `Bad trade at: ${pool.name} ${totalIn} ${totalOut} ${perPoolAmt}`
+                                    `[GAINERS] Bad trade at: ${pool.name} ${totalIn} ${totalOut} ${perPoolAmt}`
                                 )
-                                console.log(
-                                    pool.currentLiquidity,
-                                    pool.currentPrice,
-                                    investor.balances,
-                                    router.getPaths(),
-                                    router.getSwaps()
-                                )
-                                tradePools.forEach((tg) => {
-                                    console.table(tg)
-                                })
                                 return
                             }
                             this.#processSwapData(
@@ -588,76 +585,116 @@ class Generator {
                         })
                     }
 
-                    // Sell own tokens that increase/decrease in price
-                    const sellPools = this.getChangedPriceQuests(
+                    // Swap owned:
+                    // Tokens that increased in price
+                    // invBalances, freq, swapSum, swapPerc, swapDir
+                    const incPools = this.getChangedPriceQuests(
                         investor.balances,
-                        conf
+                        conf.swapIncFrequency,
+                        conf.swapIncSumPerc,
+                        conf.swapIncByPerc,
+                        conf.swapIncDir
                     )
 
-                    if (sellPools && sellPools.length) {
-                        sellPools.forEach((poolData) => {
-                            const { pool, amount } = poolData
+                    this.smartSwapPools(
+                        day,
+                        investor,
+                        router,
+                        incPools,
+                        conf.smartRouteDepth,
+                        'inc'
+                    )
 
-                            //const sp0 = performance.now()
-                            const [totalIn, totalOut] = router.smartSwap(
-                                pool.tokenRight,
-                                pool.tokenLeft,
-                                amount
-                            )
-                            // const sp1 = performance.now()
-                            // console.log(
-                            //     `[${day}][${
-                            //         investor.name
-                            //     }] Sold tokens on day ${day} into ${
-                            //         pool.name
-                            //     } amount ${amount} in ${sp1 - sp0}ms`
-                            // )
-                            this.#_OPS++
+                    // Tokens that decreased in price
+                    const decPools = this.getChangedPriceQuests(
+                        investor.balances,
+                        conf.swapDecFrequency,
+                        conf.swapDecSumPerc,
+                        conf.swapDecByPerc,
+                        conf.swapDecDir
+                    )
 
-                            // collect pool price movements here and in other calls of router.smartSwap
-                            this.storeTradedPool(day, pool)
-
-                            if (
-                                router.isZero(totalIn) ||
-                                totalOut <= 0 ||
-                                router.isZero(totalOut) ||
-                                isNaN(totalIn) ||
-                                isNaN(totalOut)
-                            ) {
-                                console.log(
-                                    `[selling] Bad trade at: ${pool.name} ${totalIn} ${totalOut} ${amount}`
-                                )
-                                console.log(
-                                    pool.currentLiquidity,
-                                    pool.currentPrice,
-                                    investor.balances,
-                                    router.getPaths(),
-                                    router.getSwaps()
-                                )
-                                sellPools.forEach((tg) => {
-                                    console.table(tg)
-                                })
-                                return
-                            }
-                            this.#processSwapData(
-                                investor,
-                                router.getSwaps(),
-                                day
-                            )
-                            investor.addBalance(
-                                pool.tokenRight,
-                                totalIn,
-                                'selling gainers/losers'
-                            )
-                            investor.addBalance(
-                                pool.tokenLeft,
-                                totalOut,
-                                'selling gainers/losers'
-                            )
-                        })
-                    }
+                    this.smartSwapPools(
+                        day,
+                        investor,
+                        router,
+                        decPools,
+                        conf.smartRouteDepth,
+                        'dec'
+                    )
                 })
             }
+        })
+    }
+
+    smartSwapPools(
+        day,
+        investor,
+        router,
+        selectedPools,
+        smartRouteDepth,
+        debugStr
+    ) {
+        if (!selectedPools || !selectedPools.length) {
+            return
+        }
+
+        selectedPools.forEach((poolData) => {
+            const { pool, amount, swapDir } = poolData
+
+            const [t0, t1] =
+                swapDir === 'buy'
+                    ? [pool.tokenLeft, pool.tokenRight]
+                    : [pool.tokenRight, pool.tokenLeft]
+
+            const sp0 = performance.now()
+            const [totalIn, totalOut] = router.smartSwap(
+                t0,
+                t1,
+                amount,
+                smartRouteDepth
+            )
+            const sp1 = performance.now()
+            // console.log(
+            //     `[${day}][${
+            //         investor.name
+            //     }] Swapped inc/dec tokens on day ${day} into ${
+            //         pool.name
+            //     } amount ${amount} in ${sp1 - sp0}ms`
+            // )
+            this.#_OPS++
+            this.#_OPS_TIME[debugStr].ops++
+            this.#_OPS_TIME[debugStr].time += sp1 - sp0
+
+            // collect pool price movements here and in other calls of router.smartSwap
+            this.storeTradedPool(day, pool)
+
+            if (
+                router.isZero(totalIn) ||
+                totalOut <= 0 ||
+                router.isZero(totalOut) ||
+                isNaN(totalIn) ||
+                isNaN(totalOut)
+            ) {
+                console.log(
+                    `[selling] Bad trade at: ${pool.name} ${totalIn} ${totalOut} ${amount}`
+                )
+                console.log(
+                    pool.currentLiquidity,
+                    pool.currentPrice,
+                    investor.balances,
+                    router.getPaths(),
+                    router.getSwaps()
+                )
+                selectedPools.forEach((tg) => {
+                    console.table(tg)
+                })
+                return
+            }
+
+            this.#processSwapData(investor, router.getSwaps(), day)
+            investor.addBalance(t0, totalIn, 'selling gainers/losers')
+            investor.addBalance(t1, totalOut, 'selling gainers/losers')
         })
     }
 
@@ -703,13 +740,14 @@ class Generator {
                                 ? 10
                                 : author.balances[quest]
 
-                        //const t0 = performance.now()
+                        const t0 = performance.now()
                         const [amtIn, amtOut] = router.smartSwap(
                             quest,
                             this.#DEFAULT_TOKEN,
-                            sumIn
+                            sumIn,
+                            conf.smartRouteDepth
                         )
-                        // const t1 = performance.now()
+                        const t1 = performance.now()
                         // console.log(
                         //     `[${day}][${
                         //         author.name
@@ -718,6 +756,8 @@ class Generator {
                         //     }ms`
                         // )
                         this.#_OPS++
+                        this.#_OPS_TIME.withdraw.ops++
+                        this.#_OPS_TIME.withdraw.time += t1 - t0
 
                         if (
                             isNaN(amtIn) ||
@@ -747,80 +787,88 @@ class Generator {
         })
     }
 
-    getChangedPriceQuests(invBalances, conf) {
+    getChangedPriceQuests(invBalances, freq, swapSumPerc, swapPerc, swapDir) {
+        // Find investor's tokens by reading their balances
+        const balancesLeftover = JSON.parse(JSON.stringify(invBalances))
+
         const invQuestPools = Object.keys(invBalances)
-            .map((q) =>
-                this.#cachedPools.find(
-                    (cp) =>
-                        cp.tokenRight === q &&
-                        cp.tokenLeft === this.#DEFAULT_TOKEN
-                )
+            .map((questName) =>
+                this.#cachedPools.get(`${this.#DEFAULT_TOKEN}-${questName}`)
             )
             .filter((x) => x)
 
-        if (!invQuestPools || !invQuestPools.length) {
+        if (
+            !invQuestPools ||
+            !invQuestPools.length ||
+            !this.#dailyTradedPools
+        ) {
             return
         }
 
         let selectedPools = []
-        if (this.#dailyTradedPools) {
-            Object.entries(this.#dailyTradedPools)
-                .filter((pd) => invQuestPools.find((ip) => ip.name === pd[0]))
-                .forEach((poolData) => {
-                    const data = poolData[1].slice(-7)
-                    const growthRate =
-                        ((data[data.length - 1].mcap - data[0].mcap) /
-                            data[0].mcap) *
-                        100
 
-                    if (growthRate === 0) {
-                        return
-                    }
+        Object.entries(this.#dailyTradedPools)
+            .filter((pd) => invQuestPools.find((ip) => ip.name === pd[0]))
+            .forEach((poolData) => {
+                const data = poolData[1].slice(-freq)
+                const growthRate =
+                    ((data[data.length - 1].mcap - data[0].mcap) /
+                        data[0].mcap) *
+                    100
 
-                    if (
-                        (growthRate < 0 && growthRate >= conf.sellDecByPerc) ||
-                        (growthRate > 0 && growthRate <= conf.sellIncByPerc)
-                    ) {
-                        return
-                    }
+                if (
+                    growthRate === 0 ||
+                    (growthRate < 0 && growthRate >= swapPerc) ||
+                    (growthRate > 0 && growthRate <= swapPerc)
+                ) {
+                    return
+                }
 
-                    const pool = invQuestPools.find(
-                        (iqp) => iqp.name === poolData[0]
-                    )
-                    const tokenBalance = invBalances[pool.tokenRight]
-                    const amountToSell =
-                        (tokenBalance / 100) *
-                        (growthRate > 0
-                            ? conf.sellIncSumPerc
-                            : conf.sellDecSumPerc)
+                const pool = invQuestPools.find(
+                    (iqp) => iqp.name === poolData[0]
+                )
 
-                    if (
-                        !amountToSell ||
-                        amountToSell <= 0 ||
-                        isNaN(amountToSell)
-                    ) {
-                        return
-                    }
+                const tokenTrade =
+                    swapDir === 'sell' ? pool.tokenRight : pool.tokenLeft
+                const tokenBalance = invBalances[tokenTrade]
+                const swapAmount = (tokenBalance / 100) * swapSumPerc
 
-                    selectedPools.push({
-                        pool: invQuestPools.find(
-                            (iqp) => iqp.name === poolData[0]
-                        ),
-                        amount: amountToSell
-                    })
+                balancesLeftover[tokenTrade] -= swapAmount
+
+                if (
+                    !swapAmount ||
+                    swapAmount <= 0 ||
+                    isNaN(swapAmount) ||
+                    balancesLeftover[tokenTrade] < swapAmount ||
+                    balancesLeftover[tokenTrade] === 0
+                ) {
+                    return
+                }
+
+                selectedPools.push({
+                    pool: invQuestPools.find((iqp) => iqp.name === poolData[0]),
+                    amount: swapAmount,
+                    swapDir
                 })
-            return selectedPools
-        }
-
-        return
+            })
+        return selectedPools
     }
 
-    getTradePools(buyQuestPerc, buyGainerPerc, excludeSingleName) {
+    getTradePools(
+        buyQuestPerc,
+        buyGainerPerc,
+        excludeSingleName,
+        buyGainersFrequency
+    ) {
         const poolsAmount = Math.ceil(
-            (this.#cachedQuests.length / 100) * buyGainerPerc
+            (this.#cachedQuests.size / 100) * buyGainerPerc
         )
 
-        const topGainers = this.getTopGainers(buyQuestPerc, poolsAmount)
+        const topGainers = this.getTopGainers(
+            buyQuestPerc,
+            poolsAmount,
+            buyGainersFrequency
+        )
 
         let randomGainers = []
         if (topGainers.length < poolsAmount) {
@@ -843,11 +891,11 @@ class Generator {
         return finalResult
     }
 
-    getTopGainers(buyQuestPerc, poolsAmount) {
-        // Collect top gainers of the last 30 days
+    getTopGainers(buyQuestPerc, poolsAmount, buyGainersFrequency = 30) {
+        // Collect top gainers of the last X days
         let gainers = []
         Object.entries(this.#dailyTradedPools).forEach((poolData) => {
-            const data = poolData[1].slice(-30)
+            const data = poolData[1].slice(-buyGainersFrequency)
             const growthRate =
                 ((data[data.length - 1].mcap - data[0].mcap) / data[0].mcap) *
                 100
@@ -882,14 +930,12 @@ class Generator {
 
         return selectedGainers
             .filter((x) => x)
-            .map((pdata) =>
-                this.#cachedPools.find((pool) => pool.name === pdata.pool)
-            )
+            .map((pdata) => this.#cachedPools.get(pdata.pool))
     }
 
     getRandomGainers(buyQuestPerc, questsAmount) {
         const randomQuests = this.getRandomElements(
-            this.#cachedQuests,
+            this.#cachedQuests.values(),
             questsAmount
         )
 
@@ -899,13 +945,10 @@ class Generator {
 
         const toTradePools = randomQuests
             .map((quest) =>
-                this.#cachedPools.find(
-                    (pool) =>
-                        pool.tokenLeft === this.#DEFAULT_TOKEN &&
-                        pool.tokenRight === quest.name
-                )
+                this.#cachedPools.get(`${this.#DEFAULT_TOKEN}-${quest.name}`)
             )
             .filter((x) => x)
+
         const poolsAmount = Math.ceil(
             (toTradePools.length / 100) * buyQuestPerc
         )
@@ -943,24 +986,20 @@ class Generator {
     spawnQuest(investor, name) {
         const quest = investor.createQuest(name)
         const pool = quest.createPool()
-        this.#cachedQuests.push(quest)
+        this.#cachedQuests.set(quest.name, quest)
 
-        let leftSideQuest = this.#cachedQuests.find(
-            (quest) => quest.name === this.#DEFAULT_TOKEN
-        )
+        let leftSideQuest = this.#cachedQuests.get(`${this.#DEFAULT_TOKEN}`)
 
         if (leftSideQuest) {
             leftSideQuest.addPool(pool)
-            this.#cachedQuests.map((quest) =>
-                quest.name === leftSideQuest.name ? leftSideQuest : quest
-            )
+            this.#cachedQuests.set(leftSideQuest.name, leftSideQuest)
         } else {
             leftSideQuest = new UsdcToken()
             leftSideQuest.addPool(pool)
-            this.#cachedQuests.push(leftSideQuest)
+            this.#cachedQuests.set(leftSideQuest.name, leftSideQuest)
         }
 
-        this.#cachedPools.push(pool)
+        this.#cachedPools.set(pool.name, pool)
 
         return { pool, quest }
     }
@@ -1022,9 +1061,7 @@ class Generator {
         const combSwaps = getCombinedSwaps(swaps, this.#cachedPools)
         Object.entries(combSwaps).forEach((ops) => {
             Object.entries(ops[1]).forEach((op) => {
-                const pool = this.#cachedPools.find(
-                    (pool) => pool.name === ops[0]
-                )
+                const pool = this.#cachedPools.get(ops[0])
                 const swapData = formSwapData(
                     pool,
                     investor,
@@ -1070,7 +1107,9 @@ class Generator {
     }
 
     getQuests() {
-        return this.#cachedQuests.filter((q) => q.name !== this.#DEFAULT_TOKEN)
+        return this.#cachedQuests
+            .values()
+            .filter((q) => q.name !== this.#DEFAULT_TOKEN)
     }
 
     getInvestors() {
@@ -1078,7 +1117,7 @@ class Generator {
     }
 
     getPools() {
-        return this.#cachedPools
+        return this.#cachedPools.values()
     }
 
     getDailyTradedPools() {
@@ -1087,6 +1126,14 @@ class Generator {
 
     getOps() {
         return this.#_OPS
+    }
+
+    resetOpsTime() {
+        this.#_OPS_TIME = _OPS_TIME_INITIAL
+    }
+
+    getOpsTime() {
+        return this.#_OPS_TIME
     }
 }
 

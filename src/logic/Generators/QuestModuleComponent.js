@@ -69,21 +69,6 @@ export const QuestModuleComponent = (props) => {
             </div>
             <div className="column flex">
                 <span className="inplace-static-text">
-                    Initial numbers of tokens in USDC pool{' '}
-                    {props.state.poolSizeTokens}
-                </span>
-                {/*<InPlaceElement
-                    id="poolSizeTokens"
-                    active={false}
-                    display={props.state.poolSizeTokens}
-                    type="number"
-                    element="input"
-                    handleChange={props.handleChange}
-                    state={props.state}
-                />*/}
-            </div>
-            <div className="column flex">
-                <span className="inplace-static-text">
                     Initial token price: 1
                 </span>
             </div>

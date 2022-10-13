@@ -5,7 +5,9 @@ import { InputText } from 'primereact/inputtext'
 export const InPlaceElement = (props) => {
     return (
         <Inplace active={props.active} closable onToggle={props.onToggle}>
-            <InplaceDisplay>{props.display}</InplaceDisplay>
+            <InplaceDisplay style={{ ...props.displayStyle }}>
+                {props.display}
+            </InplaceDisplay>
             <InplaceContent>
                 {props.element === 'input' ? (
                     <PresetInPlaceInput {...props} />

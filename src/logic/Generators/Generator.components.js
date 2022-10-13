@@ -236,8 +236,8 @@ export const GeneratorRunner = () => {
         const genManager = new Generator(
             invConfigs,
             questConfigs,
-            globalState.pools.values(),
-            globalState.quests.values()
+            globalState.pools,
+            globalState.quests
         )
 
         // Every day
@@ -283,7 +283,6 @@ export const GeneratorRunner = () => {
                 addLogObj(action)
                 globalState.logStore.logObjs.push(action)
             })
-            await genManager.sleep(100)
         }
         setPassedDays(passedDays + genDays)
         setGenActive(false)

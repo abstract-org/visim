@@ -166,7 +166,7 @@ export const QuestCitation = () => {
                     )
             }
 
-            const amt0 = activeQuest === crossPool.tokenLeft ? calcAmountA : 0
+            const amt0 = activeQuest === crossPool.tokenLeft ? 0 : calcAmountA
             const amt1 = amt0 === 0 ? calcAmountA : 0
 
             const priceRange = investor.calculatePriceRange(

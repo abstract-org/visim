@@ -1,12 +1,13 @@
-import Pool from '../Pool/Pool.class'
+import HashMap from 'hashmap'
+
 import { byName } from '../Utils/logicUtils'
 import { Graph } from './Graph.class'
 
 export default class Router {
-    #state = { quests: [], pools: [] }
+    #cachedPools = new HashMap()
+    #cachedQuests = new HashMap()
     #shouldScanPaths = true
 
-    #FOUND_PATHS = []
     #_PRICED_PATHS = []
     #_VISITED_PATHS = []
     #_SWAPS = []
@@ -23,7 +24,8 @@ export default class Router {
 
     // @param State state
     constructor(stateQuests, statePools, debug = false, debugDry = false) {
-        this.#state = { quests: stateQuests, pools: statePools }
+        this.#cachedQuests = stateQuests
+        this.#cachedPools = statePools
         this.#DEBUG = debug
         this.#DEBUG_DRY = debugDry
     }
@@ -34,7 +36,7 @@ export default class Router {
      * @param {number} amountIn
      * @returns {*[]|number[]}
      */
-    smartSwap(token0, token1, amountIn) {
+    smartSwap(token0, token1, amountIn, smartRouteDepth) {
         if (this.#DEBUG)
             console.log(
                 `\n--- SMART ROUTE ${token0}/${token1}/${amountIn}---\n`
@@ -45,7 +47,7 @@ export default class Router {
 
         const totalInOut = [0, 0]
 
-        this.calculatePairPaths(token0, token1)
+        this.calculatePairPaths(token0, token1, smartRouteDepth)
 
         if (amountIn > this.#_SWAP_SUM_STEPPER) {
             this.#_DEFAULT_SWAP_SUM = amountIn / this.#_SWAP_SUM_MAX_CHUNKS
@@ -80,10 +82,10 @@ export default class Router {
         return totalInOut
     }
 
-    calculatePairPaths(token0, token1) {
-        const poolList = this.findPoolsFor(token0)
+    calculatePairPaths(token0, token1, smartRouteDepth) {
+        const poolList = this.findPoolsFor(token0, smartRouteDepth)
         if (this.#DEBUG) console.log(poolList)
-        const graph = this.graphPools(poolList)
+        const graph = this.graphPools(poolList, smartRouteDepth)
         if (this.#DEBUG) console.log(graph)
         const paths = graph.buildPathways(token0, token1)
         this.#_PAIR_PATHS[`${token0}-${token1}`] = paths
@@ -176,8 +178,8 @@ export default class Router {
         return pathPrices
     }
 
-    graphPools(poolList) {
-        const graph = new Graph()
+    graphPools(poolList, smartRouteDepth) {
+        const graph = new Graph(smartRouteDepth)
         poolList.forEach((pool) => {
             if (!graph.adjList.has(pool.tokenLeft)) {
                 graph.addVertex(pool.tokenLeft)
@@ -200,17 +202,25 @@ export default class Router {
      * @param {number} depth
      * @returns {[]|*[]}
      */
-    findPoolsFor(tokenName, depth = 0) {
+    findPoolsFor(tokenName, maxDepth, depth = 1) {
         let results = this.#processTokenForPath(tokenName)
 
-        if (depth > 3 && this.#shouldScanPaths) {
+        if (depth >= maxDepth && this.#shouldScanPaths) {
             this.#shouldScanPaths = false
             return results
         }
 
         results.forEach((res) => {
-            const leftPools = this.findPoolsFor(res.tokenLeft, depth + 1)
-            const rightPools = this.findPoolsFor(res.tokenRight, depth + 1)
+            const leftPools = this.findPoolsFor(
+                res.tokenLeft,
+                maxDepth,
+                depth + 1
+            )
+            const rightPools = this.findPoolsFor(
+                res.tokenRight,
+                maxDepth,
+                depth + 1
+            )
 
             results = Array.prototype.concat(results, leftPools, rightPools)
         })
@@ -335,7 +345,7 @@ export default class Router {
     }
 
     #processTokenForPath(tokenName) {
-        let quest = this.#state.quests.find(byName(tokenName))
+        let quest = this.#cachedQuests.get(tokenName)
 
         if (!quest) {
             return []
@@ -348,18 +358,18 @@ export default class Router {
         }
 
         const result = []
-        candidatePools.forEach((candidate) => {
-            const pool = this.#state.pools.find(byName(candidate))
-            if (!pool || this.#_visitedForGraph.includes(pool.name)) {
+        candidatePools.forEach((pool) => {
+            const foundPool = this.#cachedPools.get(pool)
+            if (!foundPool || this.#_visitedForGraph.includes(foundPool.name)) {
                 return
             }
 
-            this.#_visitedForGraph.push(pool.name)
+            this.#_visitedForGraph.push(foundPool.name)
 
             result.push({
                 for: tokenName,
-                tokenLeft: pool.tokenLeft,
-                tokenRight: pool.tokenRight
+                tokenLeft: foundPool.tokenLeft,
+                tokenRight: foundPool.tokenRight
             })
         })
 
@@ -371,13 +381,9 @@ export default class Router {
     }
 
     #getPoolByTokens(tokenA, tokenB) {
-        return this.#state.pools.some((p) => p.name === `${tokenA}-${tokenB}`)
-            ? this.#state.pools.find(
-                  (pool) => pool.name === `${tokenA}-${tokenB}`
-              )
-            : this.#state.pools.find(
-                  (pool) => pool.name === `${tokenB}-${tokenA}`
-              )
+        return this.#cachedPools.has(`${tokenA}-${tokenB}`)
+            ? this.#cachedPools.get(`${tokenA}-${tokenB}`)
+            : this.#cachedPools.get(`${tokenB}-${tokenA}`)
     }
 
     chunkAmountBy(amount, by) {

@@ -39,7 +39,7 @@ export const getCombinedSwaps = (smSwaps, pools) => {
             combSwaps[smSwap.pool] = {}
         }
         if (!combSwaps[smSwap.pool][smSwap.op]) {
-            const pool = pools.find(byName(smSwap.pool))
+            const pool = pools.get(smSwap.pool)
             combSwaps[smSwap.pool][smSwap.op] = {
                 pool,
                 totalAmountIn: 0,

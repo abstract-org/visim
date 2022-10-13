@@ -281,3 +281,7 @@ rect.fill-inactive {
     background: #afbdd5;
     color: #fff;
 }
+
+.p-blockui-container .p-inplace-display {
+    padding: 0;
+}

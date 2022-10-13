@@ -64,8 +64,12 @@ export default class Investor {
         }
 
         if (this.balances[tokenName] + balance < 0) {
+            console.log(
+                `You don't have ${balance} of ${tokenName} to spend, remaining amount is ${this.balances[tokenName]}`,
+                msg
+            )
             throw new Error(
-                `You don't have ${balance} of ${tokenName} to spend, remaining amount is ${this.balances[tokenName]}`
+                `You don't have ${balance} of ${tokenName} to spend, remaining amount is ${this.balances[tokenName]}: ${msg}`
             )
         }
 
