@@ -31,6 +31,16 @@ export const InvestorModuleComponent = (props) => {
         dropdownQuests
     )
 
+    const hopsDropdown = Array.from([1, 2, 3, 4]).map((el) => ({
+        label: `${el} hop${el > 1 ? 's' : ''}`,
+        value: el
+    }))
+
+    const swapDirDropdown = Array.from(['buy', 'sell']).map((el) => ({
+        label: el.charAt(0).toUpperCase() + el.slice(1),
+        value: el
+    }))
+
     const aliasAlert = useRef(null)
     return (
         <div className="flex flex-column gen-card">
@@ -217,11 +227,23 @@ export const InvestorModuleComponent = (props) => {
                     blocked={props.state.buySellPeriodDays <= 0}
                     className="flex w-full"
                 >
-                    <span className="inplace-static-text">Sell</span>
                     <InPlaceElement
-                        id="sellIncSumPerc"
+                        id="swapDecDir"
                         active={false}
-                        display={`${props.state.sellIncSumPerc}%`}
+                        display={`${
+                            props.state.swapDecDir.charAt(0).toUpperCase() +
+                            props.state.swapDecDir.slice(1)
+                        }`}
+                        element="dropdown"
+                        options={swapDirDropdown}
+                        handleChange={props.handleChange}
+                        state={props.state}
+                        displayStyle={{ padding: 0 }}
+                    />
+                    <InPlaceElement
+                        id="swapIncSumPerc"
+                        active={false}
+                        display={`${props.state.swapIncSumPerc}%`}
                         type="number"
                         element="input"
                         handleChange={props.handleChange}
@@ -231,9 +253,9 @@ export const InvestorModuleComponent = (props) => {
                         of owned tokens that decreased in price by
                     </span>
                     <InPlaceElement
-                        id="sellIncByPerc"
+                        id="swapIncByPerc"
                         active={false}
-                        display={`${props.state.sellIncByPerc}%`}
+                        display={`${props.state.swapIncByPerc}%`}
                         type="number"
                         element="input"
                         handleChange={props.handleChange}
@@ -241,9 +263,9 @@ export const InvestorModuleComponent = (props) => {
                     />
                     <span className="inplace-static-text">(up to</span>
                     <InPlaceElement
-                        id="buyGrowthFrequency"
+                        id="swapDecFrequency"
                         active={false}
-                        display={props.state.buyGrowthFrequency}
+                        display={props.state.swapDecFrequency}
                         type="number"
                         element="input"
                         handleChange={props.handleChange}
@@ -257,11 +279,23 @@ export const InvestorModuleComponent = (props) => {
                     blocked={props.state.buySellPeriodDays <= 0}
                     className="flex w-full"
                 >
-                    <span className="inplace-static-text">Sell</span>
                     <InPlaceElement
-                        id="sellDecSumPerc"
+                        id="swapIncDir"
                         active={false}
-                        display={`${props.state.sellDecSumPerc}%`}
+                        display={`${
+                            props.state.swapDecDir.charAt(0).toUpperCase() +
+                            props.state.swapDecDir.slice(1)
+                        }`}
+                        element="dropdown"
+                        options={swapDirDropdown}
+                        handleChange={props.handleChange}
+                        state={props.state}
+                        displayStyle={{ padding: 0 }}
+                    />
+                    <InPlaceElement
+                        id="swapDecSumPerc"
+                        active={false}
+                        display={`${props.state.swapDecSumPerc}%`}
                         type="number"
                         element="input"
                         handleChange={props.handleChange}
@@ -281,9 +315,9 @@ export const InvestorModuleComponent = (props) => {
                     />
                     <span className="inplace-static-text">(up to</span>
                     <InPlaceElement
-                        id="sellFallFrequency"
+                        id="swapIncFrequency"
                         active={false}
-                        display={props.state.sellFallFrequency}
+                        display={props.state.swapIncFrequency}
                         type="number"
                         element="input"
                         handleChange={props.handleChange}
@@ -296,80 +330,102 @@ export const InvestorModuleComponent = (props) => {
             <hr className="dashed-divider" />
 
             <div className="column flex">
-                <span className="inplace-static-text">
-                    On initialization create Quest
-                </span>
-                <InPlaceElement
-                    id="createQuest"
-                    active={true}
-                    display={props.state.createQuest}
-                    element="dropdown"
-                    options={dropdownOptions}
-                    handleChange={props.handleChange}
-                    state={props.state}
-                />
+                <BlockUI
+                    blocked={props.state.buySellPeriodDays > 0}
+                    className="flex w-full"
+                >
+                    <span className="inplace-static-text">
+                        On initialization create Quest
+                    </span>
+                    <InPlaceElement
+                        id="createQuest"
+                        active={true}
+                        display={props.state.createQuest}
+                        element="dropdown"
+                        options={dropdownOptions}
+                        handleChange={props.handleChange}
+                        state={props.state}
+                    />
+                </BlockUI>
             </div>
             <div className="column flex">
-                <span className="inplace-static-text">Once every</span>
-                <InPlaceElement
-                    id="keepCreatingPeriodDays"
-                    active={false}
-                    display={`${props.state.keepCreatingPeriodDays}`}
-                    type="number"
-                    element="input"
-                    handleChange={props.handleChange}
-                    state={props.state}
-                />
-                <span className="inplace-static-text">
-                    days, create quest of type
-                </span>
-                <InPlaceElement
-                    id="keepCreatingQuests"
-                    active={true}
-                    display={props.state.keepCreatingQuests}
-                    element="dropdown"
-                    options={dropdownOptions}
-                    handleChange={props.handleChange}
-                    state={props.state}
-                />
+                <BlockUI
+                    blocked={props.state.buySellPeriodDays > 0}
+                    className="flex w-full"
+                >
+                    <span className="inplace-static-text">Once every</span>
+                    <InPlaceElement
+                        id="keepCreatingPeriodDays"
+                        active={false}
+                        display={`${props.state.keepCreatingPeriodDays}`}
+                        type="number"
+                        element="input"
+                        handleChange={props.handleChange}
+                        state={props.state}
+                    />
+                    <span className="inplace-static-text">
+                        days, create quest of type
+                    </span>
+                    <InPlaceElement
+                        id="keepCreatingQuests"
+                        active={true}
+                        display={props.state.keepCreatingQuests}
+                        element="dropdown"
+                        options={dropdownOptions}
+                        handleChange={props.handleChange}
+                        state={props.state}
+                    />
+                </BlockUI>
             </div>
             <div className="column flex mt-3">
-                <span className="inplace-static-text">Every</span>
-                <InPlaceElement
-                    id="valueSellPeriodDays"
-                    active={false}
-                    display={props.state.valueSellPeriodDays}
-                    type="number"
-                    element="input"
-                    handleChange={props.handleChange}
-                    state={props.state}
-                />
-                <span className="inplace-static-text">days sells</span>
-                <InPlaceElement
-                    id="valueSellAmount"
-                    active={false}
-                    display={props.state.valueSellAmount}
-                    type="number"
-                    element="input"
-                    handleChange={props.handleChange}
-                    state={props.state}
-                />
-                <span className="inplace-static-text">
-                    USDC value of their own quest tokens
-                </span>
+                <BlockUI
+                    blocked={props.state.buySellPeriodDays > 0}
+                    className="flex w-full"
+                >
+                    <span className="inplace-static-text">Every</span>
+                    <InPlaceElement
+                        id="valueSellPeriodDays"
+                        active={false}
+                        display={props.state.valueSellPeriodDays}
+                        type="number"
+                        element="input"
+                        handleChange={props.handleChange}
+                        state={props.state}
+                    />
+                    <span className="inplace-static-text">days sells</span>
+                    <InPlaceElement
+                        id="valueSellAmount"
+                        active={false}
+                        display={props.state.valueSellAmount}
+                        type="number"
+                        element="input"
+                        handleChange={props.handleChange}
+                        state={props.state}
+                    />
+                    <span className="inplace-static-text">
+                        USDC value of their own quest tokens
+                    </span>
+                </BlockUI>
             </div>
             <hr className="dashed-divider" />
             <div className="flex column">
-                <span className="inplace-static-text">Smart route depth:</span>
-                <InPlaceElement
-                    id="smartRouteDepth"
-                    active={false}
-                    display={props.state.smartRouteDepth}
-                    type="number"
-                    element="input"
-                    handleChange={props.handleChange}
-                    state={props.state}
-                />
+                <BlockUI
+                    blocked={props.state.buySellPeriodDays <= 0}
+                    className="flex w-full"
+                >
+                    <span className="inplace-static-text">
+                        Smart route hops:
+                    </span>
+                    <InPlaceElement
+                        id="smartRouteDepth"
+                        active={true}
+                        display={props.state.smartRouteDepth}
+                        element="dropdown"
+                        options={hopsDropdown}
+                        handleChange={props.handleChange}
+                        state={props.state}
+                    />
+                </BlockUI>
             </div>
         </div>
     )

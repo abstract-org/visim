@@ -4,6 +4,7 @@ import { Dropdown } from 'primereact/dropdown'
 import { InputNumber } from 'primereact/inputnumber'
 import { Messages } from 'primereact/messages'
 import { MultiStateCheckbox } from 'primereact/multistatecheckbox'
+import { Tooltip } from 'primereact/tooltip'
 import React, { useRef, useState } from 'react'
 
 import globalState from '../GlobalState'
@@ -12,7 +13,7 @@ import useLogsStore from '../Logs/logs.store'
 import { QuestSelector } from '../Quest/Quest.components'
 import useQuestStore from '../Quest/quest.store'
 import Router from '../Router/Router.class'
-import { formSwapData, getCombinedSwaps, p2pp, pp2p } from '../Utils/logicUtils'
+import { formSwapData, getCombinedSwaps } from '../Utils/logicUtils'
 import { appendIfNotExist } from '../Utils/uiUtils'
 import globalConfig from '../config.global.json'
 import usePoolStore from './pool.store'
@@ -155,10 +156,7 @@ export const SwapModule = () => {
     const addSwap = usePoolStore((state) => state.addSwap)
     const addLogObj = useLogsStore((state) => state.addLogObj)
     const swapMode = usePoolStore((state) => state.swapMode)
-    const router = new Router(
-        globalState.quests.values(),
-        globalState.pools.values()
-    )
+    const router = new Router(globalState.quests, globalState.pools)
 
     const investor = activeInvestor && globalState.investors.get(activeInvestor)
     const pool = activePool && globalState.pools.get(activePool)
@@ -430,17 +428,41 @@ export const PoolPositions = (props) => {
         return (
             <Chip
                 key={idx}
-                label={`[${pool.tokenLeft}: ${pos.amt0}] ${pos.pmin.toFixed(
-                    2
-                )}-${pos.pmax.toFixed(2)} [${pool.tokenRight}: ${pos.amt1}]`}
+                label={`[${pool.tokenLeft}: ${pos.amt0.toFixed(
+                    globalConfig.USDC_DECIMAL_POINTS
+                )}] ${pos.pmin.toFixed(2)}-${pos.pmax.toFixed(2)} [${
+                    pool.tokenRight
+                }: ${pos.amt1.toFixed(globalConfig.USDC_DECIMAL_POINTS)}]`}
                 icon={`${
                     pos.type === 'investor' ? 'pi-user' : 'pi-bitcoin'
-                } pi`}
+                } pi pi-position-icon`}
                 className={`${
                     pos.type === 'investor'
                         ? 'investor-position'
                         : 'token-position'
-                } mr-2 mb-2`}
+                } mr-1 mb-1`}
+                template={(props) => (
+                    <div className={props.className}>
+                        <Tooltip target=".pi-position-icon" />
+                        <i
+                            className={props.icon}
+                            data-pr-tooltip={
+                                !pool.isQuest()
+                                    ? globalState.investors.get(pos.hash).name
+                                    : ''
+                            }
+                            data-pr-position="top"
+                            data-pr-at="bottom bottom+30"
+                            data-pr-my="left center-2"
+                            style={{
+                                fontSize: '1rem',
+                                cursor: 'pointer',
+                                margin: '0.4rem'
+                            }}
+                        ></i>
+                        <span>{props.label}</span>
+                    </div>
+                )}
             />
         )
     })

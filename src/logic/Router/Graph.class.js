@@ -1,6 +1,6 @@
 export class Graph {
-    constructor() {
-        this.limitPathSize = 4
+    constructor(depthSize = 4) {
+        this.limitPathSize = depthSize
         this.vertices = 0
         this.adjList = new Map()
         this.paths = []
@@ -47,7 +47,7 @@ export class Graph {
         for (let i = 0; i < this.adjList.get(tokenA).length; i++) {
             if (
                 !isVisited[this.adjList.get(tokenA)[i]] &&
-                localPathList.length < this.limitPathSize
+                localPathList.length <= this.limitPathSize
             ) {
                 // store current node
                 // in path[]

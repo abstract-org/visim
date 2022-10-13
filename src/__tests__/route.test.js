@@ -50,10 +50,7 @@ describe('Graph', () => {
         globalState.quests.set(questA.name, questA)
         globalState.pools.set(poolA.name, poolA)
 
-        const router = new Router(
-            globalState.quests.values(),
-            globalState.pools.values()
-        )
+        const router = new Router(globalState.quests, globalState.pools)
 
         const poolsList = router.findPoolsFor('TEST_1')
         const graph = router.graphPools(poolsList)
@@ -121,10 +118,7 @@ describe('Routing', () => {
         globalState.quests.set('USDC', new UsdcToken())
         globalState.pools.set(poolA.name, poolA)
 
-        const router = new Router(
-            globalState.quests.values(),
-            globalState.pools.values()
-        )
+        const router = new Router(globalState.quests, globalState.pools)
         const results1 = router.smartSwap('USDC', 'TEST_1', 5000)
 
         expect(poolA.currentPrice).toBeCloseTo(poolTest.currentPrice)
@@ -142,10 +136,7 @@ describe('Routing', () => {
         globalState.pools.set(poolA.name, poolA)
         globalState.quests.set('USDC', new UsdcToken())
 
-        const router = new Router(
-            globalState.quests.values(),
-            globalState.pools.values()
-        )
+        const router = new Router(globalState.quests, globalState.pools)
         const results1 = router.smartSwap('USDC', 'TEST_1', 2500000)
         // [ -2500000.000001435, 16380.246286907708 ] - 10: 18.6s
         // [ -2500000.0000000363, 16380.246286902951 ] - 100: 0.74s
@@ -164,10 +155,7 @@ describe('Routing', () => {
         globalState.pools.set(poolA.name, poolA)
         globalState.quests.set('USDC', new UsdcToken())
 
-        const router = new Router(
-            globalState.quests.values(),
-            globalState.pools.values()
-        )
+        const router = new Router(globalState.quests, globalState.pools)
         const results1 = router.smartSwap('USDC', 'TEST_1', 153)
 
         expect(results1[0]).toBeCloseTo(-153)
@@ -183,10 +171,7 @@ describe('Routing', () => {
         globalState.pools.set(poolA.name, poolA)
         globalState.quests.set('USDC', new UsdcToken())
 
-        const router = new Router(
-            globalState.quests.values(),
-            globalState.pools.values()
-        )
+        const router = new Router(globalState.quests, globalState.pools)
         const results1 = router.smartSwap('USDC', 'TEST_1', 98)
 
         expect(results1[0]).toBeCloseTo(-98)
@@ -227,10 +212,7 @@ describe('Routing', () => {
         creator.citeQuest(BC, pr.min, pr.max, 0, 10000, pr.native)
 
         // Different chunk should yield the same results
-        const router = new Router(
-            globalState.quests.values(),
-            globalState.pools.values()
-        )
+        const router = new Router(globalState.quests, globalState.pools)
         const results1 = router.smartSwap('USDC', 'TEST_2', 2500000)
 
         expect(results1[0]).toBeCloseTo(-2500000)
@@ -266,10 +248,7 @@ describe('Routing', () => {
         pools.DE.buy(77) // Buy E by selling D
         pools.EB.buy(44) /// Buy B by selling E
 
-        const router = new Router(
-            globalState.quests.values(),
-            globalState.pools.values()
-        )
+        const router = new Router(globalState.quests, globalState.pools)
         const res1 = router.smartSwap('USDC', 'AGORA_D', 25000)
 
         expect(res1[0]).toBeCloseTo(-25000)
@@ -295,11 +274,8 @@ describe('Routing', () => {
         pools.poolD.buy(1000) // Buy Token D
         pools.poolE.buy(1000) // Buy Token E
 
-        const router = new Router(
-            globalState.quests.values(),
-            globalState.pools.values()
-        )
-        const res1 = router.smartSwap('USDC', 'AGORA_D', 25000)
+        const router = new Router(globalState.quests, globalState.pools)
+        const res1 = router.smartSwap('USDC', 'AGORA_D', 25000, 2)
 
         expect(res1[0]).toBeCloseTo(-25000)
         expect(res1[1]).toBeCloseTo(4018, 0) // was: 4012.552, 4017.970
@@ -324,10 +300,7 @@ describe('Routing', () => {
         pools.poolD.buy(1000) // Buy Token D
         pools.poolE.buy(1000) // Buy Token E
 
-        const router = new Router(
-            globalState.quests.values(),
-            globalState.pools.values()
-        )
+        const router = new Router(globalState.quests, globalState.pools)
         const res1 = router.smartSwap('USDC', 'AGORA_D', 5)
 
         expect(res1[0]).toBeCloseTo(-5)
@@ -359,10 +332,7 @@ describe('Routing', () => {
         creator.citeQuest(AB, priceMin, priceMax, 0, citeAmount)
         globalState.pools.set(AB.name, AB)
 
-        const router = new Router(
-            globalState.quests.values(),
-            globalState.pools.values()
-        )
+        const router = new Router(globalState.quests, globalState.pools)
         const res1 = router.smartSwap('USDC', 'TEST_1', 555)
         const res2 = router.smartSwap('TEST_1', 'USDC', 50)
         const res3 = router.smartSwap('TEST_1', 'USDC', 50)
@@ -405,10 +375,7 @@ describe('Routing', () => {
         globalState.pools.set(AB.name, AB)
         AB.buy(25)
 
-        const router = new Router(
-            globalState.quests.values(),
-            globalState.pools.values()
-        )
+        const router = new Router(globalState.quests, globalState.pools)
         const results = router.smartSwap('USDC', 'TEST_1', amount)
 
         expect(results[0]).toBeCloseTo(-100)
@@ -443,10 +410,7 @@ describe('Routing', () => {
         globalState.pools.set(AB.name, AB)
         AB.buy(25)
 
-        const router = new Router(
-            globalState.quests.values(),
-            globalState.pools.values()
-        )
+        const router = new Router(globalState.quests, globalState.pools)
         const results = router.smartSwap('USDC', 'TEST_2', amount)
 
         expect(results[0]).toBeCloseTo(-100)
@@ -482,10 +446,7 @@ describe('Routing', () => {
         )
         globalState.pools.set(AB.name, AB)
 
-        const router = new Router(
-            globalState.quests.values(),
-            globalState.pools.values()
-        )
+        const router = new Router(globalState.quests, globalState.pools)
         const res3 = router.smartSwap('USDC', 'TEST', 2000)
 
         expect(res3[0]).toBeCloseTo(-2000)
@@ -514,10 +475,7 @@ describe('Routing', () => {
         creator.citeQuest(AB, priceRange.min, priceRange.max, 0, 1005)
         globalState.pools.set(AB.name, AB)
 
-        const router = new Router(
-            globalState.quests.values(),
-            globalState.pools.values()
-        )
+        const router = new Router(globalState.quests, globalState.pools)
         const res1 = router.smartSwap('USDC', 'TEST', 250, 10, true)
         expect(res1[0]).toBeCloseTo(-250)
         expect(res1[1]).toBeCloseTo(61.59, 0) // 116

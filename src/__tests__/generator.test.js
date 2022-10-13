@@ -2,6 +2,7 @@ import HashMap from 'hashmap'
 
 import Generator from '../logic/Generators/Generator.class'
 import { invGen, questGen } from '../logic/Generators/initialState'
+import tradeTopGainers from '../logic/Generators/threads/master'
 import Investor from '../logic/Investor/Investor.class'
 
 let globalState = {
@@ -24,56 +25,35 @@ afterEach(() => {
     }
 })
 
-test.skip('Generates investors', async () => {
+it('Generates investors', async () => {
     const invAuthor = {
         ...invGen,
         invGenAlias: 'AUTHOR',
         invGenName: 'Researchers',
         createQuest: 'AGRA',
-        valueSellEveryDays: 7
-    }
-    const inv2Author = {
-        ...invGen,
-        invGenAlias: 'RESEARCHER',
-        invGenName: 'Authors',
-        createQuest: 'QTEST',
-        valueSellEveryDays: 10,
-        excludeSingleName: 'AGORA'
+        valueSellEveryDays: 0,
+        keepCreatingPeriodDays: 1,
+        keepCreatingQuests: 'AGRA'
     }
     const invInvestor = {
         ...invGen,
         invGenAlias: 'TWODAY',
         invGenName: 'Twodays',
         buySellPeriodDays: 2,
-        buyGainerPerc: 30,
-        buyQuestPerc: 100,
-        initialBalance: 20000,
-        sellIncSumPerc: 10,
-        sellDecSumPerc: 20,
-        excludeSingleName: 'AGORA'
+        buyGainersFrequency: 4,
+        swapIncDir: 'buy'
     }
-    const invInvestorWeekly = {
+    const invInvestor2 = {
         ...invGen,
-        buySellPeriodDays: 5,
-        buyQuestPerc: 80,
-        buyGainerPerc: 45,
-        invGenAlias: 'WEEKLY',
-        invGenName: 'Weeklies',
-        initialBalance: 50000,
-        sellIncSumPerc: 5,
-        sellDecSumPerc: 30,
-        includeSingleName: 'AGORA',
-        buySinglePerc: 10
+        invGenAlias: 'THREEDAY',
+        invGenName: 'Threedays',
+        buySellPeriodDays: 2,
+        buyGainersFrequency: 4
     }
     const queAuthor = {
         ...questGen,
-        questGenAlias: 'QTEST',
-        questGenName: 'Cookie'
-    }
-    const que2Author = {
-        ...questGen,
         questGenAlias: 'AGRA',
-        questGenName: 'Agorka'
+        questGenName: 'Cookie'
     }
 
     const creator = Investor.create('creator', 'creator', 10000)
@@ -83,25 +63,32 @@ test.skip('Generates investors', async () => {
     globalState.pools.set(fndPool.name, fndPool)
 
     const genManager = new Generator(
-        [invAuthor, inv2Author, invInvestor, invInvestorWeekly],
-        [queAuthor, que2Author],
-        globalState.pools.values(),
-        globalState.quests.values()
+        [invAuthor, invInvestor, invInvestor2],
+        [queAuthor],
+        globalState.pools,
+        globalState.quests
     )
 
     let dayPerf = []
 
-    const genDays = 5
+    const genDays = 4
     for (let day = 1; day <= genDays; day++) {
+        console.log(`Simulating day ${day}`)
         const d0 = performance.now()
         await genManager.step(day)
         const d1 = performance.now()
+        console.log(`Day ${day} simulated, took`)
+        //console.log(genManager.getOpsTime())
+        const totalTradingTime = Object.entries(genManager.getOpsTime())
+            .map((p) => p[1].time)
+            .reduce((p, a) => p + a, 0)
 
         const daySec = d1 - d0 >= 1000 ? true : false
         dayPerf.push({
             day,
             ms: !daySec ? `${(d1 - d0).toFixed(2)}ms` : null,
-            sec: daySec ? `${((d1 - d0) / 1000).toFixed(2)}sec` : null
+            sec: daySec ? `${((d1 - d0) / 1000).toFixed(2)}sec` : null,
+            nonTrade: `${((d1 - d0 + totalTradingTime) / 1000).toFixed(2)}sec`
         })
     }
 
@@ -121,3 +108,5 @@ it('Generates pools', () => {})
 it('Generates cross pools', () => {})
 
 it('Generates cites quests', () => {})
+
+fit('Runs trading in parallel workers', async () => {})
