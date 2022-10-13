@@ -6,7 +6,8 @@ import { overrideState } from '../Utils/logicUtils'
 const INITIAL_STATE = {
     invConfigs: [],
     questConfigs: [],
-    scenarioId: 0
+    scenarioId: 0,
+    needScrollUp: false
 }
 
 const devToolsOptions = { name: 'GeneratorStore' }
@@ -72,6 +73,8 @@ const useGeneratorStore = create(
                     )
                 })),
             resetQuestConfigs: () => set(() => ({ questConfigs: [] })),
+            setNeedScrollUp: (needScrollUp) =>
+                set(() => ({ needScrollUp }), false, 'setNeedScrollUp'),
             override: (newData) =>
                 set(() => overrideState(get(), newData, INITIAL_STATE))
         }),
