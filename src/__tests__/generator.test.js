@@ -2,7 +2,6 @@ import HashMap from 'hashmap'
 
 import Generator from '../logic/Generators/Generator.class'
 import { invGen, questGen } from '../logic/Generators/initialState'
-import tradeTopGainers from '../logic/Generators/threads/master'
 import Investor from '../logic/Investor/Investor.class'
 
 let globalState = {
@@ -62,33 +61,35 @@ it('Generates investors', async () => {
     globalState.quests.set(fndQuest.name, fndQuest)
     globalState.pools.set(fndPool.name, fndPool)
 
+    const performanceTest = false
     const genManager = new Generator(
         [invAuthor, invInvestor, invInvestor2],
         [queAuthor],
         globalState.pools,
-        globalState.quests
+        globalState.quests,
+        performanceTest
     )
 
     let dayPerf = []
 
-    const genDays = 4
+    const genDays = 30
     for (let day = 1; day <= genDays; day++) {
         console.log(`Simulating day ${day}`)
         const d0 = performance.now()
         await genManager.step(day)
         const d1 = performance.now()
         console.log(`Day ${day} simulated, took`)
-        //console.log(genManager.getOpsTime())
-        const totalTradingTime = Object.entries(genManager.getOpsTime())
-            .map((p) => p[1].time)
-            .reduce((p, a) => p + a, 0)
+
+        if (performanceTest) console.log(genManager.getOpsTime())
+        // const totalTradingTime = Object.entries(genManager.getOpsTime())
+        //     .map((p) => p[1].time)
+        //     .reduce((p, a) => p + a, 0)
 
         const daySec = d1 - d0 >= 1000 ? true : false
         dayPerf.push({
             day,
             ms: !daySec ? `${(d1 - d0).toFixed(2)}ms` : null,
-            sec: daySec ? `${((d1 - d0) / 1000).toFixed(2)}sec` : null,
-            nonTrade: `${((d1 - d0 + totalTradingTime) / 1000).toFixed(2)}sec`
+            sec: daySec ? `${((d1 - d0) / 1000).toFixed(2)}sec` : null
         })
     }
 
@@ -109,4 +110,4 @@ it('Generates cross pools', () => {})
 
 it('Generates cites quests', () => {})
 
-fit('Runs trading in parallel workers', async () => {})
+it('Runs trading in parallel workers', async () => {})

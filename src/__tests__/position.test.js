@@ -444,7 +444,7 @@ describe('Citation Manager', () => {
 
         expect(AB.volumeToken0).toBe(1000)
         expect(AB.volumeToken1).toBe(1000)
-        expect(AB.currentPrice).toBe(1)
+        expect(AB.curPrice).toBe(1)
         expect(AB.pos.get(-1).liquidity).toBeCloseTo(3414, 0)
         expect(AB.pos.get(0).liquidity).toBeCloseTo(0, 0)
         expect(AB.pos.get(1).liquidity).toBeCloseTo(-3414, 0)
@@ -497,7 +497,7 @@ describe('Citation Manager', () => {
 
         expect(AB.volumeToken0).toBe(1000)
         expect(AB.volumeToken1).toBe(1000)
-        expect(AB.currentPrice).toBeCloseTo(10000)
+        expect(AB.curPrice).toBeCloseTo(10000)
         expect(AB.pos.get(p2pp(10000)).liquidity).toBeCloseTo(341387, 0)
         expect(AB.pos.get(p2pp(5000)).liquidity).toBeCloseTo(34, 0)
         expect(AB.pos.get(p2pp(20000)).liquidity).toBeCloseTo(-341421, 0)
@@ -550,7 +550,7 @@ describe('Citation Manager', () => {
 
         expect(AB.volumeToken0).toBe(1000)
         expect(AB.volumeToken1).toBe(1000)
-        expect(AB.currentPrice).toBeCloseTo(0.0002)
+        expect(AB.curPrice).toBeCloseTo(0.0002)
         expect(AB.pos.get(p2pp(0.0001)).liquidity).toBeCloseTo(-141387, 0)
         expect(AB.pos.get(p2pp(0.0002)).liquidity).toBeCloseTo(-34, 0)
         expect(AB.pos.get(p2pp(0.00005)).liquidity).toBeCloseTo(141421, 0)
@@ -604,7 +604,7 @@ describe('Citation Manager', () => {
 
         expect(AB.volumeToken0).toBe(1000)
         expect(AB.volumeToken1).toBe(1000)
-        expect(AB.currentPrice).toBeCloseTo(3.69, 0)
+        expect(AB.curPrice).toBeCloseTo(3.69, 0)
         expect(AB.pos.get(p2pp(3.6865236241563073)).liquidity).toBeCloseTo(
             4777,
             0

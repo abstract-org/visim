@@ -9,31 +9,31 @@ it('Does micro price buy properly within the same liquidity', () => {
     investor.addBalance(tokenLeft.name, totalAmountIn)
     investor.addBalance(tokenRight.name, totalAmountOut)
 
-    expect(pool.currentLiquidity).toBeCloseTo(5050.505)
+    expect(pool.curLiq).toBeCloseTo(5050.505)
     expect(pool.totalSold).toBeCloseTo(0.000001)
-    expect(pool.currentPrice).toBeCloseTo(1)
+    expect(pool.curPrice).toBeCloseTo(1)
 })
 
 it('Does mini price buy properly within the same liquidity', () => {
     const { pool, investor, tokenLeft, tokenRight } = preparePool()
     const [totalAmountIn, totalAmountOut] = pool.buy(1)
 
-    expect(pool.currentLiquidity).toBeCloseTo(5050.505)
+    expect(pool.curLiq).toBeCloseTo(5050.505)
     expect(pool.totalSold).toBeCloseTo(1)
-    expect(pool.currentPrice).toBeCloseTo(1)
+    expect(pool.curPrice).toBeCloseTo(1)
 })
 
 it('Does mini price buy properly while jumping liquidity', () => {
     const { pool, investor } = preparePool(100000)
     pool.buy(10920)
 
-    expect(pool.currentLiquidity).toBeCloseTo(5050.505)
+    expect(pool.curLiq).toBeCloseTo(5050.505)
     expect(pool.totalSold).toBeCloseTo(3453.335)
-    expect(pool.currentPrice).toBeCloseTo(9.999)
+    expect(pool.curPrice).toBeCloseTo(9.999)
 
     pool.buy(1)
-    expect(pool.currentLiquidity).toBeCloseTo(21378.221)
-    expect(pool.currentPrice).toBeCloseTo(10)
+    expect(pool.curLiq).toBeCloseTo(21378.221)
+    expect(pool.curPrice).toBeCloseTo(10)
 })
 
 it('Tries to buy over limit', () => {
@@ -43,9 +43,9 @@ it('Tries to buy over limit', () => {
 
     expect(totalIn).toBe(0)
     expect(totalOut).toBe(0)
-    expect(pool.currentLiquidity).toBe(0)
+    expect(pool.curLiq).toBe(0)
     expect(pool.totalSold).toBe(20000)
-    expect(pool.currentPrice).toBeCloseTo(999999.999)
+    expect(pool.curPrice).toBeCloseTo(999999.999)
 })
 
 it('Does micro price sell properly within the same liquidity', () => {
@@ -54,9 +54,9 @@ it('Does micro price sell properly within the same liquidity', () => {
     const [totalAmountIn, totalAmountOut] = pool.sell(1)
 
     // console.log(pool, totalAmountIn, totalAmountOut)
-    expect(pool.currentLiquidity).toBeCloseTo(5050.505)
+    expect(pool.curLiq).toBeCloseTo(5050.505)
     expect(pool.totalSold).toBeCloseTo(1)
-    expect(pool.currentPrice).toBeCloseTo(1)
+    expect(pool.curPrice).toBeCloseTo(1)
     expect(totalAmountIn).toBeCloseTo(-1)
     expect(totalAmountOut).toBeCloseTo(1)
 })
@@ -81,19 +81,19 @@ it('Dry sell all', () => {
 it('Does micro price sell properly while jumping liquidity', () => {
     const { pool, investor } = preparePool(100000)
     pool.buy(10920)
-    expect(pool.currentPrice).toBeCloseTo(9.999)
+    expect(pool.curPrice).toBeCloseTo(9.999)
 
     pool.buy(1)
-    expect(pool.currentPrice).toBeCloseTo(10)
+    expect(pool.curPrice).toBeCloseTo(10)
 
-    expect(pool.currentLiquidity).toBeCloseTo(21378.221)
+    expect(pool.curLiq).toBeCloseTo(21378.221)
     expect(pool.totalSold).toBeCloseTo(3453.435)
-    expect(pool.currentPrice).toBeCloseTo(10)
+    expect(pool.curPrice).toBeCloseTo(10)
 
     pool.sell(1)
-    expect(pool.currentLiquidity).toBeCloseTo(5050.505)
+    expect(pool.curLiq).toBeCloseTo(5050.505)
     expect(pool.totalSold).toBeCloseTo(3452.435)
-    expect(pool.currentPrice).toBeCloseTo(9.987)
+    expect(pool.curPrice).toBeCloseTo(9.987)
 })
 
 it('Tries to sell over limit', () => {
@@ -115,7 +115,7 @@ it('Tries to sell over limit', () => {
     const [a3in, a3out] = pool.sell(10)
     expect(a3out).toBe(0)
     expect(a3in).toBe(0)
-    expect(pool.currentRight).toBe(0)
+    expect(pool.curRight).toBe(0)
 
     const [a4in, a4out] = pool.buy(300)
     expect(a4in).toBeCloseTo(-300)
@@ -161,19 +161,19 @@ it('Tries to sell over limit', () => {
     expect(a14in).toBeCloseTo(-19999)
     expect(a14out).toBeCloseTo(12687737.999)
 
-    expect(pool.currentLiquidity).toBeCloseTo(5050.505)
+    expect(pool.curLiq).toBeCloseTo(5050.505)
     expect(pool.totalSold).toBeCloseTo(0.999)
-    expect(pool.currentPrice).toBeCloseTo(1.0)
+    expect(pool.curPrice).toBeCloseTo(1.0)
 })
 
 it('swaps USDC for RP1 and updates current price', () => {
     const { pool, investor, tokenLeft, tokenRight } = preparePool()
 
     pool.buy(5000)
-    expect(pool.currentPrice).toBeCloseTo(3.96)
+    expect(pool.curPrice).toBeCloseTo(3.96)
 
     pool.buy(10000)
-    expect(pool.currentPrice).toBeCloseTo(11.243)
+    expect(pool.curPrice).toBeCloseTo(11.243)
 })
 
 it('Buys until runs out of USDC', () => {
@@ -230,9 +230,9 @@ it('Buy all the way to the right', () => {
 
     pool.buy(10000000000000000)
 
-    expect(pool.currentPrice).toBeLessThanOrEqual(globalConfig.PRICE_MAX)
+    expect(pool.curPrice).toBeLessThanOrEqual(globalConfig.PRICE_MAX)
     expect(pool.totalSold).toBe(20000)
-    expect(pool.currentLiquidity).toBe(0)
+    expect(pool.curLiq).toBe(0)
 })
 
 it('Sell all the way to the left', () => {
@@ -251,14 +251,14 @@ it('Swaps RP1 for USDC and updates current price', () => {
     investor.addBalance(tokenLeft.name, totalAmountIn)
     investor.addBalance(tokenRight.name, totalAmountOut)
 
-    expect(pool.currentPrice).toBeCloseTo(3.9601)
+    expect(pool.curPrice).toBeCloseTo(3.9601)
 
     let [totalAmountIn2, totalAmountOut2] = pool.sell(2513)
     investor.addBalance(tokenLeft.name, totalAmountOut2)
     investor.addBalance(tokenRight.name, totalAmountIn2)
 
     expect(investor.balances[pool.tokenLeft]).toBe(10000)
-    expect(pool.currentPrice).toBe(1)
+    expect(pool.curPrice).toBe(1)
 })
 
 it('buys with a price limit up to X within the same liquidity', () => {
@@ -267,7 +267,7 @@ it('buys with a price limit up to X within the same liquidity', () => {
     let [totalAmountIn, totalAmountOut] = pool.buy(10000, 5)
     expect(totalAmountIn).toBeCloseTo(-6242.767)
     expect(totalAmountOut).toBeCloseTo(2791.85)
-    expect(pool.currentPrice).toBeCloseTo(5)
+    expect(pool.curPrice).toBeCloseTo(5)
 })
 
 it('buys with a price limit up to X by jumping through liquidity', () => {
@@ -276,7 +276,7 @@ it('buys with a price limit up to X by jumping through liquidity', () => {
     let [totalAmountIn, totalAmountOut] = pool.buy(20000, 11)
     expect(totalAmountIn).toBeCloseTo(-14220.261)
     expect(totalAmountOut).toBeCloseTo(3768.006)
-    expect(pool.currentPrice).toBeCloseTo(11)
+    expect(pool.curPrice).toBeCloseTo(11)
 })
 
 it('sells with a price limit down to X', () => {
@@ -288,7 +288,7 @@ it('sells with a price limit down to X', () => {
     let [totalAmountIn, totalAmountOut] = pool.sell(5000, 11)
     expect(totalAmountOut).toBeCloseTo(35779.738)
     expect(totalAmountIn).toBeCloseTo(-2161.802)
-    expect(pool.currentPrice).toBeCloseTo(11)
+    expect(pool.curPrice).toBeCloseTo(11)
 })
 
 it('sells with a price limit down to X by jumping through liquidity', () => {
@@ -300,7 +300,7 @@ it('sells with a price limit down to X by jumping through liquidity', () => {
     let [totalAmountIn, totalAmountOut] = pool.sell(5500, 5)
     expect(totalAmountOut).toBeCloseTo(43757.232)
     expect(totalAmountIn).toBeCloseTo(-3137.958)
-    expect(pool.currentPrice).toBeCloseTo(5)
+    expect(pool.curPrice).toBeCloseTo(5)
 })
 
 it('Calculates reserves properly by swapping in different directions in both USDC and cross pools', () => {
@@ -325,14 +325,14 @@ it('Calculates reserves properly by swapping in different directions in both USD
     pool4.buy(100000000000000)
     pool4.sell(10000)
 
-    const startingPrice1 = pool.currentPrice / pool2.curentPrice
+    const startingPrice1 = pool.curPrice / pool2.curentPrice
     const BA = investor.createPool(quest2, quest, startingPrice1)
     const priceRange1 = investor.calculatePriceRange(BA, pool2, pool)
     investor.citeQuest(BA, priceRange1.min, priceRange1.max, 0, 1000)
     quest.addPool(BA)
     quest2.addPool(BA)
 
-    const startingPrice2 = pool.currentPrice / pool3.currentPrice
+    const startingPrice2 = pool.curPrice / pool3.curPrice
     const CA = investor.createPool(quest3, quest, startingPrice2)
     const priceRange2 = investor.calculatePriceRange(CA, pool, pool3)
     investor.citeQuest(CA, priceRange2.min, priceRange2.max, 1000, 0)
@@ -347,19 +347,19 @@ it('Calculates reserves properly by swapping in different directions in both USD
 
     expect(Math.abs(pool.volumeToken1)).toBe(0)
     expect(Math.abs(pool.volumeToken0)).toBeCloseTo(12687740.547)
-    expect(pool.currentLiquidity).toBeCloseTo(0)
+    expect(pool.curLiq).toBeCloseTo(0)
 
     expect(Math.abs(pool2.volumeToken0)).toBeCloseTo(0)
     expect(Math.abs(pool2.volumeToken1)).toBe(20000)
-    expect(pool2.currentLiquidity).toBeCloseTo(0)
+    expect(pool2.curLiq).toBeCloseTo(0)
 
     expect(Math.abs(pool3.volumeToken0)).toBeCloseTo(6000000)
     expect(Math.abs(pool3.volumeToken1)).toBeCloseTo(1266, 0)
-    expect(pool3.currentLiquidity).toBeCloseTo(141782, 0)
+    expect(pool3.curLiq).toBeCloseTo(141782, 0)
 
     expect(Math.abs(pool4.volumeToken0)).toBeCloseTo(305512, 0)
     expect(Math.abs(pool4.volumeToken1)).toBeCloseTo(10000, 0)
-    expect(pool4.currentLiquidity).toBeCloseTo(59424, 0)
+    expect(pool4.curLiq).toBeCloseTo(59424, 0)
 
     expect(Math.abs(BA.volumeToken1)).toBe(1000)
     expect(Math.abs(BA.volumeToken0)).toBe(0)

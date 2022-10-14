@@ -50,7 +50,7 @@ export const PoolChartStats = () => {
     const nf = new Intl.NumberFormat('en-US')
     const pool = activePool && globalState.pools.get(activePool)
 
-    const currentPrice = pool && pool.currentPrice
+    const curPrice = pool && pool.curPrice
     const totalValueLocked = activePool && pool.getTVL()
     const marketCap = activePool && nf.format(pool.getMarketCap())
 
@@ -60,7 +60,7 @@ export const PoolChartStats = () => {
                 <p>Current Price:</p>
                 <h2>
                     {(pool &&
-                        pool.currentPrice.toFixed(
+                        pool.curPrice.toFixed(
                             globalConfig.USDC_DECIMAL_POINTS
                         )) ||
                         0}
