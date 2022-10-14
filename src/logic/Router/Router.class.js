@@ -84,12 +84,12 @@ export default class Router {
 
     calculatePairPaths(token0, token1, smartRouteDepth) {
         const poolList = this.findPoolsFor(token0, smartRouteDepth)
-        if (this.#DEBUG) console.log(poolList)
+        if (this.#DEBUG) console.log('pool list', poolList)
         const graph = this.graphPools(poolList, smartRouteDepth)
-        if (this.#DEBUG) console.log(graph)
+        if (this.#DEBUG) console.log('graph', graph)
         const paths = graph.buildPathways(token0, token1)
         this.#_PAIR_PATHS[`${token0}-${token1}`] = paths
-        if (this.#DEBUG) console.log(this.#_PAIR_PATHS)
+        if (this.#DEBUG) console.log('pair paths', this.#_PAIR_PATHS)
 
         return paths
     }
@@ -321,16 +321,16 @@ export default class Router {
                 pool: pool.name,
                 token0: pool.tokenLeft,
                 token1: pool.tokenRight,
-                price: pool.currentPrice,
+                price: pool.curPrice,
                 next: nextPool ? nextPool.name : null,
                 op: zeroForOne ? 'buy' : 'sell',
                 in: Math.abs(sums[0]),
                 out: Math.abs(sums[1]),
-                cLiq: pool.currentLiquidity,
+                cLiq: pool.curLiq,
                 cPricePoint: pool.curPP,
-                cPrice: pool.currentPrice,
-                cLeft: pool.currentLeft,
-                cRight: pool.currentRight
+                cPrice: pool.curPrice,
+                cLeft: pool.curLeft,
+                cRight: pool.curRight
             })
         }
         return { swaps, sums: sumsTotal }

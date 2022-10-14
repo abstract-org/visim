@@ -1,3 +1,9 @@
+import HashMap from 'hashmap'
+
+import Investor from '../logic/Investor/Investor.class'
+import UsdcToken from '../logic/Quest/UsdcToken.class'
+import Router from '../logic/Router/Router.class'
+
 describe('Uniswap Math formulas', () => {
     it('constant product value is maintained when trading', () => {
         const x = 2000
@@ -105,5 +111,116 @@ describe('Uniswap Math formulas', () => {
 
         expect(liquidity0).toBeCloseTo(5050.505)
         expect(liquidity1).toBe(NaN)
+    })
+
+    describe('Liquidity Calculations', () => {
+        const amtNextBuy = (curLiq, sqrtPrice, arrivedSqrtPrice) => {
+            // Amount0 (curLiq * (arrivedSqrtPrice - sqrtPrice)
+            let amt0 = curLiq * (arrivedSqrtPrice - sqrtPrice)
+            // Amount1 (curLiq * (1/arrivedSqrtPrice - 1/sqrtPrice))
+            let amt1 = curLiq * (1 / arrivedSqrtPrice - 1 / sqrtPrice)
+
+            return [amt0, amt1]
+        }
+
+        const amtNextSell = (curLiq, sqrtPrice, arrivedSqrtPrice) => {
+            let amt0 = curLiq * (1 / sqrtPrice - 1 / arrivedSqrtPrice)
+            let amt1 = curLiq * (sqrtPrice - arrivedSqrtPrice)
+
+            return [amt0, amt1]
+        }
+
+        const nextPrice = (sqrtPrice, amt, curLiq) => {
+            return (sqrtPrice += amt / curLiq)
+        }
+
+        const investor = Investor.create('INV', 'INV', 10000)
+        const quest = investor.createQuest('QUEST')
+        const poolA = quest.createPool({
+            tokenLeft: new UsdcToken(),
+            initialPositions: [
+                { priceMin: 1, priceMax: 10000, tokenA: 0, tokenB: 5000 }
+            ]
+        })
+
+        const questB = investor.createQuest('QUEST_B')
+        const poolB = questB.createPool({
+            tokenLeft: new UsdcToken(),
+            initialPositions: [
+                { priceMin: 1, priceMax: 10000, tokenA: 0, tokenB: 5000 }
+            ]
+        })
+
+        poolA.buy(1000)
+        poolB.buy(6000)
+
+        const crossPool = investor.createPool(questB, quest)
+        quest.addPool(crossPool)
+        questB.addPool(crossPool)
+
+        const priceRange = investor.calculatePriceRange(
+            crossPool,
+            poolB,
+            poolA,
+            3
+        )
+        investor.citeQuest(crossPool, priceRange.min, priceRange.max, 0, 2000)
+
+        const pools = new HashMap()
+        const quests = new HashMap()
+
+        pools.set(poolA.name, poolA)
+        pools.set(poolB.name, poolB)
+        pools.set(crossPool.name, crossPool)
+
+        quests.set(quest.name, quest)
+        quests.set(questB.name, questB)
+
+        const router = new Router(quests, pools)
+
+        /**
+         * For amt0 
+            how much amt1 I get
+            with liq X
+            in path A
+         */
+        fit('calculates amount until next price point', () => {
+            const inOut = poolA.dryBuy(1)
+
+            const curLiq = poolA.curLiq
+            const totalLiq = poolA.pos
+                .values()
+                .reduce((prev, po) => prev + po.liquidity, 0)
+
+            const amt = 2500
+            const inOutRate = Math.abs(inOut[1]) / Math.abs(inOut[0])
+            const sqrtPrice = Math.sqrt(1)
+            const arrivedSqrtPrice = nextPrice(sqrtPrice, amt, curLiq)
+
+            //const paths = router.calculatePairPaths(questB.name, quest.name)
+            //console.log(router.drySwapForPricedPaths(paths))
+
+            //console.log(router.smartSwap(questB.name, quest.name, 2500))
+
+            // console.log(
+            //     'liqs',
+            //     curLiq,
+            //     totalLiq,
+            //     'sqrt_prices',
+            //     sqrtPrice,
+            //     arrivedSqrtPrice,
+            //     'new price',
+            //     arrivedSqrtPrice ** 2,
+            //     'in/out',
+            //     inOutRate,
+            //     inOut
+            // )
+
+            console.log(amtNextBuy(curLiq, sqrtPrice, arrivedSqrtPrice))
+            //console.log(amtNextSell(curLiq, sqrtPrice, arrivedSqrtPrice))
+
+            console.log(amtNextBuy(curLiq, sqrtPrice, Math.sqrt(4)))
+            //console.log(amtNextSell(curLiq, sqrtPrice, Math.sqrt(4)))
+        })
     })
 })

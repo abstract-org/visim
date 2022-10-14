@@ -80,7 +80,7 @@ export function InvestorPoolBalance() {
                                     let usdcValue = 0
                                     if (usdcPool) {
                                         usdcValue =
-                                            balance[1] * usdcPool.currentPrice
+                                            balance[1] * usdcPool.curPrice
                                     }
                                     return (
                                         <BalanceBar
@@ -107,9 +107,9 @@ export const NavBalance = (props) => {
         if (
             pool.isQuest() &&
             balances[pool.tokenRight.name] &&
-            pool.currentPrice > 0
+            pool.curPrice > 0
         ) {
-            return acc + pool.currentPrice * balances[pool.tokenRight.name]
+            return acc + pool.curPrice * balances[pool.tokenRight.name]
         }
         return acc + 0
     }, 0)

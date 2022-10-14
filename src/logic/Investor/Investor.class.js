@@ -92,22 +92,22 @@ export default class Investor {
             amountRight,
             Math.sqrt(priceMin),
             Math.sqrt(priceMax),
-            Math.sqrt(pool.currentPrice)
+            Math.sqrt(pool.curPrice)
         )
         pool.modifyPositionSingle(p2pp(priceMin), liquidity)
         pool.modifyPositionSingle(p2pp(priceMax), -liquidity)
 
         this.positions.set(pool.name, pool.pos.values())
 
-        if (pool.currentPrice <= priceMax && pool.currentPrice >= priceMin) {
-            pool.currentLiquidity += liquidity
+        if (pool.curPrice <= priceMax && pool.curPrice >= priceMin) {
+            pool.curLiq += liquidity
         }
 
         const amounts = pool.getAmountsForLiquidity(
             liquidity,
             Math.sqrt(priceMin),
             Math.sqrt(priceMax),
-            Math.sqrt(pool.currentPrice)
+            Math.sqrt(pool.curPrice)
         )
 
         pool.volumeToken0 -= amounts[0]
@@ -191,8 +191,7 @@ export default class Investor {
         let max = 0
         let native = true
 
-        let unitPrice =
-            citingQuestPool.currentPrice / citedQuestPool.currentPrice
+        let unitPrice = citingQuestPool.curPrice / citedQuestPool.curPrice
 
         if (baseUnitName !== baseUnitCompName) {
             min = 1 / unitPrice / multiplier

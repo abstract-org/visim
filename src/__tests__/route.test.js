@@ -121,7 +121,7 @@ describe('Routing', () => {
         const router = new Router(globalState.quests, globalState.pools)
         const results1 = router.smartSwap('USDC', 'TEST_1', 5000)
 
-        expect(poolA.currentPrice).toBeCloseTo(poolTest.currentPrice)
+        expect(poolA.curPrice).toBeCloseTo(poolTest.curPrice)
         expect(results1[1]).toBeCloseTo(allSums[1])
         expect(results1[0]).toBeCloseTo(-5000)
         expect(results1[1]).toBeCloseTo(2512.562)
@@ -499,7 +499,7 @@ describe('Routing', () => {
             res1[1] + res2[1] + res3[1] + res4[1] + res5[1] + res6[1] + res7[1]
         expect(sumIn).toBeCloseTo(-2000)
         expect(sumOut).toBeCloseTo(421, 0) // 619
-        expect(poolA.currentPrice).toBeCloseTo(5.69, 0) // 4.36
-        expect(poolB.currentPrice).toBeCloseTo(1, 0) // 1.69
+        expect(poolA.curPrice).toBeCloseTo(5.69, 0) // 4.36
+        expect(poolB.curPrice).toBeCloseTo(1, 0) // 1.69
     })
 })

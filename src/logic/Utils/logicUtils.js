@@ -17,7 +17,7 @@ export const formSwapData = (
 ) => {
     return {
         pool: pool ? pool.name : '',
-        price: pool ? pool.currentPrice.toFixed(3) : 0,
+        price: pool ? pool.curPrice.toFixed(3) : 0,
         investorHash: investor.hash,
         action: action,
         mcap: pool.isQuest() ? pool.getMarketCap() : '',
