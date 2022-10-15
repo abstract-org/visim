@@ -1,3 +1,5 @@
+import { faker } from '@faker-js/faker'
+import sha256 from 'crypto-js/sha256'
 import HashMap from 'hashmap'
 
 import Investor from '../logic/Investor/Investor.class'
@@ -184,7 +186,7 @@ describe('Uniswap Math formulas', () => {
             with liq X
             in path A
          */
-        fit('calculates amount until next price point', () => {
+        it('calculates amount until next price point', () => {
             const inOut = poolA.dryBuy(1)
 
             const curLiq = poolA.curLiq
@@ -222,5 +224,54 @@ describe('Uniswap Math formulas', () => {
             console.log(amtNextBuy(curLiq, sqrtPrice, Math.sqrt(4)))
             //console.log(amtNextSell(curLiq, sqrtPrice, Math.sqrt(4)))
         })
+    })
+})
+
+describe('Performance of space and time', () => {
+    class TestPool {
+        uuid
+        name
+
+        static create(uuid, name) {
+            const thisPool = new TestPool()
+            thisPool.uuid = uuid
+            thisPool.name = name
+
+            return thisPool
+        }
+    }
+    it('Measures hashmap vs array speed', () => {
+        const map = new HashMap()
+        const arr = []
+
+        const g0 = performance.now()
+        for (let i = 0; i <= 10000; i++) {
+            const name = faker.word.adjective()
+            const hash = sha256(`${name}${faker.lorem.words(3)}`)
+            const pool = TestPool.create(name, hash)
+            map.set(pool.name, pool)
+            arr.push(pool)
+        }
+        const g1 = performance.now()
+
+        console.log((g1 - g0) / 1000)
+
+        const m0 = performance.now()
+        const keys = map.keys()
+        for (let i = 0; i <= keys.length; i++) {
+            map.get(keys[i])
+        }
+        const m1 = performance.now()
+
+        console.log((m1 - m0) / 1000)
+
+        const a0 = performance.now()
+        const entries = Object.entries(arr)
+        for (let i = 0; i <= entries.length; i++) {
+            arr.find((el) => el.name === entries[1].name)
+        }
+        const a1 = performance.now()
+
+        console.log((a1 - a0) / 1000)
     })
 })
