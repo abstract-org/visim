@@ -78,7 +78,6 @@ it('Generates investors', async () => {
         const d0 = performance.now()
         await genManager.step(day)
         const d1 = performance.now()
-        console.log(`Day ${day} simulated, took`)
 
         if (performanceTest) console.log(genManager.getOpsTime())
         // const totalTradingTime = Object.entries(genManager.getOpsTime())
