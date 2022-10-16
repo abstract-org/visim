@@ -3,11 +3,12 @@ import 'primeicons/primeicons.css'
 import { Card } from 'primereact/card'
 import 'primereact/resources/primereact.min.css'
 import 'primereact/resources/themes/lara-light-indigo/theme.css'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { KnowledgeGraphV2 } from './components/KnowledgeGraphV2'
 import { PoolChart } from './components/PoolChart'
 import { GeneratorRunner } from './logic/Generators/Generator.components'
+import useGeneratorStore from './logic/Generators/generator.store'
 import {
     InvestorModule,
     InvestorPoolBalance,
@@ -27,7 +28,16 @@ import { TopMenu } from './logic/TopMenu.component'
 
 export default function Home() {
     const [sidebarVisible, setSidebarVisible] = useState(false)
-    //const setVisibleSidebar = (isVisible) => setSidebarVisible(() => isVisible)
+    const needScrollUp = useGeneratorStore((state) => state.needScrollUp)
+    const setNeedScrollUp = useGeneratorStore((state) => state.setNeedScrollUp)
+    const graphCard = useRef(null)
+
+    useEffect(() => {
+        if (needScrollUp) {
+            graphCard.current.scrollIntoView()
+            setNeedScrollUp(false)
+        }
+    }, [needScrollUp, setNeedScrollUp])
 
     return (
         <div>
@@ -80,7 +90,7 @@ export default function Home() {
                 <div className="col-8 m-0 pt-0">
                     <Card className="h-full">
                         <div className="grid">
-                            <div className="col-12">
+                            <div className="col-12" ref={graphCard}>
                                 <h2>Knowledge Graph</h2>
                                 <KnowledgeGraphStats />
                             </div>
