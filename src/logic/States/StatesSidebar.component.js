@@ -7,6 +7,7 @@ import { InputText } from 'primereact/inputtext'
 import { ProgressSpinner } from 'primereact/progressspinner'
 import { Sidebar } from 'primereact/sidebar'
 import { Toast } from 'primereact/toast'
+import { Tooltip } from 'primereact/tooltip'
 import React, { useEffect, useRef, useState } from 'react'
 
 import { getPresignedUrl } from '../../api/s3'
@@ -44,6 +45,10 @@ export const StatesSidebar = (props) => {
     )
 }
 
+function generateCurrentStateId() {
+    return `@${new Date().toISOString()}`
+}
+
 const StatesTable = (props) => {
     const quests = useQuestStore((state) => state.quests)
     const pools = usePoolStore((state) => state.pools)
@@ -65,11 +70,14 @@ const StatesTable = (props) => {
     const toast = useRef(null)
 
     const saveCurrentState = async () => {
-        const stateId = newStateName || `@${new Date().toISOString()}`
-        setNewStateName(stateId)
-
-        const state = { state: globalState, stateId, scenarioId }
-        const stateDetails = aggregateSnapshotTotals(state)
+        const stateId = generateCurrentStateId()
+        const stateDetails = aggregateSnapshotTotals({
+            stateId,
+            stateName: newStateName,
+            state: globalState,
+            scenarioId
+        })
+        setNewStateName(stateDetails.stateName)
 
         setLoaderData({
             active: true,
@@ -119,8 +127,7 @@ const StatesTable = (props) => {
         const response = await StorageApi.createStateRecord(
             stateId,
             stateDetails,
-            strippedStateLocation,
-            scenarioId
+            strippedStateLocation
         )
 
         if (!response || response.status !== 201) {
@@ -138,6 +145,7 @@ const StatesTable = (props) => {
             detail: response.body
         })
         setLoaderData({ active: false })
+        await handleStatesLoaded()
     }
 
     const updateSnapshots = (snapshotsLoaded) => {
@@ -172,14 +180,14 @@ const StatesTable = (props) => {
     }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
-        const snapshot = {
-            stateId: newStateName || 'snapshotName',
+        const currentStateDetails = aggregateSnapshotTotals({
+            stateName: newStateName,
             scenarioId,
-            state: { ...globalState }
-        }
-
-        setCurrentStateInfo(aggregateSnapshotTotals(snapshot))
-    }, [newStateName, quests, pools, scenarioId])
+            state: globalState
+        })
+        setCurrentStateInfo(currentStateDetails)
+        setNewStateName(currentStateDetails.stateName)
+    }, [quests, pools, scenarioId])
 
     const handleStatesLoaded = async () => {
         const snapshotsLoaded = await StorageApi.getStates()
@@ -216,12 +224,12 @@ const StatesTable = (props) => {
         props.setSidebarVisible(false)
     }
 
-    const textEditor = (options) => {
+    const stateNameEditor = () => {
         return (
             <InputText
                 type="text"
-                value={options.value || ''}
-                onChange={(e) => options.editorCallback(e.target.value)}
+                value={newStateName}
+                onChange={(e) => setNewStateName(e.target.value)}
             />
         )
     }
@@ -237,6 +245,20 @@ const StatesTable = (props) => {
                     onClick={saveCurrentState}
                 />
             </React.Fragment>
+        )
+    }
+
+    const stateNameBody = (rowData) => {
+        return (
+            <div className="state-name-cell" data-pr-tooltip={rowData.stateId}>
+                {rowData.stateName}
+                <Tooltip
+                    target=".state-name-cell"
+                    position="bottom"
+                    mouseTrack
+                    mouseTrackLeft={10}
+                />
+            </div>
         )
     }
 
@@ -264,16 +286,15 @@ const StatesTable = (props) => {
                     className="editable-cells-table"
                     value={[currentStateInfo]}
                     rows={1}
+                    size="small"
                 >
                     <Column
-                        key="stateId"
-                        field="stateId"
+                        key="stateName"
+                        field="stateName"
+                        frozen={true}
                         header="Name"
                         style={{ width: '18rem' }}
-                        editor={(options) => textEditor(options)}
-                        onCellEditComplete={(e) => {
-                            setNewStateName(e.newValue)
-                        }}
+                        body={stateNameEditor}
                     />
                     <Column field="scenarioId" header="Scenario" />
                     <Column field="totalQuests" header="Total Quests" />
@@ -311,10 +332,12 @@ const StatesTable = (props) => {
                     sortMode="multiple"
                     paginator
                     rows={10}
+                    size="small"
                 >
                     <Column
-                        field="stateId"
+                        field="stateName"
                         header="Name"
+                        body={stateNameBody}
                         style={{ width: '18rem' }}
                         sortable
                     />
