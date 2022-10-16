@@ -58,6 +58,7 @@ const StatesTable = (props) => {
     const overridePools = usePoolStore(overrideSelector)
     const overrideGenerators = useGeneratorStore(overrideSelector)
     const overrideInvestors = useInvestorStore(overrideSelector)
+    const setNeedScrollUp = useGeneratorStore((state) => state.setNeedScrollUp)
     const [snapshots, setSnapshots] = useState([])
     const [currentStateInfo, setCurrentStateInfo] = useState({})
     const isMounted = useRef(null)
@@ -221,6 +222,7 @@ const StatesTable = (props) => {
         })
 
         setLoaderData({ active: false })
+        setNeedScrollUp(true)
         props.setSidebarVisible(false)
     }
 

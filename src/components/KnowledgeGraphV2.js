@@ -4,6 +4,7 @@ import {
     SearchControl,
     SigmaContainer,
     ZoomControl,
+    useCamera,
     useLoadGraph,
     useRegisterEvents,
     useSetSettings,
@@ -38,6 +39,7 @@ const Graph = (props) => {
     const [hoveredNode, setHoveredNode] = useState(null)
     const [hoveredEdge, setHoveredEdge] = useState(null)
     const sigma = useSigma()
+    const graphCamera = useCamera({ duration: 0, factor: 1.5 })
 
     useEffect(() => {
         const COLORS = {
@@ -182,6 +184,7 @@ const Graph = (props) => {
         })
 
         loadGraph(graph)
+        graphCamera.reset()
     }, [
         setActivePool,
         registerEvents,
