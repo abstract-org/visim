@@ -72,11 +72,22 @@ export function InvestorPoolBalance() {
                         <div className="flex flex-wrap align-content-between justify-content-start">
                             {Object.entries(investor.balances).map(
                                 (balance, key) => {
+                                    const usdcPool = globalState.pools
+                                        .values()
+                                        .find(
+                                            (p) => p.tokenRight === balance[0]
+                                        )
+                                    let usdcValue = 0
+                                    if (usdcPool) {
+                                        usdcValue =
+                                            balance[1] * usdcPool.curPrice
+                                    }
                                     return (
                                         <BalanceBar
                                             key={balance[0]}
                                             token={balance[0]}
                                             value={balance[1]}
+                                            usdcValue={usdcValue}
                                         />
                                     )
                                 }
@@ -96,9 +107,9 @@ export const NavBalance = (props) => {
         if (
             pool.isQuest() &&
             balances[pool.tokenRight.name] &&
-            pool.currentPrice > 0
+            pool.curPrice > 0
         ) {
-            return acc + pool.currentPrice * balances[pool.tokenRight.name]
+            return acc + pool.curPrice * balances[pool.tokenRight.name]
         }
         return acc + 0
     }, 0)

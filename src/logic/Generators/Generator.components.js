@@ -1,13 +1,10 @@
 import { faker } from '@faker-js/faker'
-import { BlockUI } from 'primereact/blockui'
 import { Button } from 'primereact/button'
 import { Card } from 'primereact/card'
 import { Divider } from 'primereact/divider'
 import { Dropdown } from 'primereact/dropdown'
-import { Inplace, InplaceContent, InplaceDisplay } from 'primereact/inplace'
 import { InputNumber } from 'primereact/inputnumber'
 import { InputText } from 'primereact/inputtext'
-import { Message } from 'primereact/message'
 import { ProgressBar } from 'primereact/progressbar'
 import { Skeleton } from 'primereact/skeleton'
 import { Toast } from 'primereact/toast'
@@ -28,6 +25,8 @@ import {
 } from '../Utils/logicUtils'
 import { appendIfNotExist, capitalize } from '../Utils/uiUtils'
 import Generator from './Generator.class'
+import { InvestorModuleComponent } from './InvestorModuleComponent'
+import { QuestModuleComponent } from './QuestModuleComponent'
 import useGeneratorStore from './generator.store'
 import { dayData, invGen, questGen } from './initialState'
 
@@ -119,6 +118,8 @@ export const GeneratorRunner = () => {
         day: 1,
         ...dayData
     })
+
+    const swap = usePoolStore((state) => state.swap)
 
     const addPool = usePoolStore((state) => state.addPool)
     const addInvestor = useInvestorStore((state) => state.addInvestor)
@@ -235,8 +236,8 @@ export const GeneratorRunner = () => {
         const genManager = new Generator(
             invConfigs,
             questConfigs,
-            globalState.pools.values(),
-            globalState.quests.values()
+            globalState.pools,
+            globalState.quests
         )
 
         // Every day
@@ -282,6 +283,7 @@ export const GeneratorRunner = () => {
                 addLogObj(action)
                 globalState.logStore.logObjs.push(action)
             })
+
             await genManager.sleep(100)
         }
         setPassedDays(passedDays + genDays)
@@ -430,31 +432,8 @@ export const InvestorRandomGenerator = () => {
 }
 
 export const GenCardInvestor = (props) => {
-    const aliasAlert = useRef(null)
     const questConfigs = useGeneratorStore((state) => state.questConfigs)
     const quests = useQuestStore((state) => state.quests)
-
-    const defaultOptions = [
-        {
-            label: 'Select Template',
-            value: ''
-        }
-    ]
-    const questOptions = questConfigs.map((gen) => ({
-        label: `#${gen.questGenName}`,
-        value: gen.questGenAlias
-    }))
-    const dropdownOptions = Array.prototype.concat(defaultOptions, questOptions)
-
-    const defaultOption = [{ label: 'Select Quest', value: '' }]
-    const dropdownQuests = quests.map((quest) => ({
-        label: quest,
-        value: quest
-    }))
-    const dropdownQuestsOptions = Array.prototype.concat(
-        defaultOption,
-        dropdownQuests
-    )
 
     const handleChange = (evt) => {
         const newState = { ...props.state, [evt.target.id]: evt.target.value }
@@ -474,304 +453,13 @@ export const GenCardInvestor = (props) => {
     }
 
     return (
-        <div className="flex flex-column gen-card">
-            <div className="header flex">
-                <div className="flex flex-grow-1">
-                    <span className="inplace-static-text">Investor -</span>
-                    <div className="flex flex-grow-none">
-                        <InPlaceElement
-                            id="invGenName"
-                            active={true}
-                            type="text"
-                            component="input"
-                            handleChange={handleChange}
-                            state={props.state}
-                            style={{ width: '14rem' }}
-                        />
-                    </div>
-                    <div className="flex flex-grow-1 justify-content-end">
-                        <Message
-                            className="alias-alert"
-                            severity="error"
-                            text="Alias is required"
-                            ref={aliasAlert}
-                            style={{ display: 'none' }}
-                        />
-                        <div className="mr-3"></div>
-                        <Button
-                            icon="pi pi-trash"
-                            className="w-2rem h-2rem p-button-danger"
-                            onClick={() =>
-                                handleDelete(props.state.invGenAlias)
-                            }
-                        />
-                    </div>
-                </div>
-            </div>
-            <div className="column flex">
-                <span className="inplace-static-text">
-                    Daily probability to spawn
-                </span>
-                <InPlaceElement
-                    id="dailySpawnProbability"
-                    active={false}
-                    display={`${props.state.dailySpawnProbability}%`}
-                    type="number"
-                    component="input"
-                    handleChange={handleChange}
-                    state={props.state}
-                />
-            </div>
-            <div className="column flex">
-                <span className="inplace-static-text">
-                    USDC Initial Balance
-                </span>
-                <InPlaceElement
-                    id="initialBalance"
-                    active={false}
-                    display={props.state.initialBalance}
-                    type="number"
-                    component="input"
-                    handleChange={handleChange}
-                    state={props.state}
-                />
-            </div>
-            <hr className="dashed-divider" />
-            <div className="column flex">
-                <span className="inplace-static-text">Every</span>
-                <InPlaceElement
-                    id="buySellPeriodDays"
-                    active={false}
-                    display={props.state.buySellPeriodDays}
-                    type="number"
-                    component="input"
-                    handleChange={handleChange}
-                    state={props.state}
-                />
-                <span className="inplace-static-text">days:</span>
-            </div>
-            <div className="column flex">
-                <BlockUI
-                    blocked={props.state.buySellPeriodDays <= 0}
-                    className="flex w-full"
-                >
-                    <span className="inplace-static-text">Buys using</span>
-                    <InPlaceElement
-                        id="buySinglePerc"
-                        active={false}
-                        display={`${props.state.buySinglePerc}%`}
-                        type="number"
-                        component="input"
-                        handleChange={handleChange}
-                        state={props.state}
-                    />
-                    <span className="inplace-static-text">
-                        of their balance in
-                    </span>
-
-                    <InPlaceElement
-                        id="includeSingleName"
-                        active={true}
-                        display={props.state.includeSingleName}
-                        component="dropdown"
-                        options={dropdownQuestsOptions}
-                        handleChange={handleChange}
-                        state={props.state}
-                    />
-                </BlockUI>
-            </div>
-            <div className="column flex mt-2">
-                <BlockUI
-                    blocked={props.state.buySellPeriodDays <= 0}
-                    className="flex w-full"
-                >
-                    <span className="inplace-static-text">Buys using</span>
-                    <InPlaceElement
-                        id="buySumPerc"
-                        active={false}
-                        display={`${props.state.buySumPerc}%`}
-                        type="number"
-                        component="input"
-                        handleChange={handleChange}
-                        state={props.state}
-                    />
-                    <span className="inplace-static-text">
-                        of their balance in
-                    </span>
-
-                    <InPlaceElement
-                        id="buyQuestPerc"
-                        active={false}
-                        display={`${props.state.buyQuestPerc}%`}
-                        type="number"
-                        component="input"
-                        handleChange={handleChange}
-                        state={props.state}
-                    />
-                    <span className="inplace-static-text">
-                        quests that are top
-                    </span>
-
-                    <InPlaceElement
-                        id="buyGainerPerc"
-                        active={false}
-                        display={`${props.state.buyGainerPerc}%`}
-                        type="number"
-                        component="input"
-                        handleChange={handleChange}
-                        state={props.state}
-                    />
-                    <span className="inplace-static-text">
-                        gainers (up to 30 days)
-                    </span>
-                </BlockUI>
-            </div>
-            <div className="column flex">
-                <BlockUI
-                    blocked={props.state.buySellPeriodDays <= 0}
-                    className="flex w-full"
-                >
-                    <span className="inplace-static-text">
-                        Exclude quest from direct investment:
-                    </span>
-                    <InPlaceElement
-                        id="excludeSingleName"
-                        active={true}
-                        display={props.state.excludeSingleName}
-                        component="dropdown"
-                        options={dropdownQuestsOptions}
-                        handleChange={handleChange}
-                        state={props.state}
-                    />
-                </BlockUI>
-            </div>
-            <div className="column flex">
-                <BlockUI
-                    blocked={props.state.buySellPeriodDays <= 0}
-                    className="flex w-full"
-                >
-                    <span className="inplace-static-text">Sell</span>
-                    <InPlaceElement
-                        id="sellIncSumPerc"
-                        active={false}
-                        display={`${props.state.sellIncSumPerc}%`}
-                        type="number"
-                        component="input"
-                        handleChange={handleChange}
-                        state={props.state}
-                    />
-                    <span className="inplace-static-text">
-                        of owned tokens that decreased in price by
-                    </span>
-                    <InPlaceElement
-                        id="sellIncByPerc"
-                        active={false}
-                        display={`${props.state.sellIncByPerc}%`}
-                        type="number"
-                        component="input"
-                        handleChange={handleChange}
-                        state={props.state}
-                    />
-                    <span className="inplace-static-text">(up to 7 days)</span>
-                </BlockUI>
-            </div>
-            <div className="column flex">
-                <BlockUI
-                    blocked={props.state.buySellPeriodDays <= 0}
-                    className="flex w-full"
-                >
-                    <span className="inplace-static-text">Sell</span>
-                    <InPlaceElement
-                        id="sellDecSumPerc"
-                        active={false}
-                        display={`${props.state.sellDecSumPerc}%`}
-                        type="number"
-                        component="input"
-                        handleChange={handleChange}
-                        state={props.state}
-                    />
-                    <span className="inplace-static-text">
-                        of owned tokens that increased in price by
-                    </span>
-                    <InPlaceElement
-                        id="sellDecByPerc"
-                        active={false}
-                        display={`${props.state.sellDecByPerc}%`}
-                        type="number"
-                        component="input"
-                        handleChange={handleChange}
-                        state={props.state}
-                    />
-                    <span className="inplace-static-text">(up to 7 days)</span>
-                </BlockUI>
-            </div>
-
-            <hr className="dashed-divider" />
-
-            <div className="column flex">
-                <span className="inplace-static-text">
-                    On initialization create Quest
-                </span>
-                <InPlaceElement
-                    id="createQuest"
-                    active={true}
-                    display={props.state.createQuest}
-                    component="dropdown"
-                    options={dropdownOptions}
-                    handleChange={handleChange}
-                    state={props.state}
-                />
-            </div>
-            <div className="column flex">
-                <span className="inplace-static-text">Once every</span>
-                <InPlaceElement
-                    id="keepCreatingPeriodDays"
-                    active={false}
-                    display={`${props.state.keepCreatingPeriodDays}`}
-                    type="number"
-                    component="input"
-                    handleChange={handleChange}
-                    state={props.state}
-                />
-                <span className="inplace-static-text">
-                    days, create quest of type
-                </span>
-                <InPlaceElement
-                    id="keepCreatingQuests"
-                    active={true}
-                    display={props.state.keepCreatingQuests}
-                    component="dropdown"
-                    options={dropdownOptions}
-                    handleChange={handleChange}
-                    state={props.state}
-                />
-            </div>
-            <div className="column flex mt-3">
-                <span className="inplace-static-text">Every</span>
-                <InPlaceElement
-                    id="valueSellPeriodDays"
-                    active={false}
-                    display={props.state.valueSellPeriodDays}
-                    type="number"
-                    component="input"
-                    handleChange={handleChange}
-                    state={props.state}
-                />
-                <span className="inplace-static-text">days sells</span>
-                <InPlaceElement
-                    id="valueSellAmount"
-                    active={false}
-                    display={props.state.valueSellAmount}
-                    type="number"
-                    component="input"
-                    handleChange={handleChange}
-                    state={props.state}
-                />
-                <span className="inplace-static-text">
-                    USDC value of their own quest tokens
-                </span>
-            </div>
-        </div>
+        <InvestorModuleComponent
+            state={props.state}
+            handleChange={handleChange}
+            handleDelete={handleDelete}
+            questConfigs={questConfigs}
+            quests={quests}
+        />
     )
 }
 
@@ -823,18 +511,7 @@ export const QuestRandomGenerator = () => {
 }
 
 export const GenCardQuest = (props) => {
-    const aliasAlert = useRef(null)
     const quests = useQuestStore((state) => state.quests)
-
-    const defaultOption = [{ label: 'Select Quest', value: '' }]
-    const dropdownQuests = quests.map((quest) => ({
-        label: quest,
-        value: quest
-    }))
-    const dropdownQuestsOptions = Array.prototype.concat(
-        defaultOption,
-        dropdownQuests
-    )
 
     const handleChange = (evt) => {
         const newState = { ...props.state, [evt.target.id]: evt.target.value }
@@ -854,190 +531,11 @@ export const GenCardQuest = (props) => {
     }
 
     return (
-        <div className="flex flex-column gen-card">
-            <div className="header flex">
-                <span className="inplace-static-text">Quest -</span>
-                <div className="flex flex-grow-none">
-                    <InPlaceElement
-                        id="questGenName"
-                        active={true}
-                        display={props.state.questGenName}
-                        component="input"
-                        type="text"
-                        handleChange={handleChange}
-                        state={props.state}
-                        style={{ width: '14rem' }}
-                    />
-                </div>
-
-                <div className="flex flex-grow-1 justify-content-end">
-                    <Message
-                        className="alias-alert"
-                        severity="error"
-                        text="Alias is required"
-                        ref={aliasAlert}
-                        style={{ display: 'none' }}
-                    />
-                    <div className="mr-3"></div>
-                    <Button
-                        icon="pi pi-trash"
-                        className="w-2rem h-2rem p-button-danger"
-                        onClick={() => handleDelete(props.state.questGenAlias)}
-                    />
-                </div>
-            </div>
-            <div className="column flex">
-                <span className="inplace-static-text">
-                    Initial investment from author
-                </span>
-                <InPlaceElement
-                    id="initialAuthorInvest"
-                    active={false}
-                    display={props.state.initialAuthorInvest}
-                    type="number"
-                    component="input"
-                    handleChange={handleChange}
-                    state={props.state}
-                />
-            </div>
-            <div className="column flex">
-                <span className="inplace-static-text">
-                    Initial numbers of tokens in USDC pool{' '}
-                    {props.state.poolSizeTokens}
-                </span>
-                {/*<InPlaceElement
-                    id="poolSizeTokens"
-                    active={false}
-                    display={props.state.poolSizeTokens}
-                    type="number"
-                    component="input"
-                    handleChange={handleChange}
-                    state={props.state}
-                />*/}
-            </div>
-            <div className="column flex">
-                <span className="inplace-static-text">
-                    Initial token price: 1
-                </span>
-            </div>
-            <div className="column flex">
-                <span className="inplace-static-text">
-                    Initial positions: 1...10000, 20...10000, 50...10000,
-                    200...10000
-                </span>
-            </div>
-            <div className="column flex">
-                <span className="inplace-static-text">Probability to cite</span>
-                <InPlaceElement
-                    id="citeSingleName"
-                    active={true}
-                    display={props.state.citeSingleName}
-                    component="dropdown"
-                    options={dropdownQuestsOptions}
-                    handleChange={handleChange}
-                    state={props.state}
-                />
-                <InPlaceElement
-                    id="probCiteSingle"
-                    active={false}
-                    display={`${props.state.probCiteSingle}%`}
-                    type="number"
-                    component="input"
-                    handleChange={handleChange}
-                    state={props.state}
-                />
-            </div>
-            {props.state.citeSingleName ? (
-                <div className="column flex">
-                    <span className="inplace-static-text">
-                        Portion of tokens used for citing{' '}
-                        {props.state.citeSingleName}
-                    </span>
-                    <InPlaceElement
-                        id="singleCitePerc"
-                        active={false}
-                        display={`${props.state.singleCitePerc}%`}
-                        type="number"
-                        component="input"
-                        handleChange={handleChange}
-                        state={props.state}
-                    />
-                </div>
-            ) : (
-                ''
-            )}
-            <div className="column flex">
-                <span className="inplace-static-text">
-                    Probability to cite other papers
-                </span>
-                <InPlaceElement
-                    id="probOtherCite"
-                    active={false}
-                    display={`${props.state.probOtherCite}%`}
-                    type="number"
-                    component="input"
-                    handleChange={handleChange}
-                    state={props.state}
-                />
-            </div>
-            <div className="column flex">
-                <span className="inplace-static-text">
-                    Portion of tokens used for other citings
-                </span>
-                <InPlaceElement
-                    id="otherCitePerc"
-                    active={false}
-                    display={`${props.state.otherCitePerc}%`}
-                    type="number"
-                    component="input"
-                    handleChange={handleChange}
-                    state={props.state}
-                />
-            </div>
-        </div>
-    )
-}
-
-const InPlaceElement = (props) => {
-    return (
-        <Inplace active={props.active} closable onToggle={props.onToggle}>
-            <InplaceDisplay>{props.display}</InplaceDisplay>
-            <InplaceContent>
-                {props.component === 'input' ? (
-                    <PresetInPlaceInput {...props} />
-                ) : (
-                    <PresetInPlaceDropdown {...props} />
-                )}
-            </InplaceContent>
-        </Inplace>
-    )
-}
-
-const PresetInPlaceInput = (props) => {
-    return (
-        <div className="flex">
-            <InputText
-                id={props.id}
-                value={props.state[props.id]}
-                autoFocus
-                type={props.type || 'text'}
-                className="block p-inputtext-sm"
-                onChange={props.handleChange}
-                style={props.style}
-            />
-        </div>
-    )
-}
-
-const PresetInPlaceDropdown = (props) => {
-    return (
-        <Dropdown
-            id={props.id}
-            value={props.state[props.id]}
-            options={props.options}
-            onChange={props.handleChange}
-            placeholder={props.defaultValue || 'Select Option'}
-            editable={props.editable}
+        <QuestModuleComponent
+            state={props.state}
+            handleChange={handleChange}
+            handleDelete={handleDelete}
+            quests={quests}
         />
     )
 }

@@ -1,9 +1,11 @@
 import { Button } from 'primereact/button'
+import { Chip } from 'primereact/chip'
 import { Dropdown } from 'primereact/dropdown'
 import { InputNumber } from 'primereact/inputnumber'
 import { Messages } from 'primereact/messages'
 import { MultiStateCheckbox } from 'primereact/multistatecheckbox'
-import { useRef, useState } from 'react'
+import { Tooltip } from 'primereact/tooltip'
+import React, { useRef, useState } from 'react'
 
 import globalState from '../GlobalState'
 import useInvestorStore from '../Investor/investor.store'
@@ -47,34 +49,27 @@ export const PoolChartStats = () => {
     const swaps = usePoolStore((state) => state.swaps)
     const nf = new Intl.NumberFormat('en-US')
     const pool = activePool && globalState.pools.get(activePool)
-    let reserves
 
-    const currentPrice = pool && pool.currentPrice
-
+    const curPrice = pool && pool.curPrice
     const totalValueLocked = activePool && pool.getTVL()
-
     const marketCap = activePool && nf.format(pool.getMarketCap())
-
-    if (pool) {
-        reserves = pool.getSwapInfo()
-    }
 
     return (
         <div className="flex">
             <div className="flex-grow-1 flex flex-column">
                 <p>Current Price:</p>
-                <h1>
-                    {(currentPrice &&
-                        currentPrice.toFixed(
+                <h2>
+                    {(pool &&
+                        pool.curPrice.toFixed(
                             globalConfig.USDC_DECIMAL_POINTS
                         )) ||
                         0}
-                </h1>
+                </h2>
             </div>
             {pool && pool.isQuest() ? (
                 <div className="flex-grow-1 flex flex-column">
                     <p>Current Market Cap:</p>
-                    <h1>{marketCap || 0}</h1>
+                    <h2>{marketCap || 0}</h2>
                 </div>
             ) : (
                 ''
@@ -82,7 +77,7 @@ export const PoolChartStats = () => {
             {pool && pool.isQuest() ? (
                 <div className="flex-grow-1 flex flex-column">
                     <p>Total Value Locked:</p>
-                    <h1>{nf.format(totalValueLocked) || 0}</h1>
+                    <h2>{nf.format(totalValueLocked) || 0}</h2>
                 </div>
             ) : (
                 ''
@@ -91,19 +86,15 @@ export const PoolChartStats = () => {
                 <div className="flex-grow-1 flex flex-column">
                     <p>Reserves:</p>
                     <span>
-                        <h4 className="m-1">
-                            {pool.tokenLeft}{' '}
-                            {reserves[1][1] > 0
-                                ? nf.format(Math.round(reserves[1][1]))
-                                : 0}
+                        <h4>
+                            {pool.tokenLeft}:{' '}
+                            {nf.format(Math.round(pool.volumeToken0))}
                         </h4>
                     </span>
-                    <span className="m-1">
+                    <span>
                         <h4>
-                            {pool.tokenRight.name}{' '}
-                            {reserves[0][1] > 0
-                                ? nf.format(Math.round(reserves[0][1]))
-                                : 0}
+                            {pool.tokenRight}:{' '}
+                            {nf.format(Math.round(pool.volumeToken1))}
                         </h4>
                     </span>
                 </div>
@@ -138,19 +129,19 @@ export const KnowledgeGraphStats = () => {
         <div className="flex">
             <div className="flex-grow-1 flex flex-column">
                 <p>Total Quests</p>
-                <h1>{quests.length}</h1>
+                <h2>{quests.length}</h2>
             </div>
             <div className="flex-grow-1 flex flex-column">
                 <p>Total Market Cap:</p>
-                <h1>{nf.format(Math.abs(parseInt(marketCap))) || 0}</h1>
+                <h2>{nf.format(Math.abs(parseInt(marketCap))) || 0}</h2>
             </div>
             <div className="flex-grow-1 flex flex-column">
                 <p>Total Value Locked:</p>
-                <h1>{nf.format(Number(totalValueLocked.toFixed(0))) || 0}</h1>
+                <h2>{nf.format(Number(totalValueLocked.toFixed(0))) || 0}</h2>
             </div>
             <div className="flex-grow-1 flex flex-column">
                 <p>Total USDC locked:</p>
-                <h1>{nf.format(Number(totalUSDCLocked.toFixed(0))) || 0}</h1>
+                <h2>{nf.format(Number(totalUSDCLocked.toFixed(0))) || 0}</h2>
             </div>
         </div>
     )
@@ -165,10 +156,7 @@ export const SwapModule = () => {
     const addSwap = usePoolStore((state) => state.addSwap)
     const addLogObj = useLogsStore((state) => state.addLogObj)
     const swapMode = usePoolStore((state) => state.swapMode)
-    const router = new Router(
-        globalState.quests.values(),
-        globalState.pools.values()
-    )
+    const router = new Router(globalState.quests, globalState.pools)
 
     const investor = activeInvestor && globalState.investors.get(activeInvestor)
     const pool = activePool && globalState.pools.get(activePool)
@@ -241,10 +229,7 @@ export const SwapModule = () => {
             globalState.logStore.logObjs.push(swapData)
         } else {
             const smSwaps = router.getSwaps()
-            const combSwaps = getCombinedSwaps(
-                smSwaps,
-                globalState.pools.values()
-            )
+            const combSwaps = getCombinedSwaps(smSwaps, globalState.pools)
 
             Object.entries(combSwaps).forEach((ops) => {
                 Object.entries(ops[1]).forEach((op) => {
@@ -303,7 +288,7 @@ export const SwapModule = () => {
                       amount,
                       globalConfig.CHUNK_SIZE
                   )
-        console.log(swapMode, totalAmountIn, totalAmountOut, router.getPaths())
+
         investor.addBalance('USDC', totalAmountOut)
         investor.addBalance(activeQuest, totalAmountIn)
         globalState.investors.set(investor.hash, investor)
@@ -325,10 +310,7 @@ export const SwapModule = () => {
             globalState.logStore.logObjs.push(swapData)
         } else {
             const smSwaps = router.getSwaps()
-            const combSwaps = getCombinedSwaps(
-                smSwaps,
-                globalState.pools.values()
-            )
+            const combSwaps = getCombinedSwaps(smSwaps, globalState.pools)
 
             Object.entries(combSwaps).forEach((ops) => {
                 Object.entries(ops[1]).forEach((op) => {
@@ -355,7 +337,7 @@ export const SwapModule = () => {
     }
 
     return (
-        <div>
+        <React.Fragment>
             <div className="grid">
                 <div className="col-6">
                     <QuestSelector />
@@ -366,6 +348,7 @@ export const SwapModule = () => {
                         onChange={handleSetAmount}
                         mode="decimal"
                         maxFractionDigits={9}
+                        className="flex"
                     />
                 </div>
             </div>
@@ -390,7 +373,7 @@ export const SwapModule = () => {
                     <Messages ref={msgs} />
                 </div>
             </div>
-        </div>
+        </React.Fragment>
     )
 }
 
@@ -422,4 +405,61 @@ export const SwapMode = () => {
             <label>{swapMode}</label>
         </div>
     )
+}
+
+export const PoolPositions = (props) => {
+    const activePool = usePoolStore((state) => state.active)
+    const logObjs = useLogsStore((state) => state.logObjs)
+
+    if (!activePool) {
+        return <React.Fragment></React.Fragment>
+    }
+
+    const pool = globalState.pools.get(activePool)
+    const positions = pool.posOwners.map((pos, idx) => {
+        if (pos.liquidity === 0) return null
+
+        return (
+            <Chip
+                key={idx}
+                label={`[${pool.tokenLeft}: ${pos.amt0.toFixed(
+                    globalConfig.USDC_DECIMAL_POINTS
+                )}] ${pos.pmin.toFixed(2)}-${pos.pmax.toFixed(2)} [${
+                    pool.tokenRight
+                }: ${pos.amt1.toFixed(globalConfig.USDC_DECIMAL_POINTS)}]`}
+                icon={`${
+                    pos.type === 'investor' ? 'pi-user' : 'pi-bitcoin'
+                } pi pi-position-icon`}
+                className={`${
+                    pos.type === 'investor'
+                        ? 'investor-position'
+                        : 'token-position'
+                } mr-1 mb-1`}
+                template={(props) => (
+                    <div className={props.className}>
+                        <Tooltip target=".pi-position-icon" />
+                        <i
+                            className={props.icon}
+                            data-pr-tooltip={
+                                !pool.isQuest()
+                                    ? globalState.investors.get(pos.hash).name
+                                    : ''
+                            }
+                            data-pr-position="top"
+                            data-pr-at="bottom bottom+30"
+                            data-pr-my="left center-2"
+                            style={{
+                                fontSize: '1rem',
+                                cursor: 'pointer',
+                                margin: '0.4rem'
+                            }}
+                        ></i>
+                        <span>{props.label}</span>
+                    </div>
+                )}
+            />
+        )
+    })
+
+    return <React.Fragment>{positions}</React.Fragment>
 }

@@ -1,3 +1,4 @@
+import sha256 from 'crypto-js/sha256'
 import HashMap from 'hashmap'
 
 import Pool from '../Pool/Pool.class'
@@ -7,6 +8,7 @@ import UsdcToken from './UsdcToken.class'
 
 export default class Token {
     id // make uuid
+    hash
     name
     pools = []
     positions = new HashMap()
@@ -25,6 +27,7 @@ export default class Token {
     static create(name) {
         const thisToken = new Token()
         thisToken.name = name
+        thisToken.hash = '0x' + sha256(name)
 
         return thisToken
     }
@@ -32,8 +35,7 @@ export default class Token {
     createPool({
         tokenLeft = null,
         startingPrice = null,
-        initialPositions = null,
-        totalTokensProvisioned = null
+        initialPositions = null
     } = {}) {
         const tokenLeftInstance = tokenLeft || new UsdcToken()
         const pool = Pool.create(tokenLeftInstance, this, startingPrice)
@@ -69,9 +71,18 @@ export default class Token {
                 position.tokenA,
                 position.tokenB
             )
+
+            pool.posOwners.push({
+                hash: this.hash,
+                pmin: position.priceMin,
+                pmax: position.priceMax,
+                amt0: position.tokenA,
+                amt1: position.tokenB,
+                type: 'token'
+            })
         })
 
-        this.positions.set(pool.name, pool.pricePoints.values())
+        this.positions.set(pool.name, pool.pos.values())
     }
 
     // @TODO: Token can open positions during dampening (?)

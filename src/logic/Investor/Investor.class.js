@@ -64,8 +64,12 @@ export default class Investor {
         }
 
         if (this.balances[tokenName] + balance < 0) {
+            console.log(
+                `You don't have ${balance} of ${tokenName} to spend, remaining amount is ${this.balances[tokenName]}`,
+                msg
+            )
             throw new Error(
-                `You don't have ${balance} of ${tokenName} to spend, remaining amount is ${this.balances[tokenName]}`
+                `You don't have ${balance} of ${tokenName} to spend, remaining amount is ${this.balances[tokenName]}: ${msg}`
             )
         }
 
@@ -88,23 +92,28 @@ export default class Investor {
             amountRight,
             Math.sqrt(priceMin),
             Math.sqrt(priceMax),
-            Math.sqrt(pool.currentPrice)
+            Math.sqrt(pool.curPrice)
         )
         pool.modifyPositionSingle(p2pp(priceMin), liquidity)
         pool.modifyPositionSingle(p2pp(priceMax), -liquidity)
 
-        this.positions.set(pool.name, pool.pricePoints.values())
+        this.positions.set(pool.name, pool.pos.values())
 
-        if (pool.currentPrice <= priceMax && pool.currentPrice >= priceMin) {
-            pool.currentLiquidity += liquidity
+        if (pool.curPrice <= priceMax && pool.curPrice >= priceMin) {
+            pool.curLiq += liquidity
         }
 
-        return pool.getAmountsForLiquidity(
+        const amounts = pool.getAmountsForLiquidity(
             liquidity,
             Math.sqrt(priceMin),
             Math.sqrt(priceMax),
-            Math.sqrt(pool.currentPrice)
+            Math.sqrt(pool.curPrice)
         )
+
+        pool.volumeToken0 -= amounts[0]
+        pool.volumeToken1 -= amounts[1]
+
+        return amounts
     }
 
     createPool(citedToken, citingToken, startingPrice) {
@@ -119,43 +128,80 @@ export default class Investor {
      * @param {Object} crossPool
      * @param {number} priceMin
      * @param {number} priceMax
-     * @param {number} citingAmount
-     * @param {number} citedAmount
+     * @param {number} token0Amt
+     * @param {number} token1Amt
      * @returns {*[]}
      */
     citeQuest(
         crossPool,
         priceMin = 1,
         priceMax = 10,
-        citingAmount = 0,
-        citedAmount = 0
+        token0Amt = 0,
+        token1Amt = 0,
+        native
     ) {
-        // Set "positions" for value link pool
+        // Open "position" for value link pool
         const [totalIn, totalOut] = crossPool.openPosition(
             priceMin,
             priceMax,
-            citingAmount,
-            citedAmount
+            token0Amt,
+            token1Amt,
+            native
         )
+
+        if (!totalIn && !totalOut) {
+            return []
+        }
+
+        crossPool.posOwners.push({
+            hash: this.hash,
+            pmin: priceMin,
+            pmax: priceMax,
+            amt0: token0Amt,
+            amt1: token1Amt,
+            type: 'investor'
+        })
+        this.positions.set(crossPool.name, crossPool.pos.values())
+
         return [totalIn, totalOut]
     }
 
+    /**
+     * @param {Pool} crossPool
+     * @param {Pool} citedQuestPool
+     * @param {Pool} citingQuestPool
+     * @param {number} multiplier
+     * @returns {object{min: number, max: number}}
+     * @description Preferred base unit of price range is B/A (cited/citing)
+     */
     calculatePriceRange(
-        citingQuestPool,
+        crossPool,
         citedQuestPool,
+        citingQuestPool,
         multiplier = this.#PRICE_RANGE_MULTIPLIER
     ) {
-        const citingPrice = citingQuestPool.currentPrice
-        const citedPrice = citedQuestPool.currentPrice
-        if (!citingPrice || !citedPrice) {
-            throw new Error(
-                'Did you pass quest instead of a pool for citation?'
-            )
+        // @TODO:
+        // Replace all citeQuest with calculatePriceRange inside
+        // Determine preferred token to be citing and calculate + cite with proper side accordingly
+        // Replace all tests to comply
+        const baseUnitName = crossPool.name
+        const baseUnitCompName = `${citedQuestPool.tokenRight}-${citingQuestPool.tokenRight}`
+
+        let min = 0
+        let max = 0
+        let native = true
+
+        let unitPrice = citingQuestPool.curPrice / citedQuestPool.curPrice
+
+        if (baseUnitName !== baseUnitCompName) {
+            min = 1 / unitPrice / multiplier
+            max = 1 / unitPrice
+        } else {
+            min = unitPrice
+            max = unitPrice * multiplier
+            native = false
         }
 
-        let AforB = citingPrice / citedPrice
-        let min = AforB < citingPrice ? AforB / multiplier : AforB
-        let max = AforB >= citedPrice ? AforB * multiplier : AforB
-        return { min: min, max: max }
+        return { min: min, max: max, native }
     }
 }
