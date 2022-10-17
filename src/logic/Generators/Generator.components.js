@@ -33,6 +33,8 @@ import { dayData, invGen, questGen } from './initialState'
 const updateInvSelector = (state) => state.updateInvConfig
 const deleteInvSelector = (state) => state.deleteInvConfig
 
+const logObjsSelector = (state) => state.logObjs
+
 const updateQuestSelector = (state) => state.updateQuestConfig
 const deleteQuestSelector = (state) => state.deleteQuestConfig
 
@@ -126,6 +128,7 @@ export const GeneratorRunner = () => {
     const addQuest = useQuestStore((state) => state.addQuest)
     const addSwap = usePoolStore((state) => state.addSwap)
     const addLogObj = useLogsStore((state) => state.addLogObj)
+    const logObjs = useLogsStore(logObjsSelector)
 
     const addInvConfig = useGeneratorStore((state) => state.addInvConfig)
     const addQuestConfig = useGeneratorStore((state) => state.addQuestConfig)
@@ -160,6 +163,12 @@ export const GeneratorRunner = () => {
 
             setScenarioId(currentScenario.scenarioId)
         }
+
+        let dayIter =
+            (logObjs.length >= 1 && logObjs[logObjs.length - 1].day) ||
+            passedDays
+        setPassedDays(dayIter)
+        console.log(dayIter, passedDays)
     }, [
         addInvConfig,
         resetInvConfigs,
@@ -167,7 +176,9 @@ export const GeneratorRunner = () => {
         resetQuestConfigs,
         scenario,
         scenarios,
-        setScenarioId
+        setScenarioId,
+        logObjs,
+        passedDays
     ])
 
     const handleNewScenario = async () => {

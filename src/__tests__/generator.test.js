@@ -105,7 +105,7 @@ it('Generates investors', async () => {
     console.log(`Days performance`)
     console.table(dayPerf)
 
-    console.table(genManager.getOpsTime())
+    //console.table(genManager.getOpsTime())
 
     const totalTime = tot1 - tot0
     const totMeasure = genManager.getOpsTime()

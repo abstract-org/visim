@@ -69,10 +69,10 @@ class Generator {
             pools: [],
             actions: []
         }
-        const it0 = performance.now()
-        this.#_OPS_TIME.invcreate.time = it0
+        //const it0 =  = performance.now()
+        //this.#_OPS_TIME.invcreate.time = it0
         this.#invConfigs.forEach((conf) => {
-            this.#_OPS_TIME.invcreate.ops++
+            //this.#_OPS_TIME.invcreate.ops++
 
             // Calculate probabilities
             const invProbs = this.calculateInvProbabilities(conf)
@@ -120,8 +120,8 @@ class Generator {
                 } // end of inv spawner loop
             } // end of inv spawner if
         })
-        const it1 = performance.now()
-        this.#_OPS_TIME.invcreate.time = it1 - this.#_OPS_TIME.invcreate.time
+        //const it1 =  = performance.now()
+        //this.#_OPS_TIME.invcreate.time = it1 - this.#_OPS_TIME.invcreate.time
 
         // Every X days - keep creating quests
         // this.simulateKeepCreatingQuest(day)
@@ -468,9 +468,9 @@ class Generator {
     }
 
     simulateKeepCreatingQuest(day) {
-        const kt0 = performance.now()
-        this.#_OPS_TIME.keepcrt.time = kt0
-        this.#_OPS_TIME.keepcrt.ops++
+        //const kt0 =  = performance.now()
+        //this.#_OPS_TIME.keepcrt.time = kt0
+        //this.#_OPS_TIME.keepcrt.ops++
         const keepCreatingDays = Object.keys(this.keepCreatingInvs)
         keepCreatingDays.forEach((dayKey) => {
             if (day % dayKey === 0) {
@@ -492,8 +492,8 @@ class Generator {
                 })
             }
         })
-        const kt1 = performance.now()
-        this.#_OPS_TIME.keepcrt.time = kt1 - this.#_OPS_TIME.keepcrt.time
+        //const kt1 =  = performance.now()
+        //this.#_OPS_TIME.keepcrt.time = kt1 - this.#_OPS_TIME.keepcrt.time
     }
 
     tradeSpecificQuest(conf, day, investor, router) {
@@ -506,7 +506,7 @@ class Generator {
 
         let t0
         if (this.#_PERFORMANCE) {
-            t0 = performance.now()
+            //t0 =  = performance.now()
         }
 
         const [totalIn, totalOut] = router.smartSwap(
@@ -519,15 +519,15 @@ class Generator {
         this.#_OPS++
 
         if (this.#_PERFORMANCE) {
-            const t1 = performance.now()
-            if (this.#_PERFORMANCE_OUTPUT)
-                console.log(
-                    `[${day}][${investor.name}] Invested directly in ${
-                        conf.includeSingleName
-                    } amount ${spendAmount} in ${t1 - t0}ms`
-                )
-            this.#_OPS_TIME.invest.ops++
-            this.#_OPS_TIME.invest.time += t1 - t0
+            //const t1 =  = performance.now()
+            //if (this.#_PERFORMANCE_OUTPUT)
+            // console.log(
+            //     `[${day}][${investor.name}] Invested directly in ${
+            //         conf.includeSingleName
+            //     } amount ${spendAmount} in ${t1 - t0}ms`
+            // )
+            //this.#_OPS_TIME.invest.ops++
+            //this.#_OPS_TIME.invest.time += t1 - t0
         }
 
         // collect pool price movements here and in other calls of router.smartSwap
@@ -574,7 +574,7 @@ class Generator {
         tradePools.forEach(async (pool) => {
             let t0
             if (this.#_PERFORMANCE) {
-                t0 = performance.now()
+                //t0 =  = performance.now()
             }
 
             const [totalIn, totalOut] = router.smartSwap(
@@ -586,15 +586,15 @@ class Generator {
 
             this.#_OPS++
             if (this.#_PERFORMANCE) {
-                const t1 = performance.now()
-                if (this.#_PERFORMANCE_OUTPUT)
-                    console.log(
-                        `[${day}][${investor.name}] Traded top gainer in ${
-                            pool.name
-                        } amount ${perPoolAmt} in ${t1 - t0}ms`
-                    )
-                this.#_OPS_TIME.gainers.ops++
-                this.#_OPS_TIME.gainers.time += t1 - t0
+                //const t1 =  = performance.now()
+                // if (this.#_PERFORMANCE_OUTPUT)
+                //     console.log(
+                //         `[${day}][${investor.name}] Traded top gainer in ${
+                //             pool.name
+                //         } amount ${perPoolAmt} in ${t1 - t0}ms`
+                //     )
+                // this.#_OPS_TIME.gainers.ops++
+                // this.#_OPS_TIME.gainers.time += t1 - t0
             }
 
             //collect pool price movements here and in other calls of router.smartSwap
@@ -750,7 +750,7 @@ class Generator {
 
             let sp0
             if (this.#_PERFORMANCE) {
-                sp0 = performance.now()
+                //sp0 =  = performance.now()
             }
 
             const [totalIn, totalOut] = router.smartSwap(
@@ -763,17 +763,17 @@ class Generator {
             this.#_OPS++
 
             if (this.#_PERFORMANCE) {
-                const sp1 = performance.now()
-                if (this.#_PERFORMANCE_OUTPUT)
-                    console.log(
-                        `[${day}][${
-                            investor.name
-                        }] Swapped inc/dec tokens on day ${day} into ${
-                            pool.name
-                        } amount ${amount} in ${sp1 - sp0}ms`
-                    )
-                this.#_OPS_TIME[debugStr].ops++
-                this.#_OPS_TIME[debugStr].time += sp1 - sp0
+                //const sp1 =  = performance.now()
+                // if (this.#_PERFORMANCE_OUTPUT)
+                //     console.log(
+                //         `[${day}][${
+                //             investor.name
+                //         }] Swapped inc/dec tokens on day ${day} into ${
+                //             pool.name
+                //         } amount ${amount} in ${sp1 - sp0}ms`
+                //     )
+                // this.#_OPS_TIME[debugStr].ops++
+                // this.#_OPS_TIME[debugStr].time += sp1 - sp0
             }
 
             // collect pool price movements here and in other calls of router.smartSwap
@@ -848,7 +848,7 @@ class Generator {
 
                         let t0
                         if (this.#_PERFORMANCE) {
-                            t0 = performance.now()
+                            //t0 =  = performance.now()
                         }
 
                         const [amtIn, amtOut] = router.smartSwap(
@@ -861,17 +861,17 @@ class Generator {
                         this.#_OPS++
 
                         if (this.#_PERFORMANCE) {
-                            const t1 = performance.now()
-                            if (this.#_PERFORMANCE_OUTPUT)
-                                console.log(
-                                    `[${day}][${
-                                        author.name
-                                    }] Widthdrawn amount ${amtOut} for ${amtIn}${quest} in ${
-                                        t1 - t0
-                                    }ms`
-                                )
-                            this.#_OPS_TIME.withdraw.ops++
-                            this.#_OPS_TIME.withdraw.time += t1 - t0
+                            //const t1 =  = performance.now()
+                            // if (this.#_PERFORMANCE_OUTPUT)
+                            //     console.log(
+                            //         `[${day}][${
+                            //             author.name
+                            //         }] Widthdrawn amount ${amtOut} for ${amtIn}${quest} in ${
+                            //             t1 - t0
+                            //         }ms`
+                            //     )
+                            // this.#_OPS_TIME.withdraw.ops++
+                            // this.#_OPS_TIME.withdraw.time += t1 - t0
                         }
 
                         if (
