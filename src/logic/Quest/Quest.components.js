@@ -2,6 +2,7 @@ import { globals } from 'chance/.eslintrc'
 import { Button } from 'primereact/button'
 import { Checkbox } from 'primereact/checkbox'
 import { Dropdown } from 'primereact/dropdown'
+import { InputNumber } from 'primereact/inputnumber'
 import { InputText } from 'primereact/inputtext'
 import { Messages } from 'primereact/messages'
 import { ScrollPanel } from 'primereact/scrollpanel'
@@ -58,8 +59,11 @@ export const QuestSelector = () => {
 
 export const QuestCitation = () => {
     const [citationRange, setCitationRange] = useState(5)
+    const [citationMultiplier, setCitationMultiplier] = useState(2)
     const [selectedQuests, setSelectedQuests] = useState([])
     const handleCitationRange = (value) => setCitationRange(value)
+    const handleCitationMultiplier = (value) => setCitationMultiplier(value)
+
     const activeInvestor = useInvestorStore((state) => state.active)
     const setActivePool = usePoolStore((state) => state.setActive)
     const addPool = usePoolStore((state) => state.addPool)
@@ -131,18 +135,7 @@ export const QuestCitation = () => {
             }
 
             const poolName = `${activeQuest}-${questName}`
-            const swapPoolName = `${questName}-${activeQuest}`
-            if (
-                globalState.pools.get(poolName) ||
-                globalState.pools.get(swapPoolName)
-            ) {
-                console.log(`Value link pool ${poolName} already exists`)
-                msgs.current.show({
-                    severity: 'warn',
-                    detail: `Value link pool ${poolName} already exists`
-                })
-                return
-            }
+            const invPoolName = `${questName}-${activeQuest}`
 
             const citedQuest = globalState.quests.get(questName)
             const citedPool = globalState.pools
@@ -151,16 +144,43 @@ export const QuestCitation = () => {
                     (pool) =>
                         pool.tokenRight === citedQuest.name && pool.isQuest()
                 )
-            const crossPool = investor.createPool(citedQuest, citingQuest)
+
+            let crossPool
+            if (
+                !globalState.pools.has(poolName) &&
+                !globalState.pools.has(invPoolName)
+            ) {
+                const startingPrice = citingPool.curPrice / citedPool.curPrice
+                crossPool = investor.createPool(
+                    citedQuest,
+                    citingQuest,
+                    startingPrice
+                )
+            } else {
+                crossPool = globalState.pools
+                    .values()
+                    .find(
+                        (pool) =>
+                            pool.name === poolName || pool.name === invPoolName
+                    )
+            }
+
+            const amt0 = activeQuest === crossPool.tokenLeft ? 0 : calcAmountA
+            const amt1 = amt0 === 0 ? calcAmountA : 0
+
             const priceRange = investor.calculatePriceRange(
+                crossPool,
+                citedPool,
                 citingPool,
-                citedPool
+                citationMultiplier
             )
             investor.citeQuest(
                 crossPool,
                 priceRange.min,
                 priceRange.max,
-                calcAmountA
+                amt0,
+                amt1,
+                activeQuest
             )
             citedQuest.addPool(crossPool)
             citingQuest.addPool(crossPool)
@@ -221,6 +241,8 @@ export const QuestCitation = () => {
                 selectedQuests={selectedQuests}
                 citationRange={citationRange}
                 handleCitationRange={handleCitationRange}
+                citationMultiplier={citationMultiplier}
+                handleCitationMultiplier={handleCitationMultiplier}
             />
             <div className="flex justify-content-center">
                 <Button
@@ -382,11 +404,19 @@ export const CitingQuestLiquidity = (props) => {
                 </div>
             </div>
             {proMode ? (
-                <CitationRangeSlider
-                    citationRange={props.citationRange}
-                    handleCitationRange={props.handleCitationRange}
-                    token={activeQuest}
-                />
+                <React.Fragment>
+                    <CitationRangeSlider
+                        citationRange={props.citationRange}
+                        handleCitationRange={props.handleCitationRange}
+                        token={activeQuest}
+                    />
+                    <CitationPriceMultiplier
+                        citationMultiplier={props.citationMultiplier}
+                        handleCitationMultiplier={
+                            props.handleCitationMultiplier
+                        }
+                    />
+                </React.Fragment>
             ) : (
                 ''
             )}
@@ -505,7 +535,7 @@ export const QuestCreation = () => {
 
 const CitationRangeSlider = (props) => {
     return (
-        <div>
+        <React.Fragment>
             <div className="grid">
                 <div className="col-12">
                     <span className="text-center block pb-2">
@@ -518,6 +548,29 @@ const CitationRangeSlider = (props) => {
                     />
                 </div>
             </div>
-        </div>
+        </React.Fragment>
+    )
+}
+
+const CitationPriceMultiplier = (props) => {
+    return (
+        <React.Fragment>
+            <div className="grid">
+                <div className="col-12">
+                    <span className="text-center block pb-2">
+                        Price range: {props.citationMultiplier}
+                    </span>
+                    <Slider
+                        step={1}
+                        min={2}
+                        max={100}
+                        value={props.citationMultiplier}
+                        onChange={(e) =>
+                            props.handleCitationMultiplier(e.value)
+                        }
+                    />
+                </div>
+            </div>
+        </React.Fragment>
     )
 }

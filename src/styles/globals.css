@@ -2,6 +2,17 @@ body {
     background-color: #e2e2e2;
 }
 
+h1,
+h2,
+h3,
+h4 {
+    margin: 0.3rem;
+}
+
+h6 {
+    margin: 0;
+}
+
 .edge {
     stroke: #b1b1b7;
     stroke-dasharray: 5;
@@ -259,4 +270,18 @@ rect.fill-inactive {
     left: 40vw;
     border-radius: 2rem;
     padding: 2rem;
+}
+
+.p-chip.investor-position {
+    background: #b1b2dd;
+    color: #fff;
+}
+
+.p-chip.token-position {
+    background: #afbdd5;
+    color: #fff;
+}
+
+.p-blockui-container .p-inplace-display {
+    padding: 0;
 }

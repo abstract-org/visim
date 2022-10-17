@@ -9,26 +9,26 @@
         {
             "priceMin": 1,
             "priceMax": 10000,
-            "tokenB": 0,
-            "tokenA": 5000
+            "tokenA": 0,
+            "tokenB": 5000
         },
         {
             "priceMin": 10,
             "priceMax": 10000,
-            "tokenB": 0,
-            "tokenA": 5000
+            "tokenA": 0,
+            "tokenB": 5000
         },
         {
             "priceMin": 50,
             "priceMax": 10000,
-            "tokenB": 0,
-            "tokenA": 5000
+            "tokenA": 0,
+            "tokenB": 5000
         },
         {
             "priceMin": 200,
             "priceMax": 10000,
-            "tokenB": 0,
-            "tokenA": 5000
+            "tokenA": 0,
+            "tokenB": 5000
         }
     ],
     "JOURNAL": false,

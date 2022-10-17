@@ -21,15 +21,25 @@ export default class Pool {
     tokenLeft
     tokenRight
 
-    currentLeft = p2pp(globalConfig.PRICE_MIN)
-    currentRight = p2pp(globalConfig.PRICE_MAX)
-    currentPrice = 1
-    currentPricePoint = Math.log2(1)
-    currentLiquidity = 0
+    curLeft = p2pp(globalConfig.PRICE_MIN)
+    curRight = p2pp(globalConfig.PRICE_MAX)
+    curPrice = 0
+    curPP = Math.log2(1)
+    curLiq = 0
 
     totalSold = 0
 
-    pricePoints = new HashMap()
+    priceToken0 = 0
+    priceToken1 = 0
+
+    volumeToken0 = 0
+    volumeToken1 = 0
+
+    soldToken0 = 0
+    soldToken1 = 0
+
+    pos = new HashMap()
+    posOwners = []
 
     type = 'VALUE_LINK'
     #dryState = {}
@@ -46,7 +56,6 @@ export default class Pool {
      * @description Instantiates new Pool with params
      * @param {Object} tokenLeft
      * @param {Object} tokenRight
-     * @param {number} startingPrice
      * @returns {Pool}
      */
     static create(tokenLeft, tokenRight, startingPrice) {
@@ -62,13 +71,12 @@ export default class Pool {
         thisPool.id = '0x' + sha256(tokenLeft.name + '-' + tokenRight.name)
         thisPool.name = `${tokenLeft.name}-${tokenRight.name}`
 
-        // By shifting default price we also move the pointer to the right of the entire pool
-        if (startingPrice && typeof startingPrice === 'number') {
-            thisPool.currentPrice = startingPrice
-        }
-
         if (tokenLeft instanceof UsdcToken || tokenRight instanceof UsdcToken) {
             thisPool.type = 'QUEST'
+        }
+
+        if (startingPrice) {
+            thisPool.curPrice = startingPrice
         }
 
         thisPool.initializePoolBoundaries()
@@ -78,37 +86,37 @@ export default class Pool {
 
     initializePoolBoundaries() {
         // Define default price boundaries
-        this.pricePoints.set(p2pp(globalConfig.PRICE_MIN), {
+        this.pos.set(p2pp(globalConfig.PRICE_MIN), {
             // starts with PRICE_MIN
             liquidity: 0,
             left: p2pp(globalConfig.PRICE_MIN),
             pp: p2pp(globalConfig.PRICE_MIN),
-            right: this.currentPricePoint
+            right: this.curPP
         })
 
-        this.pricePoints.set(this.currentPricePoint, {
+        this.pos.set(this.curPP, {
             // starts with PRICE_MIN
             liquidity: 0,
             left: p2pp(globalConfig.PRICE_MIN),
-            pp: this.currentPricePoint,
+            pp: this.curPP,
             right: p2pp(globalConfig.PRICE_MAX)
         })
 
-        this.pricePoints.set(p2pp(globalConfig.PRICE_MAX), {
+        this.pos.set(p2pp(globalConfig.PRICE_MAX), {
             liquidity: 0,
-            left: this.currentPricePoint,
+            left: this.curPP,
             pp: p2pp(globalConfig.PRICE_MAX),
             right: p2pp(globalConfig.PRICE_MAX)
         })
     }
 
     setPositionSingle(price, liquidity) {
-        this.pricePoints.forEach((position, point) => {
+        this.pos.forEach((position, point) => {
             // setting priceMin liquidity positions
             if (point < price && price <= position.right && liquidity > 0) {
                 let newPosition = {}
-                if (this.pricePoints.has(price)) {
-                    newPosition = this.pricePoints.get(price)
+                if (this.pos.has(price)) {
+                    newPosition = this.pos.get(price)
                     newPosition.liquidity += liquidity
                 } else {
                     newPosition = {
@@ -118,23 +126,17 @@ export default class Pool {
                         right: position.right
                     }
 
-                    const nextId = this.pricePoints.get(point).right
-                    const next = this.pricePoints.get(nextId)
+                    const nextId = this.pos.get(point).right
+                    const next = this.pos.get(nextId)
 
                     next.left = price
                     position.right = price
 
-                    /**
-                     * pos(c): (r: n) -> [Inf.(0).1]
-                        new(n): (l: p, r: p.r) -> [0.(1).10k]
-                        nxt(c+r): (l: n) -> [1.(10k).1m]
-                     */
-
-                    this.pricePoints.set(point, position)
-                    this.pricePoints.set(nextId, next)
+                    this.pos.set(point, position)
+                    this.pos.set(nextId, next)
                 }
 
-                this.pricePoints.set(price, newPosition)
+                this.pos.set(price, newPosition)
 
                 // setting priceMax liquidity positions
             } else if (
@@ -144,8 +146,8 @@ export default class Pool {
             ) {
                 let newPosition = {}
 
-                if (this.pricePoints.has(price)) {
-                    newPosition = this.pricePoints.get(price)
+                if (this.pos.has(price)) {
+                    newPosition = this.pos.get(price)
                     newPosition.liquidity += liquidity
                 } else {
                     newPosition = {
@@ -155,88 +157,191 @@ export default class Pool {
                         right: point
                     }
 
-                    /**
-                     * refactor to (TBD):
-                    prev(c.l): (r: n.p) -> [-Inf.(1).1m]
-                    new(n): (l: prev, r: p) -> [0.(1).1m]
-                    pos(c): (l: n) -> [1.(1ml).Inf]
-                     */
-
-                    const next = this.pricePoints.get(point)
-                    const prev = this.pricePoints.get(next.left)
+                    const next = this.pos.get(point)
+                    const prev = this.pos.get(next.left)
 
                     prev.right = price
-                    this.pricePoints.set(next.left, prev)
+                    this.pos.set(next.left, prev)
 
                     next.left = price
-                    this.pricePoints.set(point, next)
+                    this.pos.set(point, next)
                 }
 
-                this.pricePoints.set(price, newPosition)
+                this.pos.set(price, newPosition)
             }
 
-            if (price > this.currentLeft && price < this.currentPricePoint) {
-                this.currentLeft = price
+            if (price > this.curLeft && price < this.curPP) {
+                this.curLeft = price
             }
 
-            if (price > this.currentPricePoint && price < this.currentRight) {
-                this.currentRight = price
+            if (price > this.curPP && price < this.curRight) {
+                this.curRight = price
             }
         })
     }
 
     // Remove liquidity partially/fully
     modifyPositionSingle(price, liquidity) {
-        if (!this.pricePoints.has(price)) {
+        if (!this.pos.has(price)) {
             return
         }
 
         let newPosition = {}
-        const point = this.pricePoints.get(price)
+        const point = this.pos.get(price)
         const removeAllLiq = Math.abs(liquidity) >= Math.abs(point.liquidity)
 
         if (!removeAllLiq) {
-            newPosition = this.pricePoints.get(price)
+            newPosition = this.pos.get(price)
             newPosition.liquidity -= liquidity
 
-            this.pricePoints.set(price, newPosition)
+            this.pos.set(price, newPosition)
         } else {
-            const nextId = this.pricePoints.get(price).right
-            const next = this.pricePoints.get(nextId)
-            const prevId = this.pricePoints.get(price).left
-            const prev = this.pricePoints.get(prevId)
+            const nextId = this.pos.get(price).right
+            const next = this.pos.get(nextId)
+            const prevId = this.pos.get(price).left
+            const prev = this.pos.get(prevId)
 
             next.left = prevId
             prev.right = nextId
 
-            this.pricePoints.set(nextId, next)
-            this.pricePoints.set(prevId, prev)
-            this.pricePoints.delete(price)
+            this.pos.set(nextId, next)
+            this.pos.set(prevId, prev)
+            this.pos.delete(price)
         }
     }
 
+    /**
+     * @description Opens position in the provided price range and adding provided amount of tokens into pool with calculated liquidity
+     * @param {number} priceMin
+     * @param {number} priceMax
+     * @param {number} token0Amt
+     * @param {number} token1Amt
+     * @param {boolean} native
+     * @returns {[number, number]}
+     */
+    openPosition(
+        priceMin,
+        priceMax,
+        token0Amt = 0,
+        token1Amt = 0,
+        native = false
+    ) {
+        let amounts = []
+        let amount1 = 0
+
+        const liquidity = this.getLiquidityForAmounts(
+            token0Amt,
+            token1Amt,
+            Math.sqrt(priceMin),
+            Math.sqrt(priceMax),
+            Math.sqrt(this.curPrice)
+        )
+
+        //console.log(token0Amt, token1Amt, priceMin, priceMax, liquidity)
+
+        if (liquidity === 0) {
+            return []
+        }
+
+        this.volumeToken0 += token0Amt
+        this.volumeToken1 += token1Amt
+
+        this.setPositionSingle(p2pp(priceMin), liquidity)
+        this.setPositionSingle(p2pp(priceMax), -liquidity)
+
+        if (this.curPrice >= priceMin && this.curPrice <= priceMax) {
+            this.curLiq += liquidity
+        }
+
+        amounts = this.getAmountsForLiquidity(
+            liquidity,
+            Math.sqrt(priceMin),
+            Math.sqrt(priceMax),
+            Math.sqrt(this.curPrice)
+        )
+
+        if (amount1 > 0) {
+            amounts[1] = amount1
+        }
+
+        // Flip return in/out indicator if non-native citation
+        if (!native && amounts[0] === 0) {
+            amounts[0] = amounts[1]
+            amounts[1] = amounts[1] - amounts[0]
+        }
+
+        this.setActiveLiq(priceMin, priceMax)
+
+        return amounts
+    }
+
+    setActiveLiq(pMin, pMax) {
+        if (
+            this.curLiq === 0 &&
+            (pMin < this.curPrice || pMax > this.curPrice)
+        ) {
+            const ppNext =
+                pMax > this.curPrice ? this.seekActiveLiq('right') : null
+            const ppPrev = !ppNext ? this.seekActiveLiq('left') : null
+
+            const toPP = ppNext ? ppNext : ppPrev ? ppPrev : null
+
+            if (toPP) {
+                this.curPP = toPP.pp
+                this.curLeft = toPP.left
+                this.curRight = toPP.right
+                this.curLiq = toPP.liquidity
+                this.curPrice = pp2p(toPP.pp)
+                this.priceToken0 = 1 / this.curPrice
+                this.priceToken1 = this.curPrice
+            }
+        }
+    }
+
+    seekActiveLiq(dir) {
+        let localPP = this.curPP
+
+        while (
+            this.pos.get(localPP) &&
+            this.pos.get(localPP)[dir] !== 'undefined' &&
+            localPP !== this.pos.get(localPP)[dir]
+        ) {
+            if (this.pos.get(localPP).liquidity !== 0) {
+                return this.pos.get(localPP)
+            }
+
+            localPP = this.pos.get(localPP)[dir]
+        }
+
+        return null
+    }
+
+    /**
+     * @TODO: Returns mixed liquidities when both tokens provided??
+     * @param {number} token0
+     * @param {number} token1
+     * @param {number} sqrtPriceMin
+     * @param {number} sqrtPriceMax
+     * @param {number} currentSqrtPrice
+     * @returns {number}
+     */
     getLiquidityForAmounts(
-        tokenAamount,
-        tokenBamount,
+        token0,
+        token1,
         sqrtPriceMin,
         sqrtPriceMax,
         currentSqrtPrice
     ) {
-        // if you change sides - change sides in the formula or price (e.g 1/10000, 1)
-        // if changing direction of pool, math won't work: prices are directional
-        //      so need to either swap tokens in the math functions,
-        //      or swap prices given to these functions to 1/price
-
-        const liquidity0 = tokenAamount / (1 / sqrtPriceMin - 1 / sqrtPriceMax)
-        const liquidity1 = tokenBamount / (currentSqrtPrice - sqrtPriceMin)
+        const liquidity0 = token0 / (currentSqrtPrice - sqrtPriceMin)
+        const liquidity1 = token1 / (1 / sqrtPriceMin - 1 / sqrtPriceMax)
 
         if (currentSqrtPrice <= sqrtPriceMin) {
-            return liquidity0
+            return liquidity1
         } else if (currentSqrtPrice < sqrtPriceMax) {
             return Math.min(liquidity0, liquidity1)
         }
 
-        return liquidity1
+        return liquidity0
     }
 
     getAmountsForLiquidity(
@@ -249,23 +354,25 @@ export default class Pool {
             Math.min(curSqrtPrice, sqrtPriceMax),
             sqrtPriceMin
         )
-        const tokenAamount = liquidity * (1 / clampedPrice - 1 / sqrtPriceMax)
-        const tokenBamount = liquidity * (clampedPrice - sqrtPriceMin)
+        const tokenAamount = liquidity * (clampedPrice - sqrtPriceMin)
+        const tokenBamount = liquidity * (1 / clampedPrice - 1 / sqrtPriceMax)
 
         return [tokenAamount, tokenBamount] // one can be zero if current price outside the range
     }
 
     dryBuy(amount, priceLimit = null) {
         this.#dryState = {
-            currentPrice: this.currentPrice,
-            currentLiquidity: this.currentLiquidity,
-            currentRight: this.currentRight,
-            currentLeft: this.currentLeft,
-            currentPricePoint: this.currentPricePoint,
-            totalSold: this.totalSold
+            curPrice: this.curPrice,
+            curLiq: this.curLiq,
+            curRight: this.curRight,
+            curLeft: this.curLeft,
+            curPP: this.curPP,
+            totalSold: this.totalSold,
+            volumeToken0: this.volumeToken0,
+            volumeToken1: this.volumeToken1
         }
 
-        const [totalIn, totalOut] = this.buy(amount, priceLimit)
+        const [totalIn, totalOut] = this.buy(amount, priceLimit, true)
 
         for (const state in this.#dryState) {
             this[state] = this.#dryState[state]
@@ -276,15 +383,15 @@ export default class Pool {
         return [totalIn, totalOut]
     }
 
-    buy(amount, priceLimit = null) {
+    buy(amount, priceLimit = null, dry = false) {
         let totalAmountIn = 0,
             totalAmountOut = 0
 
         let nextPricePoint
         let nextPriceTarget
 
-        let currentLiquidity
-        let arrivedAtSqrtPrice = Math.sqrt(this.currentPrice)
+        let curLiq
+        let arrivedAtSqrtPrice = Math.sqrt(this.curPrice)
 
         let journal = []
         let i = 0
@@ -293,23 +400,23 @@ export default class Pool {
         do {
             journal[i] = []
 
-            nextPricePoint = this.currentRight
+            nextPricePoint = this.curRight
             nextPriceTarget =
                 priceLimit && pp2p(nextPricePoint) > priceLimit
                     ? priceLimit
                     : pp2p(nextPricePoint)
 
             // sets local variable from global variable (global changes on each cycle)
-            currentLiquidity = this.currentLiquidity
+            curLiq = this.curLiq
 
-            arrivedAtSqrtPrice += amount / currentLiquidity
+            arrivedAtSqrtPrice += amount / curLiq
 
             journal[i].push(`Op: buy ${i}`)
-            journal[i].push(`Current price point: ${this.currentPricePoint}`)
-            journal[i].push(`Current price: ${this.currentPrice}`)
-            journal[i].push(`Current liquidity: ${currentLiquidity}`)
+            journal[i].push(`Current price point: ${this.curPP}`)
+            journal[i].push(`Current price: ${this.curPrice}`)
+            journal[i].push(`Current liquidity: ${curLiq}`)
             journal[i].push(
-                `Current left/right: ${this.currentLeft}/${this.currentRight}`
+                `Current left/right: ${this.curLeft}/${this.curRight}`
             )
             journal[i].push('---')
             journal[i].push(
@@ -342,43 +449,38 @@ export default class Pool {
                             : 'nextPricePoint'
                     }, capping at ${arrivedAtSqrtPrice}`
                 )
-                this.currentLiquidity +=
-                    this.pricePoints.get(nextPricePoint).liquidity * 1
-                this.currentRight = this.pricePoints.get(nextPricePoint).right
-                this.currentLeft = this.pricePoints.get(nextPricePoint).left
-                this.currentPricePoint = nextPricePoint
-                journal[i].push(`Next liquidity: ${this.currentLiquidity}`)
+                this.curLiq += this.pos.get(nextPricePoint).liquidity * 1
+                this.curRight = this.pos.get(nextPricePoint).right
+                this.curLeft = this.pos.get(nextPricePoint).left
+                this.curPP = nextPricePoint
+                journal[i].push(`Next liquidity: ${this.curLiq}`)
                 journal[i].push(
-                    `Next left/right: ${this.currentLeft}/${this.currentRight}`
+                    `Next left/right: ${this.curLeft}/${this.curRight}`
                 )
                 journal[i].push('!!! ---')
                 journal[i].push(`WILL MOVE TO POINT: ${nextPricePoint}`)
                 journal[i].push('!!! ---')
             } else {
                 journal[i].push('!!! ---')
-                journal[i].push(
-                    `Staying with the same liquidity ${currentLiquidity}`
-                )
+                journal[i].push(`Staying with the same liquidity ${curLiq}`)
                 journal[i].push('!!! ---')
             }
 
             journal[i].push(
-                `Calculating Amount0: ${currentLiquidity} * ${arrivedAtSqrtPrice} - ${Math.sqrt(
-                    this.currentPrice
+                `Calculating Amount0: ${curLiq} * ${arrivedAtSqrtPrice} - ${Math.sqrt(
+                    this.curPrice
                 )}`
             )
             let amount0UntilNextPrice =
-                currentLiquidity *
-                (arrivedAtSqrtPrice - Math.sqrt(this.currentPrice))
+                curLiq * (arrivedAtSqrtPrice - Math.sqrt(this.curPrice))
             journal[i].push(
-                `Calculating Amount1: ${currentLiquidity} * 1/${arrivedAtSqrtPrice} - 1/${Math.sqrt(
-                    this.currentPrice
+                `Calculating Amount1: ${curLiq} * 1/${arrivedAtSqrtPrice} - 1/${Math.sqrt(
+                    this.curPrice
                 )}`
             )
             journal[i].push('---')
             let amount1UntilNextPrice =
-                currentLiquidity *
-                (1 / arrivedAtSqrtPrice - 1 / Math.sqrt(this.currentPrice))
+                curLiq * (1 / arrivedAtSqrtPrice - 1 / Math.sqrt(this.curPrice))
 
             journal[i].push(
                 `Amount0 (curLiq * (arrived - sqrt(curPrice)):\n ${amount0UntilNextPrice}`
@@ -387,9 +489,12 @@ export default class Pool {
                 `Amount1 (curLiq * (1/arrivedAtSqrtPrice - 1/sqrt(curPrice))):\n ${amount1UntilNextPrice}`
             )
             journal[i].push('---')
-            this.currentPrice = arrivedAtSqrtPrice ** 2
+            this.curPrice = arrivedAtSqrtPrice ** 2
+            this.priceToken1 = this.curPrice
+            this.priceToken0 = 1 / this.curPrice
+
             journal[i].push(
-                `New price: ${this.currentPrice} (${arrivedAtSqrtPrice})`
+                `New price: ${this.curPrice} (${arrivedAtSqrtPrice})`
             )
 
             if (
@@ -408,13 +513,11 @@ export default class Pool {
             totalAmountIn += -amount0UntilNextPrice
             totalAmountOut += Math.abs(amount1UntilNextPrice)
 
-            this.totalSold += Math.abs(amount1UntilNextPrice)
-
             i += 1
         } while (
             amount > 0 &&
             arrivedAtSqrtPrice === Math.sqrt(pp2p(nextPricePoint)) &&
-            this.currentRight < p2pp(globalConfig.PRICE_MAX)
+            this.curRight < p2pp(globalConfig.PRICE_MAX)
         )
 
         if (globalConfig.JOURNAL && globalConfig.JOURNAL_BUY) {
@@ -423,17 +526,23 @@ export default class Pool {
             })
         }
 
+        if (!dry) {
+            this.totalSold += Math.abs(totalAmountOut)
+            this.volumeToken0 += Math.abs(totalAmountIn)
+            this.volumeToken1 += -totalAmountOut
+        }
+
         return [totalAmountIn, totalAmountOut]
     }
 
-    sell(amount, priceLimit = null) {
+    sell(amount, priceLimit = null, dry = false) {
         let totalAmountIn = 0,
             totalAmountOut = 0
 
-        let nextPricePoint = this.currentRight
+        let nextPricePoint = this.curRight
         let nextPriceTarget
-        let currentLiquidity
-        let arrivedAtSqrtPrice = Math.sqrt(2 ** this.currentRight)
+        let curLiq
+        let arrivedAtSqrtPrice = Math.sqrt(2 ** this.curRight)
 
         let journal = []
         let i = 0
@@ -441,41 +550,40 @@ export default class Pool {
         while (
             amount > 0 &&
             arrivedAtSqrtPrice === Math.sqrt(pp2p(nextPricePoint)) &&
-            this.currentPricePoint > p2pp(globalConfig.PRICE_MIN)
+            this.curPP > p2pp(globalConfig.PRICE_MIN)
         ) {
             journal[i] = []
 
-            nextPricePoint = this.currentPricePoint
+            nextPricePoint = this.curPP
             nextPriceTarget =
                 priceLimit && pp2p(nextPricePoint) < priceLimit
                     ? priceLimit
                     : pp2p(nextPricePoint)
 
-            currentLiquidity = this.currentLiquidity
-            // newprice = currentprice + amount/curliq
+            curLiq = this.curLiq
+            // newprice = curPrice + amount/curliq
 
             arrivedAtSqrtPrice =
-                currentLiquidity /
-                (amount + currentLiquidity / Math.sqrt(this.currentPrice))
+                curLiq / (amount + curLiq / Math.sqrt(this.curPrice))
 
             // arrived
 
             journal[i].push(`Op: sell ${i}`)
             journal[i].push(
-                `Bottom (current for buy) price point: ${
-                    this.currentPricePoint
-                } (${pp2p(this.currentPricePoint)})`
-            )
-            journal[i].push(
-                `Current price: ${this.currentPrice} (sqrt ${Math.sqrt(
-                    this.currentPrice
+                `Bottom (current for buy) price point: ${this.curPP} (${pp2p(
+                    this.curPP
                 )})`
             )
-            journal[i].push(`Current liquidity: ${currentLiquidity}`)
             journal[i].push(
-                `Current left/right: ${this.currentLeft} (${pp2p(
-                    this.currentLeft
-                )})/${this.currentRight} (${pp2p(this.currentRight)})`
+                `Current price: ${this.curPrice} (sqrt ${Math.sqrt(
+                    this.curPrice
+                )})`
+            )
+            journal[i].push(`Current liquidity: ${curLiq}`)
+            journal[i].push(
+                `Current left/right: ${this.curLeft} (${pp2p(this.curLeft)})/${
+                    this.curRight
+                } (${pp2p(this.curRight)})`
             )
             journal[i].push('---')
             journal[i].push(
@@ -514,32 +622,26 @@ export default class Pool {
                     })`
                 )
 
-                const np = this.pricePoints.get(nextPricePoint)
+                const np = this.pos.get(nextPricePoint)
                 journal[i].push(
                     `Next position: liq: ${np.liquidity} left: ${np.left} pp: ${np.pp} right: ${np.right}`
                 )
 
-                this.currentLiquidity -= this.pricePoints.get(
-                    this.currentPricePoint
-                ).liquidity
+                this.curLiq -= this.pos.get(this.curPP).liquidity
 
-                if (this.currentLiquidity / 0.000001 < 0) {
-                    this.currentLiquidity = 0
+                if (this.curLiq / 0.000001 < 0) {
+                    this.curLiq = 0
                 }
 
-                this.currentRight = this.currentPricePoint
-                this.currentPricePoint = this.pricePoints.get(
-                    this.currentPricePoint
-                ).left
-                this.currentLeft = this.pricePoints.get(
-                    this.currentPricePoint
-                ).left // using updated curPP
+                this.curRight = this.curPP
+                this.curPP = this.pos.get(this.curPP).left
+                this.curLeft = this.pos.get(this.curPP).left // using updated curPP
 
-                journal[i].push(`Next liquidity: ${this.currentLiquidity}`)
+                journal[i].push(`Next liquidity: ${this.curLiq}`)
                 journal[i].push(
-                    `Next left/right: ${this.currentLeft} (${pp2p(
-                        this.currentLeft
-                    )})/${this.currentRight} (${pp2p(this.currentRight)})`
+                    `Next left/right: ${this.curLeft} (${pp2p(this.curLeft)})/${
+                        this.curRight
+                    } (${pp2p(this.curRight)})`
                 )
                 journal[i].push('!!! ---')
                 journal[i].push(`WILL MOVE TO NEXT POSITION: ${nextPricePoint}`)
@@ -547,22 +649,20 @@ export default class Pool {
             }
 
             journal[i].push(
-                `Calculating amount0: ${currentLiquidity} * (1 / ${Math.sqrt(
-                    this.currentPrice
+                `Calculating amount0: ${curLiq} * (1 / ${Math.sqrt(
+                    this.curPrice
                 )} - (1 / ${arrivedAtSqrtPrice})`
             )
             let amount0UntilNextPrice =
-                currentLiquidity *
-                (1 / Math.sqrt(this.currentPrice) - 1 / arrivedAtSqrtPrice)
+                curLiq * (1 / Math.sqrt(this.curPrice) - 1 / arrivedAtSqrtPrice)
 
             journal[i].push(
-                `Calculating amount1: ${currentLiquidity} * (${Math.sqrt(
-                    this.currentPrice
+                `Calculating amount1: ${curLiq} * (${Math.sqrt(
+                    this.curPrice
                 )} - ${arrivedAtSqrtPrice})`
             )
             let amount1UntilNextPrice =
-                currentLiquidity *
-                (Math.sqrt(this.currentPrice) - arrivedAtSqrtPrice)
+                curLiq * (Math.sqrt(this.curPrice) - arrivedAtSqrtPrice)
             journal[i].push('---')
 
             journal[i].push(
@@ -573,12 +673,12 @@ export default class Pool {
             )
             journal[i].push('---')
 
-            this.currentPrice = arrivedAtSqrtPrice ** 2
+            this.curPrice = arrivedAtSqrtPrice ** 2
+            this.priceToken1 = this.curPrice
+            this.priceToken0 = 1 / this.curPrice
 
             journal[i].push(
-                `New price: ${this.currentPrice} (${Math.sqrt(
-                    arrivedAtSqrtPrice
-                )})`
+                `New price: ${this.curPrice} (${Math.sqrt(arrivedAtSqrtPrice)})`
             )
 
             journal[i].push('---')
@@ -594,12 +694,6 @@ export default class Pool {
                 `Total in ${totalAmountIn} / total out ${totalAmountOut}`
             )
 
-            this.totalSold += amount0UntilNextPrice
-
-            if (this.totalSold < 0) {
-                this.totalSold = 0
-            }
-
             journal[i].push(`Total sold ${this.totalSold}`)
 
             i += 1
@@ -611,20 +705,34 @@ export default class Pool {
             })
         }
 
+        if (!dry) {
+            this.totalSold += totalAmountIn
+            this.volumeToken1 += Math.abs(totalAmountIn)
+            this.volumeToken0 += -totalAmountOut
+            if (this.volumeToken0 < 0) {
+                this.volumeToken0 = 0
+            }
+            if (this.totalSold < 0) {
+                this.totalSold = 0
+            }
+        }
+
         return [totalAmountIn, totalAmountOut]
     }
 
     drySell(amount, priceLimit = null) {
         this.#dryState = {
-            currentPrice: this.currentPrice,
-            currentLiquidity: this.currentLiquidity,
-            currentRight: this.currentRight,
-            currentLeft: this.currentLeft,
-            currentPricePoint: this.currentPricePoint,
-            totalSold: this.totalSold
+            curPrice: this.curPrice,
+            curLiq: this.curLiq,
+            curRight: this.curRight,
+            curLeft: this.curLeft,
+            curPP: this.curPP,
+            totalSold: this.totalSold,
+            volumeToken0: this.volumeToken0,
+            volumeToken1: this.volumeToken1
         }
 
-        const [totalIn, totalOut] = this.sell(amount, priceLimit)
+        const [totalIn, totalOut] = this.sell(amount, priceLimit, true)
 
         for (const state in this.#dryState) {
             this[state] = this.#dryState[state]
@@ -680,68 +788,17 @@ export default class Pool {
         return [leftBalance, rightBalance]
     }
 
-    // @TODO: Reverse positions not implemented as of now, for citing - change the order of tokens in a pool
-    // The bug was in which place the amounts are added, and how to properly look at the pool without complicating the code
-    openPosition(priceMin, priceMax, tokenA = 0, tokenB = 0) {
-        let amounts = []
-        let amount1 = 0
-
-        /**
-         *  AB curr_price = 1
-            Inv1 deposits 100A into AB pool at [1B/A....10000B/A] range
-            Inv2 deposits 100B into AB pool at [1A/B...10000A/B] range, which is
-            [0.0001B/A...1B/A] range
-         */
-
-        // @TODO:move to mirrored pools with buy func
-        if (this.currentLiquidity === 0 && priceMin < this.currentPrice) {
-            this.sell(1)
-            this.currentPrice = 0
-        }
-
-        const liquidity = this.getLiquidityForAmounts(
-            tokenA,
-            tokenB,
-            Math.sqrt(priceMin),
-            Math.sqrt(priceMax),
-            Math.sqrt(this.currentPrice)
-        )
-
-        this.setPositionSingle(p2pp(priceMin), liquidity)
-        this.setPositionSingle(p2pp(priceMax), -liquidity)
-
-        if (this.currentPrice <= priceMax && this.currentPrice >= priceMin) {
-            this.currentLiquidity += liquidity
-        }
-
-        amounts = this.getAmountsForLiquidity(
-            liquidity,
-            Math.sqrt(priceMin),
-            Math.sqrt(priceMax),
-            Math.sqrt(this.currentPrice)
-        )
-
-        if (amount1 > 0) {
-            amounts[1] = amount1
-        }
-
-        return amounts
-    }
-
     getTVL() {
-        return Math.round(this.totalSold * this.currentPrice)
+        return Math.round(this.totalSold * this.curPrice)
     }
 
     getMarketCap() {
-        const swapInfo = this.getSwapInfo()
-        const totalTokens =
-            Math.abs(swapInfo[LEFT_TOKEN][TOTAL_OUT]) +
-            Math.abs(swapInfo[RIGHT_TOKEN][TOTAL_OUT])
+        const totalTokens = this.volumeToken0 + this.volumeToken1
 
-        return Math.round(totalTokens * this.currentPrice)
+        return Math.round(totalTokens * this.curPrice)
     }
 
     getUSDCValue() {
-        return this.isQuest() ? this.getSwapInfo()[RIGHT_TOKEN][TOTAL_OUT] : 0
+        return this.isQuest() ? this.volumeToken0 : 0
     }
 }

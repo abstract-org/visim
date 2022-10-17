@@ -18,6 +18,7 @@ import { LogsModule } from './logic/Logs/Logs'
 import {
     KnowledgeGraphStats,
     PoolChartStats,
+    PoolPositions,
     PoolSelector,
     SwapMode,
     SwapModule
@@ -57,6 +58,7 @@ export default function Home() {
                         <PoolSelector />
                         <PoolChartStats />
                         <PoolChart height={215} />
+                        <PoolPositions />
                     </Card>
                 </div>
                 <div className="col-4">
@@ -78,7 +80,7 @@ export default function Home() {
                                 </div>
                             </div>
                             <div className="grid">
-                                <div className="col-10 col-offset-1">
+                                <div className="col-12">
                                     <SwapModule />
                                 </div>
                             </div>
