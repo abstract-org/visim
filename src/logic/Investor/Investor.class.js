@@ -58,7 +58,8 @@ export default class Investor {
             this.balances[tokenName] = 0
         }
 
-        const diff = parseInt(Math.abs(balance)) / balance
+        //const diff = parseInt(Math.abs(balance)) / balance
+        const diff = parseFloat(Math.abs(balance)) / balance
         if (diff < 1) {
             balance = Math.round(balance)
         }

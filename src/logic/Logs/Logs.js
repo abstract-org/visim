@@ -39,7 +39,7 @@ export const LogsModule = () => {
             amountIn: log.totalAmountIn,
             amountOut: log.totalAmountOut,
             price: log.price,
-            investor: invType,
+            investor: globalState.investors.get(log.investorHash).name,
             path: log.paths
         }
     })
