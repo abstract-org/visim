@@ -229,7 +229,7 @@ export const QuestCitation = () => {
 
     return (
         <div>
-            <h3>Citing Quests</h3>
+            <h3>Cited Quests</h3>
             <ScrollPanel className="w-full h-10rem border-1 border-solid border-500 p-3">
                 <CitingQuestList
                     selectedQuests={selectedQuests}
