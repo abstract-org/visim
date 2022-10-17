@@ -36,7 +36,9 @@ export default class Router {
      * @param {number} amountIn
      * @returns {*[]|number[]}
      */
-    smartSwap(token0, token1, amountIn, smartRouteDepth) {
+    smartSwap(token0, token1, amountIn, smartRouteDepth, debug) {
+        if (debug) this.#DEBUG = true
+
         if (this.#DEBUG)
             console.log(
                 `\n--- SMART ROUTE ${token0}/${token1}/${amountIn}---\n`
@@ -60,8 +62,10 @@ export default class Router {
                 this.getPairPaths(token0, token1)
             )
 
-            if (this.#DEBUG) console.log(this.#_PRICED_PATHS, amountIn)
-            if (!this.#_PRICED_PATHS.length) return []
+            if (this.#DEBUG)
+                console.log('priced paths', this.#_PRICED_PATHS, amountIn)
+
+            if (!this.#_PRICED_PATHS.length) return totalInOut
 
             const sums = this.swapBestPath(amountIn, this.#_PRICED_PATHS[0])
 
@@ -78,6 +82,8 @@ export default class Router {
             !this.#isNearZero(amountIn) &&
             this.#_PRICED_PATHS.length
         )
+
+        if (debug) this.#DEBUG = false
 
         return totalInOut
     }
@@ -160,6 +166,7 @@ export default class Router {
         let existingPrices = []
         for (const path of paths) {
             const { sums } = this.swapInPath(path, 1, true)
+
             if (sums[1] === 0) {
                 continue
             }

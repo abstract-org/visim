@@ -31,7 +31,6 @@ export const questGen = {
     questGenAlias: 'Type Q',
     questGenName: '',
     initialAuthorInvest: 5000,
-    poolSizeTokens: 20000,
     startingPrice: 1,
     citeSingleName: '',
     probCiteSingle: 90,

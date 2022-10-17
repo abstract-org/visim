@@ -5,7 +5,7 @@ import { invGen, questGen } from '../logic/Generators/initialState'
 import Investor from '../logic/Investor/Investor.class'
 import UsdcToken from '../logic/Quest/UsdcToken.class'
 import Router from '../logic/Router/Router.class'
-import { prepareCrossPools } from './helpers/poolManager'
+import { prepareCrossPools, preparePool } from './helpers/poolManager'
 
 let globalState = {
     pools: new HashMap(),
@@ -64,6 +64,20 @@ describe('Graph', () => {
 })
 
 describe('Path finding', () => {
+    it('Finds pools for token->USDC', () => {
+        const { pool, tokenRight, tokenLeft } = preparePool()
+
+        pool.buy(2000)
+        globalState.pools.set(pool.name, pool)
+        globalState.quests.set(tokenRight.name, tokenRight)
+        const router = new Router(globalState.quests, globalState.pools)
+
+        const sums = router.smartSwap(tokenRight.name, tokenLeft.name, 1000)
+
+        expect(sums[0]).toBeCloseTo(-1000, 0)
+        expect(sums[1]).toBeCloseTo(1527, 0)
+    })
+
     xit('Finds paths for pair', async () => {
         const gen = new Generator()
         const router = new Router()
@@ -202,7 +216,8 @@ describe('Routing', () => {
         globalState.quests.set(questC.name, questC)
         globalState.pools.set(poolC.name, poolC)
 
-        const BC = creator.createPool(questC, questB)
+        const startingPrice = questB.curPrice / questC.curPrice
+        const BC = creator.createPool(questC, questB, startingPrice)
         questB.addPool(BC)
         questC.addPool(BC)
 
@@ -326,7 +341,8 @@ describe('Routing', () => {
         globalState.pools.set(poolB.name, poolB)
 
         // [TEST 2, TEST 1] (cited/citing)
-        const AB = creator.createPool(questB, questA)
+        const startingPrice = questA.curPrice / questB.curPrice
+        const AB = creator.createPool(questB, questA, startingPrice)
         questA.addPool(AB)
         questB.addPool(AB)
         creator.citeQuest(AB, priceMin, priceMax, 0, citeAmount)
@@ -368,7 +384,8 @@ describe('Routing', () => {
         poolB.buy(555) // Buy TEST_2 (around 500)
 
         // [TEST 1, TEST 2] (cited/citing)
-        const AB = creator.createPool(questB, questA)
+        const startingPrice = questA.curPrice / questB.curPrice
+        const AB = creator.createPool(questB, questA, startingPrice)
         questA.addPool(AB)
         questB.addPool(AB)
         creator.citeQuest(AB, priceMin, priceMax, citeAmount, 0)
@@ -403,7 +420,8 @@ describe('Routing', () => {
         poolB.buy(555) // Buy TEST_2 (around 500)
 
         // [TEST 1, TEST 2] (cited/citing)
-        const AB = creator.createPool(questB, questA)
+        const startingPrice = questA.curPrice / questB.curPrice
+        const AB = creator.createPool(questB, questA, startingPrice)
         questA.addPool(AB)
         questB.addPool(AB)
         creator.citeQuest(AB, priceMin, priceMax, 0, citeAmount)
@@ -432,7 +450,8 @@ describe('Routing', () => {
         globalState.quests.set(questB.name, questB)
         globalState.pools.set(poolB.name, poolB)
 
-        const AB = creator.createPool(questB, questA)
+        const startingPrice = questA.curPrice / questB.curPrice
+        const AB = creator.createPool(questB, questA, startingPrice)
         const priceRange = creator.calculatePriceRange(AB, poolB, poolA, 2)
         questA.addPool(AB)
         questB.addPool(AB)
@@ -468,7 +487,8 @@ describe('Routing', () => {
         globalState.quests.set(questB.name, questB)
         globalState.pools.set(poolB.name, poolB)
 
-        const AB = creator.createPool(questB, questA)
+        const startingPrice = questA.curPrice / questB.curPrice
+        const AB = creator.createPool(questB, questA, startingPrice)
         const priceRange = creator.calculatePriceRange(poolB, poolA, 2)
         questA.addPool(AB)
         questB.addPool(AB)
@@ -476,22 +496,22 @@ describe('Routing', () => {
         globalState.pools.set(AB.name, AB)
 
         const router = new Router(globalState.quests, globalState.pools)
-        const res1 = router.smartSwap('USDC', 'TEST', 250, 10, true)
+        const res1 = router.smartSwap('USDC', 'TEST', 250)
         expect(res1[0]).toBeCloseTo(-250)
         expect(res1[1]).toBeCloseTo(61.59, 0) // 116
 
-        const res2 = router.smartSwap('USDC', 'TEST', 100, 10, true)
+        const res2 = router.smartSwap('USDC', 'TEST', 100)
         expect(res2[0]).toBeCloseTo(-100)
         expect(res2[1]).toBeCloseTo(23.8, 0) // 41
 
-        const res3 = router.smartSwap('USDC', 'TEST', 50, 10, true)
+        const res3 = router.smartSwap('USDC', 'TEST', 50)
         expect(res3[0]).toBeCloseTo(-50)
         expect(res3[1]).toBeCloseTo(11.73, 0) // 20
 
         const res4 = router.smartSwap('USDC', 'TEST', 650)
-        const res5 = router.smartSwap('USDC', 'TEST', 400, 10, true)
-        const res6 = router.smartSwap('USDC', 'TEST', 400, 10, true)
-        const res7 = router.smartSwap('USDC', 'TEST', 150, 10, true)
+        const res5 = router.smartSwap('USDC', 'TEST', 400)
+        const res6 = router.smartSwap('USDC', 'TEST', 400)
+        const res7 = router.smartSwap('USDC', 'TEST', 150)
 
         const sumIn =
             res1[0] + res2[0] + res3[0] + res4[0] + res5[0] + res6[0] + res7[0]

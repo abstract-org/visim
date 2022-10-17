@@ -339,7 +339,8 @@ it('Calculates reserves properly by swapping in different directions in both USD
     quest.addPool(CA)
     quest3.addPool(CA)
 
-    const AD = investor.createPool(quest4, quest)
+    const startingPrice3 = quest.curPrice / quest4.curPrice
+    const AD = investor.createPool(quest4, quest, startingPrice3)
     const priceRange3 = investor.calculatePriceRange(AD, pool4, pool)
     investor.citeQuest(AD, priceRange3.min, priceRange3.max, 1000, 600)
     quest.addPool(AD)

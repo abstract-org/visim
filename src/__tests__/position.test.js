@@ -267,7 +267,8 @@ describe('Price Range Manager', () => {
 
         A.buy(999999999)
 
-        const AB = qA.createPool({ tokenLeft: qB })
+        const startingPrice = qA.curPrice / qB.curPrice
+        const AB = qA.createPool({ tokenLeft: qB, startingPrice })
 
         const ppAB = investor.calculatePriceRange(AB, B, A, 2)
         const ppBA = investor.calculatePriceRange(AB, A, B, 2)
@@ -289,7 +290,8 @@ describe('Price Range Manager', () => {
 
         B.buy(999999999)
 
-        const AB = qA.createPool({ tokenLeft: qB })
+        const startingPrice = qA.curPrice / qB.curPrice
+        const AB = qA.createPool({ tokenLeft: qB, startingPrice })
 
         const ppAB = investor.calculatePriceRange(AB, B, A, 2)
         const ppBA = investor.calculatePriceRange(AB, A, B, 2)
@@ -312,7 +314,8 @@ describe('Price Range Manager', () => {
         A.buy(25000)
         B.buy(5000)
 
-        const AB = qA.createPool({ tokenLeft: qB })
+        const startingPrice = qA.curPrice / qB.curPrice
+        const AB = qA.createPool({ tokenLeft: qB, startingPrice })
 
         const ppAB = investor.calculatePriceRange(AB, B, A, 2)
         const ppBA = investor.calculatePriceRange(AB, A, B, 2)
@@ -335,7 +338,8 @@ describe('Price Range Manager', () => {
         A.buy(5000)
         B.buy(25000)
 
-        const AB = qA.createPool({ tokenLeft: qB })
+        const startingPrice = qA.curPrice / qB.curPrice
+        const AB = qA.createPool({ tokenLeft: qB, startingPrice })
 
         const ppAB = investor.calculatePriceRange(AB, B, A, 2)
         const ppBA = investor.calculatePriceRange(AB, A, B, 2)
@@ -358,7 +362,8 @@ describe('Price Range Manager', () => {
         A.buy(25000)
         B.buy(25000)
 
-        const AB = qA.createPool({ tokenLeft: qB })
+        const startingPrice = qA.curPrice / qB.curPrice
+        const AB = qA.createPool({ tokenLeft: qB, startingPrice })
 
         const ppAB = investor.calculatePriceRange(AB, B, A, 3)
         const ppBA = investor.calculatePriceRange(AB, A, B, 3)
@@ -377,7 +382,9 @@ describe('Price Range Manager', () => {
         const qB = investor.createQuest('B')
         const A = qA.createPool({ tokenLeft: new UsdcToken() })
         const B = qB.createPool({ tokenLeft: new UsdcToken() })
-        const AB = qA.createPool({ tokenLeft: qB })
+
+        const startingPrice = qA.curPrice / qB.curPrice
+        const AB = qA.createPool({ tokenLeft: qB, startingPrice })
 
         const ppAB = investor.calculatePriceRange(AB, B, A, 2)
         const ppBA = investor.calculatePriceRange(AB, A, B, 2)
@@ -400,7 +407,8 @@ describe('Price Range Manager', () => {
         A.buy(999999999)
         B.buy(999999999)
 
-        const AB = qA.createPool({ tokenLeft: qB })
+        const startingPrice = qA.curPrice / qB.curPrice
+        const AB = qA.createPool({ tokenLeft: qB, startingPrice })
 
         const ppAB = investor.calculatePriceRange(AB, B, A, 2)
         const ppBA = investor.calculatePriceRange(AB, A, B, 2)
@@ -415,13 +423,60 @@ describe('Price Range Manager', () => {
 })
 
 describe('Citation Manager', () => {
+    it('Returns totalIn positive when citing non-native direction', () => {
+        const investor = Investor.create('Author', 'Author', 10000)
+        const qA = investor.createQuest('A')
+        const qB = investor.createQuest('B')
+        const A = qA.createPool({ tokenLeft: new UsdcToken() })
+        const B = qB.createPool({ tokenLeft: new UsdcToken() })
+        const startingPrice = A.curPrice / B.curPrice
+        const AB = investor.createPool(qB, qA, startingPrice)
+
+        const ppAB = investor.calculatePriceRange(AB, B, A, 2)
+
+        const [totalIn, totalOut] = investor.citeQuest(
+            AB,
+            ppAB.min,
+            ppAB.max,
+            0,
+            1000,
+            ppAB.native
+        )
+
+        expect(totalIn).toBeCloseTo(1000, 0)
+    })
+
+    it('Returns totalIn positive when citing native direction', () => {
+        const investor = Investor.create('Author', 'Author', 10000)
+        const qA = investor.createQuest('A')
+        const qB = investor.createQuest('B')
+        const A = qA.createPool({ tokenLeft: new UsdcToken() })
+        const B = qB.createPool({ tokenLeft: new UsdcToken() })
+        const startingPrice = A.curPrice / B.curPrice
+        const AB = investor.createPool(qB, qA, startingPrice)
+
+        const ppBA = investor.calculatePriceRange(AB, A, B, 2)
+
+        const [totalIn, totalOut] = investor.citeQuest(
+            AB,
+            ppBA.min,
+            ppBA.max,
+            1000,
+            0,
+            ppBA.native
+        )
+
+        expect(totalIn).toBeCloseTo(1000, 0)
+    })
+
     it('Cites both sides with default prices in cross pool', () => {
         const investor = Investor.create('Author', 'Author', 10000)
         const qA = investor.createQuest('A')
         const qB = investor.createQuest('B')
         const A = qA.createPool({ tokenLeft: new UsdcToken() })
         const B = qB.createPool({ tokenLeft: new UsdcToken() })
-        const AB = investor.createPool(qB, qA)
+        const startingPrice = qA.curPrice / qB.curPrice
+        const AB = investor.createPool(qB, qA, startingPrice)
 
         const ppAB = investor.calculatePriceRange(AB, B, A, 2)
         const ppBA = investor.calculatePriceRange(AB, A, B, 2)
@@ -472,7 +527,8 @@ describe('Citation Manager', () => {
         const qB = investor.createQuest('B')
         const A = qA.createPool({ tokenLeft: new UsdcToken() })
         const B = qB.createPool({ tokenLeft: new UsdcToken() })
-        const AB = investor.createPool(qB, qA)
+        const startingPrice = qA.curPrice / qB.curPrice
+        const AB = investor.createPool(qB, qA, startingPrice)
 
         A.buy(999999999)
 
@@ -525,7 +581,8 @@ describe('Citation Manager', () => {
         const qB = investor.createQuest('B')
         const A = qA.createPool({ tokenLeft: new UsdcToken() })
         const B = qB.createPool({ tokenLeft: new UsdcToken() })
-        const AB = investor.createPool(qB, qA)
+        const startingPrice = qA.curPrice / qB.curPrice
+        const AB = investor.createPool(qB, qA, startingPrice)
 
         B.buy(999999999)
 
@@ -578,7 +635,8 @@ describe('Citation Manager', () => {
         const qB = investor.createQuest('B')
         const A = qA.createPool({ tokenLeft: new UsdcToken() })
         const B = qB.createPool({ tokenLeft: new UsdcToken() })
-        const AB = investor.createPool(qB, qA)
+        const startingPrice = qA.curPrice / qB.curPrice
+        const AB = investor.createPool(qB, qA, startingPrice)
 
         A.buy(25000)
         B.buy(5000)
@@ -634,6 +692,4 @@ describe('Citation Manager', () => {
         expect(posMinBA.liquidity).toBeCloseTo(1778, 0)
         expect(posMaxBA.liquidity).toBeCloseTo(4777, 0)
     })
-
-    it('Cites both sides with higher B', () => {})
 })

@@ -30,29 +30,35 @@ it('Generates investors', async () => {
         invGenAlias: 'AUTHOR',
         invGenName: 'Researchers',
         createQuest: 'AGRA',
-        valueSellEveryDays: 0,
-        keepCreatingPeriodDays: 1,
+        valueSellPeriodDays: 10,
+        valueSellAmount: 5000,
+        keepCreatingPeriodDays: 11,
         keepCreatingQuests: 'AGRA'
     }
     const invInvestor = {
         ...invGen,
         invGenAlias: 'TWODAY',
         invGenName: 'Twodays',
-        buySellPeriodDays: 2,
-        buyGainersFrequency: 4,
-        swapIncDir: 'buy'
+        buySellPeriodDays: 3,
+        buyGainersFrequency: 10,
+        includeSingleName: 'AGORA',
+        buySinglePerc: 5,
+        swapDecFrequency: 2,
+        swapIncFrequency: 3
     }
     const invInvestor2 = {
         ...invGen,
         invGenAlias: 'THREEDAY',
         invGenName: 'Threedays',
-        buySellPeriodDays: 2,
-        buyGainersFrequency: 4
+        buySellPeriodDays: 3,
+        buyGainersFrequency: 5
     }
     const queAuthor = {
         ...questGen,
         questGenAlias: 'AGRA',
-        questGenName: 'Cookie'
+        questGenName: 'Athletics',
+        citeSingleName: 'AGORA',
+        citeSingleMultiplier: 3
     }
 
     const creator = Investor.create('creator', 'creator', 10000)
@@ -61,7 +67,7 @@ it('Generates investors', async () => {
     globalState.quests.set(fndQuest.name, fndQuest)
     globalState.pools.set(fndPool.name, fndPool)
 
-    const performanceTest = false
+    const performanceTest = true
     const genManager = new Generator(
         [invAuthor, invInvestor, invInvestor2],
         [queAuthor],
@@ -72,17 +78,14 @@ it('Generates investors', async () => {
 
     let dayPerf = []
 
+    const tot0 = performance.now()
+
     const genDays = 30
     for (let day = 1; day <= genDays; day++) {
         console.log(`Simulating day ${day}`)
         const d0 = performance.now()
         await genManager.step(day)
         const d1 = performance.now()
-
-        if (performanceTest) console.log(genManager.getOpsTime())
-        // const totalTradingTime = Object.entries(genManager.getOpsTime())
-        //     .map((p) => p[1].time)
-        //     .reduce((p, a) => p + a, 0)
 
         const daySec = d1 - d0 >= 1000 ? true : false
         dayPerf.push({
@@ -92,6 +95,8 @@ it('Generates investors', async () => {
         })
     }
 
+    const tot1 = performance.now()
+
     globalState.pools = genManager.getPools()
     globalState.quests = genManager.getQuests()
     globalState.investors = genManager.getInvestors()
@@ -99,6 +104,43 @@ it('Generates investors', async () => {
     console.log(`||| TOTAL TRADING OPERATIONS: ${genManager.getOps()} |||`)
     console.log(`Days performance`)
     console.table(dayPerf)
+
+    console.table(genManager.getOpsTime())
+
+    const totalTime = tot1 - tot0
+    const totMeasure = genManager.getOpsTime()
+    const totalMeasured = Object.keys(totMeasure).reduce((p, n, k) => {
+        return p + totMeasure[n].time
+    }, 0)
+
+    console.table({
+        total: (totalTime / 1000).toFixed(2),
+        totalTrade: (totalMeasured / 1000).toFixed(2)
+    })
+
+    console.table(
+        globalState.investors.map((inv) => ({
+            name: inv.name,
+            usdc: inv.balances.USDC
+        }))
+    )
+
+    console.table(
+        globalState.quests.map((q) => ({
+            name: q.name,
+            pools: q.pools.length
+        }))
+    )
+
+    console.table(
+        globalState.pools.map((p) => ({
+            name: p.name,
+            curp: p.curPrice,
+            mcap: p.getMarketCap(),
+            tvl: p.getTVL(),
+            isQ: p.isQuest()
+        }))
+    )
 })
 
 it('Generates quests', () => {})

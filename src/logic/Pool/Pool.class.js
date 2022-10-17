@@ -237,7 +237,7 @@ export default class Pool {
             Math.sqrt(this.curPrice)
         )
 
-        //console.log(priceMin, priceMax, liquidity)
+        //console.log(token0Amt, token1Amt, priceMin, priceMax, liquidity)
 
         if (liquidity === 0) {
             return []
@@ -262,6 +262,12 @@ export default class Pool {
 
         if (amount1 > 0) {
             amounts[1] = amount1
+        }
+
+        // Flip return in/out indicator if non-native citation
+        if (!native && amounts[0] === 0) {
+            amounts[0] = amounts[1]
+            amounts[1] = amounts[1] - amounts[0]
         }
 
         this.setActiveLiq(priceMin, priceMax)
@@ -310,6 +316,15 @@ export default class Pool {
         return null
     }
 
+    /**
+     * @TODO: Returns mixed liquidities when both tokens provided??
+     * @param {number} token0
+     * @param {number} token1
+     * @param {number} sqrtPriceMin
+     * @param {number} sqrtPriceMax
+     * @param {number} currentSqrtPrice
+     * @returns {number}
+     */
     getLiquidityForAmounts(
         token0,
         token1,
