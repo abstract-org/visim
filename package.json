@@ -31,10 +31,10 @@
         "zustand": "^4.1.1"
     },
     "scripts": {
-        "start": "craco start",
-        "build": "craco build",
-        "test": "craco test --env=node",
-        "eject": "craco eject"
+        "start": "react-scripts start",
+        "build": "react-scripts build",
+        "test": "react-scripts test --env=node",
+        "eject": "react-scripts eject"
     },
     "eslintConfig": {
         "extends": [
