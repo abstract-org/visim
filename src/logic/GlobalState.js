@@ -24,7 +24,6 @@ const globalState = {
     poolStore: {
         pools: [],
         swaps: [],
-        valueLinks: [],
         active: null,
         swapMode: 'smart'
     },

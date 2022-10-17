@@ -13,7 +13,7 @@ import useLogsStore from '../Logs/logs.store'
 import { QuestSelector } from '../Quest/Quest.components'
 import useQuestStore from '../Quest/quest.store'
 import Router from '../Router/Router.class'
-import { formSwapData, getCombinedSwaps } from '../Utils/logicUtils'
+import { formSwapData, getCombinedSwaps, isZero } from '../Utils/logicUtils'
 import { appendIfNotExist } from '../Utils/uiUtils'
 import globalConfig from '../config.global.json'
 import usePoolStore from './pool.store'
@@ -47,10 +47,10 @@ export const PoolSelector = () => {
 export const PoolChartStats = () => {
     const activePool = usePoolStore((state) => state.active)
     const swaps = usePoolStore((state) => state.swaps)
+    const logObjs = useLogsStore((state) => state.logObjs)
     const nf = new Intl.NumberFormat('en-US')
     const pool = activePool && globalState.pools.get(activePool)
 
-    const curPrice = pool && pool.curPrice
     const totalValueLocked = activePool && pool.getTVL()
     const marketCap = activePool && nf.format(pool.getMarketCap())
 
@@ -88,13 +88,17 @@ export const PoolChartStats = () => {
                     <span>
                         <h4>
                             {pool.tokenLeft}:{' '}
-                            {nf.format(Math.round(pool.volumeToken0))}
+                            {isZero(pool.volumeToken0)
+                                ? 0
+                                : nf.format(Math.round(pool.volumeToken0))}
                         </h4>
                     </span>
                     <span>
                         <h4>
                             {pool.tokenRight}:{' '}
-                            {nf.format(Math.round(pool.volumeToken1))}
+                            {isZero(pool.volumeToken1)
+                                ? 0
+                                : nf.format(Math.round(pool.volumeToken1))}
                         </h4>
                     </span>
                 </div>

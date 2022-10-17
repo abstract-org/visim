@@ -104,12 +104,8 @@ export const NavBalance = (props) => {
     const balances = props.investor.balances
     let nav = globalState.pools.values().reduce((acc, pool) => {
         acc = parseFloat(acc)
-        if (
-            pool.isQuest() &&
-            balances[pool.tokenRight.name] &&
-            pool.curPrice > 0
-        ) {
-            return acc + pool.curPrice * balances[pool.tokenRight.name]
+        if (pool.isQuest() && balances[pool.tokenRight] && pool.curPrice > 0) {
+            return acc + pool.curPrice * balances[pool.tokenRight]
         }
         return acc + 0
     }, 0)

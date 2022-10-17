@@ -4,7 +4,7 @@ import HashMap from 'hashmap'
 import Investor from '../Investor/Investor.class'
 import UsdcToken from '../Quest/UsdcToken.class'
 import Router from '../Router/Router.class'
-import { formSwapData, getCombinedSwaps } from '../Utils/logicUtils'
+import { formSwapData, getCombinedSwaps, isZero } from '../Utils/logicUtils'
 
 const _OPS_TIME_INITIAL = {
     invcreate: { time: 0, ops: 0 },
@@ -535,9 +535,9 @@ class Generator {
 
         // That would be an edge case, rare, but if happens, need to debug why
         if (
-            router.isZero(totalIn) ||
+            isZero(totalIn) ||
             totalOut <= 0 ||
-            router.isZero(totalOut) ||
+            isZero(totalOut) ||
             isNaN(totalIn) ||
             isNaN(totalOut)
         ) {
@@ -567,7 +567,7 @@ class Generator {
         }
 
         const perPoolAmt = spendAmount / tradePools.length
-        if (perPoolAmt <= 0 || router.isZero(perPoolAmt)) {
+        if (perPoolAmt <= 0 || isZero(perPoolAmt)) {
             return
         }
 
@@ -602,9 +602,9 @@ class Generator {
 
             //That would be an edge case, rare, but if happens, need to debug why
             if (
-                router.isZero(totalIn) ||
+                isZero(totalIn) ||
                 totalOut <= 0 ||
-                router.isZero(totalOut) ||
+                isZero(totalOut) ||
                 isNaN(totalIn) ||
                 isNaN(totalOut)
             ) {
@@ -780,9 +780,9 @@ class Generator {
             this.storeTradedPool(day, pool)
 
             if (
-                router.isZero(totalIn) ||
+                isZero(totalIn) ||
                 totalOut <= 0 ||
-                router.isZero(totalOut) ||
+                isZero(totalOut) ||
                 isNaN(totalIn) ||
                 isNaN(totalOut)
             ) {
@@ -877,8 +877,8 @@ class Generator {
                         if (
                             isNaN(amtIn) ||
                             amtOut <= 0 ||
-                            router.isZero(amtIn) ||
-                            router.isZero(amtOut)
+                            isZero(amtIn) ||
+                            isZero(amtOut)
                         ) {
                             const pool = this.#cachedPools.get(
                                 `${this.#DEFAULT_TOKEN}-${quest}`

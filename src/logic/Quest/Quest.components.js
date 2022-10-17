@@ -69,7 +69,7 @@ export const QuestCitation = () => {
     const addPool = usePoolStore((state) => state.addPool)
     const investor = globalState.investors.get(activeInvestor)
     const swaps = usePoolStore((state) => state.swaps)
-    const createValueLink = usePoolStore((state) => state.createValueLink)
+    const logObjs = useLogsStore((state) => state.logObjs)
     const addLogObj = useLogsStore((state) => state.addLogObj)
     const proMode = useQuestStore((state) => state.proMode)
     const setProMode = useQuestStore((state) => state.setProMode)
@@ -146,6 +146,8 @@ export const QuestCitation = () => {
                 )
 
             let crossPool
+            let cpExists = false
+
             if (
                 !globalState.pools.has(poolName) &&
                 !globalState.pools.has(invPoolName)
@@ -157,6 +159,7 @@ export const QuestCitation = () => {
                     startingPrice
                 )
             } else {
+                cpExists = true
                 crossPool = globalState.pools
                     .values()
                     .find(
@@ -165,7 +168,7 @@ export const QuestCitation = () => {
                     )
             }
 
-            const amt0 = activeQuest === crossPool.tokenLeft ? 0 : calcAmountA
+            const amt0 = activeQuest !== crossPool.tokenLeft ? 0 : calcAmountA
             const amt1 = amt0 === 0 ? calcAmountA : 0
 
             const priceRange = investor.calculatePriceRange(
@@ -174,33 +177,30 @@ export const QuestCitation = () => {
                 citingPool,
                 citationMultiplier
             )
-            investor.citeQuest(
+            const [totalIn, _] = investor.citeQuest(
                 crossPool,
                 priceRange.min,
                 priceRange.max,
                 amt0,
                 amt1,
-                activeQuest
+                priceRange.native
             )
-            citedQuest.addPool(crossPool)
-            citingQuest.addPool(crossPool)
-            globalState.quests.set(citedQuest.name, citedQuest)
-            globalState.quests.set(citingQuest.name, citingQuest)
-            investor.addBalance(citingQuest.name, -calcAmountA)
 
-            globalState.pools.set(crossPool.name, crossPool)
-            addPool(crossPool.name)
-            globalState.poolStore.pools.push(crossPool.name)
-            const valueLink = {
-                investor: investor.hash,
-                vl: crossPool.name,
-                initialAmount: calcAmountA,
-                initialToken: citingQuest.name
+            if (!cpExists) {
+                citedQuest.addPool(crossPool)
+                citingQuest.addPool(crossPool)
+
+                globalState.quests.set(citedQuest.name, citedQuest)
+                globalState.quests.set(citingQuest.name, citingQuest)
+                globalState.pools.set(crossPool.name, crossPool)
+                globalState.poolStore.pools.push(crossPool.name)
+                globalState.poolStore.active = crossPool.name
+                addPool(crossPool.name)
             }
-            createValueLink(valueLink)
-            globalState.poolStore.valueLinks.push(valueLink)
+
+            setActivePool('')
             setActivePool(crossPool.name)
-            globalState.poolStore.active = crossPool.name
+            investor.addBalance(citingQuest.name, -totalIn)
 
             const logData = {
                 pool: crossPool.name,

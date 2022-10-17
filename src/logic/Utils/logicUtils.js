@@ -127,3 +127,7 @@ export const sanitizeRemoteScenario = (loadedObj) => ({
         )
     }
 })
+
+export const isZero = (amount) => {
+    return Math.abs(amount) < 1e-10
+}
