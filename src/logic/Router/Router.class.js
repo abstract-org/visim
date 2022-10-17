@@ -1,6 +1,6 @@
 import HashMap from 'hashmap'
 
-import { byName } from '../Utils/logicUtils'
+import { isZero } from '../Utils/logicUtils'
 import { Graph } from './Graph.class'
 
 export default class Router {
@@ -77,7 +77,7 @@ export default class Router {
                 this.#_VISITED_PATHS.push(this.#_PRICED_PATHS[0])
             }
         } while (
-            !this.isZero(amountIn) &&
+            !isZero(amountIn) &&
             amountIn > 0 &&
             !this.#isNearZero(amountIn) &&
             this.#_PRICED_PATHS.length
@@ -153,7 +153,7 @@ export default class Router {
             amount += inAmt
         } while (
             (!isNaN(lastOutPrice) || lastOutPrice > 0) &&
-            !this.isZero(amount) &&
+            !isZero(amount) &&
             nextPricedPath &&
             lastOutPrice >= nextPricedPath.price
         )
@@ -404,10 +404,6 @@ export default class Router {
         }
 
         return chunks
-    }
-
-    isZero(amount) {
-        return Math.abs(amount) < 1e-10
     }
 
     #isNearZero(amountIn) {

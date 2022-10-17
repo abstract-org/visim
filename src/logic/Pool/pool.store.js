@@ -7,7 +7,6 @@ import { overrideState } from '../Utils/logicUtils'
 const INITIAL_STATE = {
     pools: [],
     swaps: [],
-    valueLinks: [],
     active: null,
     swapMode: 'smart'
 }
@@ -22,8 +21,6 @@ const usePoolStore = create(
                 set((state) => ({ pools: [...state.pools, pool] })),
             addSwap: (swap) =>
                 set((state) => ({ swaps: [...state.swaps, swap] })),
-            createValueLink: (vl) =>
-                set((state) => ({ valueLinks: [...state.valueLinks, vl] })),
             setActive: (pool) => set(() => ({ active: pool })),
             setSwapMode: (mode) => set((state) => ({ swapMode: mode })),
             override: (newData) =>

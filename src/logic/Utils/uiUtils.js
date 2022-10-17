@@ -1,4 +1,3 @@
-import { ProgressSpinner } from 'primereact/progressspinner'
 import React from 'react'
 
 import globalState from '../GlobalState'
