@@ -283,6 +283,8 @@ export const GeneratorRunner = () => {
                 addLogObj(action)
                 globalState.logStore.logObjs.push(action)
             })
+
+            await genManager.sleep(100)
         }
         setPassedDays(passedDays + genDays)
         setGenActive(false)

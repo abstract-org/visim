@@ -50,7 +50,8 @@ export const prepareCrossPools = (defaultTokenASum) => {
     quests.push(questE)
 
     // [A,B]
-    const AB = creator.createPool(questB, questA)
+    const startingPrice = questA.curPrice / questB.curPrice
+    const AB = creator.createPool(questB, questA, startingPrice)
     const {
         min: pmin1,
         max: pmax1,
@@ -61,7 +62,8 @@ export const prepareCrossPools = (defaultTokenASum) => {
     creator.citeQuest(AB, pmin1, pmax1, 0, defaultTokenASum, native1) // deposit A (citing)
 
     // [C,A]
-    const CA = creator.createPool(questA, questC)
+    const startingPrice2 = questC.curPrice / questA.curPrice
+    const CA = creator.createPool(questA, questC, startingPrice2)
     const {
         min: pmin2,
         max: pmax2,
@@ -72,7 +74,8 @@ export const prepareCrossPools = (defaultTokenASum) => {
     creator.citeQuest(CA, pmin2, pmax2, 0, defaultTokenASum, native2) // deposit C (citing)
 
     // [C,B]
-    const CB = creator.createPool(questC, questB)
+    const startingPrice3 = questB.curPrice / questC.curPrice
+    const CB = creator.createPool(questC, questB, startingPrice3)
     const {
         min: pmin3,
         max: pmax3,
@@ -83,7 +86,8 @@ export const prepareCrossPools = (defaultTokenASum) => {
     creator.citeQuest(CB, pmin3, pmax3, 0, defaultTokenASum, native3) // deposit B (citing)
 
     // [C,E]
-    const CE = creator.createPool(questE, questC)
+    const startingPrice4 = questC.curPrice / questE.curPrice
+    const CE = creator.createPool(questE, questC, startingPrice4)
     const {
         min: pmin4,
         max: pmax4,
@@ -94,7 +98,8 @@ export const prepareCrossPools = (defaultTokenASum) => {
     creator.citeQuest(CE, pmin4, pmax4, 0, defaultTokenASum, native4) // deposit C (citing)
 
     // [D,A]
-    const DA = creator.createPool(questD, questA)
+    const startingPrice5 = questA.curPrice / questD.curPrice
+    const DA = creator.createPool(questD, questA, startingPrice5)
     const {
         min: pmin5,
         max: pmax5,
@@ -105,7 +110,8 @@ export const prepareCrossPools = (defaultTokenASum) => {
     creator.citeQuest(DA, pmin5, pmax5, 0, defaultTokenASum, native5) // deposit A (citing)
 
     // [D,E]
-    const DE = creator.createPool(questE, questD)
+    const startingPrice6 = questD.curPrice / questE.curPrice
+    const DE = creator.createPool(questE, questD, startingPrice6)
     const {
         min: pmin6,
         max: pmax6,
@@ -116,7 +122,8 @@ export const prepareCrossPools = (defaultTokenASum) => {
     creator.citeQuest(DE, pmin6, pmax6, 0, defaultTokenASum, native6) // deposit D (citing)
 
     // [D,C]
-    const DC = creator.createPool(questC, questD)
+    const startingPrice7 = questD.curPrice / questC.curPrice
+    const DC = creator.createPool(questC, questD, startingPrice7)
     const {
         min: pmin7,
         max: pmax7,
@@ -127,7 +134,8 @@ export const prepareCrossPools = (defaultTokenASum) => {
     creator.citeQuest(DC, pmin7, pmax7, 0, defaultTokenASum, native7) // deposit D (citing)
 
     // [E,B]
-    const EB = creator.createPool(questB, questE)
+    const startingPrice8 = questE.curPrice / questB.curPrice
+    const EB = creator.createPool(questB, questE, startingPrice8)
     const {
         min: pmin8,
         max: pmax8,
