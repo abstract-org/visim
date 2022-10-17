@@ -229,10 +229,7 @@ export const SwapModule = () => {
             globalState.logStore.logObjs.push(swapData)
         } else {
             const smSwaps = router.getSwaps()
-            const combSwaps = getCombinedSwaps(
-                smSwaps,
-                globalState.pools.values()
-            )
+            const combSwaps = getCombinedSwaps(smSwaps, globalState.pools)
 
             Object.entries(combSwaps).forEach((ops) => {
                 Object.entries(ops[1]).forEach((op) => {
@@ -313,10 +310,7 @@ export const SwapModule = () => {
             globalState.logStore.logObjs.push(swapData)
         } else {
             const smSwaps = router.getSwaps()
-            const combSwaps = getCombinedSwaps(
-                smSwaps,
-                globalState.pools.values()
-            )
+            const combSwaps = getCombinedSwaps(smSwaps, globalState.pools)
 
             Object.entries(combSwaps).forEach((ops) => {
                 Object.entries(ops[1]).forEach((op) => {

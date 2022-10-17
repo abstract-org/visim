@@ -99,8 +99,8 @@ describe('Path finding', () => {
         const genManager = new Generator(
             [invAuthor],
             [queAuthor],
-            globalState.pools.values(),
-            globalState.quests.values()
+            globalState.pools,
+            globalState.quests
         )
 
         for (let day = 1; day <= genDays; day++) {
