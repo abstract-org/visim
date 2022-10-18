@@ -24,6 +24,7 @@ import {
     updateStateQuestConfig
 } from '../Utils/logicUtils'
 import { appendIfNotExist, capitalize } from '../Utils/uiUtils'
+import useDayTrackerStore from '../dayTracker.store'
 import Generator from './Generator.class'
 import { InvestorModuleComponent } from './InvestorModuleComponent'
 import { QuestModuleComponent } from './QuestModuleComponent'
@@ -113,22 +114,24 @@ export const GeneratorRunner = () => {
     const invConfigs = useGeneratorStore((state) => state.invConfigs)
     const questConfigs = useGeneratorStore((state) => state.questConfigs)
     const setScenarioId = useGeneratorStore((state) => state.setScenarioId)
+    const currentDay = useDayTrackerStore((state) => state.currentDay)
+
     const [genDays, setGenDays] = useState(10)
     const [passedDays, setPassedDays] = useState(0)
     const [genActive, setGenActive] = useState(false)
     const [genOutput, setGenOutput] = useState({
-        day: 1,
+        day: currentDay,
         ...dayData
     })
 
-    const swap = usePoolStore((state) => state.swap)
+    const swaps = usePoolStore((state) => state.swaps)
 
     const addPool = usePoolStore((state) => state.addPool)
     const addInvestor = useInvestorStore((state) => state.addInvestor)
     const addQuest = useQuestStore((state) => state.addQuest)
     const addSwap = usePoolStore((state) => state.addSwap)
     const addLogObj = useLogsStore((state) => state.addLogObj)
-    const logObjs = useLogsStore(logObjsSelector)
+    const setDay = useDayTrackerStore((state) => state.setDay)
 
     const addInvConfig = useGeneratorStore((state) => state.addInvConfig)
     const addQuestConfig = useGeneratorStore((state) => state.addQuestConfig)
@@ -163,12 +166,6 @@ export const GeneratorRunner = () => {
 
             setScenarioId(currentScenario.scenarioId)
         }
-
-        let dayIter =
-            (logObjs.length >= 1 && logObjs[logObjs.length - 1].day) ||
-            passedDays
-        setPassedDays(dayIter)
-        console.log(dayIter, passedDays)
     }, [
         addInvConfig,
         resetInvConfigs,
@@ -177,8 +174,7 @@ export const GeneratorRunner = () => {
         scenario,
         scenarios,
         setScenarioId,
-        logObjs,
-        passedDays
+        currentDay
     ])
 
     const handleNewScenario = async () => {
@@ -248,7 +244,8 @@ export const GeneratorRunner = () => {
             invConfigs,
             questConfigs,
             globalState.pools,
-            globalState.quests
+            globalState.quests,
+            swaps
         )
 
         // Every day
@@ -295,7 +292,8 @@ export const GeneratorRunner = () => {
                 globalState.logStore.logObjs.push(action)
             })
 
-            await genManager.sleep(100)
+            await genManager.sleep(150)
+            setDay(day)
         }
         setPassedDays(passedDays + genDays)
         setGenActive(false)
@@ -307,10 +305,14 @@ export const GeneratorRunner = () => {
                 {genActive ? (
                     <div className="sim-content">
                         <ProgressBar
-                            value={(
-                                (genOutput.day - passedDays) *
-                                (100 / genDays)
-                            ).toFixed(1)}
+                            value={
+                                (genOutput.day - passedDays) * (100 / genDays)
+                            }
+                            displayValueTemplate={(value) => (
+                                <React.Fragment>
+                                    {(value * genDays) / 100}/{genDays} days
+                                </React.Fragment>
+                            )}
                             className="w-12 flex align-self-center"
                         />
                     </div>
@@ -406,12 +408,8 @@ export const InvestorRandomGenerator = () => {
         }
 
         const newInvGen = Object.assign(invGen, {
-            invGenAlias: `${capitalize(
-                faker.word.adjective()
-            )} ${faker.name.firstName()}`,
-            invGenName: `${capitalize(
-                faker.word.adjective()
-            )} ${faker.name.firstName()}`
+            invGenAlias: `${faker.name.firstName()}`,
+            invGenName: `${faker.name.firstName()}`
         })
 
         addInvConfig(newInvGen)
@@ -486,12 +484,8 @@ export const QuestRandomGenerator = () => {
         }
 
         const newQuestGen = Object.assign(questGen, {
-            questGenAlias: `${capitalize(faker.word.adjective())} ${
-                faker.science.chemicalElement().name
-            }`,
-            questGenName: `${capitalize(faker.word.adjective())} ${
-                faker.science.chemicalElement().name
-            }`
+            questGenAlias: `${faker.science.chemicalElement().name}`,
+            questGenName: `${faker.science.chemicalElement().name}`
         })
         addQuestConfig(newQuestGen)
         globalState.generatorStore.questConfigs.push(newQuestGen)

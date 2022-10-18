@@ -67,10 +67,10 @@ describe('Liquidity Manager', () => {
 
 describe('getUSDCValue()', () => {
     it('returns 0 for non-USDC crosspool', () => {
-        const [, { AB, CA }] = prepareCrossPools()
+        const [, { BA, AC }] = prepareCrossPools()
 
-        expect(AB.getUSDCValue()).toBe(0)
-        expect(CA.getUSDCValue()).toBe(0)
+        expect(BA.getUSDCValue()).toBe(0)
+        expect(AC.getUSDCValue()).toBe(0)
     })
 
     it('returns correct value of USDC in pool', () => {
@@ -85,8 +85,34 @@ describe('getUSDCValue()', () => {
 })
 
 describe('isQuest()', () => {
+    const initialPositions = [
+        {
+            priceMin: 1,
+            priceMax: 10000,
+            tokenB: 5000,
+            tokenA: null
+        },
+        {
+            priceMin: 20,
+            priceMax: 10000,
+            tokenB: 5000,
+            tokenA: null
+        },
+        {
+            priceMin: 50,
+            priceMax: 10000,
+            tokenB: 5000,
+            tokenA: null
+        },
+        {
+            priceMin: 200,
+            priceMax: 10000,
+            tokenB: 5000,
+            tokenA: null
+        }
+    ]
     it('returns true for QUEST pool', () => {
-        const { pool } = preparePool()
+        const { pool } = preparePool(10000, 'investor', initialPositions)
 
         expect(pool.tokenLeft).toBe('USDC')
         expect(pool.isQuest()).toBe(true)
@@ -99,8 +125,8 @@ describe('isQuest()', () => {
     })
 
     it('returns false for cross-pools', () => {
-        const [, { AB }] = prepareCrossPools()
+        const [, { BA }] = prepareCrossPools()
 
-        expect(AB.isQuest()).toBe(false)
+        expect(BA.isQuest()).toBe(false)
     })
 })
