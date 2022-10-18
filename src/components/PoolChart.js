@@ -12,10 +12,10 @@ const alternatePointRotation = (ctx) => {
 const alternateBgColor = (ctx) => {
     if (!ctx.raw) return
 
-    const isSmartSwap = !ctx.raw.paths || ctx.raw.paths.split('-').length === 2
+    const isDirectSwap = !ctx.raw.paths || ctx.raw.paths.split('-').length === 2
 
-    const bought = isSmartSwap ? 'green' : 'lightgreen'
-    const sold = isSmartSwap ? 'darkred' : 'red'
+    const bought = isDirectSwap ? 'lightgreen' : 'green'
+    const sold = isDirectSwap ? 'red' : 'darkred'
 
     return ctx.raw.action === 'BOUGHT' ? bought : sold
 }
@@ -63,11 +63,11 @@ export const options = {
                     return swapLog(raw)
                 },
                 label: function (data) {
-                    const isSmartSwap =
+                    const isDirectSwap =
                         !data.raw.paths ||
                         data.raw.paths.split('-').length === 2
                     const returnedArray = [
-                        isSmartSwap ? 'SMART' : 'DIRECT',
+                        isDirectSwap ? 'DIRECT' : 'SMART',
                         'Price: ' + parseFloat(data.raw.price).toLocaleString()
                     ]
                     return returnedArray
