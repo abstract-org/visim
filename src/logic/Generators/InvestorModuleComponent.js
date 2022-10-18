@@ -283,8 +283,8 @@ export const InvestorModuleComponent = (props) => {
                         id="swapIncDir"
                         active={false}
                         display={`${
-                            props.state.swapDecDir.charAt(0).toUpperCase() +
-                            props.state.swapDecDir.slice(1)
+                            props.state.swapIncDir.charAt(0).toUpperCase() +
+                            props.state.swapIncDir.slice(1)
                         }`}
                         element="dropdown"
                         options={swapDirDropdown}
