@@ -14,6 +14,15 @@ export const swapLog = (swapData) => {
     const investor = globalState.investors.get(swapData.investorHash)
     const pool = globalState.pools.get(swapData.pool)
 
+    const mcap = `MCAP: ${nf.format(swapData.mcap)}`
+    const tvl = `TVL: ${nf.format(swapData.tvl)}`
+    const prices = `PRICES: ${pool.tokenLeft} ${nf.format(
+        pool.priceToken0.toFixed(2)
+    )} / ${pool.tokenRight} ${nf.format(pool.priceToken1.toFixed(2))}`
+    const volume = `VOLUME: ${pool.tokenLeft} ${nf.format(
+        pool.volumeToken0
+    )} / ${pool.tokenRight} ${nf.format(pool.volumeToken1)}`
+
     const amounts =
         swapData.action === 'BOUGHT'
             ? `${Math.abs(swapData.totalAmountOut).toLocaleString()} ${
@@ -27,15 +36,14 @@ export const swapLog = (swapData) => {
                   pool.tokenLeft
               }`
 
-    const paths = swapData.paths ? `through: ${swapData.paths}` : ''
+    const paths = swapData.paths ? `through: [${swapData.paths}]` : ''
     const day = swapData.day ? `[DAY ${swapData.day}] ` : ''
     const numData =
         swapData.mcap && swapData.tvl
-            ? `\n\nPool state:\nMCAP: ${nf.format(
-                  swapData.mcap
-              )}\nTVL: ${nf.format(swapData.tvl)}`
+            ? `\n[STATE] ${mcap} | ${tvl} | ${prices} | ${volume}`
             : ''
-    return `${day}Investor ${investor.type} ${swapData.action} ${amounts} ${paths} ${numData}`
+    const intent = swapData.opName ? `\n[INTENT] ${swapData.opName}` : ''
+    return `${day} ${investor.name} ${swapData.action} ${amounts} ${paths} ${numData} ${intent}`
 }
 
 export const capitalize = (str) => {
