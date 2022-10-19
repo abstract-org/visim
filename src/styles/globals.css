@@ -285,3 +285,7 @@ rect.fill-inactive {
 .p-blockui-container .p-inplace-display {
     padding: 0;
 }
+
+.p-progressbar .progressbar-label {
+    color: black;
+}

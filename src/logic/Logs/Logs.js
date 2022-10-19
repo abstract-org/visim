@@ -21,7 +21,7 @@ export const LogsModule = () => {
     let dayIter = 0
     const contents = logObjs.map((log, idx) => {
         pools.add(log.pool)
-        const invType = globalState.investors.get(log.investorHash).type
+        const invType = globalState.investors.get(log.investorHash).name
         invs.add(invType)
         actions.add(log.action.toUpperCase())
 

@@ -13,7 +13,8 @@ export const formSwapData = (
     totalAmountIn,
     totalAmountOut,
     paths,
-    day
+    day,
+    opName
 ) => {
     return {
         pool: pool ? pool.name : '',
@@ -25,7 +26,8 @@ export const formSwapData = (
         totalAmountIn: totalAmountIn ? totalAmountIn.toFixed(3) : '',
         totalAmountOut: totalAmountOut ? totalAmountOut.toFixed(3) : '',
         paths: paths ? paths.join('-') : '',
-        day: day || ''
+        day: day || '',
+        opName: opName || ''
     }
 }
 
@@ -130,4 +132,8 @@ export const sanitizeRemoteScenario = (loadedObj) => ({
 
 export const isZero = (amount) => {
     return Math.abs(amount) < 1e-10
+}
+
+export const calcGrowthRate = (curr, prev) => {
+    return ((curr - prev) / prev) * 100
 }

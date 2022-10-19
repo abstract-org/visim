@@ -16,6 +16,7 @@ import Router from '../Router/Router.class'
 import { formSwapData, getCombinedSwaps, isZero } from '../Utils/logicUtils'
 import { appendIfNotExist } from '../Utils/uiUtils'
 import globalConfig from '../config.global.json'
+import useDayTrackerStore from '../dayTracker.store'
 import usePoolStore from './pool.store'
 
 export const PoolSelector = () => {
@@ -160,6 +161,7 @@ export const SwapModule = () => {
     const addSwap = usePoolStore((state) => state.addSwap)
     const addLogObj = useLogsStore((state) => state.addLogObj)
     const swapMode = usePoolStore((state) => state.swapMode)
+    const day = useDayTrackerStore((state) => state.currentDay)
     const router = new Router(globalState.quests, globalState.pools)
 
     const investor = activeInvestor && globalState.investors.get(activeInvestor)
@@ -225,7 +227,9 @@ export const SwapModule = () => {
                 investor,
                 'BOUGHT',
                 totalAmountIn,
-                totalAmountOut
+                totalAmountOut,
+                null,
+                day
             )
             addSwap(swapData)
             globalState.poolStore.swaps.push(swapData)
@@ -244,7 +248,8 @@ export const SwapModule = () => {
                         op[0],
                         op[1].totalAmountIn,
                         op[1].totalAmountOut,
-                        op[1].path
+                        op[1].path,
+                        day
                     )
                     addSwap(swapData)
                     globalState.poolStore.swaps.push(swapData)
@@ -306,7 +311,9 @@ export const SwapModule = () => {
                 investor,
                 'SOLD',
                 totalAmountIn,
-                totalAmountOut
+                totalAmountOut,
+                null,
+                day
             )
             addSwap(swapData)
             globalState.poolStore.swaps.push(swapData)
@@ -325,7 +332,8 @@ export const SwapModule = () => {
                         op[0],
                         op[1].totalAmountIn,
                         op[1].totalAmountOut,
-                        op[1].path
+                        op[1].path,
+                        day
                     )
                     addSwap(swapData)
                     globalState.poolStore.swaps.push(swapData)

@@ -64,8 +64,38 @@ describe('Graph', () => {
 })
 
 describe('Path finding', () => {
+    const initialPositions = [
+        {
+            priceMin: 1,
+            priceMax: 10000,
+            tokenB: 5000,
+            tokenA: null
+        },
+        {
+            priceMin: 20,
+            priceMax: 10000,
+            tokenB: 5000,
+            tokenA: null
+        },
+        {
+            priceMin: 50,
+            priceMax: 10000,
+            tokenB: 5000,
+            tokenA: null
+        },
+        {
+            priceMin: 200,
+            priceMax: 10000,
+            tokenB: 5000,
+            tokenA: null
+        }
+    ]
     it('Finds pools for token->USDC', () => {
-        const { pool, tokenRight, tokenLeft } = preparePool()
+        const { pool, tokenRight, tokenLeft } = preparePool(
+            10000,
+            'investor',
+            initialPositions
+        )
 
         pool.buy(2000)
         globalState.pools.set(pool.name, pool)
@@ -75,7 +105,7 @@ describe('Path finding', () => {
         const sums = router.smartSwap(tokenRight.name, tokenLeft.name, 1000)
 
         expect(sums[0]).toBeCloseTo(-1000, 0)
-        expect(sums[1]).toBeCloseTo(1527, 0)
+        expect(sums[1]).toBeCloseTo(1527, 0) // was
     })
 
     xit('Finds paths for pair', async () => {
@@ -114,11 +144,37 @@ describe('Path finding', () => {
 })
 
 describe('Routing', () => {
+    const initialPositions = [
+        {
+            priceMin: 1,
+            priceMax: 10000,
+            tokenB: 5000,
+            tokenA: null
+        },
+        {
+            priceMin: 20,
+            priceMax: 10000,
+            tokenB: 5000,
+            tokenA: null
+        },
+        {
+            priceMin: 50,
+            priceMax: 10000,
+            tokenB: 5000,
+            tokenA: null
+        },
+        {
+            priceMin: 200,
+            priceMax: 10000,
+            tokenB: 5000,
+            tokenA: null
+        }
+    ]
     it('Smart route with single pool', () => {
         const creator = Investor.create('creator', 'creator', 10000)
 
         const questX = creator.createQuest('TEST_X')
-        const poolTest = questX.createPool()
+        const poolTest = questX.createPool({ initialPositions })
         let allSums = [0, 0]
         for (let i = 1; i <= 500; i++) {
             const sums = poolTest.buy(10)
@@ -127,7 +183,7 @@ describe('Routing', () => {
         }
 
         const questA = creator.createQuest('TEST_1')
-        const poolA = questA.createPool() // Mint TEST_1
+        const poolA = questA.createPool({ initialPositions }) // Mint TEST_1
         globalState.quests.set(questA.name, questA)
         globalState.quests.set('USDC', new UsdcToken())
         globalState.pools.set(poolA.name, poolA)
@@ -145,7 +201,7 @@ describe('Routing', () => {
         const creator = Investor.create('creator', 'creator', 10000)
 
         const questA = creator.createQuest('TEST_1')
-        const poolA = questA.createPool() // Mint TEST_1
+        const poolA = questA.createPool({ initialPositions }) // Mint TEST_1
         globalState.quests.set(questA.name, questA)
         globalState.pools.set(poolA.name, poolA)
         globalState.quests.set('USDC', new UsdcToken())
@@ -157,14 +213,14 @@ describe('Routing', () => {
         // [ -2500000.0000000363, 16380.246286902951 ] - 1000: 0.271s
 
         expect(results1[0]).toBeCloseTo(-2500000)
-        expect(results1[1]).toBeCloseTo(16380.246)
+        expect(results1[1]).toBeCloseTo(16008, 0) // was 16380.246
     })
 
     it('Smart route with amount above 100 with high chunk size', () => {
         const creator = Investor.create('creator', 'creator', 10000)
 
         const questA = creator.createQuest('TEST_1')
-        const poolA = questA.createPool() // Mint TEST_1
+        const poolA = questA.createPool({ initialPositions }) // Mint TEST_1
         globalState.quests.set(questA.name, questA)
         globalState.pools.set(poolA.name, poolA)
         globalState.quests.set('USDC', new UsdcToken())
@@ -180,7 +236,7 @@ describe('Routing', () => {
         const creator = Investor.create('creator', 'creator', 10000)
 
         const questA = creator.createQuest('TEST_1')
-        const poolA = questA.createPool() // Mint TEST_1
+        const poolA = questA.createPool({ initialPositions }) // Mint TEST_1
         globalState.quests.set(questA.name, questA)
         globalState.pools.set(poolA.name, poolA)
         globalState.quests.set('USDC', new UsdcToken())
@@ -196,7 +252,7 @@ describe('Routing', () => {
         const creator = Investor.create('creator', 'creator', 10000)
 
         const questA = creator.createQuest('TEST_1')
-        const poolA = questA.createPool() // Mint TEST_1
+        const poolA = questA.createPool({ initialPositions }) // Mint TEST_1
         poolA.buy(250000)
 
         globalState.quests.set(questA.name, questA)
@@ -204,14 +260,14 @@ describe('Routing', () => {
         globalState.quests.set('USDC', new UsdcToken())
 
         const questB = creator.createQuest('TEST_2')
-        const poolB = questB.createPool() // Mint TEST_2
+        const poolB = questB.createPool({ initialPositions }) // Mint TEST_2
+        poolB.buy(250000)
 
         globalState.quests.set(questB.name, questB)
-        poolB.buy(250000)
         globalState.pools.set(poolB.name, poolB)
 
         const questC = creator.createQuest('TEST_3')
-        const poolC = questC.createPool() // Mint TEST_3
+        const poolC = questC.createPool({ initialPositions }) // Mint TEST_3
 
         globalState.quests.set(questC.name, questC)
         globalState.pools.set(poolC.name, poolC)
@@ -226,12 +282,11 @@ describe('Routing', () => {
         const pr = creator.calculatePriceRange(BC, poolC, poolB)
         creator.citeQuest(BC, pr.min, pr.max, 0, 10000, pr.native)
 
-        // Different chunk should yield the same results
         const router = new Router(globalState.quests, globalState.pools)
         const results1 = router.smartSwap('USDC', 'TEST_2', 2500000)
 
         expect(results1[0]).toBeCloseTo(-2500000)
-        expect(results1[1]).toBeCloseTo(7238, 0)
+        expect(results1[1]).toBeCloseTo(447, 0) // !!!!!!!!!! WAS: 7238
     })
 
     it('Swaps USDC for D through a long chain with enough token supply', () => {
@@ -254,20 +309,20 @@ describe('Routing', () => {
         pools.poolE.buy(1000) // Buy Token E
 
         // Deposit Tokens in Cross Pools
-        pools.AB.buy(20) // Buy B by selling A
-        pools.CA.buy(50) /// Buy A by selling C
+        pools.BA.buy(20) // Buy B by selling A
+        pools.AC.buy(50) /// Buy A by selling C
         pools.CB.buy(60) // Buy B by selling C
-        pools.CE.buy(80) /// Buy E by selling C
+        pools.EC.buy(80) /// Buy E by selling C
         pools.DA.buy(100) // Buy D by selling A
-        pools.DC.buy(93) // Buy C by selling D
-        pools.DE.buy(77) // Buy E by selling D
-        pools.EB.buy(44) /// Buy B by selling E
+        pools.CD.buy(93) // Buy C by selling D
+        pools.ED.buy(77) // Buy E by selling D
+        pools.BE.buy(44) /// Buy B by selling E
 
         const router = new Router(globalState.quests, globalState.pools)
         const res1 = router.smartSwap('USDC', 'AGORA_D', 25000)
 
         expect(res1[0]).toBeCloseTo(-25000)
-        expect(res1[1]).toBeCloseTo(3948, 0) // was 3852
+        expect(res1[1]).toBeCloseTo(3431, 0) // was 3852 // was 3948 // was 2967
     })
 
     it('Swaps USDC for D through a long chain with different crosspool supplies', () => {
@@ -293,33 +348,7 @@ describe('Routing', () => {
         const res1 = router.smartSwap('USDC', 'AGORA_D', 25000, 2)
 
         expect(res1[0]).toBeCloseTo(-25000)
-        expect(res1[1]).toBeCloseTo(4018, 0) // was: 4012.552, 4017.970
-    })
-
-    it('Swaps USDC for D through a long chain with amount below chunk size', () => {
-        const defaultTokenASum = 100
-        const [quests, pools] = prepareCrossPools(defaultTokenASum)
-
-        for (const pool of Object.keys(pools)) {
-            globalState.pools.set(pools[pool].name, pools[pool])
-        }
-
-        for (const quest of quests) {
-            globalState.quests.set(quest.name, quest)
-        }
-
-        // Deposit USDC in all USDC pools
-        pools.poolA.buy(1000) // Buy Token A
-        pools.poolB.buy(1000) // Buy Token B
-        pools.poolC.buy(1000) // Buy Token C
-        pools.poolD.buy(1000) // Buy Token D
-        pools.poolE.buy(1000) // Buy Token E
-
-        const router = new Router(globalState.quests, globalState.pools)
-        const res1 = router.smartSwap('USDC', 'AGORA_D', 5)
-
-        expect(res1[0]).toBeCloseTo(-5)
-        expect(res1[1]).toBeCloseTo(3.48)
+        expect(res1[1]).toBeCloseTo(3661, 0) // was: 4012.552, 4017.970, 4018
     })
 
     it('Smart route with one citation selling USDC/TEST1', () => {
@@ -330,13 +359,13 @@ describe('Routing', () => {
         const creator = Investor.create('creator', 'creator', 10000)
 
         const questA = creator.createQuest('TEST_1')
-        const poolA = questA.createPool() // Deposit A
+        const poolA = questA.createPool({ initialPositions }) // Deposit A
         globalState.quests.set('USDC', new UsdcToken())
         globalState.quests.set(questA.name, questA)
         globalState.pools.set(poolA.name, poolA)
 
         const questB = creator.createQuest('TEST_2')
-        const poolB = questB.createPool() // Deposit B
+        const poolB = questB.createPool({ initialPositions }) // Deposit B
         globalState.quests.set(questB.name, questB)
         globalState.pools.set(poolB.name, poolB)
 
@@ -357,7 +386,7 @@ describe('Routing', () => {
         expect(res1[1]).toBeCloseTo(444, 0)
 
         expect(res2[0]).toBeCloseTo(-50)
-        expect(res2[1]).toBeCloseTo(114, 0)
+        expect(res2[1]).toBeCloseTo(59, 0)
 
         expect(res3[0]).toBeCloseTo(-50)
         expect(res3[1]).toBeCloseTo(58, 0)
@@ -469,7 +498,7 @@ describe('Routing', () => {
         const res3 = router.smartSwap('USDC', 'TEST', 2000)
 
         expect(res3[0]).toBeCloseTo(-2000)
-        expect(res3[1]).toBeCloseTo(441, 0) // was: 441, 421
+        expect(res3[1]).toBeCloseTo(416, 0) // was: 441, 421, 441
     })
 
     it('Smart route for token through cited cross pool with multiple smart swaps', () => {

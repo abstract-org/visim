@@ -3,6 +3,7 @@ import HashMap from 'hashmap'
 import Generator from '../logic/Generators/Generator.class'
 import { invGen, questGen } from '../logic/Generators/initialState'
 import Investor from '../logic/Investor/Investor.class'
+import Router from '../logic/Router/Router.class'
 
 let globalState = {
     pools: new HashMap(),
@@ -24,52 +25,213 @@ afterEach(() => {
     }
 })
 
-it('Generates investors', async () => {
+describe('Trades increased in price quest', () => {
+    const initialPositions = [
+        {
+            priceMin: 1,
+            priceMax: 10000,
+            tokenB: 5000,
+            tokenA: null
+        },
+        {
+            priceMin: 20,
+            priceMax: 10000,
+            tokenB: 5000,
+            tokenA: null
+        },
+        {
+            priceMin: 50,
+            priceMax: 10000,
+            tokenB: 5000,
+            tokenA: null
+        },
+        {
+            priceMin: 200,
+            priceMax: 10000,
+            tokenB: 5000,
+            tokenA: null
+        }
+    ]
+
+    it('Identifies quests that increased in price over X days', () => {
+        const creator = Investor.create('creator', 'creator', 10000)
+        const qA = creator.createQuest('A')
+        const A = qA.createPool({ initialPositions })
+
+        globalState.quests.set(qA.name, qA)
+        globalState.pools.set(A.name, A)
+
+        A.buy(1000)
+
+        const genManager = new Generator(
+            [],
+            [],
+            globalState.pools,
+            globalState.quests,
+            [
+                {
+                    pool: A.name,
+                    day: 0,
+                    price: A.curPrice,
+                    tvl: A.getTVL(),
+                    mcap: A.getMarketCap()
+                }
+            ]
+        )
+
+        A.buy(5000)
+        creator.addBalance(qA.name, 5000)
+        genManager.storeTradedPool(1, A)
+
+        A.buy(500)
+        creator.addBalance(qA.name, 500)
+        genManager.storeTradedPool(2, A)
+
+        A.buy(500)
+        creator.addBalance(qA.name, 500)
+        genManager.storeTradedPool(2, A)
+
+        A.buy(1000)
+        creator.addBalance(qA.name, 100)
+        genManager.storeTradedPool(3, A)
+
+        A.sell(200)
+        creator.addBalance(qA.name, 400)
+        genManager.storeTradedPool(4, A)
+
+        A.buy(50)
+        creator.addBalance(qA.name, 50)
+        genManager.storeTradedPool(6, A)
+
+        const selectedPools = genManager.getChangedPriceQuests(
+            creator.balances,
+            7,
+            5,
+            10,
+            'sell'
+        )
+
+        expect(selectedPools[0].amount).toBeCloseTo(327.5)
+    })
+
+    it('Trades provided pool with increased price', () => {
+        const creator = Investor.create('creator', 'creator', 10000)
+        const qA = creator.createQuest('A')
+        const A = qA.createPool({ initialPositions })
+
+        globalState.quests.set(qA.name, qA)
+        globalState.pools.set(A.name, A)
+
+        const router = new Router(globalState.quests, globalState.pools)
+
+        A.buy(1000)
+
+        const genManager = new Generator(
+            [],
+            [],
+            globalState.pools,
+            globalState.quests,
+            [
+                {
+                    pool: A.name,
+                    day: 0,
+                    price: A.curPrice,
+                    tvl: A.getTVL(),
+                    mcap: A.getMarketCap()
+                }
+            ]
+        )
+
+        A.buy(5000)
+        creator.addBalance(qA.name, 5000)
+        genManager.storeTradedPool(1, A)
+
+        A.buy(500)
+        creator.addBalance(qA.name, 500)
+        genManager.storeTradedPool(2, A)
+
+        A.buy(500)
+        creator.addBalance(qA.name, 500)
+        genManager.storeTradedPool(2, A)
+
+        A.buy(1000)
+        creator.addBalance(qA.name, 100)
+        genManager.storeTradedPool(3, A)
+
+        A.sell(200)
+        creator.addBalance(qA.name, 400)
+        genManager.storeTradedPool(4, A)
+
+        A.buy(50)
+        creator.addBalance(qA.name, 50)
+        genManager.storeTradedPool(6, A)
+
+        const selectedPools = genManager.getChangedPriceQuests(
+            creator.balances,
+            7,
+            5,
+            10,
+            'sell'
+        )
+
+        const result = genManager.smartSwapPools(
+            7,
+            creator,
+            router,
+            selectedPools,
+            3,
+            'test:swap-inc-dec'
+        )
+
+        expect(selectedPools[0].amount).toBeCloseTo(327.5)
+        expect(result[0]).toBeCloseTo(-327.5, 0)
+        expect(result[1]).toBeCloseTo(1574.5, 0)
+    })
+})
+
+fit('Generates investors', async () => {
     const invAuthor = {
         ...invGen,
         invGenAlias: 'AUTHOR',
-        invGenName: 'Researchers',
-        createQuest: 'AGRA',
+        invGenName: 'Author',
+        createQuest: 'AGORA',
         valueSellPeriodDays: 10,
-        valueSellAmount: 5000,
-        keepCreatingPeriodDays: 11,
-        keepCreatingQuests: 'AGRA'
+        valueSellAmount: 200,
+        keepCreatingPeriodDays: 10,
+        keepCreatingQuests: 'AGORA'
     }
     const invInvestor = {
         ...invGen,
         invGenAlias: 'TWODAY',
-        invGenName: 'Twodays',
-        buySellPeriodDays: 3,
-        buyGainersFrequency: 10,
-        includeSingleName: 'AGORA',
-        buySinglePerc: 5,
+        invGenName: 'Investor',
+        buySellPeriodDays: 1,
+        buyGainersFrequency: 3,
+        excludeSingleName: 'AGORA',
+        buySinglePerc: 0,
         swapDecFrequency: 2,
-        swapIncFrequency: 3
-    }
-    const invInvestor2 = {
-        ...invGen,
-        invGenAlias: 'THREEDAY',
-        invGenName: 'Threedays',
-        buySellPeriodDays: 3,
-        buyGainersFrequency: 5
+        swapIncDir: 'buy',
+        swapDecSumPerc: 10,
+        swapIncFrequency: 2
     }
     const queAuthor = {
         ...questGen,
-        questGenAlias: 'AGRA',
-        questGenName: 'Athletics',
+        questGenAlias: 'AGORA',
+        questGenName: 'Unrealistic Chlorine',
         citeSingleName: 'AGORA',
-        citeSingleMultiplier: 3
+        citeSingleMultiplier: 2
     }
 
     const creator = Investor.create('creator', 'creator', 10000)
     const fndQuest = creator.createQuest('AGORA')
     const fndPool = fndQuest.createPool()
+    fndPool.buy(50000)
+    console.log(`Starting AGORA price ${fndPool.curPrice}`)
     globalState.quests.set(fndQuest.name, fndQuest)
     globalState.pools.set(fndPool.name, fndPool)
 
     const performanceTest = true
     const genManager = new Generator(
-        [invAuthor, invInvestor, invInvestor2],
+        [invAuthor, invInvestor],
         [queAuthor],
         globalState.pools,
         globalState.quests,
@@ -80,11 +242,11 @@ it('Generates investors', async () => {
 
     const tot0 = performance.now()
 
-    const genDays = 30
+    const genDays = 20
     for (let day = 1; day <= genDays; day++) {
         console.log(`Simulating day ${day}`)
         const d0 = performance.now()
-        await genManager.step(day)
+        const dayData = await genManager.step(day)
         const d1 = performance.now()
 
         const daySec = d1 - d0 >= 1000 ? true : false

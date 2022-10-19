@@ -61,13 +61,28 @@ export default class Router {
             this.#_PRICED_PATHS = this.drySwapForPricedPaths(
                 this.getPairPaths(token0, token1)
             )
+            //console.log(this.#_PRICED_PATHS)
 
             if (this.#DEBUG)
-                console.log('priced paths', this.#_PRICED_PATHS, amountIn)
+                console.log(
+                    'priced paths',
+                    this.#_PRICED_PATHS,
+                    `amountIn: ${amountIn}`
+                )
 
             if (!this.#_PRICED_PATHS.length) return totalInOut
 
             const sums = this.swapBestPath(amountIn, this.#_PRICED_PATHS[0])
+
+            if (this.#DEBUG) {
+                console.log(
+                    `[path-swap-result] ${sums}`,
+                    `prices`,
+                    `${this.#getPoolByTokens(token0, token1).priceToken0} / ${
+                        this.#getPoolByTokens(token0, token1).priceToken1
+                    }`
+                )
+            }
 
             amountIn += sums[0]
             totalInOut[0] += sums[0]
@@ -86,22 +101,6 @@ export default class Router {
         if (debug) this.#DEBUG = false
 
         return totalInOut
-    }
-
-    calculatePairPaths(token0, token1, smartRouteDepth) {
-        const poolList = this.findPoolsFor(token0, smartRouteDepth)
-        if (this.#DEBUG) console.log('pool list', poolList)
-        const graph = this.graphPools(poolList, smartRouteDepth)
-        if (this.#DEBUG) console.log('graph', graph)
-        const paths = graph.buildPathways(token0, token1)
-        this.#_PAIR_PATHS[`${token0}-${token1}`] = paths
-        if (this.#DEBUG) console.log('pair paths', this.#_PAIR_PATHS)
-
-        return paths
-    }
-
-    getPairPaths(token0, token1) {
-        return this.#_PAIR_PATHS[`${token0}-${token1}`]
     }
 
     swapBestPath(amount, pricedPath) {
@@ -131,7 +130,18 @@ export default class Router {
                     : amount < this.#_DEFAULT_SWAP_SUM
                     ? amount
                     : this.#_DEFAULT_SWAP_SUM
-                const poolSum = pool[zeroForOne ? 'buy' : 'sell'](sum)
+                const action = zeroForOne ? 'buy' : 'sell'
+                const poolSum = pool[action](sum)
+                if (this.#DEBUG) {
+                    console.log(
+                        '[actual-swap]',
+                        pool.name,
+                        action,
+                        sum,
+                        poolSum,
+                        pool.curPrice
+                    )
+                }
 
                 pathSums.push(poolSum)
 
@@ -145,6 +155,17 @@ export default class Router {
             })
             const inAmt = pathSums[0][0]
             const outAmt = pathSums[pathSums.length - 1][1]
+
+            if (this.#DEBUG) {
+                console.log(
+                    '[swap-pre-result]',
+                    inAmt,
+                    outAmt,
+                    'vs calculated',
+                    pathSums[0][0],
+                    pathSums[pathSums.length - 1][1]
+                )
+            }
 
             lastOutPrice = this.#getOutInPrice(inAmt, outAmt)
 
@@ -165,7 +186,7 @@ export default class Router {
         let pathPrices = []
         let existingPrices = []
         for (const path of paths) {
-            const { sums } = this.swapInPath(path, 1, true)
+            const sums = this.drySwapPath(path)
 
             if (sums[1] === 0) {
                 continue
@@ -183,6 +204,22 @@ export default class Router {
 
         pathPrices.sort((a, b) => b.price - a.price)
         return pathPrices
+    }
+
+    calculatePairPaths(token0, token1, smartRouteDepth) {
+        const poolList = this.findPoolsFor(token0, smartRouteDepth)
+        if (this.#DEBUG) console.log('pool list', poolList)
+        const graph = this.graphPools(poolList, smartRouteDepth)
+        if (this.#DEBUG) console.log('graph', graph)
+        const paths = graph.buildPathways(token0, token1)
+        this.#_PAIR_PATHS[`${token0}-${token1}`] = paths
+        if (this.#DEBUG) console.log('pair paths', this.#_PAIR_PATHS)
+
+        return paths
+    }
+
+    getPairPaths(token0, token1) {
+        return this.#_PAIR_PATHS[`${token0}-${token1}`]
     }
 
     graphPools(poolList, smartRouteDepth) {
@@ -254,31 +291,29 @@ export default class Router {
         return [sortedPrices, pricedPaths]
     }
 
-    swapInPath(path, amount, dry = false) {
+    /**
+     * @description Takes array path and swaps through the entire path and returns very first and very last prices
+     * @param {array} path
+     * @returns {number, number}
+     */
+    drySwapPath(path) {
+        const amount = 1
         const poolPairs = path
             .map((token, id) => [token, path[id + 1]])
             .filter((pair) => pair[0] && pair[1])
-        const swaps = []
-        let sums = []
+
         let sumsTotal = []
 
         for (const id in poolPairs) {
             let idx = parseInt(id)
             const poolTokens = poolPairs[idx]
             const pool = this.#getPoolByTokens(poolTokens[0], poolTokens[1])
-            const nextPool =
-                idx + 1 < poolPairs.length
-                    ? this.#getPoolByTokens(
-                          poolPairs[idx + 1][0],
-                          poolPairs[idx + 1][1]
-                      )
-                    : null
-
             const zeroForOne = pool.tokenLeft === poolTokens[0] ? true : false
+            const sums = pool.drySwap(amount, zeroForOne)
 
-            sums = dry
-                ? pool.drySwap(amount, zeroForOne)
-                : pool.swap(amount, zeroForOne)
+            if (Math.abs(sums[0]) === 0 && Math.abs(sums[1]) === 0) {
+                return [0, 0]
+            }
 
             if (idx === 0) {
                 sumsTotal[0] = sums[0]
@@ -286,61 +321,8 @@ export default class Router {
             if (idx === poolPairs.length - 1) {
                 sumsTotal[1] = sums[1]
             }
-
-            if ((this.#DEBUG && !dry) || (this.#DEBUG_DRY && dry)) {
-                console.log(
-                    `[${dry ? 'DRY' : 'REAL'}]\n`,
-                    `ID: ${idx}\n`,
-                    `POOL: ${pool.name}\n`,
-                    `PATH: ${path}\n`,
-                    `PAIRS: ${poolPairs}\n`,
-                    `${zeroForOne ? 'BUY' : 'SELL'}\n`,
-                    `AMT PRE CAP: ${amount}\n`,
-                    `SUMS: ${sums}\n`,
-                    `RESULT: ${sumsTotal}`
-                )
-            }
-            amount = Math.abs(sums[1])
-
-            if (Math.abs(sums[0]) === 0 && Math.abs(sums[1]) === 0) {
-                if ((this.#DEBUG && !dry) || this.#DEBUG_DRY)
-                    console.log(
-                        `[${
-                            dry ? 'DRY' : 'REAL'
-                        }] Swap returned nils at ${path} on index ${idx} pool ${
-                            pool.name
-                        }`,
-                        pool.drySell(1.1726),
-                        pool.getSwapInfo(true)
-                    )
-                return { swaps, sums: [0, 0] }
-            }
-
-            // @TODO: Currently cases where chain swap can break is filtered out during drySwap
-            // Can be smarter solution?
-            if (amount <= 0 && nextPool) {
-                console.log('Amount ran out')
-                return { swaps, sums: false }
-            }
-
-            swaps.push({
-                path,
-                pool: pool.name,
-                token0: pool.tokenLeft,
-                token1: pool.tokenRight,
-                price: pool.curPrice,
-                next: nextPool ? nextPool.name : null,
-                op: zeroForOne ? 'buy' : 'sell',
-                in: Math.abs(sums[0]),
-                out: Math.abs(sums[1]),
-                cLiq: pool.curLiq,
-                cPricePoint: pool.curPP,
-                cPrice: pool.curPrice,
-                cLeft: pool.curLeft,
-                cRight: pool.curRight
-            })
         }
-        return { swaps, sums: sumsTotal }
+        return sumsTotal
     }
 
     getPaths() {
