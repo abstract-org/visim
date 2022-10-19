@@ -73,10 +73,17 @@ class Generator {
                 this.storeTradedPool(swap.day, this.#cachedPools.get(swap.pool))
             )
         }
+
+        const locSplit = document.location.href.split('?')
+        if (locSplit && locSplit.length > 1 && locSplit[1] === 'debug') {
+            this.#WEB_DEBUG = true
+        }
     }
 
     webdbg(msg) {
-        console.log(msg)
+        if (this.#WEB_DEBUG) {
+            console.log(msg)
+        }
     }
 
     async step(day) {
