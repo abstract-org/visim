@@ -250,7 +250,7 @@ export const GeneratorRunner = () => {
 
         // Every day
         for (let day = passedDays + 1; day <= genDays + passedDays; day++) {
-            console.log(`Simulating day ${day}`)
+            console.log(`\n\nSimulating day ${day}\n\n`)
             const stepData = await genManager.step(day)
 
             setGenOutput({

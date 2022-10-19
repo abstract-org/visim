@@ -1,29 +1,40 @@
 export const invGen = {
+    dailySpawnProbability: 50,
+
     invGenAlias: 'Type A',
     invGenName: '',
-    createQuest: '',
-    keepCreatingQuests: '',
-    keepCreatingPeriodDays: 0,
-    dailySpawnProbability: 50,
     initialBalance: 10000,
+
     buySellPeriodDays: 0,
-    buyGainersFrequency: 30,
-    excludeSingleName: '',
-    includeSingleName: '',
+
     buySinglePerc: 0,
+    includeSingleName: '',
+
     buySumPerc: 10,
     buyQuestPerc: 50,
     buyGainerPerc: 20,
+    buyGainersFrequency: 30,
+
+    excludeSingleName: '',
+
     swapIncFrequency: 7,
-    swapDecFrequency: 7,
     swapIncDir: 'sell',
     swapIncSumPerc: 20,
     swapIncByPerc: 10,
+
+    swapDecFrequency: 7,
     swapDecDir: 'sell',
     swapDecSumPerc: 5,
-    sellDecByPerc: 10,
+    swapDecByPerc: 10,
+
+    createQuest: '',
+
+    keepCreatingQuests: '',
+    keepCreatingPeriodDays: 0,
+
     valueSellPeriodDays: 0,
     valueSellAmount: 0,
+
     smartRouteDepth: 3
 }
 
