@@ -189,7 +189,7 @@ describe('Trades increased in price quest', () => {
     })
 })
 
-xit('Generates investors', async () => {
+fit('Generates investors', async () => {
     const invAuthor = {
         ...invGen,
         invGenAlias: 'AUTHOR',
@@ -205,11 +205,13 @@ xit('Generates investors', async () => {
         invGenAlias: 'TWODAY',
         invGenName: 'Investor',
         buySellPeriodDays: 1,
-        buyGainersFrequency: 30,
+        buyGainersFrequency: 3,
         excludeSingleName: 'AGORA',
         buySinglePerc: 0,
-        swapDecFrequency: 7,
-        swapIncFrequency: 7
+        swapDecFrequency: 2,
+        swapIncDir: 'buy',
+        swapDecSumPerc: 10,
+        swapIncFrequency: 2
     }
     const queAuthor = {
         ...questGen,
@@ -240,7 +242,7 @@ xit('Generates investors', async () => {
 
     const tot0 = performance.now()
 
-    const genDays = 15
+    const genDays = 20
     for (let day = 1; day <= genDays; day++) {
         console.log(`Simulating day ${day}`)
         const d0 = performance.now()
