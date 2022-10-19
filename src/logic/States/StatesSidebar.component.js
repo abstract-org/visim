@@ -331,7 +331,8 @@ const StatesTable = (props) => {
                 <DataTable
                     value={snapshots}
                     selectionMode="single"
-                    sortMode="multiple"
+                    sortField="executionDate"
+                    sortOrder={-1}
                     paginator
                     rows={10}
                     size="small"
