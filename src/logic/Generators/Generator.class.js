@@ -144,7 +144,7 @@ class Generator {
         )
 
         // Every X days - buy/sell top gainers/increased or decreased in prices
-        //this.simulateTrade(day, this.router)
+        this.simulateTrade(day, this.router)
         this.handlers.push(
             new Promise((resolve) => {
                 resolve(this.simulateTrade(day, this.router))
@@ -152,7 +152,7 @@ class Generator {
         )
 
         // Every X days - withdraw X in USDC value
-        //this.simulateWithdraw(day, this.router)
+        this.simulateWithdraw(day, this.router)
         this.handlers.push(
             new Promise((resolve) => {
                 resolve(this.simulateWithdraw(day, this.router))
@@ -528,7 +528,7 @@ class Generator {
             conf.smartRouteDepth
         )
 
-        this.#_OPS++
+        //this.#_OPS++
 
         if (this.#_PERFORMANCE) {
             //const t1 =  = performance.now()
@@ -609,7 +609,7 @@ class Generator {
                 conf.smartRouteDepth
             )
 
-            this.#_OPS++
+            //this.#_OPS++
             if (this.#_PERFORMANCE) {
                 //const t1 =  = performance.now()
                 // if (this.#_PERFORMANCE_OUTPUT)
@@ -798,7 +798,17 @@ class Generator {
                 smartRouteDepth
             )
 
-            this.#_OPS++
+            console.log(
+                pool,
+                t0,
+                t1,
+                amount,
+                smartRouteDepth,
+                router.getPaths(),
+                router.getDailyTradedPools()
+            )
+
+            //this.#_OPS++
 
             if (this.#_PERFORMANCE) {
                 //const sp1 =  = performance.now()
@@ -825,7 +835,7 @@ class Generator {
                 isNaN(totalOut)
             ) {
                 console.log(
-                    `[selling] Bad trade at: ${pool.name} ${totalIn} ${totalOut} ${amount}`
+                    `[selling/buying] Bad trade at: ${pool.name} ${totalIn} ${totalOut} ${amount}`
                 )
                 return
             }
@@ -852,7 +862,7 @@ class Generator {
             investor.addBalance(t0, totalIn, 'selling gainers/losers')
             investor.addBalance(t1, totalOut, 'selling gainers/losers')
         })
-        return [_outTotalIn, _outTotalOut]
+        //return [_outTotalIn, _outTotalOut]
     }
 
     simulateWithdraw(day, router) {
@@ -869,7 +879,6 @@ class Generator {
                     }
 
                     // Sell own value here
-                    console.log(author.questsCreated)
                     const questArr = this.getRandomElements(
                         author.questsCreated,
                         1
@@ -913,7 +922,7 @@ class Generator {
                             conf.smartRouteDepth
                         )
 
-                        this.#_OPS++
+                        //this.#_OPS++
 
                         if (this.#_PERFORMANCE) {
                             //const t1 =  = performance.now()
@@ -1243,9 +1252,9 @@ class Generator {
         }
 
         // Removes previous trades of the day and keeps only the last one
-        this.#dailyTradedPools[pool.name] = this.#dailyTradedPools[
-            pool.name
-        ].filter((trade) => trade.day !== day)
+        // this.#dailyTradedPools[pool.name] = this.#dailyTradedPools[
+        //     pool.name
+        // ].filter((trade) => trade.day !== day)
 
         this.#dailyTradedPools[pool.name].push({
             day,

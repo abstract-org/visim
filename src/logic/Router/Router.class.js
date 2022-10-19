@@ -311,6 +311,10 @@ export default class Router {
             const zeroForOne = pool.tokenLeft === poolTokens[0] ? true : false
             const sums = pool.drySwap(amount, zeroForOne)
 
+            if (Math.abs(sums[0]) === 0 && Math.abs(sums[1]) === 0) {
+                return [0, 0]
+            }
+
             if (idx === 0) {
                 sumsTotal[0] = sums[0]
             }
