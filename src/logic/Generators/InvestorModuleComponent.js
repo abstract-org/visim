@@ -305,9 +305,9 @@ export const InvestorModuleComponent = (props) => {
                         of owned tokens that increased in price by
                     </span>
                     <InPlaceElement
-                        id="sellDecByPerc"
+                        id="swapDecByPerc"
                         active={false}
-                        display={`${props.state.sellDecByPerc}%`}
+                        display={`${props.state.swapDecByPerc}%`}
                         type="number"
                         element="input"
                         handleChange={props.handleChange}

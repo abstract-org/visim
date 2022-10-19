@@ -3,6 +3,33 @@ import globalConfig from '../logic/config.global.json'
 import { prepareCrossPools, preparePool } from './helpers/poolManager'
 
 describe('Liquidity Manager', () => {
+    const initialPositions = [
+        {
+            priceMin: 1,
+            priceMax: 10000,
+            tokenB: 5000,
+            tokenA: null
+        },
+        {
+            priceMin: 20,
+            priceMax: 10000,
+            tokenB: 5000,
+            tokenA: null
+        },
+        {
+            priceMin: 50,
+            priceMax: 10000,
+            tokenB: 5000,
+            tokenA: null
+        },
+        {
+            priceMin: 200,
+            priceMax: 10000,
+            tokenB: 5000,
+            tokenA: null
+        }
+    ]
+
     it('calculates liquidity for token0', () => {
         const { pool } = preparePool()
 
@@ -30,7 +57,7 @@ describe('Liquidity Manager', () => {
     })
 
     it('sets initial liquidity positions', () => {
-        const { pool } = preparePool()
+        const { pool } = preparePool(10000, 'investor', initialPositions)
         expect(Math.round(pool.pos.get(p2pp(50)).liquidity)).toBeCloseTo(38046)
     })
 
