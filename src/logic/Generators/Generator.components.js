@@ -19,7 +19,6 @@ import useQuestStore from '../Quest/quest.store'
 import {
     deleteStateInvestorConfig,
     deleteStateQuestConfig,
-    sanitizeRemoteScenario,
     updateStateInvestorConfig,
     updateStateQuestConfig
 } from '../Utils/logicUtils'
@@ -60,7 +59,7 @@ const RemoteScenarios = (props) => {
         const scenarios = await getScenarios()
         if (scenarios) {
             props.setScenario(null)
-            props.setScenarios(scenarios.map(sanitizeRemoteScenario))
+            props.setScenarios(scenarios)
         }
         setLazyLoading(false)
     }
