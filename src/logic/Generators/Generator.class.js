@@ -326,8 +326,8 @@ class Generator {
             price: pool.curPrice,
             investorHash: investor.hash,
             action: 'BOUGHT',
-            totalAmountIn: totalIn.toFixed(3),
-            totalAmountOut: totalOut.toFixed(3),
+            totalAmountIn: totalIn.toFixed(2),
+            totalAmountOut: totalOut.toFixed(2),
             day,
             mcap: pool.getMarketCap(),
             tvl: pool.getTVL(),
@@ -661,13 +661,9 @@ class Generator {
             investor,
             router.getSwaps(),
             day,
-            `Invest in ${conf.includeSingleName} via ${router
-                .getPaths()
-                .map(
-                    (po) =>
-                        `Path price ${po.price}, path hops: ${po.path.length}`
-                )
-                .join(' // ')}`
+            `Invest directly in ${conf.includeSingleName}, smart routed ${
+                router.getPaths().length
+            } times / total in ${totalIn}, total out ${totalOut}`
         )
         investor.addBalance(tradePool.tokenLeft, totalIn)
         investor.addBalance(tradePool.tokenRight, totalOut)
@@ -747,13 +743,9 @@ class Generator {
                 investor,
                 router.getSwaps(),
                 day,
-                `Buying top gainer ${pool.tokenRight} via paths ${router
-                    .getPaths()
-                    .map(
-                        (po) =>
-                            `Path price ${po.price}, path hops: ${po.path.length}`
-                    )
-                    .join(' // ')}`
+                `Buying top gainer ${pool.tokenRight}, smart routed ${
+                    router.getPaths().length
+                } times / total in ${totalIn}, total out ${totalOut}`
             )
             investor.addBalance(pool.tokenLeft, totalIn, 'buying top traders')
             investor.addBalance(pool.tokenRight, totalOut, 'buying top traders')
@@ -975,13 +967,9 @@ class Generator {
                     debugStr === 'inc' ? 'increased' : 'decreased'
                 } ${
                     swapDir === 'buy' ? pool.tokenLeft : pool.tokenRight
-                } in price via ${router
-                    .getPaths()
-                    .map(
-                        (po) =>
-                            `Path price ${po.price}, path hops: ${po.path.length}`
-                    )
-                    .join(' // ')}`
+                } in price, smart routed ${
+                    router.getPaths().length
+                } times / total in ${totalIn}, total out ${totalOut}`
             )
             investor.addBalance(t0, totalIn, 'selling gainers/losers')
             investor.addBalance(t1, totalOut, 'selling gainers/losers')
@@ -1022,10 +1010,10 @@ class Generator {
                         return
                     }
 
-                    let totalIn = 0
-                    let totalOut = 0
+                    let alreadyWithdrawn = 0
+
                     while (
-                        totalOut < conf.valueSellAmount &&
+                        alreadyWithdrawn < conf.valueSellAmount &&
                         author.balances[quest] > 0
                     ) {
                         const sumIn =
@@ -1038,7 +1026,7 @@ class Generator {
                             //t0 =  = performance.now()
                         }
 
-                        const [amtIn, amtOut] = router.smartSwap(
+                        const [totalIn, totalOut] = router.smartSwap(
                             quest,
                             this.#DEFAULT_TOKEN,
                             sumIn,
@@ -1062,10 +1050,10 @@ class Generator {
                         }
 
                         if (
-                            isNaN(amtIn) ||
-                            amtOut <= 0 ||
-                            isZero(amtIn) ||
-                            isZero(amtOut)
+                            isNaN(totalIn) ||
+                            totalOut <= 0 ||
+                            isZero(totalIn) ||
+                            isZero(totalOut)
                         ) {
                             const pool = this.#cachedPools.get(
                                 `${this.#DEFAULT_TOKEN}-${quest}`
@@ -1083,21 +1071,20 @@ class Generator {
                             day,
                             `Withdrawing ${
                                 conf.valueSellAmount
-                            } ${quest} via ${router
-                                .getPaths()
-                                .map(
-                                    (po) =>
-                                        `Path price ${po.price}, path hops: ${po.path.length}`
-                                )
-                                .join(' // ')}`
+                            } ${quest}, smart routed ${
+                                router.getPaths().length
+                            } times / total in ${totalIn}, total out ${totalOut}`
                         )
 
-                        totalIn += amtIn
-                        totalOut += amtOut
-                        author.addBalance(quest, amtIn, 'withdrawing own USDC')
+                        alreadyWithdrawn += totalOut
+                        author.addBalance(
+                            quest,
+                            totalIn,
+                            'withdrawing own USDC'
+                        )
                         author.addBalance(
                             this.#DEFAULT_TOKEN,
-                            amtOut,
+                            totalOut,
                             'withdrawing own USDC'
                         )
                     }
@@ -1132,7 +1119,7 @@ class Generator {
             this.webdbg(
                 `Investor has no qualifying quest balances to ${swapDir}`
             )
-            return
+            return []
         }
 
         this.webdbg(`Found potential ${invQuestPools.length} quests`)
@@ -1144,7 +1131,7 @@ class Generator {
             .forEach((poolData) => {
                 const data = poolData[1].slice(-freq)
                 this.webdbg(
-                    `[GENERATOR] Calculating growth rate for ${poolData[1].pool} during ${swapDir} of inc/dec`
+                    `[GENERATOR] Calculating growth rate for ${poolData[0]} during ${swapDir} of inc/dec`
                 )
                 this.webdbg(data)
                 const growthRate = data
@@ -1159,7 +1146,7 @@ class Generator {
                     .reduce((p, c) => p + c)
 
                 this.webdbg(
-                    `Pool ${poolData[1].pool} has a growth rate of ${growthRate}`
+                    `Pool ${poolData[0]} has a growth rate of ${growthRate}`
                 )
 
                 if (
@@ -1167,7 +1154,7 @@ class Generator {
                     (growthRate < 0 && growthRate >= percentageChange) ||
                     (growthRate > 0 && growthRate <= percentageChange)
                 ) {
-                    return
+                    return []
                 }
 
                 const pool = invQuestPools.find(
@@ -1195,7 +1182,7 @@ class Generator {
                     this.webdbg(
                         `Not enough balance to trade ${swapAmount} ${tokenTrade}`
                     )
-                    return
+                    return []
                 }
 
                 selectedPools.push({
@@ -1250,7 +1237,7 @@ class Generator {
         Object.entries(this.#dailyTradedPools).forEach((poolData) => {
             const data = poolData[1].slice(-buyGainersFrequency)
             this.webdbg(
-                `[GENERATOR] Calculating growth rate for ${poolData[1].pool} during finding top gainers`
+                `[GENERATOR] Calculating growth rate for ${poolData[0]} during finding top gainers`
             )
             const growthRate = data
                 .map((curr, id) => {
@@ -1264,7 +1251,7 @@ class Generator {
                 .reduce((p, c) => p + c)
 
             this.webdbg(
-                `Pool ${poolData[1].pool} has a growth rate of ${growthRate}`
+                `Pool ${poolData[0]} has a growth rate of ${growthRate}`
             )
 
             if (growthRate > 0) {
@@ -1428,8 +1415,7 @@ class Generator {
             day,
             price: pool.curPrice,
             tvl: pool.getTVL(),
-            mcap: pool.getMarketCap(),
-            pool: pool.name
+            mcap: pool.getMarketCap()
         })
     }
 
