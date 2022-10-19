@@ -42,9 +42,7 @@ export const aggregateSnapshotTotals = (snapshot) => {
 
     return {
         stateId,
-        stateName:
-            stateName ||
-            `${capitalize(faker.word.adjective())} ${faker.word.noun()}`,
+        stateName: stateName || `${faker.word.noun()}`,
         scenarioId,
         totalQuests: stateQuests,
         totalCrossPools: stateCrossPools,
