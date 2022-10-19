@@ -19,10 +19,11 @@ import useQuestStore from '../Quest/quest.store'
 import {
     deleteStateInvestorConfig,
     deleteStateQuestConfig,
+    getMissingQuestNames,
     updateStateInvestorConfig,
     updateStateQuestConfig
 } from '../Utils/logicUtils'
-import { appendIfNotExist, capitalize } from '../Utils/uiUtils'
+import { appendIfNotExist } from '../Utils/uiUtils'
 import useDayTrackerStore from '../dayTracker.store'
 import Generator from './Generator.class'
 import { InvestorModuleComponent } from './InvestorModuleComponent'
@@ -69,7 +70,7 @@ const RemoteScenarios = (props) => {
             id={props.scenario}
             value={props.scenario}
             options={dropdownScenarios}
-            onChange={(e) => props.setScenario(e.value)}
+            onChange={(e) => props.handleSelectScenario(e.value)}
             placeholder="Load Scenario"
             className="w-15rem"
             virtualScrollerOptions={{
@@ -126,7 +127,9 @@ export const GeneratorRunner = () => {
     const swaps = usePoolStore((state) => state.swaps)
 
     const addPool = usePoolStore((state) => state.addPool)
+    const activeInvestor = useInvestorStore((state) => state.active)
     const addInvestor = useInvestorStore((state) => state.addInvestor)
+    const addHumanQuest = useQuestStore((state) => state.addHumanQuest)
     const addQuest = useQuestStore((state) => state.addQuest)
     const addSwap = usePoolStore((state) => state.addSwap)
     const addLogObj = useLogsStore((state) => state.addLogObj)
@@ -175,6 +178,41 @@ export const GeneratorRunner = () => {
         setScenarioId,
         currentDay
     ])
+
+    const handleSelectScenario = (scenarioId) => {
+        const scenarioObj = scenarios.find((sc) => sc.scenarioId === scenarioId)
+        const missingQuests = getMissingQuestNames(scenarioObj.scenario)
+
+        if (activeInvestor && missingQuests.length > 0) {
+            const investor = globalState.investors.get(activeInvestor)
+            missingQuests.forEach((qName) => {
+                const quest = investor.createQuest(qName)
+                const pool = quest.createPool()
+
+                const usdcQuest = globalState.quests.get(pool.tokenLeft)
+                usdcQuest.addPool(pool)
+                globalState.quests.get(usdcQuest.name, usdcQuest)
+
+                globalState.quests.set(quest.name, quest)
+                globalState.pools.set(pool.name, pool)
+
+                // Add Quest to state
+                addQuest(quest.name)
+                // Add Quest to global state store
+                globalState.questStore.quests.push(quest.name)
+                // Mark Quest as human-made
+                addHumanQuest(quest.name)
+                // Add human-made mark to global state
+                globalState.questStore.humanQuests.push(quest.name)
+                // Add Pool to state
+                addPool(pool.name)
+                // Add Pool to global state of pool store
+                globalState.poolStore.pools.push(pool.name)
+            })
+        }
+
+        setScenario(scenarioId)
+    }
 
     const handleNewScenario = async () => {
         toast.current.clear()
@@ -348,6 +386,9 @@ export const GeneratorRunner = () => {
                                             scenarios={scenarios}
                                             setScenario={setScenario}
                                             setScenarios={setScenarios}
+                                            handleSelectScenario={
+                                                handleSelectScenario
+                                            }
                                         />
                                     </div>
 
