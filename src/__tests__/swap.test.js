@@ -1,7 +1,33 @@
 import Investor from '../logic/Investor/Investor.class'
-import { p2pp, pp2p } from '../logic/Utils/logicUtils'
 import globalConfig from '../logic/config.global.json'
 import { preparePool } from './helpers/poolManager'
+
+const initialPositions = [
+    {
+        priceMin: 1,
+        priceMax: 10000,
+        tokenB: 5000,
+        tokenA: null
+    },
+    {
+        priceMin: 20,
+        priceMax: 10000,
+        tokenB: 5000,
+        tokenA: null
+    },
+    {
+        priceMin: 50,
+        priceMax: 10000,
+        tokenB: 5000,
+        tokenA: null
+    },
+    {
+        priceMin: 200,
+        priceMax: 10000,
+        tokenB: 5000,
+        tokenA: null
+    }
+]
 
 it('Does micro price buy properly within the same liquidity', () => {
     const { pool, investor, tokenLeft, tokenRight } = preparePool(20001)
@@ -245,7 +271,11 @@ it('Sell all the way to the left', () => {
 })
 
 fit('Swaps RP1 for USDC and updates current price', () => {
-    const { pool, investor, tokenLeft, tokenRight } = preparePool(10000)
+    const { pool, investor, tokenLeft, tokenRight } = preparePool(
+        10000,
+        'investor',
+        initialPositions
+    )
 
     let [totalAmountIn, totalAmountOut] = pool.buy(5000)
     investor.addBalance(tokenLeft.name, totalAmountIn)
