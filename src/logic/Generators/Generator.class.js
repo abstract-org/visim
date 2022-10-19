@@ -362,87 +362,84 @@ class Generator {
             questConfig.singleCitePerc
         )
 
-        if (citeSingleAmount) {
-            const pName = `${this.#DEFAULT_TOKEN}-${singleQuest.name}`
-            if (!this.#cachedPools.has(pName)) {
-                return
-            }
+        if (
+            !citeSingleAmount ||
+            typeof citeOtherAmount !== 'number' ||
+            citeSingleAmount < 0
+        ) {
+            return
+        }
 
-            const singleUsdcPool = this.#cachedPools.get(pName)
-            let crossPool
+        const pName = `${this.#DEFAULT_TOKEN}-${singleQuest.name}`
+        if (!this.#cachedPools.has(pName)) {
+            return
+        }
 
-            if (
-                !this.#cachedPools.has(
-                    `${singleQuest.name}-${citingQuest.name}`
-                )
-            ) {
-                const startingPrice =
-                    citingPool.curPrice / singleUsdcPool.curPrice
-                crossPool = investor.createPool(
-                    singleQuest,
-                    citingQuest,
-                    startingPrice
-                )
-                this.#dayData[day].actions.push({
-                    pool: crossPool.name,
-                    investorHash: investor.hash,
-                    action: 'CREATED',
-                    day
-                })
-            }
+        const singleUsdcPool = this.#cachedPools.get(pName)
+        let crossPool
 
-            const priceRange = investor.calculatePriceRange(
-                crossPool,
-                singleUsdcPool,
-                citingPool,
-                questConfig.citeSingleMultiplier
+        if (!this.#cachedPools.has(`${singleQuest.name}-${citingQuest.name}`)) {
+            const startingPrice = citingPool.curPrice / singleUsdcPool.curPrice
+            crossPool = investor.createPool(
+                singleQuest,
+                citingQuest,
+                startingPrice
             )
-            this.#dayData[day].pools.push(crossPool)
-
-            const citeAmount0 =
-                crossPool.tokenLeft === singleQuest.name ? 0 : citeSingleAmount
-            const citeAmount1 = citeAmount0 === 0 ? citeSingleAmount : 0
-
-            const [totalIn, totalOut] = investor.citeQuest(
-                crossPool,
-                priceRange.min,
-                priceRange.max,
-                citeAmount0,
-                citeAmount1,
-                priceRange.native
-            )
-
-            this.webdbg(
-                `[GENERATOR] ${investor.name} cited ${singleQuest.name} on day ${day} by depositing ${citeSingleAmount} of ${citingQuest.name}  (${creationType})`
-            )
-            this.webdbg(priceRange)
-            this.webdbg([totalIn, totalOut])
-
-            const orgQuest = this.#cachedQuests.get(citingQuest.name)
-            const sinQuest = this.#cachedQuests.get(singleQuest.name)
-            orgQuest.addPool(crossPool)
-            sinQuest.addPool(crossPool)
-            this.#cachedQuests.set(orgQuest.name, orgQuest)
-            this.#cachedQuests.set(sinQuest.name, sinQuest)
-
             this.#dayData[day].actions.push({
                 pool: crossPool.name,
-                price: citingPool.curPrice,
                 investorHash: investor.hash,
-                action: 'CITED',
-                totalAmountIn: citeSingleAmount.toFixed(3),
+                action: 'CREATED',
                 day
             })
-
-            investor.addBalance(
-                citingQuest.name,
-                -totalIn,
-                'citing single quest'
-            )
-
-            this.#cachedPools.set(crossPool.name, crossPool)
-            this.#dayData[day]['pools'].push(crossPool)
         }
+
+        const priceRange = investor.calculatePriceRange(
+            crossPool,
+            singleUsdcPool,
+            citingPool,
+            questConfig.citeSingleMultiplier
+        )
+        this.#dayData[day].pools.push(crossPool)
+
+        const citeAmount0 =
+            crossPool.tokenLeft === singleQuest.name ? 0 : citeSingleAmount
+        const citeAmount1 = citeAmount0 === 0 ? citeSingleAmount : 0
+
+        const [totalIn, totalOut] = investor.citeQuest(
+            crossPool,
+            priceRange.min,
+            priceRange.max,
+            citeAmount0,
+            citeAmount1,
+            priceRange.native
+        )
+
+        this.webdbg(
+            `[GENERATOR] ${investor.name} cited ${singleQuest.name} on day ${day} by depositing ${citeSingleAmount} of ${citingQuest.name}  (${creationType})`
+        )
+        this.webdbg(priceRange)
+        this.webdbg([totalIn, totalOut])
+
+        const orgQuest = this.#cachedQuests.get(citingQuest.name)
+        const sinQuest = this.#cachedQuests.get(singleQuest.name)
+        orgQuest.addPool(crossPool)
+        sinQuest.addPool(crossPool)
+        this.#cachedQuests.set(orgQuest.name, orgQuest)
+        this.#cachedQuests.set(sinQuest.name, sinQuest)
+
+        this.#dayData[day].actions.push({
+            pool: crossPool.name,
+            price: citingPool.curPrice,
+            investorHash: investor.hash,
+            action: 'CITED',
+            totalAmountIn: citeSingleAmount.toFixed(3),
+            day
+        })
+
+        investor.addBalance(citingQuest.name, -totalIn, 'citing single quest')
+
+        this.#cachedPools.set(crossPool.name, crossPool)
+        this.#dayData[day]['pools'].push(crossPool)
     }
 
     citeRandomQuests(
@@ -480,6 +477,14 @@ class Generator {
                     questConfig.randomCitePerc,
                     questProbs.citeOtherQuantity
                 )
+
+                if (
+                    !citeOtherAmount ||
+                    typeof citeOtherAmount !== 'number' ||
+                    citeOtherAmount < 0
+                ) {
+                    return
+                }
 
                 const citedPool = this.#cachedPools.get(
                     `${this.#DEFAULT_TOKEN}-${randomQuest.name}`
@@ -1312,12 +1317,18 @@ class Generator {
 
     calculateCiteAmount(investor, quest, percentage, quantity = 1) {
         if (!investor || !investor.balances[quest]) {
+            this.webdbg(
+                `Could not calculate cite amount due to invalid investor or no balance exists for quest ${quest}`
+            )
             return null
         }
 
         const amount = (investor.balances[quest] / 100) * percentage
 
         if (amount < 2 || investor.balances[quest] < amount * quantity) {
+            this.webdbg(
+                `Could not get cite amount for quest ${quest} as not enough balance`
+            )
             return null
         }
 
