@@ -130,6 +130,30 @@ export const sanitizeRemoteScenario = (loadedObj) => ({
     }
 })
 
+export const getMissingQuestNames = (scenario) => {
+    const quests = new Set()
+
+    if (typeof scenario !== 'object') return
+
+    scenario.invConfigs.forEach((conf) => {
+        if (conf.excludeSingleName.length) {
+            quests.add(conf.excludeSingleName)
+        }
+
+        if (conf.includeSingleName.length) {
+            quests.add(conf.includeSingleName)
+        }
+    })
+
+    scenario.questConfigs.forEach((conf) => {
+        if (conf.citeSingleName.length) {
+            quests.add(conf.citeSingleName)
+        }
+    })
+
+    return Array.from(quests)
+}
+
 export const isZero = (amount) => {
     return Math.abs(amount) < 1e-10
 }

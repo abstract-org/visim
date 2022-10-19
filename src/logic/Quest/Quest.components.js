@@ -470,18 +470,26 @@ export const QuestCreation = () => {
         const tokenRight = investor.createQuest(questName)
         const pool = tokenRight.createPool()
 
-        // Add USDC to pools
+        // Add new pool to USDC Token
         const exQuest = globalState.quests.get(pool.tokenLeft)
         exQuest.addPool(pool)
         globalState.quests.set(pool.tokenLeft, exQuest)
 
+        // Add Quest and Pool to global state
         globalState.quests.set(tokenRight.name, tokenRight)
         globalState.pools.set(pool.name, pool)
+
+        // Add Quest to state
         addQuest(tokenRight.name)
+        // Add Quest to global state store
         globalState.questStore.quests.push(tokenRight.name)
+        // Mark Quest as human-made
         addHumanQuest(tokenRight.name)
+        // Add human-made mark to global state
         globalState.questStore.humanQuests.push(tokenRight.name)
+        // Add Pool to state
         addPool(pool.name)
+        // Add Pool to global state of pool store
         globalState.poolStore.pools.push(pool.name)
 
         setQuestName('')
