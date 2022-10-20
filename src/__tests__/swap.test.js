@@ -30,7 +30,11 @@ const initialPositions = [
 ]
 
 it('Does micro price buy properly within the same liquidity', () => {
-    const { pool, investor, tokenLeft, tokenRight } = preparePool(20001)
+    const { pool, investor, tokenLeft, tokenRight } = preparePool(
+        20001,
+        'investor',
+        initialPositions
+    )
     const [totalAmountIn, totalAmountOut] = pool.buy(0.000001)
     investor.addBalance(tokenLeft.name, totalAmountIn)
     investor.addBalance(tokenRight.name, totalAmountOut)
@@ -41,7 +45,11 @@ it('Does micro price buy properly within the same liquidity', () => {
 })
 
 it('Does mini price buy properly within the same liquidity', () => {
-    const { pool, investor, tokenLeft, tokenRight } = preparePool()
+    const { pool, investor, tokenLeft, tokenRight } = preparePool(
+        10000,
+        'investor',
+        initialPositions
+    )
     const [totalAmountIn, totalAmountOut] = pool.buy(1)
 
     expect(pool.curLiq).toBeCloseTo(5050.505)
@@ -50,20 +58,24 @@ it('Does mini price buy properly within the same liquidity', () => {
 })
 
 it('Does mini price buy properly while jumping liquidity', () => {
-    const { pool, investor } = preparePool(100000)
-    pool.buy(10920)
+    const { pool, investor } = preparePool(100000, 'investor', initialPositions)
+    pool.buy(17500)
 
+    expect(pool.curPrice).toBeCloseTo(19.9, 0)
     expect(pool.curLiq).toBeCloseTo(5050.505)
-    expect(pool.totalSold).toBeCloseTo(3453.335)
-    expect(pool.curPrice).toBeCloseTo(9.999)
+    expect(pool.totalSold).toBeCloseTo(3919, 0)
 
-    pool.buy(1)
-    expect(pool.curLiq).toBeCloseTo(21378.221)
-    expect(pool.curPrice).toBeCloseTo(10)
+    pool.buy(500)
+    expect(pool.curLiq).toBeCloseTo(28458, 0)
+    expect(pool.curPrice).toBeCloseTo(20, 0)
 })
 
 it('Tries to buy over limit', () => {
-    const { pool, investor, tokenLeft, tokenRight } = preparePool()
+    const { pool, investor, tokenLeft, tokenRight } = preparePool(
+        10000,
+        'investor',
+        initialPositions
+    )
     pool.buy(150000000)
     const [totalIn, totalOut] = pool.buy(20000)
 
@@ -75,7 +87,11 @@ it('Tries to buy over limit', () => {
 })
 
 it('Does micro price sell properly within the same liquidity', () => {
-    const { pool, investor, tokenLeft, tokenRight } = preparePool()
+    const { pool, investor, tokenLeft, tokenRight } = preparePool(
+        10000,
+        'investor',
+        initialPositions
+    )
     pool.buy(2)
     const [totalAmountIn, totalAmountOut] = pool.sell(1)
 
@@ -88,7 +104,11 @@ it('Does micro price sell properly within the same liquidity', () => {
 })
 
 it('Dry buy all', () => {
-    const { pool, investor, tokenLeft, tokenRight } = preparePool()
+    const { pool, investor, tokenLeft, tokenRight } = preparePool(
+        10000,
+        'investor',
+        initialPositions
+    )
 
     const [aBuy, aSell] = pool.getSwapInfo()
     expect(aBuy[0]).toBeCloseTo(-12687740.547)
@@ -96,7 +116,11 @@ it('Dry buy all', () => {
 })
 
 it('Dry sell all', () => {
-    const { pool, investor, tokenLeft, tokenRight } = preparePool()
+    const { pool, investor, tokenLeft, tokenRight } = preparePool(
+        10000,
+        'investor',
+        initialPositions
+    )
 
     pool.buy(10000000000)
     const [aBuy, aSell] = pool.getSwapInfo()
@@ -105,7 +129,7 @@ it('Dry sell all', () => {
 })
 
 it('Does micro price sell properly while jumping liquidity', () => {
-    const { pool, investor } = preparePool(100000)
+    const { pool, investor } = preparePool(100000, 'investor', initialPositions)
     pool.buy(10920)
     expect(pool.curPrice).toBeCloseTo(9.999)
 
@@ -123,7 +147,11 @@ it('Does micro price sell properly while jumping liquidity', () => {
 })
 
 it('Tries to sell over limit', () => {
-    const { pool, investor, tokenLeft, tokenRight } = preparePool()
+    const { pool, investor, tokenLeft, tokenRight } = preparePool(
+        10000,
+        'investor',
+        initialPositions
+    )
     const [a1in, a1out] = pool.buy(1000000000)
     expect(pool.totalSold).toBeCloseTo(20000)
 
@@ -193,7 +221,11 @@ it('Tries to sell over limit', () => {
 })
 
 it('swaps USDC for RP1 and updates current price', () => {
-    const { pool, investor, tokenLeft, tokenRight } = preparePool()
+    const { pool, investor, tokenLeft, tokenRight } = preparePool(
+        10000,
+        'investor',
+        initialPositions
+    )
 
     pool.buy(5000)
     expect(pool.curPrice).toBeCloseTo(3.96)
@@ -203,7 +235,11 @@ it('swaps USDC for RP1 and updates current price', () => {
 })
 
 it('Buys until runs out of USDC', () => {
-    const { pool, investor, tokenLeft, tokenRight } = preparePool(20001)
+    const { pool, investor, tokenLeft, tokenRight } = preparePool(
+        20001,
+        'investor',
+        initialPositions
+    )
 
     let [totalAmountIn, totalAmountOut] = pool.buy(5000)
 
@@ -231,7 +267,11 @@ it('Buys until runs out of USDC', () => {
 })
 
 it('Three investors one tick (buy during liquidity shift)', () => {
-    const { pool, investor, tokenLeft, tokenRight } = preparePool()
+    const { pool, investor, tokenLeft, tokenRight } = preparePool(
+        10000,
+        'investor',
+        initialPositions
+    )
     const longTerm = Investor.create('long-term', 'long-term', 1000000)
     const fomo = Investor.create('fomo', 'fomo', 1000, 'fomo')
 
@@ -252,7 +292,11 @@ it('Three investors one tick (buy during liquidity shift)', () => {
 })
 
 it('Buy all the way to the right', () => {
-    const { pool, investor, tokenLeft, tokenRight } = preparePool()
+    const { pool, investor, tokenLeft, tokenRight } = preparePool(
+        10000,
+        'investor',
+        initialPositions
+    )
 
     pool.buy(10000000000000000)
 
@@ -262,7 +306,11 @@ it('Buy all the way to the right', () => {
 })
 
 it('Sell all the way to the left', () => {
-    const { pool, investor, tokenLeft, tokenRight } = preparePool()
+    const { pool, investor, tokenLeft, tokenRight } = preparePool(
+        10000,
+        'investor',
+        initialPositions
+    )
 
     pool.buy(100000000)
     expect(pool.totalSold).toBe(20000)
@@ -270,7 +318,7 @@ it('Sell all the way to the left', () => {
     expect(pool.totalSold).toBeCloseTo(0)
 })
 
-fit('Swaps RP1 for USDC and updates current price', () => {
+it('Swaps RP1 for USDC and updates current price', () => {
     const { pool, investor, tokenLeft, tokenRight } = preparePool(
         10000,
         'investor',
@@ -294,7 +342,7 @@ fit('Swaps RP1 for USDC and updates current price', () => {
 })
 
 it('buys with a price limit up to X within the same liquidity', () => {
-    const { pool } = preparePool()
+    const { pool } = preparePool(10000, 'investor', initialPositions)
 
     let [totalAmountIn, totalAmountOut] = pool.buy(10000, 5)
     expect(totalAmountIn).toBeCloseTo(-6242.767)
@@ -303,7 +351,7 @@ it('buys with a price limit up to X within the same liquidity', () => {
 })
 
 it('buys with a price limit up to X by jumping through liquidity', () => {
-    const { pool } = preparePool()
+    const { pool } = preparePool(10000, 'investor', initialPositions)
 
     let [totalAmountIn, totalAmountOut] = pool.buy(20000, 11)
     expect(totalAmountIn).toBeCloseTo(-14220.261)
@@ -312,7 +360,7 @@ it('buys with a price limit up to X by jumping through liquidity', () => {
 })
 
 it('sells with a price limit down to X', () => {
-    const { pool } = preparePool()
+    const { pool } = preparePool(10000, 'investor', initialPositions)
 
     pool.buy(50000)
     expect(pool.totalSold).toBeCloseTo(5929.808)
@@ -324,7 +372,7 @@ it('sells with a price limit down to X', () => {
 })
 
 it('sells with a price limit down to X by jumping through liquidity', () => {
-    const { pool } = preparePool()
+    const { pool } = preparePool(10000, 'investor', initialPositions)
 
     pool.buy(50000)
     expect(pool.totalSold).toBeCloseTo(5929.808)
