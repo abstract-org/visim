@@ -13,6 +13,7 @@ import globalState from '../GlobalState'
 import useInvestorStore from '../Investor/investor.store'
 import useLogsStore from '../Logs/logs.store'
 import usePoolStore from '../Pool/pool.store'
+import { isNumericString } from '../Utils/logicUtils'
 import UsdcToken from './UsdcToken.class'
 import useQuestStore from './quest.store'
 
@@ -452,6 +453,15 @@ export const QuestCreation = () => {
             msgs.current.show({
                 severity: 'warn',
                 detail: 'Please give quest a name and select investor first'
+            })
+            return
+        }
+
+        if (isNumericString(questName)) {
+            console.log('QuestName should not be a number')
+            msgs.current.show({
+                severity: 'warn',
+                detail: 'Please rename quest. It should not be a number'
             })
             return
         }
