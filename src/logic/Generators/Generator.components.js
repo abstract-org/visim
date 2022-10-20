@@ -20,6 +20,7 @@ import {
     deleteStateInvestorConfig,
     deleteStateQuestConfig,
     getMissingQuestNames,
+    isNumericString,
     updateStateInvestorConfig,
     updateStateQuestConfig
 } from '../Utils/logicUtils'
@@ -485,6 +486,12 @@ export const GenCardInvestor = (props) => {
     const quests = useQuestStore((state) => state.quests)
 
     const handleChange = (evt) => {
+        if (
+            evt.target.id === 'invGenName' &&
+            isNumericString(evt.target.value)
+        ) {
+            return
+        }
         const newState = { ...props.state, [evt.target.id]: evt.target.value }
         props.updateInvConfig(newState)
         globalState.generatorStore.invConfigs = updateStateInvestorConfig(
@@ -559,6 +566,12 @@ export const GenCardQuest = (props) => {
     const quests = useQuestStore((state) => state.quests)
 
     const handleChange = (evt) => {
+        if (
+            evt.target.id === 'questGenName' &&
+            isNumericString(evt.target.value)
+        ) {
+            return
+        }
         const newState = { ...props.state, [evt.target.id]: evt.target.value }
         props.updateQuestConfig(newState)
         globalState.generatorStore.questConfigs = updateStateQuestConfig(

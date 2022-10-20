@@ -161,3 +161,5 @@ export const isZero = (amount) => {
 export const calcGrowthRate = (curr, prev) => {
     return ((curr - prev) / prev) * 100
 }
+
+export const isNumericString = (str) => parseFloat(str) === Number(str)
