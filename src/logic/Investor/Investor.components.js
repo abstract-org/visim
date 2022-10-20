@@ -59,7 +59,6 @@ export function InvestorSelector() {
 
 export function InvestorPoolBalance() {
     const activeInvestor = useInvestorStore((state) => state.active)
-    const swaps = usePoolStore((state) => state.swaps)
 
     if (activeInvestor) {
         const investor = globalState.investors.get(activeInvestor)

@@ -11,6 +11,8 @@ export default class Token {
     hash
     name
     pools = []
+    initialBalanceA = 0
+    initialBalanceB = 0
     positions = new HashMap()
 
     constructor(...args) {
@@ -71,6 +73,9 @@ export default class Token {
                 position.tokenA,
                 position.tokenB
             )
+
+            this.initialBalanceA += parseFloat(position.tokenA)
+            this.initialBalanceB += parseFloat(position.tokenB)
 
             pool.posOwners.push({
                 hash: this.hash,

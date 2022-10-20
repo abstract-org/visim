@@ -12,9 +12,9 @@ export const TopMenu = (props) => {
         },
         {
             label: `Money Flow`,
-            icon: 'pi pi-fw pi-list',
+            icon: 'pi pi-fw pi-money-bill',
             command: () => {
-                props.setSidebarVisible(!props.sidebarVisible)
+                props.setMoneyflowVisible(!props.moneyflowVisible)
             }
         }
     ]
