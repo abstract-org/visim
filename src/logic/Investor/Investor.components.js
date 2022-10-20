@@ -6,7 +6,6 @@ import { BalanceBar } from '../../components/ExtraUiComponents'
 import globalState from '../GlobalState'
 import useLogsStore from '../Logs/logs.store'
 import usePoolStore from '../Pool/pool.store'
-import { appendIfNotExist } from '../Utils/uiUtils'
 import { generateDefaultInvestors } from './Investor.generator'
 import useInvestorStore from './investor.store'
 
@@ -21,9 +20,9 @@ export function InvestorModule({ children }) {
         investors.forEach((investor) => {
             if (!globalState.investors.has(investor.hash)) {
                 globalState.investors.set(investor.hash, investor)
-                globalState.investorStore.investors = appendIfNotExist(
-                    globalState.investorStore.investors,
-                    investor.hash
+                globalState.investorStore.investors.push(
+                    investor.hash,
+                    investor
                 )
             }
             addInvestors(investors.map((investor) => investor.hash))

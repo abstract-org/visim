@@ -26,7 +26,7 @@ class Generator {
     #questConfigs = []
     #chance = null
     #dayData = {}
-    #cachedInvestors = []
+    #cachedInvestors = new HashMap()
     #cachedQuests = new HashMap()
     #cachedPools = new HashMap()
     #dailyTradedPools = []
@@ -52,6 +52,7 @@ class Generator {
         questConfigs,
         globalPools,
         globalQuests,
+        globalInvestors,
         swaps = [],
         performance,
         performanceOutput
@@ -62,6 +63,12 @@ class Generator {
         this.#questConfigs = questConfigs
         this.#cachedQuests = globalQuests.clone()
         this.#cachedPools = globalPools.clone()
+
+        globalInvestors.values().forEach((investor) => {
+            if (!investor.default) {
+                this.#cachedInvestors.set(investor.hash, investor)
+            }
+        })
 
         this.router = new Router(this.#cachedQuests, this.#cachedPools)
 
@@ -305,10 +312,11 @@ class Generator {
     }
 
     initializeInvestor(invConfig, day) {
-        const invSum = this.#cachedInvestors.length
+        console.log(this.#cachedInvestors)
+        const invSum = this.#cachedInvestors.size
         const investor = this.spawnInvestor(
-            `${invConfig.invGenAlias}${invSum + 1}`,
-            invConfig.invGenName,
+            invConfig.invGenAlias,
+            `${invConfig.invGenName} (${invSum + 1})`,
             invConfig.initialBalance
         )
         this.#dayData[day].investors.push(investor)
@@ -1346,14 +1354,9 @@ class Generator {
     }
 
     spawnInvestor(type, name, initialBalance) {
-        const id = this.#cachedInvestors.length + 1
-        const investor = Investor.create(
-            type,
-            `${name} (${id})`,
-            initialBalance
-        )
+        const investor = Investor.create(type, name, initialBalance)
 
-        this.#cachedInvestors.push(investor)
+        this.#cachedInvestors.set(investor.hash, investor)
 
         return investor
     }
@@ -1501,7 +1504,7 @@ class Generator {
     }
 
     getInvestors() {
-        return this.#cachedInvestors
+        return this.#cachedInvestors.values()
     }
 
     getPools() {
