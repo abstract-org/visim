@@ -371,7 +371,7 @@ class Generator {
 
         if (
             !citeSingleAmount ||
-            typeof citeOtherAmount !== 'number' ||
+            typeof citeSingleAmount !== 'number' ||
             citeSingleAmount < 0
         ) {
             return
