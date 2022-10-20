@@ -6,6 +6,7 @@ import 'primereact/resources/themes/lara-light-indigo/theme.css'
 import { useEffect, useRef, useState } from 'react'
 
 import { KnowledgeGraphV2 } from './components/KnowledgeGraphV2'
+import { MoneyFlowSidebar } from './components/MoneyFlowSidebar'
 import { PoolChart } from './components/PoolChart'
 import { GeneratorRunner } from './logic/Generators/Generator.components'
 import useGeneratorStore from './logic/Generators/generator.store'
@@ -29,6 +30,7 @@ import { TopMenu } from './logic/TopMenu.component'
 
 export default function Home() {
     const [sidebarVisible, setSidebarVisible] = useState(false)
+    const [moneyflowVisible, setMoneyflowVisible] = useState(false)
     const needScrollUp = useGeneratorStore((state) => state.needScrollUp)
     const setNeedScrollUp = useGeneratorStore((state) => state.setNeedScrollUp)
     const graphCard = useRef(null)
@@ -47,11 +49,17 @@ export default function Home() {
                     <TopMenu
                         sidebarVisible={sidebarVisible}
                         setSidebarVisible={setSidebarVisible}
+                        moneyflowVisible={moneyflowVisible}
+                        setMoneyflowVisible={setMoneyflowVisible}
                     />
                 </div>
                 <StatesSidebar
                     sidebarVisible={sidebarVisible}
                     setSidebarVisible={setSidebarVisible}
+                />
+                <MoneyFlowSidebar
+                    moneyflowVisible={moneyflowVisible}
+                    setMoneyflowVisible={setMoneyflowVisible}
                 />
                 <div className="col-8">
                     <Card className="h-full">
