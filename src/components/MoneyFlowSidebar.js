@@ -26,6 +26,12 @@ const MoneyFlow = () => {
 
     const totalIssuedUSDC = globalState.investors
         .values()
+        .filter((x) => x.default)
+        .reduce((acc, i) => acc + i.initialBalance, 0)
+
+    const totalIssuedUSDCDynamic = globalState.investors
+        .values()
+        .filter((x) => !x.default)
         .reduce((acc, i) => acc + i.initialBalance, 0)
 
     const totalIssuedTokens = globalState.quests
@@ -76,7 +82,10 @@ const MoneyFlow = () => {
         })
 
     const totalMissingUSDC =
-        totalIssuedUSDC - totalLockedUSDC - totalWalletsUSDC
+        totalIssuedUSDC +
+        totalIssuedUSDCDynamic -
+        totalLockedUSDC -
+        totalWalletsUSDC
 
     const totalMissingTokens = globalState.quests
         .values()
@@ -108,7 +117,11 @@ const MoneyFlow = () => {
                     <h3>Total Issued</h3>
                     <div className="ml-2">
                         <div>
-                            <b>USDC</b>: {nf.format(totalIssuedUSDC)}
+                            <b>Pre-Sim USDC</b>: {nf.format(totalIssuedUSDC)}
+                        </div>
+                        <div>
+                            <b>Generated USDC</b>:{' '}
+                            {nf.format(totalIssuedUSDCDynamic)}
                         </div>
                         <div>
                             {totalIssuedTokens.map((td, idx) => {
