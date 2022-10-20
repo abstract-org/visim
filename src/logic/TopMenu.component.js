@@ -4,10 +4,17 @@ import React from 'react'
 export const TopMenu = (props) => {
     const items = [
         {
-            label: `${props.sidebarVisible ? 'Hide states' : 'Show states'}`,
+            label: props.statesVisible ? 'Hide states' : 'Show states',
             icon: 'pi pi-fw pi-list',
             command: () => {
-                props.setSidebarVisible(!props.sidebarVisible)
+                props.setStatesVisible(!props.statesVisible)
+            }
+        },
+        {
+            label: props.capTableVisible ? 'Hide CapTable' : 'Show CapTable',
+            icon: 'pi pi-fw pi-book',
+            command: () => {
+                props.setCapTableVisible(!props.capTableVisible)
             }
         },
         {
@@ -19,7 +26,7 @@ export const TopMenu = (props) => {
         }
     ]
 
-    const start = <React.Fragment></React.Fragment>
+    const start = <React.Fragment />
 
-    return <Menubar model={items} start={start} />
+    return <Menubar start={start} model={items} />
 }
