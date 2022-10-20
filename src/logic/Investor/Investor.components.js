@@ -6,9 +6,7 @@ import { BalanceBar } from '../../components/ExtraUiComponents'
 import globalState from '../GlobalState'
 import useLogsStore from '../Logs/logs.store'
 import usePoolStore from '../Pool/pool.store'
-import UsdcToken from '../Quest/UsdcToken.class'
-import useQuestStore from '../Quest/quest.store'
-import { appendIfNotExist, numericValue } from '../Utils/uiUtils'
+import { appendIfNotExist } from '../Utils/uiUtils'
 import { generateDefaultInvestors } from './Investor.generator'
 import useInvestorStore from './investor.store'
 
@@ -17,15 +15,20 @@ const setActiveSelector = (state) => state.setActive
 
 export function InvestorModule({ children }) {
     const addInvestors = useInvestorStore(addInvestorsSelector)
-    const investors = generateDefaultInvestors()
-    investors.forEach((investor) => {
-        globalState.investors.set(investor.hash, investor)
-        globalState.investorStore.investors = appendIfNotExist(
-            globalState.investorStore.investors,
-            investor.hash
-        )
+
+    useEffect(() => {
+        const investors = generateDefaultInvestors()
+        investors.forEach((investor) => {
+            if (!globalState.investors.has(investor.hash)) {
+                globalState.investors.set(investor.hash, investor)
+                globalState.investorStore.investors = appendIfNotExist(
+                    globalState.investorStore.investors,
+                    investor.hash
+                )
+            }
+            addInvestors(investors.map((investor) => investor.hash))
+        })
     })
-    addInvestors(investors.map((investor) => investor.hash))
 
     return <div>{children}</div>
 }
