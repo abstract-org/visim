@@ -312,7 +312,6 @@ class Generator {
     }
 
     initializeInvestor(invConfig, day) {
-        console.log(this.#cachedInvestors)
         const invSum = this.#cachedInvestors.size
         const investor = this.spawnInvestor(
             invConfig.invGenAlias,
@@ -636,6 +635,13 @@ class Generator {
             //t0 =  = performance.now()
         }
 
+        if (conf.excludeSingleName === tradePool.tokenRight) {
+            console.log(
+                `Investing directly into ${conf.includeSingleName} quest with excluded set as ${conf.excludeSingleName}`
+            )
+            console.log(tradePool)
+        }
+
         const [totalIn, totalOut] = router.smartSwap(
             this.#DEFAULT_TOKEN,
             tradePool.tokenRight,
@@ -720,6 +726,13 @@ class Generator {
                 //t0 =  = performance.now()
             }
 
+            if (conf.excludeSingleName === pool.tokenRight) {
+                console.log(
+                    `Trading ${pool.name} quest with excluded set as ${conf.excludeSingleName}`
+                )
+                console.log(pool)
+            }
+
             const [totalIn, totalOut] = router.smartSwap(
                 this.#DEFAULT_TOKEN,
                 pool.tokenRight,
@@ -797,6 +810,7 @@ class Generator {
             router,
             incPools,
             conf.smartRouteDepth,
+            conf.excludeSingleName,
             'inc'
         )
     }
@@ -826,6 +840,7 @@ class Generator {
             router,
             decPools,
             conf.smartRouteDepth,
+            conf.excludeSingleName,
             'dec'
         )
     }
@@ -843,7 +858,10 @@ class Generator {
                     const conf = investorObj.conf
 
                     // Buy in specific quest
-                    if (conf.includeSingleName.length && conf.buySinglePerc) {
+                    if (
+                        conf.includeSingleName.length > 0 &&
+                        conf.buySinglePerc > 0
+                    ) {
                         this.tradingHandlers.push(
                             new Promise((resolve) =>
                                 resolve(
@@ -909,6 +927,7 @@ class Generator {
         router,
         selectedPools,
         smartRouteDepth,
+        excludeSingleName,
         debugStr
     ) {
         if (!selectedPools || !selectedPools.length) {
@@ -933,6 +952,13 @@ class Generator {
                 `Will swap(${swapDir}) ${t0} for ${t1} with ${amount}, involved pool ${pool.name}`
             )
             this.webdbg(pool)
+
+            if (excludeSingleName === t0 || excludeSingleName === t1) {
+                console.log(
+                    `${swapDir} ${t0}/${t1} with excluded set as ${excludeSingleName}, direction ${debugStr}`
+                )
+                console.log(selectedPools)
+            }
 
             const [totalIn, totalOut] = router.smartSwap(
                 t0,
@@ -1047,6 +1073,12 @@ class Generator {
                         let t0
                         if (this.#_PERFORMANCE) {
                             //t0 =  = performance.now()
+                        }
+
+                        if (conf.excludeSingleName) {
+                            console.log(
+                                `Withdrawing ${quest} quest with excluded set as ${conf.excludeSingleName}`
+                            )
                         }
 
                         const [totalIn, totalOut] = router.smartSwap(
@@ -1245,7 +1277,7 @@ class Generator {
         let finalResult = Array.prototype.concat(topGainers, randomGainers)
 
         if (excludeSingleName) {
-            finalResult.filter(
+            finalResult = finalResult.filter(
                 (pool) =>
                     pool.isQuest() && pool.tokenRight !== excludeSingleName
             )
