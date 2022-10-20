@@ -4,6 +4,7 @@ import Investor from '../Investor/Investor.class'
 import Pool from '../Pool/Pool.class'
 import Token from '../Quest/Token.class'
 import UsdcToken from '../Quest/UsdcToken.class'
+import { isNumericString } from './logicUtils'
 
 const _KNOWN_CLASSES = {
     Pool: Pool,
@@ -85,7 +86,7 @@ const serialize = (instance) => {
 const convertObjToHashMap = (obj) => {
     // converting { [string]: value } ==> [ [string1,value1], [string2,value2] ]
     const objEntriesConverted = Object.entries(obj).reduce((Arr2D, [k, v]) => {
-        const newKey = parseFloat(k) === Number(k) ? parseFloat(k) : k
+        const newKey = isNumericString(k) ? parseFloat(k) : k
 
         return [...Arr2D, [newKey, v]]
     }, [])
