@@ -682,7 +682,7 @@ class Generator {
     }
 
     tradeTopGainers(conf, day, investor, router) {
-        this.webdbg(`[GENERATOR] Trying to buy top gainers on day ${day}`)
+        this.webdbg(`[GENERATOR] Buying top gainers on day ${day}`)
         const spendAmount =
             (investor.balances[this.#DEFAULT_TOKEN] / 100) * conf.buySumPerc
 
@@ -825,6 +825,9 @@ class Generator {
     simulateTrade(day, router) {
         const tradingDayKeys = Object.keys(this.tradingInvs)
         tradingDayKeys.forEach(async (dayKey) => {
+            this.webdbg(
+                `[GENERATOR] Simulating trade day ${day}, trading day current ${dayKey}`
+            )
             if (day % dayKey === 0) {
                 const investors = this.tradingInvs[dayKey]
                 investors.forEach((investorObj) => {
