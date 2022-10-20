@@ -4,6 +4,7 @@ import React, { useEffect } from 'react'
 
 import { BalanceBar } from '../../components/ExtraUiComponents'
 import globalState from '../GlobalState'
+import useLogsStore from '../Logs/logs.store'
 import usePoolStore from '../Pool/pool.store'
 import UsdcToken from '../Quest/UsdcToken.class'
 import useQuestStore from '../Quest/quest.store'
@@ -60,6 +61,7 @@ export function InvestorSelector() {
 export function InvestorPoolBalance() {
     const activeInvestor = useInvestorStore((state) => state.active)
     const swaps = usePoolStore((state) => state.swaps)
+    const logObjs = useLogsStore((state) => state.logObjs)
 
     if (activeInvestor) {
         const investor = globalState.investors.get(activeInvestor)
