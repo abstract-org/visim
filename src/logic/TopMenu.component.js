@@ -4,7 +4,14 @@ import React from 'react'
 export const TopMenu = (props) => {
     const items = [
         {
-            label: `${props.sidebarVisible ? 'Hide' : 'Show'} states`,
+            label: `${props.sidebarVisible ? 'Hide states' : 'Show states'}`,
+            icon: 'pi pi-fw pi-list',
+            command: () => {
+                props.setSidebarVisible(!props.sidebarVisible)
+            }
+        },
+        {
+            label: `Money Flow`,
             icon: 'pi pi-fw pi-list',
             command: () => {
                 props.setSidebarVisible(!props.sidebarVisible)
