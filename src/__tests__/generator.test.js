@@ -68,6 +68,7 @@ describe('Trades increased in price quest', () => {
             [],
             globalState.pools,
             globalState.quests,
+            null,
             [
                 {
                     pool: A.name,
@@ -131,6 +132,7 @@ describe('Trades increased in price quest', () => {
             [],
             globalState.pools,
             globalState.quests,
+            null,
             [
                 {
                     pool: A.name,
@@ -235,6 +237,7 @@ fit('Generates investors', async () => {
         [queAuthor],
         globalState.pools,
         globalState.quests,
+        null,
         performanceTest
     )
 

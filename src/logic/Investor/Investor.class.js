@@ -9,11 +9,11 @@ export default class Investor {
     hash = null
     type = null
     name = null
+    default = false
     balances = { USDC: 0 } // not like solidity, what's better -> balances here or in tokens
     positions = new HashMap()
     questsCreated = []
 
-    #canCreate = false
     #PRICE_RANGE_MULTIPLIER = 2
 
     constructor(...args) {
@@ -31,13 +31,13 @@ export default class Investor {
      * @param {number} usdcBalance
      * @returns {Investor}
      */
-    static create(type, name, usdcBalance = 10000) {
+    static create(type, name, usdcBalance = 10000, _default = false) {
         const thisInvestor = new Investor()
         thisInvestor.hash = '0x' + sha256(`${name} + ${type}`)
         thisInvestor.balances.USDC = parseFloat(usdcBalance)
         thisInvestor.type = type
         thisInvestor.name = name
-        thisInvestor.#canCreate = type === 'creator'
+        thisInvestor.default = _default
 
         return thisInvestor
     }
