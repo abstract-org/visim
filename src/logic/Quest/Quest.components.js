@@ -1,8 +1,6 @@
-import { globals } from 'chance/.eslintrc'
 import { Button } from 'primereact/button'
 import { Checkbox } from 'primereact/checkbox'
 import { Dropdown } from 'primereact/dropdown'
-import { InputNumber } from 'primereact/inputnumber'
 import { InputText } from 'primereact/inputtext'
 import { Messages } from 'primereact/messages'
 import { ScrollPanel } from 'primereact/scrollpanel'
@@ -13,6 +11,8 @@ import globalState from '../GlobalState'
 import useInvestorStore from '../Investor/investor.store'
 import useLogsStore from '../Logs/logs.store'
 import usePoolStore from '../Pool/pool.store'
+import { isNumericString } from '../Utils/logicUtils'
+import { appendIfNotExist } from '../Utils/uiUtils'
 import UsdcToken from './UsdcToken.class'
 import useQuestStore from './quest.store'
 
@@ -201,6 +201,11 @@ export const QuestCitation = () => {
             setActivePool('')
             setActivePool(crossPool.name)
             investor.addBalance(citingQuest.name, -totalIn)
+            globalState.investors.set(investor.hash, investor)
+            globalState.investorStore.investors = appendIfNotExist(
+                globalState.investorStore.investors,
+                investor.hash
+            )
 
             const logData = {
                 pool: crossPool.name,
@@ -452,6 +457,15 @@ export const QuestCreation = () => {
             msgs.current.show({
                 severity: 'warn',
                 detail: 'Please give quest a name and select investor first'
+            })
+            return
+        }
+
+        if (isNumericString(questName)) {
+            console.log('QuestName should not be a number')
+            msgs.current.show({
+                severity: 'warn',
+                detail: 'Please rename quest. It should not be a number'
             })
             return
         }
