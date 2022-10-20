@@ -24,7 +24,6 @@ import {
     updateStateInvestorConfig,
     updateStateQuestConfig
 } from '../Utils/logicUtils'
-import { appendIfNotExist } from '../Utils/uiUtils'
 import useDayTrackerStore from '../dayTracker.store'
 import Generator from './Generator.class'
 import { InvestorModuleComponent } from './InvestorModuleComponent'
@@ -34,8 +33,6 @@ import { dayData, invGen, questGen } from './initialState'
 
 const updateInvSelector = (state) => state.updateInvConfig
 const deleteInvSelector = (state) => state.deleteInvConfig
-
-const logObjsSelector = (state) => state.logObjs
 
 const updateQuestSelector = (state) => state.updateQuestConfig
 const deleteQuestSelector = (state) => state.deleteQuestConfig
@@ -283,6 +280,7 @@ export const GeneratorRunner = () => {
             questConfigs,
             globalState.pools,
             globalState.quests,
+            globalState.investors,
             swaps
         )
 
@@ -301,10 +299,7 @@ export const GeneratorRunner = () => {
                 if (!globalState.investors.has(investor.hash)) {
                     globalState.investors.set(investor.hash, investor)
                     addInvestor(investor.hash)
-                    globalState.investorStore.investors = appendIfNotExist(
-                        globalState.investorStore.investors,
-                        investor.hash
-                    )
+                    globalState.investorStore.investors.push(investor.hash)
                 }
             })
             stepData.quests.forEach((quest) => {

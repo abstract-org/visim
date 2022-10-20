@@ -37,7 +37,8 @@ export function generateDefaultInvestors() {
         let newInvestor = Investor.create(
             investorType.type,
             investorType.name,
-            investorType.usdcBalance
+            investorType.usdcBalance,
+            investorType.default
         )
 
         investors.push(newInvestor)
