@@ -67,6 +67,7 @@ const aggregateTokenHolders = () => {
             tokens[quest].name = quest
             tokens[quest].investors.push({
                 investor: inv.name,
+                investorType: inv.type,
                 amount: sum
             })
             tokens[quest].investorsTotal += sum
@@ -127,9 +128,9 @@ const CapTable = (props) => {
     const invPercentageBody = (rowData) => {
         return (
             <React.Fragment>
-                <span>{formatPercent(rowData.percentage)}</span>
+                <span>{formatPercent(rowData.percentageOfIssued)}</span>
                 <ProgressBar
-                    value={rowData.percentage * 100}
+                    value={rowData.percentageOfIssued * 100}
                     showValue={false}
                 />
             </React.Fragment>
@@ -142,19 +143,27 @@ const CapTable = (props) => {
                 value={data.investors}
                 responsiveLayout="scroll"
                 size="small"
+                rowGroupMode="rowspan"
+                sortOrder={1}
+                sortField="investorType"
+                groupRowsBy="investorType"
             >
-                <Column style={{ width: '3em' }} />
+                <Column field="investorType" header="Investor type" />
                 <Column field="investor" header="Investor" />
                 <Column
                     field="amount"
                     header="Tokens amount"
                     dataType="numeric"
+                    style={{ textAlign: 'left' }}
                 />
-                <Column
-                    field="percentage"
-                    header="Tokens amount"
-                    dataType="numeric"
-                />
+                {/*<Column*/}
+                {/*    field="percentage"*/}
+                {/*    header="Percentage of bought, %"*/}
+                {/*    dataType="numeric"*/}
+                {/*    body={(rowData) => (*/}
+                {/*        <span>{formatPercent(rowData.percentage)}</span>*/}
+                {/*    )}*/}
+                {/*/>*/}
                 <Column
                     field="percentageOfIssued"
                     header="Investor's share, %"
