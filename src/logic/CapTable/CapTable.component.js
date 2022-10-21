@@ -1,12 +1,13 @@
 import { Column } from 'primereact/column'
 import { ColumnGroup } from 'primereact/columngroup'
 import { DataTable } from 'primereact/datatable'
+import { ProgressBar } from 'primereact/progressbar'
 import { Row } from 'primereact/row'
 import { Sidebar } from 'primereact/sidebar'
-import { Tooltip } from 'primereact/tooltip'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 import globalState from '../GlobalState'
+import UsdcToken from '../Quest/UsdcToken.class'
 
 export const CapTableSidebar = (props) => {
     return (
@@ -24,50 +25,91 @@ export const CapTableSidebar = (props) => {
     )
 }
 
-const combineInvestorBalances = (investor) =>
-    Object.keys(investor.balances).map((balance) => {
-        const usdcPool = globalState.pools
-            .values()
-            .find((p) => p.tokenRight === balance[0])
+const totalWalletsTokens = globalState.quests
+    .values()
+    .filter((x) => !(x instanceof UsdcToken))
+    .map((q) => {
+        let totalQTokens = 0
 
-        return {
-            token: balance[0],
-            amount: balance[1],
-            usdcValue: usdcPool ? balance[1] * usdcPool.curPrice : 0
-        }
-    }, [])
+        globalState.investors.values().forEach((inv) => {
+            totalQTokens += inv.balances[q.name] ? inv.balances[q.name] : 0
+        })
 
-const aggregateInvestors = () => {
-    let grandUsdcTotal = 0
-
-    const investorList = globalState.investors.values().map((investor) => {
-        const invQuests = combineInvestorBalances(investor)
-        const usdcTotal = invQuests.reduce(
-            (sum, invPool) => sum + invPool.usdcValue,
-            0
-        )
-        grandUsdcTotal += usdcTotal
-
-        return {
-            invName: investor.name,
-            invType: investor.type,
-            usdcTotal,
-            invQuests
-        }
+        return { name: q.name, total: totalQTokens }
     })
 
-    return investorList.map((inv) => ({
-        ...inv,
-        percentage: inv.usdcTotal / grandUsdcTotal
-    }))
+const aggregateTokenHolders = () => {
+    const investorList = globalState.investors.values()
+    const questList = globalState.quests.values()
+
+    const totalIssuedTokens = questList
+        .filter((x) => !(x instanceof UsdcToken))
+        .reduce(
+            (resultMap, quest) => ({
+                ...resultMap,
+                [quest.name]: quest.initialBalanceB
+            }),
+            {}
+        )
+
+    const tokenMap = investorList.reduce((tokens, inv) => {
+        Object.entries(inv.balances).forEach(([quest, sum]) => {
+            if (quest === 'USDC') return // TODO: should gather USDC info somewhere else
+            if (!tokens[quest]) {
+                tokens[quest] = {
+                    name: '',
+                    investors: [],
+                    investorsTotal: 0,
+                    issuedTotal: 0
+                }
+            }
+
+            tokens[quest].name = quest
+            tokens[quest].investors.push({
+                investor: inv.name,
+                amount: sum
+            })
+            tokens[quest].investorsTotal += sum
+            tokens[quest].issuedTotal = totalIssuedTokens[quest]
+        })
+
+        return tokens
+    }, {})
+
+    const tokenList = Object.entries(tokenMap).reduce(
+        (resultList, [tokenName, currToken]) => {
+            return [
+                ...resultList,
+                {
+                    ...currToken,
+                    name: tokenName
+                }
+            ]
+        },
+        []
+    )
+
+    tokenList.forEach((tokenData) => {
+        tokenData.investors.forEach((investorItem) => {
+            investorItem.percentage =
+                investorItem.amount / tokenData.investorsTotal
+            investorItem.percentageOfIssued =
+                investorItem.amount / tokenData.issuedTotal
+        })
+    })
+
+    return tokenList
 }
 
 const CapTable = (props) => {
-    const [capContents, setCapContents] = useState([])
+    const [tableContents, setTableContents] = useState([])
+    const [expandedRows, setExpandedRows] = useState(null)
+    const isMounted = useRef(false)
 
     useEffect(() => {
-        setCapContents(aggregateInvestors())
-    }, [])
+        isMounted.current = true
+        setTableContents(aggregateTokenHolders())
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     const formatDecimal = (value = 0) => {
         return value.toLocaleString('en-US', {
@@ -75,49 +117,71 @@ const CapTable = (props) => {
             maximumFractionDigits: 2
         })
     }
-    const formatPercent = (value = 0.00000001) => {
+    const formatPercent = (value = 0) => {
         return value.toLocaleString('en-US', {
             style: 'percent',
             minimumFractionDigits: 2
         })
     }
 
-    const totalsUsdc = () => {
+    const invPercentageBody = (rowData) => {
+        return (
+            <React.Fragment>
+                <span>{formatPercent(rowData.percentage)}</span>
+                <ProgressBar
+                    value={rowData.percentage * 100}
+                    showValue={false}
+                />
+            </React.Fragment>
+        )
+    }
+
+    const rowExpansionTemplate = (data) => {
+        return (
+            <DataTable
+                value={data.investors}
+                responsiveLayout="scroll"
+                size="small"
+            >
+                <Column style={{ width: '3em' }} />
+                <Column field="investor" header="Investor" />
+                <Column
+                    field="amount"
+                    header="Tokens amount"
+                    dataType="numeric"
+                />
+                <Column
+                    field="percentage"
+                    header="Tokens amount"
+                    dataType="numeric"
+                />
+                <Column
+                    field="percentageOfIssued"
+                    header="Investor's share, %"
+                    body={invPercentageBody}
+                />
+            </DataTable>
+        )
+    }
+
+    const inWalletsTotal = () => {
         let total = 0
-        for (let rowData of capContents) {
-            total += rowData.usdcTotal
+        for (let rowData of tableContents) {
+            total += rowData.investorsTotal
         }
 
         return formatDecimal(total)
     }
 
-    const totalsPercentage = () => {
+    const issuedGrandTotal = () => {
         let total = 0
-        for (let rowData of capContents) {
-            total += rowData.percentage
+        for (let rowData of tableContents) {
+            total += rowData.issuedTotal
         }
 
-        return formatPercent(total)
+        return formatDecimal(total)
     }
 
-    const usdcTotalBody = (rowData) => {
-        const tooltipText = rowData.invQuests.reduce(
-            (resultStr, invPool) =>
-                `${resultStr}\n${invPool.name}: ${invPool.investorShare} USDC`,
-            ''
-        )
-        return (
-            <div className="cell-usdc-total" data-pr-tooltip={tooltipText}>
-                {rowData.usdcTotal}
-                <Tooltip
-                    target=".cell-usdc-total"
-                    position="bottom"
-                    mouseTrack
-                    mouseTrackLeft={10}
-                />
-            </div>
-        )
-    }
     const footerGroup = (
         <ColumnGroup>
             <Row>
@@ -126,8 +190,8 @@ const CapTable = (props) => {
                     colSpan={2}
                     footerStyle={{ textAlign: 'right' }}
                 />
-                <Column footer={totalsUsdc} />
-                <Column footer={totalsPercentage} />
+                <Column footer={inWalletsTotal} />
+                <Column footer={issuedGrandTotal} />
             </Row>
         </ColumnGroup>
     )
@@ -135,21 +199,26 @@ const CapTable = (props) => {
     return (
         <React.Fragment>
             <DataTable
-                value={capContents}
+                value={tableContents}
+                expandedRows={expandedRows}
+                onRowToggle={(e) => setExpandedRows(e.data)}
+                responsiveLayout="scroll"
+                rowExpansionTemplate={rowExpansionTemplate}
+                groupRowsBy="representative.name"
+                sortMode="single"
+                sortField="name"
+                sortOrder={1}
+                size="big"
                 footerColumnGroup={footerGroup}
-                selectionMode="single"
-                sortMode="multiple"
-                size="small"
             >
-                <Column field="invName" header="Investor name" sortable />
-                <Column field="invType" header="Investor type" />
+                <Column expander style={{ width: '3em' }} />
+                <Column field="name" header="Token name" sortable />
                 <Column
-                    field="usdcTotal"
-                    header="UsdcTotal"
-                    body={usdcTotalBody}
+                    field="investorsTotal"
+                    header="Investors total"
+                    sortable
                 />
-                <Column field="percentage" header="Percentage" />
-                <Column field="invQuests" hidden />
+                <Column field="issuedTotal" header="Total tokens" sortable />
             </DataTable>
         </React.Fragment>
     )
