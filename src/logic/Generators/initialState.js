@@ -32,6 +32,11 @@ export const invGen = {
     keepCreatingQuests: '',
     keepCreatingPeriodDays: 0,
 
+    keepCitingProbability: 10,
+    keepCitingSumPercentage: 30,
+    keepCitingPriceHigherThan: 50,
+    keepCitingPosMultiplier: 2,
+
     valueSellPeriodDays: 0,
     valueSellAmount: 0,
 
@@ -49,7 +54,8 @@ export const questGen = {
     citeSingleMultiplier: 2,
     probRandomCite: 500,
     randomCitePerc: 5,
-    citeRandomMultiplier: 2
+    citeRandomMultiplier: 2,
+    citeRandomPreferOwn: false
 }
 
 export const dayData = {

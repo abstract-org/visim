@@ -8,7 +8,8 @@ import {
     calcGrowthRate,
     formSwapData,
     getCombinedSwaps,
-    isZero
+    isZero,
+    priceDiff
 } from '../Utils/logicUtils'
 
 const _OPS_TIME_INITIAL = {
@@ -312,7 +313,6 @@ class Generator {
     }
 
     initializeInvestor(invConfig, day) {
-        console.log(this.#cachedInvestors)
         const invSum = this.#cachedInvestors.size
         const investor = this.spawnInvestor(
             invConfig.invGenAlias,
@@ -466,131 +466,228 @@ class Generator {
         questProbs,
         creationType
     ) {
-        this.webdbg(`[GENERATOR] Trying to cite random quests`)
-        const filteredQuests = this.#cachedQuests
-            .values()
-            .filter(
-                (questIter) =>
-                    questIter.name !== this.#DEFAULT_TOKEN &&
-                    questIter.name !== quest.name
+        this.webdbg(`[GENERATOR] Citing random quests`)
+        this.webdbg(
+            `${
+                questConfig.citeRandomPreferOwn
+                    ? 'Prefers own'
+                    : 'Prefers random'
+            }`
+        )
+
+        let filteredQuests = questConfig.citeRandomPreferOwn
+            ? investor.questsCreated.map((qc) => {
+                  return this.#cachedQuests.get(qc)
+              })
+            : []
+
+        if (filteredQuests.length < questProbs.citeOtherQuantity) {
+            const randomFilteredQuests = this.#cachedQuests
+                .values()
+                .filter(
+                    (questIter) =>
+                        questIter.name !== this.#DEFAULT_TOKEN &&
+                        questIter.name !== quest.name
+                )
+
+            const randomQuests = this.getRandomElements(
+                randomFilteredQuests,
+                questProbs.citeOtherQuantity - filteredQuests.length
             )
+
+            if (randomQuests.length > 0) {
+                filteredQuests = Array.prototype.concat(
+                    filteredQuests,
+                    randomQuests
+                )
+            }
+        }
         this.webdbg(`Got ${filteredQuests.length} filtered quests`)
         this.webdbg(filteredQuests)
 
-        const randomQuests = this.getRandomElements(
-            filteredQuests,
-            questProbs.citeOtherQuantity
-        )
-        this.webdbg(`Got ${randomQuests.length} randomized quests`)
-        this.webdbg(randomQuests)
+        this.webdbg(`Got ${filteredQuests.length} randomized quests`)
+        this.webdbg(filteredQuests)
 
-        if (randomQuests.length) {
-            randomQuests.forEach((randomQuest) => {
-                const citeOtherAmount = this.calculateCiteAmount(
-                    investor,
-                    quest.name,
-                    questConfig.randomCitePerc,
-                    questProbs.citeOtherQuantity
-                )
+        console.log(`Will cite random quests by ${pool.name}`)
+        console.log(filteredQuests)
+
+        this.citeQuests(
+            day,
+            investor,
+            quest,
+            pool,
+            filteredQuests,
+            questConfig.randomCitePerc,
+            questConfig.citeRandomMultiplier,
+            creationType
+        )
+    }
+
+    citeRandomWithPriceHigher(conf, day, investor, quest, pool, creationType) {
+        const shouldCiteRandom = this.calcProb(conf.keepCitingProbability)
+
+        if (!shouldCiteRandom) {
+            return
+        }
+
+        const priceMark = conf.keepCitingPriceHigherThan
+        const potentialQuestPools = this.#cachedPools.values().filter((cp) => {
+            if (cp.isQuest() && cp.tokenRight !== quest.name) {
+                const diff = priceDiff(cp.curPrice, pool.curPrice)
 
                 if (
-                    !citeOtherAmount ||
-                    typeof citeOtherAmount !== 'number' ||
-                    citeOtherAmount < 0
+                    conf.excludeSingleName.length &&
+                    cp.tokenRight === conf.excludeSingleName
                 ) {
-                    return
+                    return false
                 }
 
-                const citedPool = this.#cachedPools.get(
-                    `${this.#DEFAULT_TOKEN}-${randomQuest.name}`
-                )
-
-                if (!citedPool || citedPool.name === pool.name) {
-                    this.webdbg(
-                        `Could not find pool for citing, wanted ${randomQuest.name} got`,
-                        citedPool
-                    )
-                    return
+                if (diff > priceMark) {
+                    return true
                 }
+            }
+            return false
+        })
+        const randomQuestPool = this.getRandomElements(potentialQuestPools, 1)
 
-                let crossPool = this.#cachedPools.get(
-                    `${randomQuest.tokenLeft}-${quest.name}`
+        if (!randomQuestPool.length) {
+            return
+        }
+
+        this.citeQuests(
+            day,
+            investor,
+            quest,
+            pool,
+            randomQuestPool,
+            conf.keepCitingSumPercentage,
+            conf.keepCitingPosMultiplier,
+            creationType
+        )
+    }
+
+    citeQuests(
+        day,
+        investor,
+        citingQuest,
+        citingPool,
+        citedQuests,
+        citingPercentage,
+        citingPosMultiplier,
+        creationType
+    ) {
+        this.webdbg(`[GENERATOR] Trying to cite quests`)
+
+        if (!citedQuests.length) {
+            this.webdbg(
+                `Did not pass any quests for citation, creation-type: ${creationType}`
+            )
+            return
+        }
+
+        citedQuests.forEach((randomQuest) => {
+            const citeOtherAmount = this.calculateCiteAmount(
+                investor,
+                citingQuest.name,
+                citingPercentage,
+                citedQuests.length
+            )
+
+            if (
+                !citeOtherAmount ||
+                typeof citeOtherAmount !== 'number' ||
+                citeOtherAmount < 0
+            ) {
+                return
+            }
+
+            const citedPool = this.#cachedPools.get(
+                `${this.#DEFAULT_TOKEN}-${randomQuest.name}`
+            )
+
+            if (!citedPool || citedPool.name === citingPool.name) {
+                this.webdbg(
+                    `Could not find pool for citing, wanted ${randomQuest.name} got`,
+                    citedPool
                 )
+                return
+            }
 
-                if (!crossPool) {
-                    const startingPrice = pool.curPrice / citedPool.curPrice
-                    crossPool = investor.createPool(
-                        randomQuest,
-                        quest,
-                        startingPrice
-                    )
+            let crossPool = this.#cachedPools.get(
+                `${randomQuest.tokenLeft}-${citingQuest.name}`
+            )
 
-                    this.webdbg(
-                        `Created cross-pool ${crossPool.name}, starting price ${startingPrice}`
-                    )
-
-                    this.#dayData[day].actions.push({
-                        pool: crossPool.name,
-                        investorHash: investor.hash,
-                        action: 'CREATED',
-                        day
-                    })
-                }
-
-                const priceRange = investor.calculatePriceRange(
-                    crossPool,
-                    citedPool,
-                    pool,
-                    questConfig.citeRandomMultiplier
-                )
-                this.#dayData[day].pools.push(crossPool)
-
-                const citeAmount0 =
-                    crossPool.tokenLeft === randomQuest.name
-                        ? 0
-                        : citeOtherAmount
-                const citeAmount1 = citeAmount0 === 0 ? citeOtherAmount : 0
-
-                const [totalIn, totalOut] = investor.citeQuest(
-                    crossPool,
-                    priceRange.min,
-                    priceRange.max,
-                    citeAmount0,
-                    citeAmount1,
-                    priceRange.native
+            if (!crossPool) {
+                const startingPrice = citingPool.curPrice / citedPool.curPrice
+                crossPool = investor.createPool(
+                    randomQuest,
+                    citingQuest,
+                    startingPrice
                 )
 
                 this.webdbg(
-                    `[GENERATOR] ${investor.name} cited random ${randomQuest.name} by depositing ${citeOtherAmount} of ${quest.name}  (${creationType})`
+                    `Created cross-pool ${crossPool.name}, starting price ${startingPrice}`
                 )
-                this.webdbg(priceRange)
-                this.webdbg([totalIn, totalOut])
-
-                const orgQuest = this.#cachedQuests.get(quest.name)
-                const ranQuest = this.#cachedQuests.get(randomQuest.name)
-                orgQuest.addPool(crossPool)
-                ranQuest.addPool(crossPool)
-                this.#cachedQuests.set(orgQuest.name, orgQuest)
-                this.#cachedQuests.set(ranQuest.name, ranQuest)
 
                 this.#dayData[day].actions.push({
                     pool: crossPool.name,
-                    price: crossPool.curPrice,
                     investorHash: investor.hash,
-                    action: 'CITED',
-                    totalAmountIn: citeOtherAmount.toFixed(3),
+                    action: 'CREATED',
                     day
                 })
-                investor.addBalance(
-                    quest.name,
-                    -totalIn,
-                    'citing random quests'
-                )
+            }
 
-                this.#cachedPools.set(crossPool.name, crossPool)
-                this.#dayData[day]['pools'].push(crossPool)
+            const priceRange = investor.calculatePriceRange(
+                crossPool,
+                citedPool,
+                citingPool,
+                citingPosMultiplier
+            )
+            this.#dayData[day].pools.push(crossPool)
+
+            const citeAmount0 =
+                crossPool.tokenLeft === randomQuest.name ? 0 : citeOtherAmount
+            const citeAmount1 = citeAmount0 === 0 ? citeOtherAmount : 0
+
+            const [totalIn, totalOut] = investor.citeQuest(
+                crossPool,
+                priceRange.min,
+                priceRange.max,
+                citeAmount0,
+                citeAmount1,
+                priceRange.native
+            )
+
+            this.webdbg(
+                `[GENERATOR] ${investor.name} cited random ${randomQuest.name} by depositing ${citeOtherAmount} of ${citingQuest.name}  (${creationType})`
+            )
+            this.webdbg(priceRange)
+            this.webdbg([totalIn, totalOut])
+
+            const orgQuest = this.#cachedQuests.get(citingQuest.name)
+            const ranQuest = this.#cachedQuests.get(randomQuest.name)
+            orgQuest.addPool(crossPool)
+            ranQuest.addPool(crossPool)
+            this.#cachedQuests.set(orgQuest.name, orgQuest)
+            this.#cachedQuests.set(ranQuest.name, ranQuest)
+
+            this.#dayData[day].actions.push({
+                pool: crossPool.name,
+                price: crossPool.curPrice,
+                investorHash: investor.hash,
+                action: 'CITED',
+                totalAmountIn: citeOtherAmount.toFixed(3),
+                day
             })
-        }
+            investor.addBalance(
+                citingQuest.name,
+                -totalIn,
+                'citing random quests'
+            )
+
+            this.#cachedPools.set(crossPool.name, crossPool)
+            this.#dayData[day]['pools'].push(crossPool)
+        })
     }
 
     simulateKeepCreatingQuest(day) {
@@ -634,6 +731,13 @@ class Generator {
         let t0
         if (this.#_PERFORMANCE) {
             //t0 =  = performance.now()
+        }
+
+        if (conf.excludeSingleName === tradePool.tokenRight) {
+            console.log(
+                `Investing directly into ${conf.includeSingleName} quest with excluded set as ${conf.excludeSingleName}`
+            )
+            console.log(tradePool)
         }
 
         const [totalIn, totalOut] = router.smartSwap(
@@ -720,6 +824,13 @@ class Generator {
                 //t0 =  = performance.now()
             }
 
+            if (conf.excludeSingleName === pool.tokenRight) {
+                console.log(
+                    `Trading ${pool.name} quest with excluded set as ${conf.excludeSingleName}`
+                )
+                console.log(pool)
+            }
+
             const [totalIn, totalOut] = router.smartSwap(
                 this.#DEFAULT_TOKEN,
                 pool.tokenRight,
@@ -769,6 +880,17 @@ class Generator {
             )
             investor.addBalance(pool.tokenLeft, totalIn, 'buying top traders')
             investor.addBalance(pool.tokenRight, totalOut, 'buying top traders')
+
+            // Cite random quest by probabiliy
+            const tradedQuest = this.#cachedQuests.get(pool.tokenRight)
+            this.citeRandomWithPriceHigher(
+                conf,
+                day,
+                investor,
+                tradedQuest,
+                pool,
+                'keep-citing'
+            )
         })
     }
 
@@ -797,6 +919,7 @@ class Generator {
             router,
             incPools,
             conf.smartRouteDepth,
+            conf.excludeSingleName,
             'inc'
         )
     }
@@ -826,6 +949,7 @@ class Generator {
             router,
             decPools,
             conf.smartRouteDepth,
+            conf.excludeSingleName,
             'dec'
         )
     }
@@ -843,7 +967,10 @@ class Generator {
                     const conf = investorObj.conf
 
                     // Buy in specific quest
-                    if (conf.includeSingleName.length && conf.buySinglePerc) {
+                    if (
+                        conf.includeSingleName.length > 0 &&
+                        conf.buySinglePerc > 0
+                    ) {
                         this.tradingHandlers.push(
                             new Promise((resolve) =>
                                 resolve(
@@ -909,6 +1036,7 @@ class Generator {
         router,
         selectedPools,
         smartRouteDepth,
+        excludeSingleName,
         debugStr
     ) {
         if (!selectedPools || !selectedPools.length) {
@@ -933,6 +1061,13 @@ class Generator {
                 `Will swap(${swapDir}) ${t0} for ${t1} with ${amount}, involved pool ${pool.name}`
             )
             this.webdbg(pool)
+
+            if (excludeSingleName === t0 || excludeSingleName === t1) {
+                console.log(
+                    `${swapDir} ${t0}/${t1} with excluded set as ${excludeSingleName}, direction ${debugStr}`
+                )
+                console.log(selectedPools)
+            }
 
             const [totalIn, totalOut] = router.smartSwap(
                 t0,
@@ -1047,6 +1182,12 @@ class Generator {
                         let t0
                         if (this.#_PERFORMANCE) {
                             //t0 =  = performance.now()
+                        }
+
+                        if (conf.excludeSingleName) {
+                            console.log(
+                                `Withdrawing ${quest} quest with excluded set as ${conf.excludeSingleName}`
+                            )
                         }
 
                         const [totalIn, totalOut] = router.smartSwap(
@@ -1245,7 +1386,7 @@ class Generator {
         let finalResult = Array.prototype.concat(topGainers, randomGainers)
 
         if (excludeSingleName) {
-            finalResult.filter(
+            finalResult = finalResult.filter(
                 (pool) =>
                     pool.isQuest() && pool.tokenRight !== excludeSingleName
             )
