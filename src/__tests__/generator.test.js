@@ -55,6 +55,7 @@ describe('Trades increased in price quest', () => {
 
     it('Identifies quests that increased in price over X days', () => {
         const creator = Investor.create('creator', 'creator', 10000)
+        globalState.investors.set(creator.hash, creator)
         const qA = creator.createQuest('A')
         const A = qA.createPool({ initialPositions })
 
@@ -68,7 +69,7 @@ describe('Trades increased in price quest', () => {
             [],
             globalState.pools,
             globalState.quests,
-            null,
+            globalState.investors,
             [
                 {
                     pool: A.name,
@@ -115,8 +116,10 @@ describe('Trades increased in price quest', () => {
         expect(selectedPools[0].amount).toBeCloseTo(327.5)
     })
 
-    it('Trades provided pool with increased price', () => {
+    xit('Trades provided pool with increased price', () => {
         const creator = Investor.create('creator', 'creator', 10000)
+        globalState.investors.set(creator.hash, creator)
+
         const qA = creator.createQuest('A')
         const A = qA.createPool({ initialPositions })
 
@@ -132,7 +135,7 @@ describe('Trades increased in price quest', () => {
             [],
             globalState.pools,
             globalState.quests,
-            null,
+            globalState.investors,
             [
                 {
                     pool: A.name,
@@ -223,7 +226,8 @@ fit('Generates investors', async () => {
         citeSingleMultiplier: 2
     }
 
-    const creator = Investor.create('creator', 'creator', 10000)
+    const creator = Investor.create('creator', 'creator', 10000, true)
+    globalState.investors.set(creator.hash, creator)
     const fndQuest = creator.createQuest('AGORA')
     const fndPool = fndQuest.createPool()
     fndPool.buy(50000)
@@ -237,7 +241,7 @@ fit('Generates investors', async () => {
         [queAuthor],
         globalState.pools,
         globalState.quests,
-        null,
+        globalState.investors,
         performanceTest
     )
 
