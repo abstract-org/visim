@@ -163,3 +163,7 @@ export const calcGrowthRate = (curr, prev) => {
 }
 
 export const isNumericString = (str) => parseFloat(str) === Number(str)
+
+export const priceDiff = (price1, price2) => {
+    return ((price1 - price2) / price2) * 100
+}

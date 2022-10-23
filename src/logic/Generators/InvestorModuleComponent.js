@@ -408,6 +408,61 @@ export const InvestorModuleComponent = (props) => {
                 </BlockUI>
             </div>
             <hr className="dashed-divider" />
+            <div className="ml-2 flex mt-3">
+                <span className="inplace-static-text">
+                    When bought quest, chance to cite other random quest is
+                </span>
+                <InPlaceElement
+                    id="keepCitingProbability"
+                    active={false}
+                    display={`${props.state.keepCitingProbability}%`}
+                    type="number"
+                    element="input"
+                    handleChange={props.handleChange}
+                    state={props.state}
+                />
+                <span className="inplace-static-text">with amount</span>
+                <InPlaceElement
+                    id="keepCitingSumPercentage"
+                    active={false}
+                    display={`${props.state.keepCitingSumPercentage}%`}
+                    type="number"
+                    element="input"
+                    handleChange={props.handleChange}
+                    state={props.state}
+                />
+                <span className="inplace-static-text">
+                    {' '}
+                    of purchased quest.
+                </span>
+            </div>
+            <div className="flex ml-2">
+                <span className="inplace-static-text">
+                    Cited price is equal or higher by at least
+                </span>
+                <InPlaceElement
+                    id="keepCitingPriceHigherThan"
+                    active={false}
+                    display={`${props.state.keepCitingPriceHigherThan}%`}
+                    type="number"
+                    element="input"
+                    handleChange={props.handleChange}
+                    state={props.state}
+                />
+                <span className="inplace-static-text">
+                    and position multiplier
+                </span>
+                <InPlaceElement
+                    id="keepCitingPosMultiplier"
+                    active={false}
+                    display={props.state.keepCitingPosMultiplier}
+                    type="number"
+                    element="input"
+                    handleChange={props.handleChange}
+                    state={props.state}
+                />
+            </div>
+            <hr className="dashed-divider" />
             <div className="flex column">
                 <BlockUI
                     blocked={props.state.buySellPeriodDays <= 0}
