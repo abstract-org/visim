@@ -148,14 +148,6 @@ class Generator {
                         'keepCreatingPeriodDays'
                     )
 
-                    // Keep citing quests every X days
-                    this.addPeriodicInvestor(
-                        investor,
-                        conf,
-                        'keepCitingInvs',
-                        'keepCitingPeriodDays'
-                    )
-
                     // Buy/sell investors every X days
                     this.addPeriodicInvestor(
                         investor,
