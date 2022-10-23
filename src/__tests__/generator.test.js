@@ -194,7 +194,7 @@ describe('Trades increased in price quest', () => {
     })
 })
 
-xit('Generates investors', async () => {
+fit('Generates investors', async () => {
     const invAuthor = {
         ...invGen,
         invGenAlias: 'AUTHOR',
