@@ -11,6 +11,7 @@ export default class Investor {
     name = null
     default = false
     balances = { USDC: 0 } // not like solidity, what's better -> balances here or in tokens
+    initialBalance = 0
     positions = new HashMap()
     questsCreated = []
 
@@ -35,6 +36,7 @@ export default class Investor {
         const thisInvestor = new Investor()
         thisInvestor.hash = '0x' + sha256(`${name} + ${type}`)
         thisInvestor.balances.USDC = parseFloat(usdcBalance)
+        thisInvestor.initialBalance = parseFloat(usdcBalance)
         thisInvestor.type = type
         thisInvestor.name = name
         thisInvestor.default = _default
