@@ -32,15 +32,15 @@ const overrideSelector = (state) => state.override
 export const StatesSidebar = (props) => {
     return (
         <Sidebar
-            visible={props.sidebarVisible}
+            visible={props.isVisible}
             position="left"
             dismissable
             closeOnEscape
-            onHide={() => props.setSidebarVisible(false)}
+            onHide={() => props.setVisible(false)}
             modal={true}
         >
             <h1>States</h1>
-            <StatesTable setSidebarVisible={props.setSidebarVisible} />
+            <StatesTable setSidebarVisible={props.setVisible} />
         </Sidebar>
     )
 }

@@ -170,6 +170,55 @@ describe('Routing', () => {
             tokenA: null
         }
     ]
+
+    it('Smart route and taking right amount in/out', () => {
+        const creator = Investor.create('creator', 'creator', 10000)
+
+        const questX = creator.createQuest('AGORA')
+        const poolX = questX.createPool()
+        poolX.buy(5550)
+
+        const questA = creator.createQuest('RUTHER')
+        const poolA = questA.createPool()
+        poolA.buy(5000)
+
+        const usdcToken = new UsdcToken()
+        usdcToken.addPool(poolA)
+        usdcToken.addPool(poolX)
+        globalState.quests.set('USDC', usdcToken)
+
+        const startingPrice = poolA.curPrice / poolX.curPrice
+        const XA = creator.createPool(questX, questA, startingPrice)
+
+        questA.addPool(XA)
+        questX.addPool(XA)
+        globalState.quests.set(questA.name, questA)
+        globalState.quests.set(questX.name, questX)
+
+        globalState.pools.set(poolA.name, poolA)
+        globalState.pools.set(poolX.name, poolX)
+
+        const pr = creator.calculatePriceRange(XA, poolX, poolA)
+        creator.citeQuest(XA, pr.min, pr.max, 2, 172.57, pr.native)
+
+        globalState.pools.set(XA.name, XA)
+
+        const router = new Router(globalState.quests, globalState.pools)
+        const results1 = router.smartSwap('USDC', 'RUTHER', 1000)
+
+        const acc = router.getSwaps().reduce((acc, swap) => {
+            return swap.pool === 'USDC-AGORA' ? acc + swap.out : acc + 0
+        }, 0)
+
+        const acc2 = router.getSwaps().reduce((acc, swap) => {
+            return swap.pool === 'AGORA-RUTHER' ? acc + swap.in : acc + 0
+        }, 0)
+
+        expect(acc).toBeCloseTo(acc2)
+        expect(results1[0]).toBeCloseTo(-999.999)
+        expect(results1[1]).toBeCloseTo(164.694)
+    })
+
     it('Smart route with single pool', () => {
         const creator = Investor.create('creator', 'creator', 10000)
 

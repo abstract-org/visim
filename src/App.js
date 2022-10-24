@@ -6,7 +6,9 @@ import 'primereact/resources/themes/lara-light-indigo/theme.css'
 import { useEffect, useRef, useState } from 'react'
 
 import { KnowledgeGraphV2 } from './components/KnowledgeGraphV2'
+import { MoneyFlowSidebar } from './components/MoneyFlowSidebar'
 import { PoolChart } from './components/PoolChart'
+import { CapTableSidebar } from './logic/CapTable/CapTable.component'
 import { GeneratorRunner } from './logic/Generators/Generator.components'
 import useGeneratorStore from './logic/Generators/generator.store'
 import {
@@ -28,7 +30,9 @@ import { StatesSidebar } from './logic/States/StatesSidebar.component'
 import { TopMenu } from './logic/TopMenu.component'
 
 export default function Home() {
-    const [sidebarVisible, setSidebarVisible] = useState(false)
+    const [statesVisible, setStatesVisible] = useState(false)
+    const [capTableVisible, setCapTableVisible] = useState(false)
+    const [moneyflowVisible, setMoneyflowVisible] = useState(false)
     const needScrollUp = useGeneratorStore((state) => state.needScrollUp)
     const setNeedScrollUp = useGeneratorStore((state) => state.setNeedScrollUp)
     const graphCard = useRef(null)
@@ -45,13 +49,25 @@ export default function Home() {
             <div className="grid">
                 <div className="col-12">
                     <TopMenu
-                        sidebarVisible={sidebarVisible}
-                        setSidebarVisible={setSidebarVisible}
+                        statesVisible={statesVisible}
+                        setStatesVisible={setStatesVisible}
+                        capTableVisible={capTableVisible}
+                        setCapTableVisible={setCapTableVisible}
+                        moneyflowVisible={moneyflowVisible}
+                        setMoneyflowVisible={setMoneyflowVisible}
                     />
                 </div>
                 <StatesSidebar
-                    sidebarVisible={sidebarVisible}
-                    setSidebarVisible={setSidebarVisible}
+                    isVisible={statesVisible}
+                    setVisible={setStatesVisible}
+                />
+                <CapTableSidebar
+                    isVisible={capTableVisible}
+                    setVisible={setCapTableVisible}
+                />
+                <MoneyFlowSidebar
+                    moneyflowVisible={moneyflowVisible}
+                    setMoneyflowVisible={setMoneyflowVisible}
                 />
                 <div className="col-8">
                     <Card className="h-full">
