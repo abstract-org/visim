@@ -487,7 +487,10 @@ export const GenCardInvestor = (props) => {
         ) {
             return
         }
-        const newState = { ...props.state, [evt.target.id]: evt.target.value }
+        const newState = {
+            ...props.state,
+            [evt.target.id]: evt.target.value || evt.target.checked
+        }
         props.updateInvConfig(newState)
         globalState.generatorStore.invConfigs = updateStateInvestorConfig(
             globalState.generatorStore.invConfigs,
@@ -567,7 +570,10 @@ export const GenCardQuest = (props) => {
         ) {
             return
         }
-        const newState = { ...props.state, [evt.target.id]: evt.target.value }
+        const newState = {
+            ...props.state,
+            [evt.target.id]: evt.target.value || evt.target.checked
+        }
         props.updateQuestConfig(newState)
         globalState.generatorStore.questConfigs = updateStateQuestConfig(
             globalState.generatorStore.questConfigs,

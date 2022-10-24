@@ -1,4 +1,5 @@
 import { Button } from 'primereact/button'
+import { Checkbox } from 'primereact/checkbox'
 import { Message } from 'primereact/message'
 import { useRef } from 'react'
 
@@ -171,6 +172,16 @@ export const QuestModuleComponent = (props) => {
                     handleChange={props.handleChange}
                     state={props.state}
                 />
+            </div>
+            <div className="column flex">
+                <span className="inplace-static-text">
+                    Prefer own quests for citation (can be mixed with random):{' '}
+                </span>
+                <Checkbox
+                    id="citeRandomPreferOwn"
+                    onChange={props.handleChange}
+                    checked={props.state.citeRandomPreferOwn}
+                ></Checkbox>
             </div>
         </div>
     )
