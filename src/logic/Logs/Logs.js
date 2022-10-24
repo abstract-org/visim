@@ -40,7 +40,8 @@ export const LogsModule = () => {
             amountOut: log.totalAmountOut,
             price: log.price,
             investor: globalState.investors.get(log.investorHash).name,
-            path: log.paths
+            path: log.paths,
+            opName: log.opName
         }
     })
 
@@ -121,23 +122,24 @@ export const LogsModule = () => {
                 stripedRows
                 paginator
                 rows={100}
+                className="text-sm"
             >
                 <Column
                     field="block"
-                    header="Block"
-                    className="w-5rem flex-none"
+                    header="Blk"
+                    className="w-4rem flex-none"
                     sortable
                 ></Column>
                 <Column
                     field="day"
                     header="Day"
-                    className="w-5rem flex-none"
+                    className="w-4rem flex-none"
                     sortable
                 ></Column>
                 <Column
                     field="investor"
                     header="Investor"
-                    className="w-12rem cfilters flex-none"
+                    className="w-10rem cfilters flex-none"
                     body={invTmpl}
                     showFilterMenu={false}
                     filter
@@ -146,7 +148,7 @@ export const LogsModule = () => {
                 <Column
                     field="action"
                     header="Action"
-                    className="w-12rem cfilters flex-none"
+                    className="w-10rem cfilters flex-none"
                     body={actTmpl}
                     showFilterMenu={false}
                     filter
@@ -155,7 +157,7 @@ export const LogsModule = () => {
                 <Column
                     field="pool"
                     header="Pool"
-                    className="w-12rem cfilters flex-none"
+                    className="w-10rem cfilters flex-none"
                     body={poolTmpl}
                     showFilterMenu={false}
                     filter
@@ -194,7 +196,12 @@ export const LogsModule = () => {
                 <Column
                     field="path"
                     header="Path"
-                    className="w-auto flex-none"
+                    className="w-1 flex-none text-xs"
+                ></Column>
+                <Column
+                    field="opName"
+                    header="OP"
+                    className="w-1 flex-none"
                 ></Column>
             </DataTable>
         </div>

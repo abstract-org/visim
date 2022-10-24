@@ -54,7 +54,6 @@ const MoneyFlow = () => {
 
             q.pools.forEach((p) => {
                 const pool = globalState.pools.get(p)
-                console.log(q.name, pool.volumeToken0, pool.volumeToken1)
                 totalQTokens +=
                     pool.tokenLeft === q.name
                         ? pool.volumeToken0

@@ -209,6 +209,7 @@ export default class Router {
     calculatePairPaths(token0, token1, smartRouteDepth) {
         const poolList = this.findPoolsFor(token0, smartRouteDepth)
         if (this.#DEBUG) console.log('pool list', poolList)
+        if (this.#DEBUG && poolList.length <= 0) console.log(this.#cachedQuests)
         const graph = this.graphPools(poolList, smartRouteDepth)
         if (this.#DEBUG) console.log('graph', graph)
         const paths = graph.buildPathways(token0, token1)
@@ -310,6 +311,7 @@ export default class Router {
             const pool = this.#getPoolByTokens(poolTokens[0], poolTokens[1])
             const zeroForOne = pool.tokenLeft === poolTokens[0] ? true : false
             const sums = pool.drySwap(amount, zeroForOne)
+            //console.log(path, pool.name, zeroForOne, sums)
 
             if (Math.abs(sums[0]) === 0 && Math.abs(sums[1]) === 0) {
                 return [0, 0]
