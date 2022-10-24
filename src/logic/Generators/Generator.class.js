@@ -338,7 +338,7 @@ class Generator {
 
         this.#dayData[day].actions.push({
             pool: pool.name,
-            price: pool.curPrice,
+            price: pool.curPrice.toFixed(3),
             investorHash: investor.hash,
             action: 'BOUGHT',
             totalAmountIn: totalIn.toFixed(2),
@@ -444,7 +444,7 @@ class Generator {
 
         this.#dayData[day].actions.push({
             pool: crossPool.name,
-            price: citingPool.curPrice,
+            price: crossPool.curPrice.toFixed(3),
             investorHash: investor.hash,
             action: 'CITED',
             totalAmountIn: citeSingleAmount.toFixed(3),
@@ -507,9 +507,6 @@ class Generator {
 
         this.webdbg(`Got ${filteredQuests.length} randomized quests`)
         this.webdbg(filteredQuests)
-
-        console.log(`Will cite random quests by ${pool.name}`)
-        console.log(filteredQuests)
 
         this.citeQuests(
             day,
@@ -673,12 +670,13 @@ class Generator {
 
             this.#dayData[day].actions.push({
                 pool: crossPool.name,
-                price: crossPool.curPrice,
+                price: crossPool.curPrice.toFixed(3),
                 investorHash: investor.hash,
                 action: 'CITED',
                 totalAmountIn: citeOtherAmount.toFixed(3),
                 day
             })
+
             investor.addBalance(
                 citingQuest.name,
                 -totalIn,
@@ -787,9 +785,13 @@ class Generator {
             day,
             `Invest directly in ${conf.includeSingleName}, smart routed ${
                 router.getPaths().length
-            } times / total in ${totalIn}, total out ${totalOut}`
+            } times / total in ${totalIn.toFixed(
+                3
+            )}, total out ${totalOut.toFixed(
+                3
+            )}, initial amount in ${spendAmount}`
         )
-        investor.addBalance(tradePool.tokenLeft, totalIn)
+        investor.addBalance(this.#DEFAULT_TOKEN, totalIn)
         investor.addBalance(tradePool.tokenRight, totalOut)
     }
 
@@ -855,8 +857,6 @@ class Generator {
                 // this.#_OPS_TIME.gainers.time += t1 - t0
             }
 
-            //collect pool price movements here and in other calls of router.smartSwap
-            this.storeTradedPool(day, pool)
             //That would be an edge case, rare, but if happens, need to debug why
             if (
                 isZero(totalIn) ||
@@ -870,15 +870,26 @@ class Generator {
                 )
                 return
             }
+
+            //collect pool price movements here and in other calls of router.smartSwap
+            this.storeTradedPool(day, pool)
             this.#processSwapData(
                 investor,
                 router.getSwaps(),
                 day,
                 `Buying top gainer ${pool.tokenRight}, smart routed ${
                     router.getPaths().length
-                } times / total in ${totalIn}, total out ${totalOut}`
+                } times / total in ${totalIn.toFixed(
+                    3
+                )}, total out ${totalOut.toFixed(
+                    3
+                )}, initial amount in ${perPoolAmt}`
             )
-            investor.addBalance(pool.tokenLeft, totalIn, 'buying top traders')
+            investor.addBalance(
+                this.#DEFAULT_TOKEN,
+                totalIn,
+                'buying top traders'
+            )
             investor.addBalance(pool.tokenRight, totalOut, 'buying top traders')
 
             // Cite random quest by probabiliy
@@ -1127,7 +1138,11 @@ class Generator {
                     swapDir === 'buy' ? pool.tokenLeft : pool.tokenRight
                 } in price, smart routed ${
                     router.getPaths().length
-                } times / total in ${totalIn}, total out ${totalOut}`
+                } times / total in ${totalIn.toFixed(
+                    3
+                )}, total out ${totalOut.toFixed(
+                    3
+                )}, initial amount in ${amount}`
             )
             investor.addBalance(t0, totalIn, 'selling gainers/losers')
             investor.addBalance(t1, totalOut, 'selling gainers/losers')
@@ -1237,7 +1252,11 @@ class Generator {
                                 conf.valueSellAmount
                             } ${quest}, smart routed ${
                                 router.getPaths().length
-                            } times / total in ${totalIn}, total out ${totalOut}`
+                            } times / total in ${totalIn.toFixed(
+                                3
+                            )}, total out ${totalOut.toFixed(
+                                3
+                            )}, initial amount in ${sumIn}`
                         )
 
                         alreadyWithdrawn += totalOut

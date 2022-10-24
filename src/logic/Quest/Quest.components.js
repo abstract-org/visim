@@ -209,6 +209,7 @@ export const QuestCitation = () => {
 
             const logData = {
                 pool: crossPool.name,
+                price: crossPool.curPrice.toFixed(3),
                 investorHash: investor.hash,
                 action: `CITED`,
                 totalAmountIn: calcAmountA
