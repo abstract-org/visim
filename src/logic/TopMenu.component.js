@@ -23,6 +23,13 @@ export const TopMenu = (props) => {
             command: () => {
                 props.setMoneyflowVisible(!props.moneyflowVisible)
             }
+        },
+        {
+            label: `Investor's Performance`,
+            icon: 'pi pi-fw pi-chart-line',
+            command: () => {
+                props.setInvPerfVisible(!props.invPerfVisible)
+            }
         }
     ]
 

@@ -16,6 +16,7 @@ import {
     InvestorPoolBalance,
     InvestorSelector
 } from './logic/Investor/Investor.components'
+import { InvestorPerfSidebar } from './logic/InvestorPerf/InvestorPerf.component'
 import { LogsModule } from './logic/Logs/Logs'
 import {
     KnowledgeGraphStats,
@@ -33,6 +34,7 @@ export default function Home() {
     const [statesVisible, setStatesVisible] = useState(false)
     const [capTableVisible, setCapTableVisible] = useState(false)
     const [moneyflowVisible, setMoneyflowVisible] = useState(false)
+    const [invPerfVisible, setInvPerfVisible] = useState(false)
     const needScrollUp = useGeneratorStore((state) => state.needScrollUp)
     const setNeedScrollUp = useGeneratorStore((state) => state.setNeedScrollUp)
     const graphCard = useRef(null)
@@ -55,6 +57,8 @@ export default function Home() {
                         setCapTableVisible={setCapTableVisible}
                         moneyflowVisible={moneyflowVisible}
                         setMoneyflowVisible={setMoneyflowVisible}
+                        invPerfVisible={invPerfVisible}
+                        setInvPerfVisible={setInvPerfVisible}
                     />
                 </div>
                 <StatesSidebar
@@ -68,6 +72,10 @@ export default function Home() {
                 <MoneyFlowSidebar
                     moneyflowVisible={moneyflowVisible}
                     setMoneyflowVisible={setMoneyflowVisible}
+                />
+                <InvestorPerfSidebar
+                    isVisible={invPerfVisible}
+                    setVisible={setInvPerfVisible}
                 />
                 <div className="col-8">
                     <Card className="h-full">
