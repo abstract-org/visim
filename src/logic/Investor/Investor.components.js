@@ -20,10 +20,7 @@ export function InvestorModule({ children }) {
         investors.forEach((investor) => {
             if (!globalState.investors.has(investor.hash)) {
                 globalState.investors.set(investor.hash, investor)
-                globalState.investorStore.investors.push(
-                    investor.hash,
-                    investor
-                )
+                globalState.investorStore.investors.push(investor.hash)
             }
             addInvestors(investors.map((investor) => investor.hash))
         })

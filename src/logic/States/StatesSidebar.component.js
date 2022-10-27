@@ -23,7 +23,8 @@ import { downloadStateFrom, getContentLength } from './download.service'
 import {
     aggregateSnapshotTotals,
     base64ToState,
-    overrideStateBySnapshot
+    overrideStateBySnapshot,
+    sanitizeSnapshot
 } from './states.service'
 import { uploadStateTo } from './upload.service'
 
@@ -205,7 +206,7 @@ const StatesTable = (props) => {
         })
 
         const b64Content = await downloadStateFrom(stateLocation)
-        const snapshot = base64ToState(b64Content)
+        const snapshot = sanitizeSnapshot(base64ToState(b64Content))
 
         overrideInvestors(snapshot.investorStore)
         overrideQuests(snapshot.questStore)
