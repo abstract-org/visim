@@ -114,3 +114,14 @@ export const base64ToState = (base64st) => {
 
     return rehydrateState(deserializedState)
 }
+
+const sanitizeInvestorStoreInvestors = (investorHashes) =>
+    investorHashes.filter((hash) => typeof hash === 'string')
+
+export const sanitizeSnapshot = (snapshot) => {
+    snapshot.investorStore.investors = sanitizeInvestorStoreInvestors(
+        snapshot.investorStore.investors
+    )
+
+    return snapshot
+}
