@@ -114,115 +114,111 @@ describe('Uniswap Math formulas', () => {
         expect(liquidity0).toBeCloseTo(5050.505)
         expect(liquidity1).toBe(NaN)
     })
+})
 
-    describe('Liquidity Calculations', () => {
-        const amtNextBuy = (curLiq, sqrtPrice, arrivedSqrtPrice) => {
-            // Amount0 (curLiq * (arrivedSqrtPrice - sqrtPrice)
-            let amt0 = curLiq * (arrivedSqrtPrice - sqrtPrice)
-            // Amount1 (curLiq * (1/arrivedSqrtPrice - 1/sqrtPrice))
-            let amt1 = curLiq * (1 / arrivedSqrtPrice - 1 / sqrtPrice)
+describe('Liquidity Calculations', () => {
+    const investor = Investor.create('INV', 'INV', 10000)
 
-            return [amt0, amt1]
-        }
+    const amtNextBuy = (curLiq, sqrtPrice, arrivedSqrtPrice) => {
+        let amt0 = curLiq * (arrivedSqrtPrice - sqrtPrice)
+        let amt1 = curLiq * (1 / arrivedSqrtPrice - 1 / sqrtPrice)
 
-        const amtNextSell = (curLiq, sqrtPrice, arrivedSqrtPrice) => {
-            let amt0 = curLiq * (1 / sqrtPrice - 1 / arrivedSqrtPrice)
-            let amt1 = curLiq * (sqrtPrice - arrivedSqrtPrice)
+        return [amt0, amt1]
+    }
 
-            return [amt0, amt1]
-        }
+    const amtNextSell = (curLiq, sqrtPrice, arrivedSqrtPrice) => {
+        let amt0 = curLiq * (1 / sqrtPrice - 1 / arrivedSqrtPrice)
+        let amt1 = curLiq * (sqrtPrice - arrivedSqrtPrice)
 
-        const nextPrice = (sqrtPrice, amt, curLiq) => {
-            return (sqrtPrice += amt / curLiq)
-        }
+        return [amt0, amt1]
+    }
 
-        const investor = Investor.create('INV', 'INV', 10000)
-        const quest = investor.createQuest('QUEST')
-        const poolA = quest.createPool({
+    const getQP = (name) => {
+        const quest = investor.createQuest(name)
+        const pool = quest.createPool({
             tokenLeft: new UsdcToken(),
             initialPositions: [
-                { priceMin: 1, priceMax: 10000, tokenA: 0, tokenB: 5000 }
+                { priceMin: 1, priceMax: 10000, tokenA: 0, tokenB: 5000 },
+                { priceMin: 20, priceMax: 10000, tokenA: 0, tokenB: 5000 },
+                { priceMin: 50, priceMax: 10000, tokenA: 0, tokenB: 5000 },
+                {
+                    priceMin: 200,
+                    priceMax: 10000,
+                    tokenA: 0,
+                    tokenB: 5000
+                }
             ]
         })
 
-        const questB = investor.createQuest('QUEST_B')
-        const poolB = questB.createPool({
-            tokenLeft: new UsdcToken(),
-            initialPositions: [
-                { priceMin: 1, priceMax: 10000, tokenA: 0, tokenB: 5000 }
-            ]
-        })
+        return { quest, pool }
+    }
 
-        poolA.buy(1000)
-        poolB.buy(6000)
-        const startingPrice = poolA.curPrice / poolB.curPrice
-        const crossPool = investor.createPool(questB, quest, startingPrice)
-        quest.addPool(crossPool)
-        questB.addPool(crossPool)
+    const maxOneShotIn = (p) => {
+        return p.curLiq * (Math.sqrt(2 ** p.curRight) - Math.sqrt(p.curPrice))
+    }
 
-        const priceRange = investor.calculatePriceRange(
-            crossPool,
-            poolB,
-            poolA,
-            3
+    const maxOneShotOut = (p) => {
+        return (
+            p.curLiq *
+            (1 / Math.sqrt(2 ** p.curRight) - 1 / Math.sqrt(p.curPrice))
         )
-        investor.citeQuest(crossPool, priceRange.min, priceRange.max, 0, 2000)
+    }
 
-        const pools = new HashMap()
-        const quests = new HashMap()
+    const getCP = (qA, qB, A, B) => {
+        const AB = investor.createPool(qB, qA)
+        qA.addPool(AB)
+        qB.addPool(AB)
 
-        pools.set(poolA.name, poolA)
-        pools.set(poolB.name, poolB)
-        pools.set(crossPool.name, crossPool)
+        const priceRange = investor.calculatePriceRange(AB, B, A, 2)
+        investor.citeQuest(AB, priceRange.min, priceRange.max, 0, 1000)
 
-        quests.set(quest.name, quest)
-        quests.set(questB.name, questB)
+        return { crossPool: AB }
+    }
 
-        const router = new Router(quests, pools)
+    const { quest: questA, pool: A } = getQP('A')
+    const { quest: questB, pool: B } = getQP('B')
+    const { quest: questC, pool: C } = getQP('C')
 
-        /**
-         * For amt0 
-            how much amt1 I get
-            with liq X
-            in path A
-         */
-        it('calculates amount until next price point', () => {
-            const inOut = poolA.dryBuy(1)
+    A.buy(1000)
+    B.buy(6000)
+    C.buy(2500)
 
-            const curLiq = poolA.curLiq
-            const totalLiq = poolA.pos
-                .values()
-                .reduce((prev, po) => prev + po.liquidity, 0)
+    const { crossPool: AB } = getCP(questA, questB, A, B)
+    const { crossPool: BC } = getCP(questB, questC, B, C)
 
-            const amt = 2500
-            const inOutRate = Math.abs(inOut[1]) / Math.abs(inOut[0])
-            const sqrtPrice = Math.sqrt(1)
-            const arrivedSqrtPrice = nextPrice(sqrtPrice, amt, curLiq)
+    const pools = new HashMap()
+    const quests = new HashMap()
 
-            //const paths = router.calculatePairPaths(questB.name, quest.name)
-            //console.log(router.drySwapForPricedPaths(paths))
+    pools.set(A.name, A)
+    pools.set(B.name, B)
+    pools.set(C.name, C)
+    pools.set(AB.name, AB)
+    pools.set(BC.name, BC)
 
-            //console.log(router.smartSwap(questB.name, quest.name, 2500))
+    quests.set(questA.name, questA)
+    quests.set(questB.name, questB)
+    quests.set(questC.name, questC)
 
-            // console.log(
-            //     'liqs',
-            //     curLiq,
-            //     totalLiq,
-            //     'sqrt_prices',
-            //     sqrtPrice,
-            //     arrivedSqrtPrice,
-            //     'new price',
-            //     arrivedSqrtPrice ** 2,
-            //     'in/out',
-            //     inOutRate,
-            //     inOut
-            // )
+    const router = new Router(quests, pools)
+    fit('calculates amount until next price point', () => {
+        const maxAB_in_B = maxOneShotIn(AB)
+        const maxAB_out_A = maxOneShotOut(AB)
 
-            //console.log(amtNextBuy(curLiq, sqrtPrice, arrivedSqrtPrice))
-            //console.log(amtNextSell(curLiq, sqrtPrice, arrivedSqrtPrice))
+        const maxBC_in_C = maxOneShotIn(BC)
+        const maxBC_out_B = maxOneShotOut(BC)
 
-            //console.log(amtNextBuy(curLiq, sqrtPrice, Math.sqrt(4)))
-            //console.log(amtNextSell(curLiq, sqrtPrice, Math.sqrt(4)))
-        })
+        console.log('should give', maxAB_in_B, maxAB_out_A)
+        console.log('should give', maxBC_in_C, maxBC_out_B)
+
+        const result_ABC_amtout_A =
+            ((AB.liq * (1 / Math.sqrt(AB.curPrice) - AB.liq / maxBC_out_B)) /
+                AB.liq) *
+            (1 / Math.sqrt(AB.curPrice) -
+                AB.liq /
+                    (BC.liq *
+                        (1 / Math.sqrt(BC.curPrice) -
+                            1 / Math.sqrt(2 ** BC.curRight))))
+
+        console.log(result_ABC_amtout_A)
     })
 })

@@ -204,7 +204,7 @@ export const SwapModule = () => {
             )
         }
 
-        let [totalAmountIn, totalAmountOut] =
+        let [totalAmountIn, totalAmountOut, returnUsdc] =
             swapMode === 'direct'
                 ? tradePool.buy(amount)
                 : router.smartSwap(
@@ -215,12 +215,16 @@ export const SwapModule = () => {
                   )
 
         investor.addBalance('USDC', totalAmountIn)
+        if (returnUsdc && returnUsdc > 0) {
+            investor.addBalance('USDC', returnUsdc)
+        }
         investor.addBalance(activeQuest, totalAmountOut)
         globalState.investors.set(investor.hash, investor)
         globalState.investorStore.investors = appendIfNotExist(
             globalState.investorStore.investors,
             investor.hash
         )
+
         if (swapMode === 'direct') {
             const swapData = formSwapData(
                 pool,
@@ -229,7 +233,8 @@ export const SwapModule = () => {
                 totalAmountIn,
                 totalAmountOut,
                 null,
-                day
+                day,
+                `Manual Direct Swap`
             )
             addSwap(swapData)
             globalState.poolStore.swaps.push(swapData)
@@ -249,7 +254,8 @@ export const SwapModule = () => {
                         op[1].totalAmountIn,
                         op[1].totalAmountOut,
                         op[1].path,
-                        day
+                        day,
+                        `Manual Smart Swap`
                     )
                     addSwap(swapData)
                     globalState.poolStore.swaps.push(swapData)
@@ -288,7 +294,7 @@ export const SwapModule = () => {
             return
         }
 
-        let [totalAmountIn, totalAmountOut] =
+        let [totalAmountIn, totalAmountOut, returnUsdc] =
             swapMode === 'direct'
                 ? pool.sell(amount)
                 : router.smartSwap(
@@ -299,6 +305,9 @@ export const SwapModule = () => {
                   )
 
         investor.addBalance('USDC', totalAmountOut)
+        if (returnUsdc && returnUsdc > 0) {
+            investor.addBalance('USDC', returnUsdc)
+        }
         investor.addBalance(activeQuest, totalAmountIn)
         globalState.investors.set(investor.hash, investor)
         globalState.investorStore.investors = appendIfNotExist(
@@ -313,7 +322,8 @@ export const SwapModule = () => {
                 totalAmountIn,
                 totalAmountOut,
                 null,
-                day
+                day,
+                `Manual Direct Swap`
             )
             addSwap(swapData)
             globalState.poolStore.swaps.push(swapData)
@@ -333,7 +343,8 @@ export const SwapModule = () => {
                         op[1].totalAmountIn,
                         op[1].totalAmountOut,
                         op[1].path,
-                        day
+                        day,
+                        `Manual Smart Swap`
                     )
                     addSwap(swapData)
                     globalState.poolStore.swaps.push(swapData)

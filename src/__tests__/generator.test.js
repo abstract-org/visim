@@ -16,7 +16,9 @@ let globalState = {
  * @TODO: Add many tests :)
  */
 
-beforeAll(() => {})
+beforeAll(() => {
+    process.env.NODE_ENV = 'test'
+})
 
 afterEach(() => {
     globalState = {
@@ -292,17 +294,17 @@ describe('Money loss sanity tests', () => {
             })
 
     fit('Generates investors', async () => {
+        jest.retryTimes(0)
+
         const invAuthor = {
             ...invGen,
             dailySpawnProbability: 100,
             invGenAlias: 'AUTHOR',
             invGenName: 'Author',
             createQuest: 'RUTHER',
-            valueSellPeriodDays: 0,
-            valueSellAmount: 0,
-            keepCreatingPeriodDays: 1,
-            keepCreatingQuests: 'RUTHER',
-            excludeSingleName: 'AGORA'
+            keepCreatingPeriodDays: 0,
+            keepCreatingQuests: ''
+            //excludeSingleName: 'AGORA'
         }
         const invInvestor = {
             ...invGen,
@@ -343,7 +345,7 @@ describe('Money loss sanity tests', () => {
 
         const tot0 = performance.now()
 
-        const genDays = 1
+        const genDays = 5
         for (let day = 1; day <= genDays; day++) {
             console.log(`Simulating day ${day}`)
             const d0 = performance.now()
@@ -374,6 +376,11 @@ describe('Money loss sanity tests', () => {
                 ms: !daySec ? `${(d1 - d0).toFixed(2)}ms` : null,
                 sec: daySec ? `${((d1 - d0) / 1000).toFixed(2)}sec` : null
             })
+            // genManager.router
+            //     .getSwaps()
+            //     .forEach((swap) =>
+            //         swap.op !== 'BOUGHT' ? console.log(swap) : null
+            //     )
         }
 
         const missingTokens = getTotalMissingTokens()
@@ -382,7 +389,6 @@ describe('Money loss sanity tests', () => {
 
         const tot1 = performance.now()
 
-        // globalState.pools = genManager.getPools()
         // globalState.quests = genManager.getQuests()
         // globalState.investors = genManager.getInvestors()
 

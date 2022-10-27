@@ -26,7 +26,7 @@ export const formSwapData = (
         totalAmountIn: totalAmountIn ? totalAmountIn.toFixed(3) : '',
         totalAmountOut: totalAmountOut ? totalAmountOut.toFixed(3) : '',
         paths: paths ? paths.join('-') : '',
-        day: day || '',
+        day: day,
         opName: opName || ''
     }
 }

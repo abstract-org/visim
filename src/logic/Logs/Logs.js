@@ -12,15 +12,23 @@ export const LogsModule = () => {
     const [filters, setFilters] = useState({
         investor: { value: null, matchMode: FilterMatchMode.EQUALS },
         pool: { value: null, matchMode: FilterMatchMode.EQUALS },
+        //quests: { value: null, matchMode: FilterMatchMode.CONTAINS },
         action: { value: null, matchMode: FilterMatchMode.EQUALS }
     })
 
+    //const quests = new Set()
     const pools = new Set()
     const invs = new Set()
     const actions = new Set()
     let dayIter = 0
     const contents = logObjs.map((log, idx) => {
         pools.add(log.pool)
+        // if (log.pool) {
+        //     if (globalState.pools.get(log.pool).tokenLeft !== 'USDC') {
+        //         quests.add(globalState.pools.get(log.pool).tokenLeft)
+        //     }
+        //     quests.add(globalState.pools.get(log.pool).tokenRight)
+        // }
         const invType = globalState.investors.get(log.investorHash).name
         invs.add(invType)
         actions.add(log.action.toUpperCase())
@@ -33,6 +41,7 @@ export const LogsModule = () => {
             block: idx,
             day: dayIter,
             action: log.action.toUpperCase(),
+            //quests: log.pool.split('-'),
             pool: log.pool,
             poolMcap: log.mcap,
             poolTvl: log.tvl,
@@ -44,6 +53,26 @@ export const LogsModule = () => {
             opName: log.opName
         }
     })
+
+    // const questTmpl = (rowData) => {
+    //     return <span>{rowData.quests.join(', ')}</span>
+    // }
+    // const questItemTmpl = (option) => {
+    //     return <span>{option}</span>
+    // }
+    // const questFilterTmpl = (options) => {
+    //     return (
+    //         <Dropdown
+    //             value={options.value}
+    //             options={[...quests]}
+    //             onChange={(e) => options.filterApplyCallback(e.value)}
+    //             itemTemplate={questItemTmpl}
+    //             placeholder="Quests"
+    //             className="p-column-filter"
+    //             showClear
+    //         />
+    //     )
+    // }
 
     const poolTmpl = (rowData) => {
         return <span>{rowData.pool}</span>
@@ -154,6 +183,16 @@ export const LogsModule = () => {
                     filter
                     filterElement={actFilterTmpl}
                 ></Column>
+                {/* <Column
+                    field="quest"
+                    header="Quest"
+                    className="w-10rem cfilters flex-none"
+                    body={questTmpl}
+                    showFilterMenu={false}
+                    filter
+                    filterElement={questFilterTmpl}
+                    filterField="quests"
+                ></Column> */}
                 <Column
                     field="pool"
                     header="Pool"

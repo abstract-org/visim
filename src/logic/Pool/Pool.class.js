@@ -237,8 +237,6 @@ export default class Pool {
             Math.sqrt(this.curPrice)
         )
 
-        //console.log(token0Amt, token1Amt, priceMin, priceMax, liquidity)
-
         if (liquidity === 0) {
             return []
         }
@@ -306,7 +304,7 @@ export default class Pool {
             this.pos.get(localPP)[dir] !== 'undefined' &&
             localPP !== this.pos.get(localPP)[dir]
         ) {
-            if (this.pos.get(localPP).liquidity !== 0) {
+            if (this.pos.get(localPP).liquidity > 0) {
                 return this.pos.get(localPP)
             }
 
@@ -793,7 +791,14 @@ export default class Pool {
     }
 
     getMarketCap() {
-        const totalTokens = this.volumeToken0 + this.volumeToken1
+        if (!this.isQuest()) {
+            return
+        }
+
+        const totalTokens = this.posOwners.reduce(
+            (acc, val) => acc + val.amt1,
+            0
+        )
 
         return Math.round(totalTokens * this.curPrice)
     }
