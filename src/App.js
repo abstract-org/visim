@@ -6,6 +6,7 @@ import 'primereact/resources/themes/lara-light-indigo/theme.css'
 import { useEffect, useRef, useState } from 'react'
 
 import { KnowledgeGraphV2 } from './components/KnowledgeGraphV2'
+import { MoneyFeed } from './components/MoneyFeed.component'
 import { MoneyFlowSidebar } from './components/MoneyFlowSidebar'
 import { PoolChart } from './components/PoolChart'
 import { CapTableSidebar } from './logic/CapTable/CapTable.component'
@@ -28,6 +29,7 @@ import {
 import { QuestCitation, QuestCreation } from './logic/Quest/Quest.components'
 import { StatesSidebar } from './logic/States/StatesSidebar.component'
 import { TopMenu } from './logic/TopMenu.component'
+import { isWebDebug } from './logic/Utils/uiUtils'
 
 export default function Home() {
     const [statesVisible, setStatesVisible] = useState(false)
@@ -57,6 +59,11 @@ export default function Home() {
                         setMoneyflowVisible={setMoneyflowVisible}
                     />
                 </div>
+                {isWebDebug() && (
+                    <div className="col-12">
+                        <MoneyFeed />
+                    </div>
+                )}
                 <StatesSidebar
                     isVisible={statesVisible}
                     setVisible={setStatesVisible}

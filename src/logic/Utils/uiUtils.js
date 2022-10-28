@@ -68,3 +68,7 @@ export const appendIfNotExist = (arr, item) => {
         ? arr.concat([item])
         : arr
 }
+
+export const isWebDebug = () => {
+    return 'debug' === window.location.search.replace(/\?/, '')
+}
