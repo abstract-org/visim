@@ -11,6 +11,7 @@ import {
     isZero,
     priceDiff
 } from '../Utils/logicUtils'
+import { totalMissingTokens, totalMissingUSDC } from '../Utils/tokenCalc'
 
 const _OPS_TIME_INITIAL = {
     invcreate: { time: 0, ops: 0 },
@@ -441,6 +442,7 @@ class Generator {
             citeAmount1,
             priceRange.native
         )
+
         this.webdbg(
             `New volumes: ${crossPool.volumeToken0}, ${crossPool.volumeToken1}`
         )
@@ -471,6 +473,15 @@ class Generator {
 
         this.#cachedPools.set(crossPool.name, crossPool)
         this.#dayData[day]['pools'].push(crossPool)
+        const tsu = totalMissingUSDC(
+            this.#cachedInvestors.values(),
+            this.#cachedPools.values()
+        )
+        const tst = totalMissingTokens(
+            this.#cachedQuests.values(),
+            this.#cachedPools.values(),
+            this.#cachedInvestors.values()
+        )
     }
 
     citeRandomQuests(
@@ -535,6 +546,16 @@ class Generator {
             questConfig.citeRandomMultiplier,
             creationType
         )
+
+        const tsu = totalMissingUSDC(
+            this.#cachedInvestors.values(),
+            this.#cachedPools.values()
+        )
+        const tst = totalMissingTokens(
+            this.#cachedQuests.values(),
+            this.#cachedPools.values(),
+            this.#cachedInvestors.values()
+        )
     }
 
     citeRandomWithPriceHigher(conf, day, investor, quest, pool, creationType) {
@@ -573,6 +594,16 @@ class Generator {
             conf.keepCitingSumPercentage,
             conf.keepCitingPosMultiplier,
             creationType
+        )
+
+        const tsu = totalMissingUSDC(
+            this.#cachedInvestors.values(),
+            this.#cachedPools.values()
+        )
+        const tst = totalMissingTokens(
+            this.#cachedQuests.values(),
+            this.#cachedPools.values(),
+            this.#cachedInvestors.values()
         )
     }
 
@@ -670,6 +701,7 @@ class Generator {
                 citeAmount1,
                 priceRange.native
             )
+
             this.webdbg(
                 `[GENERATOR:CITE-RANDOM] New volumes: ${crossPool.volumeToken0}, ${crossPool.volumeToken1}`
             )
@@ -704,6 +736,16 @@ class Generator {
 
             this.#cachedPools.set(crossPool.name, crossPool)
             this.#dayData[day]['pools'].push(crossPool)
+            const tsu = totalMissingUSDC(
+                this.#cachedInvestors.values(),
+                this.#cachedPools.values()
+            )
+
+            const tst = totalMissingTokens(
+                this.#cachedQuests.values(),
+                this.#cachedPools.values(),
+                this.#cachedInvestors.values()
+            )
         })
     }
 
@@ -757,12 +799,16 @@ class Generator {
             console.log(tradePool)
         }
 
-        const [totalIn, totalOut] = router.smartSwap(
+        const [totalIn, totalOut, returnUsdc] = router.smartSwap(
             this.#DEFAULT_TOKEN,
             tradePool.tokenRight,
             spendAmount,
             conf.smartRouteDepth
         )
+
+        if (returnUsdc > 0) {
+            investor.addBalance('USDC', returnUsdc)
+        }
 
         this.webdbg(
             `[GENERATOR] Invested directly in ${tradePool.tokenRight} sum ${spendAmount} got in/out: ${totalIn}/${totalOut}`
@@ -782,7 +828,7 @@ class Generator {
             //this.#_OPS_TIME.invest.time += t1 - t0
         }
 
-        // collect pool price movements here and in other calls of router.smartSwap
+        // collect pool price movements here and in other calls of router.smart Swap
         this.storeTradedPool(day, tradePool)
 
         // That would be an edge case, rare, but if happens, need to debug why
@@ -812,6 +858,17 @@ class Generator {
         )
         investor.addBalance(this.#DEFAULT_TOKEN, totalIn)
         investor.addBalance(tradePool.tokenRight, totalOut)
+
+        const tsu = totalMissingUSDC(
+            this.#cachedInvestors.values(),
+            this.#cachedPools.values()
+        )
+
+        const tst = totalMissingTokens(
+            this.#cachedQuests.values(),
+            this.#cachedPools.values(),
+            this.#cachedInvestors.values()
+        )
     }
 
     tradeTopGainers(conf, day, investor, router) {
@@ -852,12 +909,16 @@ class Generator {
                 console.log(pool)
             }
 
-            const [totalIn, totalOut] = router.smartSwap(
+            const [totalIn, totalOut, returnUsdc] = router.smartSwap(
                 this.#DEFAULT_TOKEN,
                 pool.tokenRight,
                 perPoolAmt,
                 conf.smartRouteDepth
             )
+
+            if (returnUsdc > 0) {
+                investor.addBalance('USDC', returnUsdc)
+            }
 
             this.webdbg(
                 `Top gainer traded ${investor.name} buying ${pool.tokenRight}, put in ${totalIn} got out ${totalOut}`
@@ -890,7 +951,7 @@ class Generator {
                 return
             }
 
-            //collect pool price movements here and in other calls of router.smartSwap
+            //collect pool price movements here and in other calls of router.smart Swap
             this.storeTradedPool(day, pool)
             this.#processSwapData(
                 investor,
@@ -910,6 +971,17 @@ class Generator {
                 'buying top traders'
             )
             investor.addBalance(pool.tokenRight, totalOut, 'buying top traders')
+
+            const tsu = totalMissingUSDC(
+                this.#cachedInvestors.values(),
+                this.#cachedPools.values()
+            )
+
+            const tst = totalMissingTokens(
+                this.#cachedQuests.values(),
+                this.#cachedPools.values(),
+                this.#cachedInvestors.values()
+            )
 
             // Cite random quest by probabiliy
             const tradedQuest = this.#cachedQuests.get(pool.tokenRight)
@@ -1099,12 +1171,16 @@ class Generator {
                 console.log(selectedPools)
             }
 
-            const [totalIn, totalOut] = router.smartSwap(
+            const [totalIn, totalOut, returnUsdc] = router.smartSwap(
                 t0,
                 t1,
                 amount,
                 smartRouteDepth
             )
+
+            if (returnUsdc > 0) {
+                investor.addBalance('USDC', returnUsdc)
+            }
 
             this.webdbg(
                 `[GENERATOR] Traded pool ${pool.name} that ${debugStr} in price, action ${swapDir}, amount ${amount}, token0 ${t0} for token1 ${t1}`
@@ -1165,6 +1241,17 @@ class Generator {
             )
             investor.addBalance(t0, totalIn, 'selling gainers/losers')
             investor.addBalance(t1, totalOut, 'selling gainers/losers')
+
+            const tsu = totalMissingUSDC(
+                this.#cachedInvestors.values(),
+                this.#cachedPools.values()
+            )
+
+            const tst = totalMissingTokens(
+                this.#cachedQuests.values(),
+                this.#cachedPools.values(),
+                this.#cachedInvestors.values()
+            )
         })
     }
 
@@ -1224,12 +1311,17 @@ class Generator {
                             )
                         }
 
-                        const [totalIn, totalOut] = router.smartSwap(
-                            quest,
-                            this.#DEFAULT_TOKEN,
-                            sumIn,
-                            conf.smartRouteDepth
-                        )
+                        const [totalIn, totalOut, returnUsdc] =
+                            router.smartSwap(
+                                quest,
+                                this.#DEFAULT_TOKEN,
+                                sumIn,
+                                conf.smartRouteDepth
+                            )
+
+                        if (returnUsdc > 0) {
+                            author.addBalance('USDC', returnUsdc)
+                        }
 
                         //this.#_OPS++
 
@@ -1288,6 +1380,17 @@ class Generator {
                             this.#DEFAULT_TOKEN,
                             totalOut,
                             'withdrawing own USDC'
+                        )
+
+                        const tsu = totalMissingUSDC(
+                            this.#cachedInvestors.values(),
+                            this.#cachedPools.values()
+                        )
+
+                        const tst = totalMissingTokens(
+                            this.#cachedQuests.values(),
+                            this.#cachedPools.values(),
+                            this.#cachedInvestors.values()
                         )
                     }
                 })
