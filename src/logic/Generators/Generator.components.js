@@ -301,7 +301,10 @@ export const GeneratorRunner = () => {
                 if (!globalState.investors.has(investor.hash)) {
                     globalState.investors.set(investor.hash, investor)
                     addInvestor(investor.hash)
-                    globalState.investorStore.investors.push(investor.hash)
+                    globalState.investorStore.investors = [
+                        ...globalState.investorStore.investors,
+                        investor.hash
+                    ]
                 }
             })
             stepData.quests.forEach((quest) => {
