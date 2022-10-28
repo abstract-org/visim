@@ -309,7 +309,10 @@ describe('Money loss sanity tests', () => {
             dailySpawnProbability: 100,
             invGenAlias: 'TWODAY',
             invGenName: 'Investor',
-            buySellPeriodDays: 1
+            buySellPeriodDays: 1,
+            buyGainersFrequency: 3,
+            swapIncFrequency: 4,
+            swapDecFrequency: 2
         }
         const questModule = {
             ...questGen,
@@ -343,7 +346,7 @@ describe('Money loss sanity tests', () => {
 
         const tot0 = performance.now()
 
-        const genDays = 1
+        const genDays = 15
         for (let day = 1; day <= genDays; day++) {
             console.log(`Simulating day ${day}`)
             const d0 = performance.now()
@@ -382,50 +385,72 @@ describe('Money loss sanity tests', () => {
 
         const tot1 = performance.now()
 
-        // globalState.pools = genManager.getPools()
-        // globalState.quests = genManager.getQuests()
-        // globalState.investors = genManager.getInvestors()
+        globalState.pools = genManager.getPools()
+        globalState.quests = genManager.getQuests()
+        globalState.investors = genManager.getInvestors()
 
-        // console.log(`||| TOTAL TRADING OPERATIONS: ${genManager.getOps()} |||`)
-        // console.log(`Days performance`)
-        // console.table(dayPerf)
+        console.log(`||| TOTAL TRADING OPERATIONS: ${genManager.getOps()} |||`)
+        console.log(`Days performance`)
+        console.table(dayPerf)
 
-        // //console.table(genManager.getOpsTime())
+        //console.table(genManager.getOpsTime())
 
-        // const totalTime = tot1 - tot0
-        // const totMeasure = genManager.getOpsTime()
-        // const totalMeasured = Object.keys(totMeasure).reduce((p, n, k) => {
-        //     return p + totMeasure[n].time
-        // }, 0)
+        const totalTime = tot1 - tot0
+        const totMeasure = genManager.getOpsTime()
+        const totalMeasured = Object.keys(totMeasure).reduce((p, n, k) => {
+            return p + totMeasure[n].time
+        }, 0)
 
-        // console.table({
-        //     total: (totalTime / 1000).toFixed(2),
-        //     totalTrade: (totalMeasured / 1000).toFixed(2)
-        // })
+        console.table({
+            total: (totalTime / 1000).toFixed(2),
+            totalTrade: (totalMeasured / 1000).toFixed(2)
+        })
 
-        // console.table(
-        //     globalState.investors.map((inv) => ({
-        //         name: inv.name,
-        //         usdc: inv.balances.USDC
-        //     }))
-        // )
+        console.table(
+            globalState.investors
+                .map((inv) => ({
+                    name: inv.name,
+                    usdc: inv.balances.USDC,
+                    nav: Object.entries(inv.balances).reduce(
+                        (acc, curr) =>
+                            curr[0] === 'USDC'
+                                ? acc + inv.balances.USDC
+                                : acc +
+                                  globalState.pools.find(
+                                      (p) =>
+                                          p.isQuest() &&
+                                          p.tokenRight === curr[0]
+                                  ).curPrice *
+                                      curr[1],
+                        0
+                    ),
+                    initial: inv.initialBalance
+                }))
+                .sort((a, b) =>
+                    a.name > b.name ? 1 : b.name > a.name ? -1 : 0
+                )
+        )
 
-        // console.table(
-        //     globalState.quests.map((q) => ({
-        //         name: q.name,
-        //         pools: q.pools.length
-        //     }))
-        // )
+        console.table(
+            globalState.quests.map((q) => ({
+                name: q.name,
+                pools: q.pools.length
+            }))
+        )
 
-        // console.table(
-        //     globalState.pools.map((p) => ({
-        //         name: p.name,
-        //         curp: p.curPrice,
-        //         mcap: p.getMarketCap(),
-        //         tvl: p.getTVL(),
-        //         isQ: p.isQuest()
-        //     }))
-        // )
+        console.table(
+            globalState.pools
+                .map(
+                    (p) =>
+                        p.isQuest() && {
+                            name: p.name,
+                            curp: p.curPrice.toFixed(2),
+                            mcap: p.getMarketCap(),
+                            tvl: p.getTVL()
+                        }
+                )
+                .filter((x) => x)
+        )
     })
 })
 

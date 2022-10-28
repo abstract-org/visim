@@ -77,10 +77,7 @@ export const prepareCrossPools = (citingSum) => {
     quests.push(questE)
 
     // BA
-    const startingPrice =
-        poolA.priceToken0 /
-        poolA.priceToken1 /
-        (poolB.priceToken0 / poolB.priceToken1)
+    const startingPrice = poolA.curPrice / poolB.curPrice
     const BA = creator.createPool(questB, questA, startingPrice)
     const {
         min: pmin1,
