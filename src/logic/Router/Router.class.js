@@ -143,6 +143,18 @@ export default class Router {
                     )
                 }
 
+                if (sum !== poolSum[0]) {
+                    console.log(
+                        '[smart-swap:error] Should return USDC or rewind or recalculate as injected amount doesnt equal to the actually consumed amount'
+                    )
+                }
+
+                if (poolSum[0] === 0 || poolSum[1] === 0) {
+                    console.log(
+                        '[smart-swap:error] Should revert, as exited mid-way'
+                    )
+                }
+
                 pathSums.push(poolSum)
 
                 this.#_SWAPS.push({
@@ -186,9 +198,15 @@ export default class Router {
         let pathPrices = []
         let existingPrices = []
         for (const path of paths) {
-            const sums = this.drySwapPath(path)
+            const sumsTotal = this.drySwapPath(path)
 
-            if (sums[1] === 0) {
+            if (!sumsTotal) {
+                continue
+            }
+
+            const sums = [sumsTotal[0][0], sumsTotal[sumsTotal.length - 1][1]]
+
+            if (sums[0] === 0 || sums[1] === 0) {
                 continue
             }
 
@@ -293,9 +311,9 @@ export default class Router {
     }
 
     /**
-     * @description Takes array path and swaps through the entire path and returns very first and very last prices
+     * @description Takes array path and swaps through the entire path and returns prices along the way
      * @param {array} path
-     * @returns {number, number}
+     * @returns {number, number}[]
      */
     drySwapPath(path) {
         const amount = 1
@@ -304,25 +322,32 @@ export default class Router {
             .filter((pair) => pair[0] && pair[1])
 
         let sumsTotal = []
+        let amountIn = amount
 
         for (const id in poolPairs) {
             let idx = parseInt(id)
             const poolTokens = poolPairs[idx]
             const pool = this.#getPoolByTokens(poolTokens[0], poolTokens[1])
             const zeroForOne = pool.tokenLeft === poolTokens[0] ? true : false
-            const sums = pool.drySwap(amount, zeroForOne)
-            //console.log(path, pool.name, zeroForOne, sums)
+
+            const hasNextToken = zeroForOne
+                ? !isZero(pool.volumeToken1) &&
+                  !this.#isNearZero(pool.volumeToken1)
+                : !isZero(pool.volumeToken0) &&
+                  !this.#isNearZero(pool.volumeToken0)
+
+            if (!hasNextToken) {
+                return null
+            }
+
+            const sums = pool.drySwap(amountIn, zeroForOne)
 
             if (Math.abs(sums[0]) === 0 && Math.abs(sums[1]) === 0) {
-                return [0, 0]
+                return null
             }
 
-            if (idx === 0) {
-                sumsTotal[0] = sums[0]
-            }
-            if (idx === poolPairs.length - 1) {
-                sumsTotal[1] = sums[1]
-            }
+            amountIn = Math.abs(sums[1])
+            sumsTotal.push(sums)
         }
         return sumsTotal
     }
