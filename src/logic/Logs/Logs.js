@@ -120,6 +120,7 @@ export const LogsModule = () => {
                 sortField="block"
                 sortOrder={-1}
                 stripedRows
+                resizableColumns
                 paginator
                 rows={100}
                 className="text-sm"

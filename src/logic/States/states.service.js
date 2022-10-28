@@ -8,7 +8,6 @@ import Token from '../Quest/Token.class'
 import UsdcToken from '../Quest/UsdcToken.class'
 import { fromBase64 } from '../Utils/logicUtils'
 import Serializer from '../Utils/serializer.js'
-import { capitalize } from '../Utils/uiUtils'
 
 /**
  /**
