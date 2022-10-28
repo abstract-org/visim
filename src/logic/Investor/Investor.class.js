@@ -3,7 +3,7 @@ import HashMap from 'hashmap'
 
 import Pool from '../Pool/Pool.class'
 import Token from '../Quest/Token.class'
-import { p2pp } from '../Utils/logicUtils'
+import { isZero, p2pp } from '../Utils/logicUtils'
 
 export default class Investor {
     hash = null
@@ -56,14 +56,12 @@ export default class Investor {
             return
         }
 
-        if (!this.balances[tokenName]) {
-            this.balances[tokenName] = 0
+        if (isZero(balance) || balance === 0) {
+            return
         }
 
-        const diff = parseInt(Math.abs(balance)) / balance
-        //const diff = parseFloat(Math.abs(balance)) / balance
-        if (diff < 1) {
-            balance = Math.round(balance)
+        if (!this.balances[tokenName]) {
+            this.balances[tokenName] = 0
         }
 
         if (this.balances[tokenName] + balance < 0) {
@@ -77,6 +75,10 @@ export default class Investor {
         }
 
         this.balances[tokenName] += balance
+
+        if (isZero(this.balances[tokenName])) {
+            this.balances[tokenName] = 0
+        }
     }
 
     removeLiquidity(pool, priceMin, priceMax, amountLeft = 0, amountRight = 0) {
@@ -162,7 +164,14 @@ export default class Investor {
             pmax: priceMax,
             amt0: token0Amt,
             amt1: token1Amt,
-            type: 'investor'
+            type: 'investor',
+            liq: crossPool.getLiquidityForAmounts(
+                token0Amt,
+                token1Amt,
+                priceMin,
+                priceMax,
+                crossPool.curPrice
+            )
         })
         this.positions.set(crossPool.name, crossPool.pos.values())
 
@@ -192,19 +201,35 @@ export default class Investor {
 
         let min = 0
         let max = 0
-        let native = true
 
         let unitPrice = citingQuestPool.curPrice / citedQuestPool.curPrice
 
-        if (baseUnitName !== baseUnitCompName) {
-            min = 1 / unitPrice / multiplier
-            max = 1 / unitPrice
-        } else {
-            min = unitPrice
-            max = unitPrice * multiplier
-            native = false
+        // position we're planning to open in pool B/A is B for A (native) or "on the left side" of the current price
+        // B for A left position here [0.5...1(curPrice)...2] right position here A for B
+        // right position min cannot be lower than curPrice, adapt if necessary
+        const nativePos = baseUnitName !== baseUnitCompName
+
+        min = nativePos ? 1 / unitPrice : unitPrice
+        max = nativePos ? 1 / unitPrice : unitPrice
+
+        if (nativePos && max <= crossPool.curPrice) {
+            min = min / multiplier
+        } else if (nativePos && max > crossPool.curPrice) {
+            max = crossPool.curPrice
+
+            if (min === max) {
+                min = min / multiplier
+            }
+        } else if (!nativePos && min >= crossPool.curPrice) {
+            max = max * multiplier
+        } else if (!nativePos && min < crossPool.curPrice) {
+            min = crossPool.curPrice
+
+            if (min === max) {
+                max = max * multiplier
+            }
         }
 
-        return { min: min, max: max, native }
+        return { min: min, max: max, native: nativePos }
     }
 }

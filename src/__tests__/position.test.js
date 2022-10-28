@@ -297,8 +297,8 @@ describe('Price Range Manager', () => {
 
         A.buy(999999999)
 
-        const startingPrice = qA.curPrice / qB.curPrice
-        const AB = qA.createPool({ tokenLeft: qB, startingPrice })
+        const startingPrice = A.curPrice / B.curPrice
+        const AB = investor.createPool(qB, qA, startingPrice)
 
         const ppAB = investor.calculatePriceRange(AB, B, A, 2)
         const ppBA = investor.calculatePriceRange(AB, A, B, 2)
@@ -320,8 +320,8 @@ describe('Price Range Manager', () => {
 
         B.buy(999999999)
 
-        const startingPrice = qA.curPrice / qB.curPrice
-        const AB = qA.createPool({ tokenLeft: qB, startingPrice })
+        const startingPrice = A.curPrice / B.curPrice
+        const AB = investor.createPool(qB, qA, startingPrice)
 
         const ppAB = investor.calculatePriceRange(AB, B, A, 2)
         const ppBA = investor.calculatePriceRange(AB, A, B, 2)
@@ -344,9 +344,8 @@ describe('Price Range Manager', () => {
         A.buy(25000)
         B.buy(5000)
 
-        const startingPrice = qA.curPrice / qB.curPrice
-        const AB = qA.createPool({ tokenLeft: qB, startingPrice })
-
+        const startingPrice = A.curPrice / B.curPrice
+        const AB = investor.createPool(qB, qA, startingPrice)
         const ppAB = investor.calculatePriceRange(AB, B, A, 2)
         const ppBA = investor.calculatePriceRange(AB, A, B, 2)
 
@@ -368,9 +367,8 @@ describe('Price Range Manager', () => {
         A.buy(5000)
         B.buy(25000)
 
-        const startingPrice = qA.curPrice / qB.curPrice
-        const AB = qA.createPool({ tokenLeft: qB, startingPrice })
-
+        const startingPrice = A.curPrice / B.curPrice
+        const AB = investor.createPool(qB, qA, startingPrice)
         const ppAB = investor.calculatePriceRange(AB, B, A, 2)
         const ppBA = investor.calculatePriceRange(AB, A, B, 2)
 
@@ -392,9 +390,8 @@ describe('Price Range Manager', () => {
         A.buy(25000)
         B.buy(25000)
 
-        const startingPrice = qA.curPrice / qB.curPrice
-        const AB = qA.createPool({ tokenLeft: qB, startingPrice })
-
+        const startingPrice = A.curPrice / B.curPrice
+        const AB = investor.createPool(qB, qA, startingPrice)
         const ppAB = investor.calculatePriceRange(AB, B, A, 3)
         const ppBA = investor.calculatePriceRange(AB, A, B, 3)
 
@@ -413,9 +410,8 @@ describe('Price Range Manager', () => {
         const A = qA.createPool({ tokenLeft: new UsdcToken() })
         const B = qB.createPool({ tokenLeft: new UsdcToken() })
 
-        const startingPrice = qA.curPrice / qB.curPrice
-        const AB = qA.createPool({ tokenLeft: qB, startingPrice })
-
+        const startingPrice = A.curPrice / B.curPrice
+        const AB = investor.createPool(qB, qA, startingPrice)
         const ppAB = investor.calculatePriceRange(AB, B, A, 2)
         const ppBA = investor.calculatePriceRange(AB, A, B, 2)
 
@@ -437,9 +433,8 @@ describe('Price Range Manager', () => {
         A.buy(999999999)
         B.buy(999999999)
 
-        const startingPrice = qA.curPrice / qB.curPrice
-        const AB = qA.createPool({ tokenLeft: qB, startingPrice })
-
+        const startingPrice = A.curPrice / B.curPrice
+        const AB = investor.createPool(qB, qA, startingPrice)
         const ppAB = investor.calculatePriceRange(AB, B, A, 2)
         const ppBA = investor.calculatePriceRange(AB, A, B, 2)
 
@@ -537,7 +532,7 @@ describe('Citation Manager', () => {
             tokenLeft: new UsdcToken(),
             initialPositions
         })
-        const startingPrice = qA.curPrice / qB.curPrice
+        const startingPrice = A.curPrice / B.curPrice
         const AB = investor.createPool(qB, qA, startingPrice)
 
         const ppAB = investor.calculatePriceRange(AB, B, A, 2)
@@ -595,10 +590,10 @@ describe('Citation Manager', () => {
             tokenLeft: new UsdcToken(),
             initialPositions
         })
-        const startingPrice = qA.curPrice / qB.curPrice
-        const AB = investor.createPool(qB, qA, startingPrice)
-
         A.buy(999999999)
+
+        const startingPrice = A.curPrice / B.curPrice
+        const AB = investor.createPool(qB, qA, startingPrice)
 
         const ppAB = investor.calculatePriceRange(AB, B, A, 2)
         const ppBA = investor.calculatePriceRange(AB, A, B, 2)
@@ -655,10 +650,10 @@ describe('Citation Manager', () => {
             tokenLeft: new UsdcToken(),
             initialPositions
         })
-        const startingPrice = qA.curPrice / qB.curPrice
-        const AB = investor.createPool(qB, qA, startingPrice)
-
         B.buy(999999999)
+
+        const startingPrice = A.curPrice / B.curPrice
+        const AB = investor.createPool(qB, qA, startingPrice)
 
         const ppAB = investor.calculatePriceRange(AB, B, A, 2)
         const ppBA = investor.calculatePriceRange(AB, A, B, 2)
@@ -682,12 +677,12 @@ describe('Citation Manager', () => {
         expect(AB.volumeToken0).toBe(1000)
         expect(AB.volumeToken1).toBe(1000)
         expect(AB.curPrice).toBeCloseTo(0.0002)
-        expect(AB.pos.get(p2pp(0.0001)).liquidity).toBeCloseTo(-141387, 0)
+        expect(AB.pos.get(p2pp(0.0001)).liquidity).toBeCloseTo(-341387, 0)
         expect(AB.pos.get(p2pp(0.0002)).liquidity).toBeCloseTo(-34, 0)
-        expect(AB.pos.get(p2pp(0.00005)).liquidity).toBeCloseTo(141421, 0)
+        expect(AB.pos.get(p2pp(0.00005)).liquidity).toBeCloseTo(341421, 0)
 
         // A->B
-        expect(posMinAB.liquidity).toBeCloseTo(-141387, 0)
+        expect(posMinAB.liquidity).toBeCloseTo(-341387, 0)
         expect(posMaxAB.liquidity).toBeCloseTo(-34, 0)
 
         expect(posOwnerAB.amt1).toBe(1000)
@@ -699,8 +694,8 @@ describe('Citation Manager', () => {
         expect(posOwnerBA.pmin).toBeCloseTo(0.0005, 0)
         expect(posOwnerBA.pmax).toBeCloseTo(0.0001, 0)
 
-        expect(posMinBA.liquidity).toBeCloseTo(141421, 0)
-        expect(posMaxBA.liquidity).toBeCloseTo(-141387, 0)
+        expect(posMinBA.liquidity).toBeCloseTo(341421, 0)
+        expect(posMaxBA.liquidity).toBeCloseTo(-341387, 0)
     })
 
     // @TODO: Something is wrong here with liquidity calculation and price ranges
