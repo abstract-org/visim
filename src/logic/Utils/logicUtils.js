@@ -167,3 +167,7 @@ export const isNumericString = (str) => parseFloat(str) === Number(str)
 export const priceDiff = (price1, price2) => {
     return ((price1 - price2) / price2) * 100
 }
+
+export const tokenIntersect = (pair1, pair2) => {
+    return pair1.map((q) => (pair2.includes(q) ? q : null)).filter((x) => x)
+}

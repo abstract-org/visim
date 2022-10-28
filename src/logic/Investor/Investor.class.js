@@ -162,6 +162,13 @@ export default class Investor {
             pmax: priceMax,
             amt0: token0Amt,
             amt1: token1Amt,
+            liq: crossPool.getLiquidityForAmounts(
+                token0Amt,
+                token1Amt,
+                priceMin,
+                priceMax,
+                crossPool.curPrice
+            ),
             type: 'investor'
         })
         this.positions.set(crossPool.name, crossPool.pos.values())

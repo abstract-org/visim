@@ -1,7 +1,15 @@
 import HashMap from 'hashmap'
 
-import { isZero } from '../Utils/logicUtils'
+import { isZero, tokenIntersect } from '../Utils/logicUtils'
 import { Graph } from './Graph.class'
+import {
+    getMaxOneShotBuy,
+    getMaxOneShotSell,
+    maxSameLiqBuyIn,
+    maxSameLiqBuyOut,
+    maxSameLiqSellIn,
+    maxSameLiqSellOut
+} from './math'
 
 export default class Router {
     #cachedPools = new HashMap()
@@ -61,7 +69,7 @@ export default class Router {
             this.#_PRICED_PATHS = this.drySwapForPricedPaths(
                 this.getPairPaths(token0, token1)
             )
-            //console.log(this.#_PRICED_PATHS)
+            this.#_PRICED_PATHS = this.cleanUpPaths(this.#_PRICED_PATHS)
 
             if (this.#DEBUG)
                 console.log(
@@ -72,7 +80,9 @@ export default class Router {
 
             if (!this.#_PRICED_PATHS.length) return totalInOut
 
-            const sums = this.swapBestPath(amountIn, this.#_PRICED_PATHS[0])
+            //const sums = this.swapBestPath(amountIn, this.#_PRICED_PATHS[0])
+            const sums = this.swapPricedPaths(amountIn, this.#_PRICED_PATHS)
+            return
 
             if (this.#DEBUG) {
                 console.log(
@@ -103,8 +113,20 @@ export default class Router {
         return totalInOut
     }
 
-    swapBestPath(amount, pricedPath) {
+    swapPricedPaths(amountIn, paths) {
+        paths.forEach((po) => {
+            const path = po.path
+
+            const maxIn = this.calculateMaxIn(path, amountIn)
+        })
+
+        return [0, 0]
+    }
+
+    swapBestPath(amount, pricedPath, dry = false) {
         if (!pricedPath) return
+
+        let poolsCache = []
 
         const poolPairs = pricedPath.path
             .map((token, id) => [token, pricedPath.path[id + 1]])
@@ -131,7 +153,16 @@ export default class Router {
                     ? amount
                     : this.#_DEFAULT_SWAP_SUM
                 const action = zeroForOne ? 'buy' : 'sell'
+
+                let poolCache = JSON.parse(JSON.stringify(pool))
                 const poolSum = pool[action](sum)
+                poolsCache.push({
+                    pool: poolCache,
+                    action,
+                    sum,
+                    poolSum
+                })
+
                 if (this.#DEBUG) {
                     console.log(
                         '[actual-swap]',
@@ -182,13 +213,94 @@ export default class Router {
         return [allSums.in, allSums.out]
     }
 
+    calculateMaxIn(path, amountIn) {
+        console.log(path, amountIn)
+        let sumsTotal = []
+        let localAmountIn = amountIn
+        let localAmountOut = 0
+        let zeroForOne = true
+
+        const poolPairs = path
+            .map((token, id) => [token, path[id + 1]])
+            .filter((pair) => pair[0] && pair[1])
+
+        for (let [idx, pair] of poolPairs.entries()) {
+            const prevPair = poolPairs[idx - 1] || null
+
+            const pool = this.#getPoolByTokens(pair[0], pair[1])
+            if (prevPair) {
+                const intersect = tokenIntersect(prevPair, pair)
+                if (intersect.length > 0) {
+                    zeroForOne = pool.tokenRight === intersect[0] ? false : true
+                }
+            }
+            const action = zeroForOne ? 'dryBuy' : 'drySell'
+
+            const [totalIn, totalOut] = pool[action](localAmountIn)
+            localAmountIn = totalOut
+            console.log(
+                'dry-swap',
+                action,
+                pool.name,
+                totalIn,
+                totalOut,
+                localAmountIn
+            )
+        }
+
+        return sumsTotal
+    }
+
+    cleanUpPaths(pricedPaths) {
+        const localPaths = JSON.parse(JSON.stringify(pricedPaths))
+        let existingQuests = []
+
+        if (localPaths.length > 1) {
+            localPaths.forEach((path, pathId) => {
+                let elimPath = false
+                let localQuests = []
+
+                for (let [idx, quest] of path.path.entries()) {
+                    if (quest === 'USDC') {
+                        continue
+                    }
+
+                    if (existingQuests.includes(quest)) {
+                        elimPath = true
+                        localQuests = []
+                        break
+                    } else {
+                        localQuests.push(quest)
+                    }
+                }
+
+                existingQuests = Array.prototype.concat(
+                    existingQuests,
+                    localQuests
+                )
+
+                if (elimPath) {
+                    delete localPaths[pathId]
+                }
+            })
+        }
+
+        return localPaths.filter((x) => x)
+    }
+
     drySwapForPricedPaths(paths) {
         let pathPrices = []
         let existingPrices = []
         for (const path of paths) {
-            const sums = this.drySwapPath(path)
+            const sumsTotal = this.drySwapPath(path)
 
-            if (sums[1] === 0) {
+            if (!sumsTotal) {
+                continue
+            }
+
+            const sums = [sumsTotal[0][0], sumsTotal[sumsTotal.length - 1][1]]
+
+            if (sums[0] === 0 || sums[1] === 0) {
                 continue
             }
 
@@ -297,8 +409,9 @@ export default class Router {
      * @param {array} path
      * @returns {number, number}
      */
-    drySwapPath(path) {
-        const amount = 1
+    drySwapPath(path, amountIn) {
+        let curAmount = amountIn || 1
+
         const poolPairs = path
             .map((token, id) => [token, path[id + 1]])
             .filter((pair) => pair[0] && pair[1])
@@ -310,20 +423,28 @@ export default class Router {
             const poolTokens = poolPairs[idx]
             const pool = this.#getPoolByTokens(poolTokens[0], poolTokens[1])
             const zeroForOne = pool.tokenLeft === poolTokens[0] ? true : false
-            const sums = pool.drySwap(amount, zeroForOne)
-            //console.log(path, pool.name, zeroForOne, sums)
+
+            const hasNextToken = zeroForOne
+                ? !isZero(pool.volumeToken1) &&
+                  !this.#isNearZero(pool.volumeToken1)
+                : !isZero(pool.volumeToken0) &&
+                  !this.#isNearZero(pool.volumeToken0)
+
+            if (!hasNextToken) {
+                return null
+            }
+
+            const sums = pool.drySwap(curAmount, zeroForOne)
 
             if (Math.abs(sums[0]) === 0 && Math.abs(sums[1]) === 0) {
-                return [0, 0]
+                return null
             }
 
-            if (idx === 0) {
-                sumsTotal[0] = sums[0]
-            }
-            if (idx === poolPairs.length - 1) {
-                sumsTotal[1] = sums[1]
-            }
+            curAmount = parseFloat(Math.abs(sums[1]))
+
+            sumsTotal.push(sums)
         }
+
         return sumsTotal
     }
 

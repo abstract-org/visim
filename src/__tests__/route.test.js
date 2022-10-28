@@ -5,6 +5,14 @@ import { invGen, questGen } from '../logic/Generators/initialState'
 import Investor from '../logic/Investor/Investor.class'
 import UsdcToken from '../logic/Quest/UsdcToken.class'
 import Router from '../logic/Router/Router.class'
+import {
+    getMaxOneShotBuy,
+    getMaxOneShotSell,
+    maxSameLiqBuyIn,
+    maxSameLiqBuyOut,
+    maxSameLiqSellIn,
+    maxSameLiqSellOut
+} from '../logic/Router/math'
 import { prepareCrossPools, preparePool } from './helpers/poolManager'
 
 let globalState = {
@@ -143,6 +151,102 @@ describe('Path finding', () => {
     })
 })
 
+describe('Router functions', () => {
+    const investor = Investor.create('INV', 'INV', 10000)
+
+    const getQP = (name) => {
+        const quest = investor.createQuest(name)
+        const pool = quest.createPool({
+            tokenLeft: new UsdcToken(),
+            initialPositions: [
+                { priceMin: 1, priceMax: 10000, tokenA: 0, tokenB: 5000 },
+                { priceMin: 20, priceMax: 10000, tokenA: 0, tokenB: 5000 },
+                { priceMin: 50, priceMax: 10000, tokenA: 0, tokenB: 5000 },
+                {
+                    priceMin: 200,
+                    priceMax: 10000,
+                    tokenA: 0,
+                    tokenB: 5000
+                }
+            ]
+        })
+
+        return { quest, pool }
+    }
+
+    const getCP = (
+        citingQ,
+        citedQ,
+        citingP,
+        citedP,
+        citedSumA = 0,
+        citedSumB = 0
+    ) => {
+        const AB = investor.createPool(citedQ, citingQ)
+        citedQ.addPool(AB)
+        citingQ.addPool(AB)
+
+        const priceRange = investor.calculatePriceRange(AB, citedP, citingP, 2)
+        investor.citeQuest(
+            AB,
+            priceRange.min,
+            priceRange.max,
+            citedSumA,
+            citedSumB,
+            priceRange.native
+        )
+
+        return { crossPool: AB }
+    }
+
+    it('Cleans up intersecting paths', () => {
+        const router = new Router(new HashMap(), new HashMap())
+        const res = router.cleanUpPaths([
+            { path: ['USDC', 'AGORA'] },
+            { path: ['USDC', 'AGORA', 'PET'] },
+            { path: ['USDC', 'PET', 'DIVIDE'] },
+            { path: ['AGORA', 'TRIO', 'MAN'] },
+            { path: ['TROUBLE', 'FIGURE', 'USDC'] }
+        ])
+
+        expect(res.length).toBe(3)
+    })
+
+    fit('Calculates max in through chain and fixes backwards', () => {
+        const { quest: questA, pool: A } = getQP('A')
+        const { quest: questB, pool: B } = getQP('B')
+        const { quest: questC, pool: C } = getQP('C')
+
+        A.buy(1500)
+        B.buy(3500)
+        C.buy(4500)
+
+        const { crossPool: BA } = getCP(questA, questB, B, A, 500, 0)
+        const { crossPool: CB } = getCP(questB, questC, C, B, 1000, 0)
+
+        const pools = new HashMap()
+        const quests = new HashMap()
+
+        pools.set(A.name, A)
+        pools.set(B.name, B)
+        pools.set(C.name, C)
+        pools.set(BA.name, BA)
+        pools.set(CB.name, CB)
+
+        quests.set(questA.name, questA)
+        quests.set(questB.name, questB)
+        quests.set(questC.name, questC)
+
+        console.log(BA.dryBuy(1000000), BA.drySell(10000000))
+        console.log(CB.dryBuy(2000000), CB.drySell(20000000))
+
+        const router = new Router(quests, pools)
+
+        const testRoute = ['USDC', 'A', 'B', 'C']
+        router.calculateMaxIn(testRoute, 10000)
+    })
+})
+
 describe('Routing', () => {
     const initialPositions = [
         {
@@ -217,6 +321,69 @@ describe('Routing', () => {
         expect(acc).toBeCloseTo(acc2)
         expect(results1[0]).toBeCloseTo(-999.999)
         expect(results1[1]).toBeCloseTo(164.694)
+    })
+
+    it('Dry swap smart route before actual swap', () => {
+        const creator = Investor.create('creator', 'creator', 10000)
+
+        const questX = creator.createQuest('AGORA')
+        const poolX = questX.createPool()
+
+        poolX.buy(5550)
+
+        const questA = creator.createQuest('RUTHER')
+        const poolA = questA.createPool()
+        poolA.buy(5000)
+
+        const usdcToken = new UsdcToken()
+        usdcToken.addPool(poolA)
+        usdcToken.addPool(poolX)
+        globalState.quests.set('USDC', usdcToken)
+
+        const startingPrice = poolA.curPrice / poolX.curPrice
+        const XA = creator.createPool(questX, questA, startingPrice)
+
+        questA.addPool(XA)
+        questX.addPool(XA)
+        globalState.quests.set(questA.name, questA)
+        globalState.quests.set(questX.name, questX)
+
+        globalState.pools.set(poolA.name, poolA)
+        globalState.pools.set(poolX.name, poolX)
+
+        const pr = creator.calculatePriceRange(XA, poolX, poolA)
+        creator.citeQuest(XA, pr.min, pr.max, 2, 172.57, pr.native)
+
+        globalState.pools.set(XA.name, XA)
+
+        const router = new Router(globalState.quests, globalState.pools)
+
+        expect(
+            maxSameLiqBuyIn(poolX.curLiq, poolX.curPrice, 205.3905466)
+        ).toBeCloseTo(-1000, 0)
+        expect(
+            maxSameLiqBuyOut(poolX.curLiq, poolX.curPrice, 1000)
+        ).toBeCloseTo(-205.3905, 0)
+        expect(
+            maxSameLiqSellIn(poolX.curLiq, poolX.curPrice, 3128.9953660188066)
+        ).toBeCloseTo(1000, 0)
+        expect(
+            maxSameLiqSellOut(poolX.curLiq, poolX.curPrice, 1000)
+        ).toBeCloseTo(3128.9953, 0)
+
+        const results1 = router.smartSwap('USDC', 'RUTHER', 10000)
+
+        const acc = router.getSwaps().reduce((acc, swap) => {
+            return swap.pool === 'USDC-AGORA' ? acc + swap.out : acc + 0
+        }, 0)
+
+        const acc2 = router.getSwaps().reduce((acc, swap) => {
+            return swap.pool === 'AGORA-RUTHER' ? acc + swap.in : acc + 0
+        }, 0)
+
+        expect(acc).toBeCloseTo(acc2)
+        expect(results1[0]).toBeCloseTo(-9999.999)
+        expect(results1[1]).toBeCloseTo(1313.9, 0)
     })
 
     it('Smart route with single pool', () => {

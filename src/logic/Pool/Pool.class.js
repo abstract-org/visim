@@ -229,6 +229,13 @@ export default class Pool {
         let amounts = []
         let amount1 = 0
 
+        // @TODO: Probably horrible idea, otherwise it won't set opposite liquidity (backwards/downwards/for sell/etc)
+        // This condition only assumes newly created crossPool where price is not defined, there are no other positions
+        // And liquidity funciton needs curPrice to be set to the maximum of sell position that we open
+        if (this.pos.size === 3 && this.curPrice === 0 && token0Amt > 0) {
+            this.curPrice = priceMax
+        }
+
         const liquidity = this.getLiquidityForAmounts(
             token0Amt,
             token1Amt,
@@ -237,7 +244,16 @@ export default class Pool {
             Math.sqrt(this.curPrice)
         )
 
-        //console.log(token0Amt, token1Amt, priceMin, priceMax, liquidity)
+        // console.log(
+        //     this.name,
+        //     this.curPrice,
+        //     token0Amt,
+        //     token1Amt,
+        //     priceMin,
+        //     priceMax,
+        //     liquidity,
+        //     this.pos.size
+        // )
 
         if (liquidity === 0) {
             return []
@@ -306,7 +322,7 @@ export default class Pool {
             this.pos.get(localPP)[dir] !== 'undefined' &&
             localPP !== this.pos.get(localPP)[dir]
         ) {
-            if (this.pos.get(localPP).liquidity !== 0) {
+            if (this.pos.get(localPP).liquidity > 0) {
                 return this.pos.get(localPP)
             }
 
@@ -409,9 +425,14 @@ export default class Pool {
             // sets local variable from global variable (global changes on each cycle)
             curLiq = this.curLiq
 
+            // if (amount < 0) {
+            //     arrivedAtSqrtPrice = Math.sqrt(nextPriceTarget)
+            // }
+
             arrivedAtSqrtPrice += amount / curLiq
 
             journal[i].push(`Op: buy ${i}`)
+            journal[i].push(`Params: ${amount} / ${priceLimit}`)
             journal[i].push(`Current price point: ${this.curPP}`)
             journal[i].push(`Current price: ${this.curPrice}`)
             journal[i].push(`Current liquidity: ${curLiq}`)
@@ -515,7 +536,7 @@ export default class Pool {
 
             i += 1
         } while (
-            amount > 0 &&
+            amount !== 0 &&
             arrivedAtSqrtPrice === Math.sqrt(pp2p(nextPricePoint)) &&
             this.curRight < p2pp(globalConfig.PRICE_MAX)
         )
