@@ -47,7 +47,7 @@ export const StatesSidebar = (props) => {
 }
 
 function generateCurrentStateId() {
-    return `@${new Date().toISOString()}`
+    return `@${new Date().getTime()}`
 }
 
 const StatesTable = (props) => {
@@ -189,7 +189,7 @@ const StatesTable = (props) => {
         })
         setCurrentStateInfo(currentStateDetails)
         setNewStateName(currentStateDetails.stateName)
-    }, [quests, pools, scenarioId])
+    }, [quests, pools, scenarioId, newStateName])
 
     const handleStatesLoaded = async () => {
         const snapshotsLoaded = await StorageApi.getStates()
@@ -279,6 +279,16 @@ const StatesTable = (props) => {
         )
     }
 
+    const execDateFormatter = (rowData) => {
+        return (
+            <span>
+                {new Date(rowData.executionDate).toDateString() +
+                    ' ' +
+                    new Date(rowData.executionDate).toLocaleTimeString()}
+            </span>
+        )
+    }
+
     return (
         <React.Fragment>
             <Loader loaderData={loaderData} />
@@ -310,6 +320,7 @@ const StatesTable = (props) => {
                     <Column
                         field="executionDate"
                         header="Execution Date"
+                        body={execDateFormatter}
                         sortable
                     />
 
@@ -356,6 +367,7 @@ const StatesTable = (props) => {
                     <Column
                         field="executionDate"
                         header="Execution Date"
+                        body={execDateFormatter}
                         sortable
                     />
 

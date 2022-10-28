@@ -152,6 +152,8 @@ export const GeneratorRunner = () => {
                 (sc) => sc.scenarioId === scenario
             )
 
+            globalState.generatorStore = { invConfigs: [], questConfigs: [] }
+
             resetInvConfigs()
             currentScenario.scenario.invConfigs.forEach((invGen) => {
                 addInvConfig(invGen)
@@ -449,7 +451,8 @@ export const InvestorRandomGenerator = () => {
         })
 
         addInvConfig(newInvGen)
-        globalState.generatorStore.invConfigs.push(newInvGen)
+        const cloned = JSON.parse(JSON.stringify(newInvGen))
+        globalState.generatorStore.invConfigs.push(cloned)
     }
 
     return (
@@ -533,7 +536,8 @@ export const QuestRandomGenerator = () => {
             questGenName: `${faker.science.chemicalElement().name}`
         })
         addQuestConfig(newQuestGen)
-        globalState.generatorStore.questConfigs.push(newQuestGen)
+        const cloned = JSON.parse(JSON.stringify(newQuestGen))
+        globalState.generatorStore.questConfigs.push(cloned)
     }
 
     return (
