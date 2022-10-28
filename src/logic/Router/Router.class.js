@@ -21,6 +21,7 @@ export default class Router {
     #DEBUG_DRY = false
 
     #_visitedForGraph = []
+    tempSwapReturns = 0
 
     // @param State state
     constructor(stateQuests, statePools, debug = false, debugDry = false) {
@@ -47,7 +48,7 @@ export default class Router {
         this.#_VISITED_PATHS = []
         this.#_visitedForGraph = []
 
-        const totalInOut = [0, 0]
+        const totalInOut = [0, 0, 0]
 
         this.calculatePairPaths(token0, token1, smartRouteDepth)
 
@@ -87,6 +88,8 @@ export default class Router {
             amountIn += sums[0]
             totalInOut[0] += sums[0]
             totalInOut[1] += sums[1]
+            totalInOut[2] += this.tempSwapReturns
+            this.tempSwapReturns = 0
 
             if (!this.#_VISITED_PATHS.includes(this.#_PRICED_PATHS[0])) {
                 this.#_VISITED_PATHS.push(this.#_PRICED_PATHS[0])
@@ -106,6 +109,12 @@ export default class Router {
     swapBestPath(amount, pricedPath) {
         if (!pricedPath) return
 
+        let localSwaps = []
+        // Due to inconsistent amounts swapped between pools, we have to calculate leftovers and return them to USDC pool by investor via direct sell
+        // Otherwise tokens leak - as intermediate leftovers are not regarded and get lost
+        // @TODO: Implement math formula for exactIn exactOut
+        let shouldExitEmpty = false
+
         const poolPairs = pricedPath.path
             .map((token, id) => [token, pricedPath.path[id + 1]])
             .filter((pair) => pair[0] && pair[1])
@@ -121,17 +130,51 @@ export default class Router {
         let allSums = { in: 0, out: 0 }
         let lastOutPrice = 0
         do {
+            // @TODO: This mess is probably not working well :<
             let pathSums = []
-            pools.forEach((pool, id) => {
+            for (const [id, pool] of pools.entries()) {
                 const zeroForOne =
                     pool.tokenLeft === poolPairs[id][0] ? true : false
                 const sum = pathSums.length
                     ? pathSums[id - 1][1]
                     : amount < this.#_DEFAULT_SWAP_SUM
                     ? amount
+                    : !pool.isQuest()
+                    ? 10
                     : this.#_DEFAULT_SWAP_SUM
                 const action = zeroForOne ? 'buy' : 'sell'
                 const poolSum = pool[action](sum)
+
+                if (sum !== poolSum[0] && pools.length > 1) {
+                    let diff = sum - Math.abs(poolSum[0])
+                    if (this.#isNearZero(diff) || isZero(diff)) {
+                        diff = 0
+                    }
+
+                    if (diff > 0) {
+                        const token = zeroForOne
+                            ? pool.tokenLeft
+                            : pool.tokenRight
+                        const usdcPool = this.#cachedPools
+                            .values()
+                            .find(
+                                (cp) => cp.isQuest() && cp.tokenRight === token
+                            )
+                        const [_, tOut] = usdcPool.sell(diff)
+
+                        this.tempSwapReturns += tOut
+                        this.#cachedPools.set(usdcPool.name, usdcPool)
+                    }
+                }
+
+                localSwaps.push({
+                    path: pricedPath.path,
+                    pool: pool.name,
+                    op: zeroForOne ? 'BOUGHT' : 'SOLD',
+                    in: Math.abs(poolSum[0]),
+                    out: Math.abs(poolSum[1])
+                })
+
                 if (this.#DEBUG) {
                     console.log(
                         '[actual-swap]',
@@ -143,28 +186,21 @@ export default class Router {
                     )
                 }
 
-                if (sum !== poolSum[0]) {
-                    console.log(
-                        '[smart-swap:error] Should return USDC or rewind or recalculate as injected amount doesnt equal to the actually consumed amount'
-                    )
-                }
-
                 if (poolSum[0] === 0 || poolSum[1] === 0) {
-                    console.log(
-                        '[smart-swap:error] Should revert, as exited mid-way'
-                    )
+                    this.revertPathSwaps(pathSums, localSwaps)
+                    localSwaps = []
+                    allSums = { in: 0, out: 0 }
+                    shouldExitEmpty = true
+                    break
                 }
 
                 pathSums.push(poolSum)
+            }
 
-                this.#_SWAPS.push({
-                    path: pricedPath.path,
-                    pool: pool.name,
-                    op: zeroForOne ? 'BOUGHT' : 'SOLD',
-                    in: Math.abs(poolSum[0]),
-                    out: Math.abs(poolSum[1])
-                })
-            })
+            if (shouldExitEmpty) {
+                break
+            }
+
             const inAmt = pathSums[0][0]
             const outAmt = pathSums[pathSums.length - 1][1]
 
@@ -191,7 +227,34 @@ export default class Router {
             lastOutPrice >= nextPricedPath.price
         )
 
+        localSwaps.forEach((swap) => {
+            this.#_SWAPS.push(swap)
+        })
+
         return [allSums.in, allSums.out]
+    }
+
+    // Should be moved to direct swap in the pools for exact amount back
+    revertPathSwaps(poolSum, swaps) {
+        // Nothing to revert
+        if (!poolSum.length) {
+            return
+        }
+
+        // remove last bad trade
+        swaps.pop()
+        const reverse = swaps.reverse()
+
+        let lastOut = reverse[0].out
+
+        reverse.forEach((swap) => {
+            const pool = this.#cachedPools.get(swap.pool)
+            const op = swap.op === 'SOLD' ? 'buy' : 'sell'
+
+            const [_, totalOut] = pool[op](lastOut)
+
+            lastOut = totalOut
+        })
     }
 
     drySwapForPricedPaths(paths) {
