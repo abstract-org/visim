@@ -42,7 +42,7 @@ describe('Position Manager', () => {
         expect(p50.liquidity).toBeCloseTo(38045.566)
         expect(p200.right).toBe(p2pp(10000))
         expect(p200.liquidity).toBeCloseTo(82357.834)
-        expect(p10k.right).toBe(p2pp(1000000))
+        expect(p10k.right).toBeCloseTo(p2pp(19.93156871359367), 0)
         expect(p10k.liquidity).toBeCloseTo(-148861.401)
     })
 

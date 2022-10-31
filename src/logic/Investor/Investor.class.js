@@ -53,11 +53,11 @@ export default class Investor {
     addBalance(tokenName, balance, msg = null) {
         if (isNaN(balance)) {
             console.log('Trying to pass NaN amount', tokenName, balance, msg)
-            return
+            return false
         }
 
         if (isZero(balance) || balance === 0) {
-            return
+            return false
         }
 
         if (!this.balances[tokenName]) {
@@ -69,9 +69,7 @@ export default class Investor {
                 `You don't have ${balance} of ${tokenName} to spend, remaining amount is ${this.balances[tokenName]}`,
                 msg
             )
-            throw new Error(
-                `You don't have ${balance} of ${tokenName} to spend, remaining amount is ${this.balances[tokenName]}: ${msg}`
-            )
+            return false
         }
 
         this.balances[tokenName] += balance
@@ -79,6 +77,8 @@ export default class Investor {
         if (isZero(this.balances[tokenName])) {
             this.balances[tokenName] = 0
         }
+
+        return true
     }
 
     removeLiquidity(pool, priceMin, priceMax, amountLeft = 0, amountRight = 0) {
