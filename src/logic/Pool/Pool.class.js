@@ -3,7 +3,7 @@ import sha256 from 'crypto-js/sha256'
 import HashMap from 'hashmap'
 
 import UsdcToken from '../Quest/UsdcToken.class'
-import { p2pp, pp2p } from '../Utils/logicUtils'
+import { isNearZero, isZero, p2pp, pp2p } from '../Utils/logicUtils'
 import globalConfig from '../config.global.json'
 
 // cosmetic constants to address left/right token balance
@@ -17,6 +17,8 @@ let pp
 
 export default class Pool {
     name
+
+    FRESH = true
 
     tokenLeft
     tokenRight
@@ -276,13 +278,10 @@ export default class Pool {
     }
 
     setActiveLiq(pMin, pMax) {
-        if (
-            this.curLiq === 0 &&
-            (pMin < this.curPrice || pMax > this.curPrice)
-        ) {
+        if (this.curPP !== p2pp(this.curPrice) && this.FRESH) {
             const ppNext =
-                pMax > this.curPrice ? this.seekActiveLiq('right') : null
-            const ppPrev = !ppNext ? this.seekActiveLiq('left') : null
+                pMin <= this.curPrice ? this.seekActiveLiq('left') : null
+            const ppPrev = !ppNext ? this.seekActiveLiq('right') : null
 
             const toPP = ppNext ? ppNext : ppPrev ? ppPrev : null
 
@@ -369,7 +368,8 @@ export default class Pool {
             curPP: this.curPP,
             totalSold: this.totalSold,
             volumeToken0: this.volumeToken0,
-            volumeToken1: this.volumeToken1
+            volumeToken1: this.volumeToken1,
+            FRESH: this.FRESH
         }
 
         const [totalIn, totalOut] = this.buy(amount, priceLimit, true)
@@ -411,7 +411,9 @@ export default class Pool {
 
             arrivedAtSqrtPrice += amount / curLiq
 
+            journal[i].push(`POOL ${this.name}`)
             journal[i].push(`Op: buy ${i}`)
+            journal[i].push(`Amount: ${amount}`)
             journal[i].push(`Current price point: ${this.curPP}`)
             journal[i].push(`Current price: ${this.curPrice}`)
             journal[i].push(`Current liquidity: ${curLiq}`)
@@ -532,6 +534,8 @@ export default class Pool {
             this.volumeToken1 += -totalAmountOut
         }
 
+        this.FRESH = false
+
         return [totalAmountIn, totalAmountOut]
     }
 
@@ -561,14 +565,15 @@ export default class Pool {
                     : pp2p(nextPricePoint)
 
             curLiq = this.curLiq
-            // newprice = curPrice + amount/curliq
 
             arrivedAtSqrtPrice =
                 curLiq / (amount + curLiq / Math.sqrt(this.curPrice))
 
             // arrived
 
-            journal[i].push(`Op: sell ${i}`)
+            journal[i].push(`POOL ${this.name}`)
+            journal[i].push(`i ${i}`)
+            journal[i].push(`Amount: ${amount}`)
             journal[i].push(
                 `Bottom (current for buy) price point: ${this.curPP} (${pp2p(
                     this.curPP
@@ -717,6 +722,8 @@ export default class Pool {
             }
         }
 
+        this.FRESH = false
+
         return [totalAmountIn, totalAmountOut]
     }
 
@@ -729,7 +736,8 @@ export default class Pool {
             curPP: this.curPP,
             totalSold: this.totalSold,
             volumeToken0: this.volumeToken0,
-            volumeToken1: this.volumeToken1
+            volumeToken1: this.volumeToken1,
+            FRESH: this.FRESH
         }
 
         const [totalIn, totalOut] = this.sell(amount, priceLimit, true)

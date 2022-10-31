@@ -291,7 +291,7 @@ describe('Money loss sanity tests', () => {
                 }
             })
 
-    fit('Generates investors', async () => {
+    it('Generates investors', async () => {
         const invAuthor = {
             ...invGen,
             dailySpawnProbability: 100,

@@ -5,6 +5,8 @@ import { invGen, questGen } from '../logic/Generators/initialState'
 import Investor from '../logic/Investor/Investor.class'
 import UsdcToken from '../logic/Quest/UsdcToken.class'
 import Router from '../logic/Router/Router.class'
+import { getPathActions, pp2p } from '../logic/Utils/logicUtils'
+import { getCP, getQP } from './helpers/getQuestPools'
 import { prepareCrossPools, preparePool } from './helpers/poolManager'
 
 let globalState = {
@@ -23,21 +25,80 @@ afterEach(() => {
     }
 })
 
-describe('Chunking amounts', () => {
-    it('Chunks normal amounts', () => {
-        const router = new Router()
+describe('Building routes', () => {
+    it('Builds correct direction of swap through path', () => {
+        // Assume path: START-AGORA-USDC
+        // Pools: [AGORA/START, USDC/AGORA] - AGORA was cited
+        const { quest: qSTART, pool: START } = getQP('START')
+        const { quest: qAGORA, pool: AGORA } = getQP('AGORA')
+        const { quest: qBISON, pool: BISON } = getQP('BISON')
+        const { crossPool: AGORA_START } = getCP(
+            qSTART,
+            qAGORA,
+            START,
+            AGORA,
+            0,
+            150
+        )
+        const { crossPool: AGORA_BISON } = getCP(
+            qAGORA,
+            qBISON,
+            AGORA,
+            BISON,
+            0,
+            150
+        )
 
-        const chunks = router.chunkAmountBy(100, 38)
-        expect(chunks.length).toBe(3)
-        expect(chunks[0]).toBe(38)
-        expect(chunks[chunks.length - 1]).toBe(24)
-    })
+        const pools = new HashMap()
+        const quests = new HashMap()
+        pools.set(AGORA.name, AGORA)
+        pools.set(START.name, START)
+        pools.set(BISON.name, BISON)
+        pools.set(AGORA_START.name, AGORA_START)
+        pools.set(AGORA_BISON.name, AGORA_BISON)
 
-    it('Chunks amounts below chunk size', () => {
-        const router = new Router()
+        quests.set(qSTART.name, qSTART)
+        quests.set(qAGORA.name, qAGORA)
+        quests.set(qBISON.name, qBISON)
+        quests.set('USDC', new UsdcToken())
 
-        const chunks = router.chunkAmountBy(30, 38)
-        expect(chunks[0]).toBe(30)
+        const router = new Router(quests, pools)
+
+        const path = ['START', 'AGORA', 'USDC']
+        const res = getPathActions(path, router)
+        expect(res.length).toBe(2)
+        expect(res[0].action).toBe('sell')
+        expect(res[1].action).toBe('sell')
+
+        const path2 = ['START', 'USDC']
+        const res2 = getPathActions(path2, router)
+        expect(res2.length).toBe(1)
+        expect(res2[0].action).toBe('sell')
+
+        const path3 = ['USDC', 'START']
+        const res3 = getPathActions(path3, router)
+        expect(res3.length).toBe(1)
+        expect(res3[0].action).toBe('buy')
+
+        const path4 = ['USDC', 'AGORA', 'START']
+        const res4 = getPathActions(path4, router)
+        expect(res4.length).toBe(2)
+        expect(res4[0].action).toBe('buy')
+        expect(res4[1].action).toBe('buy')
+
+        const path5 = ['USDC', 'BISON', 'AGORA', 'START']
+        const res5 = getPathActions(path5, router)
+        expect(res5.length).toBe(3)
+        expect(res5[0].action).toBe('buy')
+        expect(res5[1].action).toBe('buy')
+        expect(res5[2].action).toBe('buy')
+
+        const path6 = ['BISON', 'AGORA', 'START', 'USDC']
+        const res6 = getPathActions(path6, router)
+        expect(res6.length).toBe(3)
+        expect(res6[0].action).toBe('buy')
+        expect(res6[1].action).toBe('buy')
+        expect(res6[2].action).toBe('sell')
     })
 })
 
@@ -107,40 +168,6 @@ describe('Path finding', () => {
         expect(sums[0]).toBeCloseTo(-1000, 0)
         expect(sums[1]).toBeCloseTo(1527, 0) // was
     })
-
-    xit('Finds paths for pair', async () => {
-        const gen = new Generator()
-        const router = new Router()
-
-        const genDays = 20
-        const invAuthor = {
-            ...invGen,
-            dailySpawnProbability: 100,
-            invGenAlias: 'AUTHOR',
-            createQuest: 'AGORA',
-            initialBalance: 10000000
-        }
-        const queAuthor = {
-            ...questGen,
-            questGenAlias: 'AGORA',
-            initialAuthorInvest: 1000
-        }
-
-        const genManager = new Generator(
-            [invAuthor],
-            [queAuthor],
-            globalState.pools,
-            globalState.quests
-        )
-
-        for (let day = 1; day <= genDays; day++) {
-            await genManager.step(day)
-        }
-
-        globalState.pools = genManager.getPools()
-        globalState.quests = genManager.getQuests()
-        globalState.investors = genManager.getInvestors()
-    })
 })
 
 describe('Routing', () => {
@@ -170,6 +197,72 @@ describe('Routing', () => {
             tokenA: null
         }
     ]
+
+    xit('Proper selling in cross pools without violating price boundaries', () => {
+        // Assume path: USDC-Praseodymium (5)-AGORA-Praseodymium (3)
+        const { quest: qPRA3, pool: PRA3 } = getQP('Praseodymium (3)', 1000000)
+        const { quest: qPRA5, pool: PRA5 } = getQP('Praseodymium (5)', 1000000)
+        const { quest: qAGORA, pool: AGORA } = getQP('AGORA', 1000000)
+
+        AGORA.buy(25000)
+
+        AGORA.buy(555555)
+        PRA3.buy(1480)
+        PRA5.buy(5000)
+        PRA5.buy(650)
+
+        const { crossPool: AGORA_PRA3 } = getCP(
+            qPRA3,
+            qAGORA,
+            PRA3,
+            AGORA,
+            0,
+            50.025
+        )
+        const { crossPool: AGORA_PRA5 } = getCP(
+            qPRA5,
+            qAGORA,
+            PRA5,
+            AGORA,
+            0,
+            50.025
+        )
+
+        console.log(
+            AGORA_PRA3.name,
+            AGORA_PRA3.curPrice,
+            pp2p(AGORA_PRA3.curPP),
+            AGORA_PRA3.volumeToken0,
+            AGORA_PRA3.volumeToken1
+        )
+        console.log(AGORA_PRA3)
+        console.log(AGORA_PRA3.sell(40))
+        console.log(AGORA_PRA3.buy(40))
+        console.log(AGORA_PRA3.sell(40))
+        console.log(
+            AGORA_PRA3.name,
+            AGORA_PRA3.curPrice,
+            AGORA_PRA3.volumeToken0,
+            AGORA_PRA3.volumeToken1
+        )
+
+        const pools = new HashMap()
+        const quests = new HashMap()
+        pools.set(AGORA.name, AGORA)
+        pools.set(PRA3.name, PRA3)
+        pools.set(PRA5.name, PRA5)
+        pools.set(AGORA_PRA3.name, AGORA_PRA3)
+        pools.set(AGORA_PRA5.name, AGORA_PRA5)
+
+        quests.set(qPRA3.name, qPRA3)
+        quests.set(qAGORA.name, qAGORA)
+        quests.set(qPRA5.name, qPRA5)
+        quests.set('USDC', new UsdcToken())
+
+        const router = new Router(quests, pools)
+
+        //console.log(router.smartSwap('USDC', 'Praseodymium (5)', 2000))
+    })
 
     it('Smart route and taking right amount in/out', () => {
         const creator = Investor.create('creator', 'creator', 10000)

@@ -194,7 +194,9 @@ class Generator {
             })
         )
 
-        await Promise.all(this.handlers)
+        await Promise.all(this.handlers).catch((reason) => {
+            console.log(`Rejectd promise: ${reason}`)
+        })
 
         return this.#dayData[day]
     }
@@ -848,11 +850,9 @@ class Generator {
             investor,
             router.getSwaps(),
             day,
-            `Invest directly in ${conf.includeSingleName}, smart routed ${
-                router.getPaths().length
-            } times / total in ${totalIn.toFixed(
-                3
-            )}, total out ${totalOut.toFixed(
+            `Invest directly in ${
+                conf.includeSingleName
+            } / total in ${totalIn.toFixed(3)}, total out ${totalOut.toFixed(
                 3
             )}, initial amount in ${spendAmount}`
         )
@@ -957,9 +957,9 @@ class Generator {
                 investor,
                 router.getSwaps(),
                 day,
-                `Buying top gainer ${pool.tokenRight}, smart routed ${
-                    router.getPaths().length
-                } times / total in ${totalIn.toFixed(
+                `Buying top gainer ${
+                    pool.tokenRight
+                } / total in ${totalIn.toFixed(
                     3
                 )}, total out ${totalOut.toFixed(
                     3
@@ -1231,9 +1231,7 @@ class Generator {
                     debugStr === 'inc' ? 'increased' : 'decreased'
                 } ${
                     swapDir === 'buy' ? pool.tokenLeft : pool.tokenRight
-                } in price, smart routed ${
-                    router.getPaths().length
-                } times / total in ${totalIn.toFixed(
+                } in price / total in ${totalIn.toFixed(
                     3
                 )}, total out ${totalOut.toFixed(
                     3
@@ -1361,9 +1359,7 @@ class Generator {
                             day,
                             `Withdrawing ${
                                 conf.valueSellAmount
-                            } ${quest}, smart routed ${
-                                router.getPaths().length
-                            } times / total in ${totalIn.toFixed(
+                            } ${quest} / total in ${totalIn.toFixed(
                                 3
                             )}, total out ${totalOut.toFixed(
                                 3
