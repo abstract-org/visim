@@ -68,3 +68,38 @@ export const appendIfNotExist = (arr, item) => {
         ? arr.concat([item])
         : arr
 }
+
+export const isWebDebug = () => {
+    return 'debug' === window.location.search.replace(/\?/, '')
+}
+
+const escapeRegExp = (text) => {
+    return text.replace(/[-[\]{}()*+?.,\\^$|#]/g, '\\$&')
+}
+
+export const getHighlightedText = (
+    text = '',
+    highlight = 'none',
+    hlStyle = { fontWeight: 'bold' }
+) => {
+    // Split on highlight term and include term into parts, ignore case
+    const hlPattern = escapeRegExp(highlight)
+    const parts = text.split(new RegExp(`(${hlPattern})`, 'gi'))
+    return (
+        <span>
+            {' '}
+            {parts.map((part, i) => (
+                <span
+                    key={i}
+                    style={
+                        part.toLowerCase() === highlight.toLowerCase()
+                            ? hlStyle
+                            : {}
+                    }
+                >
+                    {part}
+                </span>
+            ))}{' '}
+        </span>
+    )
+}
