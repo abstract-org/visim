@@ -306,6 +306,7 @@ describe('Basic math works', () => {
         console.log(AGORA_PRA3)
         console.log(AGORA_PRA3.sell(100))
         console.log(AGORA_PRA3.buy(100))
+        // @TODO: Vitaliy do investor.citeQuest here again on AGORA_PRA3
         //console.log(AGORA_PRA3.sell(100))
         console.log(AGORA_PRA3)
         console.log(
