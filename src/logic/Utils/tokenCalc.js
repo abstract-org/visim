@@ -44,25 +44,27 @@ export const totalLockedTokens = (quests, pools) =>
 export const totalWalletsUSDC = (investors) =>
     investors.reduce((acc, inv) => acc + inv.balances['USDC'], 0)
 
-export const totalWalletsTokens = (quests, investors) =>
+export const totalWalletsTokensWith0 = (quests, investors) =>
     quests
         .filter((x) => !(x instanceof UsdcToken))
         .map((q) => {
-            if (investors) {
-                let totalQTokens = 0
+            const total =
+                investors &&
+                Array.isArray(investors) &&
+                investors.reduce(
+                    (sum, inv) =>
+                        inv.balances[q.name] ? sum + inv.balances[q.name] : sum,
+                    0
+                )
 
-                investors.forEach((inv) => {
-                    totalQTokens += inv.balances[q.name]
-                        ? inv.balances[q.name]
-                        : 0
-                })
-
-                return { name: q.name, total: totalQTokens }
+            return {
+                name: q.name,
+                total: total || 0
             }
-
-            return null
         })
-        .filter((x) => x)
+
+export const totalWalletsTokens = (quests, investors) =>
+    totalWalletsTokensWith0(quests, investors).filter((x) => x.total !== 0)
 
 export const totalMissingUSDC = (investors, pools) =>
     totalIssuedUSDC(investors) +
