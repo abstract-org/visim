@@ -5,8 +5,10 @@ import HashMap from 'hashmap'
 import Investor from '../logic/Investor/Investor.class'
 import UsdcToken from '../logic/Quest/UsdcToken.class'
 import Router from '../logic/Router/Router.class'
+import { pp2p } from '../logic/Utils/logicUtils'
+import { getCP, getQP } from './helpers/getQuestPools'
 
-describe('Uniswap Math formulas', () => {
+describe.skip('Uniswap Math formulas', () => {
     it('constant product value is maintained when trading', () => {
         const x = 2000
         const y = 300
@@ -113,5 +115,249 @@ describe('Uniswap Math formulas', () => {
 
         expect(liquidity0).toBeCloseTo(5050.505)
         expect(liquidity1).toBe(NaN)
+    })
+})
+
+describe('Basic math works', () => {
+    let quests
+    let pools
+
+    beforeEach(() => {
+        quests = new HashMap()
+        pools = new HashMap()
+    })
+
+    it('Buys out the entire quest  pool without triggering surplus function', () => {
+        const { pool } = getQP('AGORA', 1000000)
+
+        const res = pool.buy(1000000000)
+        expect(res[0]).toBeCloseTo(-133426696.95, 2)
+        expect(res[1]).toBe(20000)
+    })
+
+    it('Sells out the entire quest  pool without triggering surplus function', () => {
+        const { pool } = getQP('AGORA', 1000000)
+
+        pool.buy(1000000000)
+        const res = pool.sell(1000000000)
+        expect(res[0]).toBeCloseTo(-20000)
+        expect(res[1]).toBeCloseTo(133426696.95, 2)
+    })
+
+    it('Buys out the entire quest pool without triggering surplus function via smart route', () => {
+        const { quest, pool } = getQP('AGORA')
+
+        quests.set(quest.name, quest)
+        quests.set('USDC', new UsdcToken())
+
+        pools.set(pool.name, pool)
+
+        const router = new Router(quests, pools)
+        const res = router.smartSwap('USDC', 'AGORA', 1000000000)
+
+        expect(res[0]).toBeCloseTo(-13342669.695, 3)
+        expect(res[1]).toBeCloseTo(20000)
+    })
+
+    it('Sells out the entire quest pool without triggering surplus function via smart route', () => {
+        const { quest, pool } = getQP('AGORA')
+
+        quests.set(quest.name, quest)
+        quests.set('USDC', new UsdcToken())
+
+        pools.set(pool.name, pool)
+
+        const router = new Router(quests, pools)
+
+        router.smartSwap('USDC', 'AGORA', 1000000000)
+        const res = router.smartSwap('AGORA', 'USDC', 1000000000)
+
+        expect(res[0]).toBeCloseTo(-20000, 0)
+        expect(res[1]).toBeCloseTo(13342669.695, 3)
+    })
+
+    it('Buys out the entire cross pool with 1:1 price', () => {
+        const { quest: qAGORA, pool: AGORA } = getQP('AGORA')
+        const { quest: qTEST, pool: TEST } = getQP('TEST')
+
+        const { crossPool: AGORA_TEST } = getCP(
+            qTEST,
+            qAGORA,
+            TEST,
+            AGORA,
+            0,
+            50.5
+        )
+
+        const res = AGORA_TEST.buy(1000)
+        expect(res[0]).toBeCloseTo(-71.417, 2)
+        expect(res[1]).toBeCloseTo(50.5, 1)
+    })
+
+    it('Sells out the entire cross pool with 1:1 price', () => {
+        const { quest: qAGORA, pool: AGORA } = getQP('AGORA')
+        const { quest: qTEST, pool: TEST } = getQP('TEST')
+
+        const { crossPool: AGORA_TEST } = getCP(
+            qTEST,
+            qAGORA,
+            TEST,
+            AGORA,
+            0,
+            50.5
+        )
+
+        AGORA_TEST.buy(1000)
+        const res = AGORA_TEST.sell(1000)
+        expect(res[0]).toBeCloseTo(-50.5, 1)
+        expect(res[1]).toBeCloseTo(71.417, 2)
+    })
+
+    it('Doesnt buy anything at the end of the quest pool', () => {})
+    it('Doesnt buy anything at the end of the cross pool with price 1:1 pool', () => {})
+    it('Doesnt buy anything at the end of the cross pool with cited higher than citing pool', () => {})
+    it('Doesnt buy anything at the end of the cross pool with citing higher than cited pool', () => {})
+
+    it('Doesnt sell anything at the end of the quest pool', () => {})
+    it('Doesnt sell anything at the end of the cross pool with price 1:1 pool', () => {})
+    it('Doesnt sell anything at the end of the cross pool with cited higher than citing pool', () => {})
+    it('Doesnt sell anything at the end of the cross pool with citing higher than cited pool', () => {})
+
+    it('Doesnt buy anything at the end of the quest pool via smart route', () => {})
+    it('Doesnt buy anything at the end of the cross pool with price 1:1 pool via smart route', () => {})
+    it('Doesnt buy anything at the end of the cross pool with cited higher than citing pool via smart route', () => {})
+    it('Doesnt buy anything at the end of the cross pool with citing higher than cited pool via smart route', () => {})
+
+    it('Doesnt sell anything at the end of the quest pool via smart route', () => {})
+    it('Doesnt sell anything at the end of the cross pool with price 1:1 pool via smart route', () => {})
+    it('Doesnt sell anything at the end of the cross pool with cited higher than citing pool via smart route', () => {})
+    it('Doesnt sell anything at the end of the cross pool with citing higher than cited pool via smart route', () => {})
+
+    it('Buys out the entire cross pool with price 1:1 via smart route', () => {
+        const { quest: qAGORA, pool: AGORA } = getQP('AGORA')
+        const { quest: qTEST, pool: TEST } = getQP('TEST')
+
+        const { crossPool: AGORA_TEST } = getCP(
+            qTEST,
+            qAGORA,
+            TEST,
+            AGORA,
+            0,
+            50.5
+        )
+
+        quests.set(qAGORA.name, qAGORA)
+        quests.set(qTEST.name, qTEST)
+        quests.set('USDC', new UsdcToken())
+
+        pools.set(AGORA.name, AGORA)
+        pools.set(TEST.name, TEST)
+        pools.set(AGORA_TEST.name, AGORA_TEST)
+
+        const router = new Router(quests, pools)
+
+        const res = router.smartSwap('AGORA', 'TEST', 1000)
+        expect(res[0]).toBeCloseTo(-71.417, 2)
+        expect(res[1]).toBeCloseTo(50.5, 1)
+    })
+
+    fit('Sells out the entire cross pool with price 1:1 via smart route', () => {
+        // Assume path: USDC-Praseodymium (5)-AGORA-Praseodymium (3)
+        const { quest: qPRA3, pool: PRA3 } = getQP('TEST_1', 1000000)
+        const { quest: qPRA5, pool: PRA5 } = getQP('TEST_2', 1000000)
+        const { quest: qAGORA, pool: AGORA } = getQP('AGORA', 1000000)
+
+        AGORA.buy(25000)
+
+        AGORA.buy(555555)
+        PRA3.buy(1480)
+        PRA5.buy(5000)
+        PRA5.buy(650)
+
+        const { crossPool: AGORA_PRA3 } = getCP(
+            qPRA3,
+            qAGORA,
+            PRA3,
+            AGORA,
+            0,
+            50.025
+        )
+        const { crossPool: AGORA_PRA5 } = getCP(
+            qPRA5,
+            qAGORA,
+            PRA5,
+            AGORA,
+            0,
+            50.025
+        )
+
+        console.log(
+            AGORA_PRA3.name,
+            AGORA_PRA3.curPrice,
+            pp2p(AGORA_PRA3.curPP),
+            AGORA_PRA3.volumeToken0,
+            AGORA_PRA3.volumeToken1
+        )
+        console.log(AGORA_PRA3)
+        console.log(AGORA_PRA3.sell(40))
+        console.log(AGORA_PRA3.buy(40))
+        console.log(AGORA_PRA3.sell(40))
+        console.log(
+            AGORA_PRA3.name,
+            AGORA_PRA3.curPrice,
+            AGORA_PRA3.volumeToken0,
+            AGORA_PRA3.volumeToken1
+        )
+
+        const pools = new HashMap()
+        const quests = new HashMap()
+        pools.set(AGORA.name, AGORA)
+        pools.set(PRA3.name, PRA3)
+        pools.set(PRA5.name, PRA5)
+        pools.set(AGORA_PRA3.name, AGORA_PRA3)
+        pools.set(AGORA_PRA5.name, AGORA_PRA5)
+
+        quests.set(qPRA3.name, qPRA3)
+        quests.set(qAGORA.name, qAGORA)
+        quests.set(qPRA5.name, qPRA5)
+        quests.set('USDC', new UsdcToken())
+
+        const router = new Router(quests, pools)
+
+        //console.log(router.smartSwap('USDC', 'Praseodymium (5)', 2000))
+    })
+
+    fit('After opening a position on drained cross pool it opens with correct price range', () => {})
+
+    it('When selling out drained pool it correctly sets active position', () => {
+        expect(0).toBe(1)
+    })
+
+    it('Left position - When opening a new position with lower priceMin than curPrice and price shift is free - do the change to another active liquidity', () => {
+        expect(0).toBe(1)
+    })
+
+    it('Right position - When opening a new position with lower priceMin than curPrice and price shift is free - do the change to another active liquidity', () => {
+        expect(0).toBe(1)
+    })
+
+    it('Never sells tokens that do not exist in the pool', () => {
+        expect(0).toBe(1)
+    })
+
+    it('Never consumes more than it can exchange for during swap', () => {
+        expect(0).toBe(1)
+    })
+
+    it('Properly exists when 0 is passed to buy/sell', () => {
+        expect(0).toBe(1)
+    })
+
+    it('Properly exists when NaN is passed to buy/sell', () => {
+        expect(0).toBe(1)
+    })
+
+    it('Properly exists when during buy/sell calculation it got to NaN', () => {
+        expect(0).toBe(1)
     })
 })
