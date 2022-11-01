@@ -304,6 +304,8 @@ describe('Basic math works', () => {
             AGORA_PRA3.volumeToken1
         )
         console.log(AGORA_PRA3)
+        // @TODO: If this returns anything higher than [0,0] -> this is the BUG
+        // Comment out Pool.setActiveLiq function to reproduce
         console.log(AGORA_PRA3.sell(100))
         console.log(AGORA_PRA3.buy(100))
         // @TODO: Vitaliy do investor.citeQuest here again on AGORA_PRA3
