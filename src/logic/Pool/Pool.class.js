@@ -272,7 +272,7 @@ export default class Pool {
             amounts[1] = amounts[1] - amounts[0]
         }
 
-        //this.setActiveLiq(priceMin, priceMax)
+        this.setActiveLiq(priceMin, priceMax)
 
         return amounts
     }
@@ -280,27 +280,29 @@ export default class Pool {
     // USDC-TOKEN_A -> open pos (1-5000,20-5000...) x 20,000
     // TOKEN_A-TOKEN_B -> citation(open pos) -> (1-2, 50 tokenB) crossPool === (0)CITED/CITING(50, 1-2)
     setActiveLiq(pMin, pMax) {
-        let shouldSeek = false
-        if (this.curLeft === -Infinity && this.curPP === p2pp(this.curPrice)) {
-            const drySell = this.drySell(1000000000)
-            shouldSeek =
-                (isNaN(drySell[0]) && isNaN(drySell[1])) ||
-                (drySell[0] === 0 && drySell[1] === 0)
-        } else if (
-            this.curRight === Infinity &&
-            this.curPP === p2pp(this.curPrice)
-        ) {
-            const dryBuy = this.dryBuy(1000000000)
-            shouldSeek =
-                (isNaN(dryBuy[0]) && isNaN(dryBuy[1])) ||
-                (dryBuy[0] === 0 && dryBuy[1] === 0)
-        }
+        //let shouldSeek = false
+        // if (this.curLeft === -Infinity && this.curPP === p2pp(this.curPrice)) {
+        //     const drySell = this.drySell(1000000000)
+        //     shouldSeek =
+        //         (isNaN(drySell[0]) && isNaN(drySell[1])) ||
+        //         (drySell[0] === 0 && drySell[1] === 0)
+        // } else if (
+        //     this.curRight === Infinity &&
+        //     this.curPP === p2pp(this.curPrice)
+        // ) {
+        //     const dryBuy = this.dryBuy(1000000000)
+        //     shouldSeek =
+        //         (isNaN(dryBuy[0]) && isNaN(dryBuy[1])) ||
+        //         (dryBuy[0] === 0 && dryBuy[1] === 0)
+        // }
 
-        if (
-            (this.curLiq === 0 && this.FRESH) ||
-            (shouldSeek && this.curPrice > pMin) ||
-            (shouldSeek && this.curPrice > pMax)
-        ) {
+        // if (
+        //     (this.curLiq === 0 && this.FRESH) ||
+        //     (shouldSeek && this.curPrice > pMin) ||
+        //     (shouldSeek && this.curPrice > pMax)
+        // ) {
+
+        if (pp2p(this.curPP) !== this.curPrice) {
             const ppNext =
                 pMin <= this.curPrice ? this.seekActiveLiq('left') : null
             const ppPrev = !ppNext ? this.seekActiveLiq('right') : null
@@ -444,7 +446,7 @@ export default class Pool {
             )
             journal[i].push('---')
             journal[i].push(
-                `Next price point: ${nextPricePoint} (${Math.sqrt(
+                `Next price point: log2(${nextPricePoint}) dec(${pp2p(
                     nextPricePoint
                 )})`
             )
@@ -561,6 +563,7 @@ export default class Pool {
         return [totalAmountIn, totalAmountOut]
     }
 
+    // @TODO: Save pool state (all 5 variables) and if you cannot sell anything, restore state
     sell(amount, priceLimit = null, dry = false) {
         let totalAmountIn = 0,
             totalAmountOut = 0
@@ -594,7 +597,7 @@ export default class Pool {
             // arrived
 
             journal[i].push(`POOL ${this.name}`)
-            journal[i].push(`i ${i}`)
+            journal[i].push(`Op (sell) ${i}`)
             journal[i].push(`Amount: ${amount}`)
             journal[i].push(
                 `Bottom (current for buy) price point: ${this.curPP} (${pp2p(
