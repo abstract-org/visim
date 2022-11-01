@@ -6,6 +6,7 @@ import Investor from '../logic/Investor/Investor.class'
 import UsdcToken from '../logic/Quest/UsdcToken.class'
 import Router from '../logic/Router/Router.class'
 import { pp2p } from '../logic/Utils/logicUtils'
+import globalConfig from '../logic/config.global.json'
 import { getCP, getQP } from './helpers/getQuestPools'
 
 describe.skip('Uniswap Math formulas', () => {
@@ -291,6 +292,10 @@ describe('Basic math works', () => {
             50.025
         )
 
+        globalConfig.JOURNAL = true
+        globalConfig.JOURNAL_BUY = true
+        globalConfig.JOURNAL_SELL = true
+
         console.log(
             AGORA_PRA3.name,
             AGORA_PRA3.curPrice,
@@ -299,15 +304,20 @@ describe('Basic math works', () => {
             AGORA_PRA3.volumeToken1
         )
         console.log(AGORA_PRA3)
-        console.log(AGORA_PRA3.sell(40))
-        console.log(AGORA_PRA3.buy(40))
-        console.log(AGORA_PRA3.sell(40))
+        console.log(AGORA_PRA3.sell(100))
+        console.log(AGORA_PRA3.buy(100))
+        //console.log(AGORA_PRA3.sell(100))
+        console.log(AGORA_PRA3)
         console.log(
             AGORA_PRA3.name,
             AGORA_PRA3.curPrice,
             AGORA_PRA3.volumeToken0,
             AGORA_PRA3.volumeToken1
         )
+
+        globalConfig.JOURNAL = false
+        globalConfig.JOURNAL_BUY = true
+        globalConfig.JOURNAL_SELL = true
 
         const pools = new HashMap()
         const quests = new HashMap()
