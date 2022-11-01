@@ -208,3 +208,6 @@ export const getPathActions = (path, router) => {
 
     return out
 }
+
+export const hashmapToObj = (hm) =>
+    hm.entries().reduce((o, [k, v]) => ({ ...o, [k]: v }), {})
