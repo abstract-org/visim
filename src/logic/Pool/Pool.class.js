@@ -272,13 +272,35 @@ export default class Pool {
             amounts[1] = amounts[1] - amounts[0]
         }
 
-        this.setActiveLiq(priceMin, priceMax)
+        //this.setActiveLiq(priceMin, priceMax)
 
         return amounts
     }
 
+    // USDC-TOKEN_A -> open pos (1-5000,20-5000...) x 20,000
+    // TOKEN_A-TOKEN_B -> citation(open pos) -> (1-2, 50 tokenB) crossPool === (0)CITED/CITING(50, 1-2)
     setActiveLiq(pMin, pMax) {
-        if (this.curPP !== p2pp(this.curPrice) && this.FRESH) {
+        let shouldSeek = false
+        if (this.curLeft === -Infinity && this.curPP === p2pp(this.curPrice)) {
+            const drySell = this.drySell(1000000000)
+            shouldSeek =
+                (isNaN(drySell[0]) && isNaN(drySell[1])) ||
+                (drySell[0] === 0 && drySell[1] === 0)
+        } else if (
+            this.curRight === Infinity &&
+            this.curPP === p2pp(this.curPrice)
+        ) {
+            const dryBuy = this.dryBuy(1000000000)
+            shouldSeek =
+                (isNaN(dryBuy[0]) && isNaN(dryBuy[1])) ||
+                (dryBuy[0] === 0 && dryBuy[1] === 0)
+        }
+
+        if (
+            (this.curLiq === 0 && this.FRESH) ||
+            (shouldSeek && this.curPrice > pMin) ||
+            (shouldSeek && this.curPrice > pMax)
+        ) {
             const ppNext =
                 pMin <= this.curPrice ? this.seekActiveLiq('left') : null
             const ppPrev = !ppNext ? this.seekActiveLiq('right') : null
