@@ -20,7 +20,6 @@ import {
     deleteStateInvestorConfig,
     deleteStateQuestConfig,
     getMissingQuestNames,
-    getUniqArrByKey,
     isNumericString,
     updateStateInvestorConfig,
     updateStateQuestConfig
