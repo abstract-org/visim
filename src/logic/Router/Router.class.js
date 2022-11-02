@@ -201,6 +201,8 @@ export default class Router {
             allSums.in += inAmt
             allSums.out += outAmt
             amount += inAmt
+
+            this._SWAPS.push(...localSwaps)
             localSwaps = []
         } while (
             (!isNaN(lastOutPrice) || lastOutPrice > 0) &&
@@ -208,10 +210,6 @@ export default class Router {
             nextPricedPath &&
             lastOutPrice > nextPricedPath.price
         )
-
-        localSwaps.forEach((swap) => {
-            this._SWAPS.push(swap)
-        })
 
         return [allSums.in, allSums.out]
     }
