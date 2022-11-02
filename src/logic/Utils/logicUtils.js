@@ -208,12 +208,3 @@ export const getPathActions = (path, router) => {
 
     return out
 }
-
-export const getUniqArrByKey = (objArr, byKey) => {
-    return objArr
-        .filter(
-            (value, index, self) =>
-                index === self.findIndex((t) => t[byKey] === value[byKey])
-        )
-        .map((i) => i[byKey])
-}
