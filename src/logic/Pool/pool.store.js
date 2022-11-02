@@ -35,9 +35,7 @@ const usePoolStore = create(
                 set(
                     produce((state) => {
                         swaps.forEach((swap) => {
-                            if (!state.swaps.includes(swap)) {
-                                state.swaps.push(swap)
-                            }
+                            state.swaps.push(swap)
                         })
                     })
                 ),

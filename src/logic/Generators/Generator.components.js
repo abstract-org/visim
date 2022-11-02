@@ -351,7 +351,7 @@ export const GeneratorRunner = () => {
                 stepData.actions.filter((a) => boughtSoldArr.includes(a.action))
             )
 
-            await genManager.sleep(150)
+            await genManager.sleep(50)
             setDay(day)
         }
         setPassedDays(passedDays + genDays)

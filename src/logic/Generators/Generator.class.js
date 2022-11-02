@@ -116,7 +116,7 @@ class Generator {
             this.#_OPS_TIME[funcName].timeStart = time
         } else {
             const time = performance.now()
-            this.#_OPS_TIME[funcName].time =
+            this.#_OPS_TIME[funcName].time +=
                 time - this.#_OPS_TIME[funcName].timeStart
             this.#_OPS_TIME[funcName].timeStart = 0
         }

@@ -24,9 +24,7 @@ const useLogsStore = create(
                 set(
                     produce((state) => {
                         logs.forEach((log) => {
-                            if (!state.logObjs.includes(log)) {
-                                state.logObjs.push(log)
-                            }
+                            state.logObjs.push(log)
                         })
                     })
                 ),

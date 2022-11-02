@@ -1,7 +1,6 @@
 import { Chart } from 'primereact/chart'
 import React from 'react'
 
-import useLogsStore from '../logic/Logs/logs.store'
 import usePoolStore from '../logic/Pool/pool.store'
 import { swapLog } from '../logic/Utils/uiUtils'
 

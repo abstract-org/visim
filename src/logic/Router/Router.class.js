@@ -11,9 +11,8 @@ export default class Router {
     _PRICED_PATHS = []
     _SWAPS = []
     _PAIR_PATHS = {}
-    _DEFAULT_SWAP_SUM = 10
-    _SWAP_SUM_MAX_CHUNKS = 100
-    _SWAP_SUM_STEPPER = 10000
+    _DEFAULT_SWAP_SUM = 100
+    _SWAP_SUM = 100
 
     /* eslint-disable no-loop-func */
     _DEBUG = false
@@ -53,10 +52,10 @@ export default class Router {
             token1,
             smartRouteDepth
         )
-        if (amountIn > this._SWAP_SUM_STEPPER) {
-            this._DEFAULT_SWAP_SUM = amountIn / this._SWAP_SUM_MAX_CHUNKS
+        if (amountIn < this._DEFAULT_SWAP_SUM) {
+            this._SWAP_SUM = amountIn
         } else {
-            this._DEFAULT_SWAP_SUM = this._SWAP_SUM_MAX_CHUNKS
+            this._SWAP_SUM = this._DEFAULT_SWAP_SUM
         }
 
         const totalInOut = [0, 0, 0]
@@ -126,9 +125,9 @@ export default class Router {
             for (const [id, pact] of pathActions.entries()) {
                 const sum = pathSums.length
                     ? pathSums[id - 1][1]
-                    : amount < this._DEFAULT_SWAP_SUM
+                    : amount < this._SWAP_SUM
                     ? amount
-                    : this._DEFAULT_SWAP_SUM
+                    : this._SWAP_SUM
 
                 const { action, pool } = pact
                 const zeroForOne = action === 'buy'
