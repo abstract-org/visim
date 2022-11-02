@@ -291,7 +291,7 @@ describe('Money loss sanity tests', () => {
                 }
             })
 
-    it('Generates investors', async () => {
+    fit('Generates investors', async () => {
         const invAuthor = {
             ...invGen,
             dailySpawnProbability: 100,
@@ -301,8 +301,7 @@ describe('Money loss sanity tests', () => {
             valueSellPeriodDays: 0,
             valueSellAmount: 0,
             keepCreatingPeriodDays: 1,
-            keepCreatingQuests: 'RUTHER',
-            excludeSingleName: 'AGORA'
+            keepCreatingQuests: 'RUTHER'
         }
         const invInvestor = {
             ...invGen,
@@ -310,9 +309,10 @@ describe('Money loss sanity tests', () => {
             invGenAlias: 'TWODAY',
             invGenName: 'Investor',
             buySellPeriodDays: 1,
-            buyGainersFrequency: 3,
-            swapIncFrequency: 4,
-            swapDecFrequency: 2
+            buyGainersFrequency: 30,
+            swapIncFrequency: 7,
+            swapDecFrequency: 7,
+            excludeSingleName: 'AGORA'
         }
         const questModule = {
             ...questGen,
@@ -339,14 +339,12 @@ describe('Money loss sanity tests', () => {
             globalState.pools,
             globalState.quests,
             globalState.investors,
+            [],
             performanceTest
         )
 
         let dayPerf = []
-
-        const tot0 = performance.now()
-
-        const genDays = 15
+        const genDays = 10
         for (let day = 1; day <= genDays; day++) {
             console.log(`Simulating day ${day}`)
             const d0 = performance.now()
@@ -380,31 +378,24 @@ describe('Money loss sanity tests', () => {
         }
 
         const missingTokens = getTotalMissingTokens()
-
         console.log(missingTokens)
-
-        const tot1 = performance.now()
 
         globalState.pools = genManager.getPools()
         globalState.quests = genManager.getQuests()
         globalState.investors = genManager.getInvestors()
 
-        console.log(`||| TOTAL TRADING OPERATIONS: ${genManager.getOps()} |||`)
         console.log(`Days performance`)
         console.table(dayPerf)
 
-        //console.table(genManager.getOpsTime())
-
-        const totalTime = tot1 - tot0
-        const totMeasure = genManager.getOpsTime()
-        const totalMeasured = Object.keys(totMeasure).reduce((p, n, k) => {
-            return p + totMeasure[n].time
-        }, 0)
-
-        console.table({
-            total: (totalTime / 1000).toFixed(2),
-            totalTrade: (totalMeasured / 1000).toFixed(2)
-        })
+        console.table(
+            Object.entries(genManager.getOpsTime())
+                .map((ot) => ({
+                    f: ot[0],
+                    t: ot[1].time,
+                    o: ot[1].ops
+                }))
+                .sort((a, b) => b.t - a.t)
+        )
 
         console.table(
             globalState.investors

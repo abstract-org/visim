@@ -20,6 +20,16 @@ const useQuestStore = create(
             ...INITIAL_STATE,
             addQuest: (quest) =>
                 set((state) => ({ quests: [...state.quests, quest] })),
+            addMultipleQuests: (quests) =>
+                set(
+                    produce((state) => {
+                        quests.forEach((quest) => {
+                            if (!state.quests.includes(quest)) {
+                                state.quests.push(quest)
+                            }
+                        })
+                    })
+                ),
             addHumanQuest: (quest) =>
                 set((state) => ({
                     humanQuests: [...state.humanQuests, quest]
