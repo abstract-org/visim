@@ -148,11 +148,11 @@ export default class Router {
                     poolSum[1] === 0 ||
                     isZero(poolSum[1] || isNearZero(poolSum[1]))
                 ) {
-                    //this.revertPathSwaps(localSwaps)
-                    // localSwaps = []
-                    // allSums = { in: 0, out: 0 }
-                    // shouldExitEmpty = true
-                    // break
+                    this.revertPathSwaps(localSwaps)
+                    localSwaps = []
+                    allSums = { in: 0, out: 0 }
+                    shouldExitEmpty = true
+                    break
                 }
 
                 let diff = sum - Math.abs(poolSum[0])
@@ -163,7 +163,7 @@ export default class Router {
                         (!zeroForOne && !isNearZero(pool.volumeToken0)))
                 ) {
                     console.log('diff', diff)
-                    //this.returnSurplus(pool, zeroForOne, diff)
+                    this.returnSurplus(pool, zeroForOne, diff)
                 }
 
                 if (this._DEBUG) {
@@ -202,6 +202,7 @@ export default class Router {
             allSums.in += inAmt
             allSums.out += outAmt
             amount += inAmt
+            localSwaps = []
         } while (
             (!isNaN(lastOutPrice) || lastOutPrice > 0) &&
             !isZero(amount) &&
