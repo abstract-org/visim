@@ -73,6 +73,7 @@ const calculateMoneyLeaked = () => {
 
 export const MoneyLeakBar = (props) => {
     const swaps = usePoolStore((state) => state.swaps)
+    const logs = useLogsStore((state) => state.logObjs)
     const addLogObj = useLogsStore((state) => state.addLogObj)
     const [usdcLeaked, setUsdcLeaked] = useState(0)
     const [usdcLeakRatio, setUsdcLeakRatio] = useState(0)
@@ -92,23 +93,16 @@ export const MoneyLeakBar = (props) => {
             0.1 * Math.abs(prevUsdcLeakRatio) // TODO: define leak ratio deviation percent (10% now)
 
         if (isBigDeviation) {
-            const latestSwap = swaps.slice(-1)[0]
+            const latestLog = logs.slice(-1)[0]
             const logData = {
                 action: `LEAK`,
-                pool: latestSwap.pool,
-                price: latestSwap.price,
-                investorHash: latestSwap.investorHash,
-                totalAmountIn: latestSwap.totalAmountIn,
-                totalAmountOut: latestSwap.totalAmountOut,
-                mcap: latestSwap.mcap,
-                tvl: latestSwap.tvl,
-                paths: latestSwap.paths,
-                opName: `USDC leak increased from ${prevUsdcLeaked} to ${leakTotal.usdcLeaked} now.`
+                opName: `USDC leak increased from ${prevUsdcLeaked} to ${leakTotal.usdcLeaked} now.`,
+                ...latestLog
             }
-            addLogObj(logData)
-            globalState.logStore.logObjs.push(logData)
+            // addLogObj(logData)
+            // globalState.logStore.logObjs.push(logData)
         }
-    }, [swaps])
+    }, [swaps, logs])
 
     return (
         <React.Fragment>
@@ -132,7 +126,7 @@ export const MoneyLeakBar = (props) => {
 }
 
 const TokenButton = (props) => {
-    const swaps = usePoolStore((state) => state.swaps)
+    const logs = useLogsStore((state) => state.logObjs)
     const isMounted = useRef(null)
     const op = useRef(null)
 
@@ -148,68 +142,72 @@ const TokenButton = (props) => {
         if (ratio < 0.1) return 'danger'
     }
 
-    const filterQuestRelated = (swapsList, questName) => {
-        return swapsList
-            .filter((swap) => {
-                const isQuestInPool = swap.pool && swap.pool.includes(questName)
-                const isQuestInOpName = swap.opName.includes(questName)
-                const isQuestInPaths = swap.paths.includes(questName)
+    const filterQuestRelated = (logList, questName) => {
+        return logList
+            .map((log, idx) => ({ ...log, idx: idx }))
+            .filter((log) => {
+                const isQuestInPool = log.pool?.includes(questName)
+                const isQuestInOpName = log.opName?.includes(questName)
+                const isQuestInPaths = log.paths?.includes(questName)
 
                 return isQuestInPool || isQuestInOpName || isQuestInPaths
             })
-            .slice(-10)
+        // .slice(-10)
     }
 
     return (
-        <Button
-            type="button"
-            label={props.label}
-            icon={props.icon}
-            onClick={(e) => op.current.toggle(e)}
-            aria-haspopup
-            aria-controls="overlay_panel"
-            className={`tip-button p-button-text p-button-sm pi-button-${getSeverity(
-                props.ratio
-            )}`}
-            tooltip={`Leaked value: ${
-                Math.abs(props.value) > 1
-                    ? props.value.toFixed(2)
-                    : props.value.toFixed(12)
-            }\nLeaked-to-Locked ratio: ${props.ratio?.toFixed(6) * 100}%`}
-            tooltipOptions={{
-                position: 'bottom',
-                mouseTrack: true,
-                mouseTrackTop: 15
-            }}
-        >
-            <Badge
-                value={nf.format(props.value.toFixed(2))}
-                severity={getSeverity(Math.abs(props.ratio))}
-            />
-            <Tooltip target=".tip-buton" mouseTrack mouseTrackLeft={10} />
-
+        <React.Fragment>
+            <Button
+                type="button"
+                label={props.label}
+                icon={props.icon}
+                onClick={(e) => op.current.toggle(e)}
+                aria-haspopup
+                aria-controls="overlay_panel"
+                className={`tip-button p-button-text p-button-sm pi-button-${getSeverity(
+                    props.ratio
+                )}`}
+                tooltip={`Leaked value: ${
+                    Math.abs(props.value) > 1
+                        ? props.value.toFixed(2)
+                        : props.value.toFixed(12)
+                }\nLeaked-to-Locked ratio: ${props.ratio?.toFixed(6) * 100}%`}
+                tooltipOptions={{
+                    position: 'bottom',
+                    mouseTrack: true,
+                    mouseTrackTop: 15
+                }}
+            >
+                <Badge
+                    value={nf.format(props.value.toFixed(2))}
+                    severity={getSeverity(Math.abs(props.ratio))}
+                />
+                <Tooltip target=".tip-buton" mouseTrack mouseTrackLeft={10} />
+            </Button>
             <OverlayPanel
                 ref={op}
+                dismissable
                 showCloseIcon
                 id="overlay_panel"
                 style={{ width: 'auto' }}
             >
-                <SwapLogTable
+                <QuestLogTable
                     currentQuest={props.label}
-                    data={filterQuestRelated(swaps, props.label)}
+                    data={filterQuestRelated(logs, props.label)}
                 />
             </OverlayPanel>
-        </Button>
+        </React.Fragment>
     )
 }
 
-const SwapLogTable = (props) => {
+const QuestLogTable = (props) => {
     const pathsBody = (rowData) => {
-        const pathNodes = rowData.paths.split('-')
+        const pathNodes = rowData.paths ? rowData.paths.split('-') : []
         return (
             <React.Fragment>
                 {pathNodes.map((currNode) => (
                     <div
+                        key={currNode}
                         style={
                             props.currentQuest === currNode
                                 ? {
@@ -234,6 +232,12 @@ const SwapLogTable = (props) => {
         return <span>{investorName}</span>
     }
 
+    const poolBody = (rowData) => {
+        return getHighlightedText(rowData.pool, props.currentQuest, {
+            // color: 'red',
+            fontWeight: 'bold'
+        })
+    }
     const opNameBody = (rowData) => {
         return getHighlightedText(rowData.opName, props.currentQuest, {
             color: 'red',
@@ -243,8 +247,19 @@ const SwapLogTable = (props) => {
 
     return (
         <div>
-            <DataTable value={props.data} stripedRows>
-                <Column field="pool" header="Pool" />
+            <DataTable
+                value={props.data}
+                stripedRows
+                sortMode="single"
+                sortOrder={-1}
+                sortField="idx"
+                paginator
+                rows={10}
+                size="small"
+            >
+                <Column field="idx" header="Block" sortable />
+                <Column field="day" header="Day" sortable />
+                <Column field="pool" header="Pool" body={poolBody} />
                 <Column field="price" header="Price" />
                 <Column
                     field="investorHash"
@@ -256,8 +271,8 @@ const SwapLogTable = (props) => {
                 <Column field="tvl" header="TVL" />
                 <Column field="totalAmountIn" header="Total In" />
                 <Column field="totalAmountOut" header="Total Out" />
+                <Column field="price" header="Price" />
                 <Column field="paths" header="Paths" body={pathsBody} />
-                <Column field="day" header="Day" />
                 <Column
                     field="opName"
                     header="Op name"
