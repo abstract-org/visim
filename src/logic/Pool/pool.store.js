@@ -19,18 +19,32 @@ const usePoolStore = create(
             ...INITIAL_STATE,
             addPool: (pool) =>
                 set((state) => ({ pools: [...state.pools, pool] })),
+            addMultiplePools: (pools) =>
+                set(
+                    produce((state) => {
+                        pools.forEach((pool) => {
+                            if (!state.pools.includes(pool)) {
+                                state.pools.push(pool)
+                            }
+                        })
+                    })
+                ),
             addSwap: (swap) =>
                 set((state) => ({ swaps: [...state.swaps, swap] })),
+            addMultipleSwaps: (swaps) =>
+                set(
+                    produce((state) => {
+                        swaps.forEach((swap) => {
+                            if (!state.swaps.includes(swap)) {
+                                state.swaps.push(swap)
+                            }
+                        })
+                    })
+                ),
             setActive: (pool) => set(() => ({ active: pool })),
             setSwapMode: (mode) => set((state) => ({ swapMode: mode })),
             override: (newData) =>
-                set(() => overrideState(get(), newData, INITIAL_STATE)),
-            addMultiplePools: (pools) =>
-                set(
-                    produce((state) => ({
-                        investors: [...state.pools, ...pools]
-                    }))
-                )
+                set(() => overrideState(get(), newData, INITIAL_STATE))
         }),
         devToolsOptions
     )

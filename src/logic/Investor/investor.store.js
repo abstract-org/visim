@@ -21,11 +21,15 @@ const useInvestorStore = create(
                         investors: [...state.investors, hash]
                     }))
                 ),
-            addMultipleInvestors: (hashes) =>
+            addMultipleInvestors: (investors) =>
                 set(
-                    produce((state) => ({
-                        investors: [...state.investors, ...hashes]
-                    }))
+                    produce((state) => {
+                        investors.forEach((investor) => {
+                            if (!state.investors.includes(investor)) {
+                                state.investors.push(investor)
+                            }
+                        })
+                    })
                 ),
             addInvestors: (investorsList) =>
                 set(

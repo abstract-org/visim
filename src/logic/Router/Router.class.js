@@ -11,7 +11,9 @@ export default class Router {
     _PRICED_PATHS = []
     _SWAPS = []
     _PAIR_PATHS = {}
-    _SWAP_SUM = 100
+    _DEFAULT_SWAP_SUM = 10
+    _SWAP_SUM_MAX_CHUNKS = 100
+    _SWAP_SUM_STEPPER = 10000
 
     /* eslint-disable no-loop-func */
     _DEBUG = false
@@ -51,7 +53,11 @@ export default class Router {
             token1,
             smartRouteDepth
         )
-        this._SWAP_SUM = amountIn < this._SWAP_SUM ? amountIn : this._SWAP_SUM
+        if (amountIn > this._SWAP_SUM_STEPPER) {
+            this._DEFAULT_SWAP_SUM = amountIn / this._SWAP_SUM_MAX_CHUNKS
+        } else {
+            this._DEFAULT_SWAP_SUM = this._SWAP_SUM_MAX_CHUNKS
+        }
 
         const totalInOut = [0, 0, 0]
 
@@ -69,24 +75,7 @@ export default class Router {
 
             if (!this._PRICED_PATHS.length) return totalInOut
 
-            if (
-                this._PRICED_PATHS.length === 1 &&
-                this._PRICED_PATHS[0].length === 2
-            ) {
-                const token0 = this._PRICED_PATHS[0][0]
-                const token1 = this._PRICED_PATHS[0][1]
-
-                const pool = this.getPoolByTokens(token0, token1)
-
-                if (pool.isQuest()) {
-                    //
-                }
-            }
-
-            const sums = this.swapBestPath(
-                this._SWAP_SUM,
-                this._PRICED_PATHS[0]
-            )
+            const sums = this.swapBestPath(amountIn, this._PRICED_PATHS[0])
 
             if (this._DEBUG) {
                 console.log(
@@ -128,27 +117,23 @@ export default class Router {
             : null
         let allSums = { in: 0, out: 0 }
         let lastOutPrice = 0
-        let sum = amount
 
         const pathActions = getPathActions(pricedPath.path, this)
 
         do {
             let pathSums = []
-            for (const [_, pact] of pathActions.entries()) {
+
+            for (const [id, pact] of pathActions.entries()) {
+                const sum = pathSums.length
+                    ? pathSums[id - 1][1]
+                    : amount < this._DEFAULT_SWAP_SUM
+                    ? amount
+                    : this._DEFAULT_SWAP_SUM
+
                 const { action, pool } = pact
                 const zeroForOne = action === 'buy'
 
                 const poolSum = pool[action](sum)
-
-                let diff = sum - Math.abs(poolSum[0])
-                if (
-                    !isNearZero(diff) &&
-                    !isZero(diff) &&
-                    ((zeroForOne && !isNearZero(pool.volumeToken1)) ||
-                        (!zeroForOne && !isNearZero(pool.volumeToken0)))
-                ) {
-                    this.returnSurplus(pool, zeroForOne, diff)
-                }
 
                 localSwaps.push({
                     path: pricedPath.path,
@@ -157,6 +142,29 @@ export default class Router {
                     in: Math.abs(poolSum[0]),
                     out: Math.abs(poolSum[1])
                 })
+
+                if (
+                    poolSum[0] === 0 ||
+                    poolSum[1] === 0 ||
+                    isZero(poolSum[1] || isNearZero(poolSum[1]))
+                ) {
+                    //this.revertPathSwaps(localSwaps)
+                    // localSwaps = []
+                    // allSums = { in: 0, out: 0 }
+                    // shouldExitEmpty = true
+                    // break
+                }
+
+                let diff = sum - Math.abs(poolSum[0])
+                if (
+                    !isNearZero(diff) &&
+                    !isZero(diff) &&
+                    ((zeroForOne && !isNearZero(pool.volumeToken1)) ||
+                        (!zeroForOne && !isNearZero(pool.volumeToken0)))
+                ) {
+                    console.log('diff', diff)
+                    //this.returnSurplus(pool, zeroForOne, diff)
+                }
 
                 if (this._DEBUG) {
                     const tokenFor = !zeroForOne
@@ -175,26 +183,11 @@ export default class Router {
                     )
                 }
 
-                if (
-                    (poolSum[0] === 0 || poolSum[1] === 0) &&
-                    pathSums.length > 0
-                ) {
-                    this.revertPathSwaps(localSwaps)
-                    localSwaps = []
-                    allSums = { in: 0, out: 0 }
-                    shouldExitEmpty = true
-                    break
-                }
-
-                if (Math.abs(poolSum[0]) > 0 && Math.abs(poolSum[1]) > 0) {
-                    sum = Math.abs(poolSum[1])
-                }
-
                 pathSums.push(poolSum)
             }
 
             if (shouldExitEmpty) {
-                break
+                return [0, 0]
             }
 
             const inAmt = pathSums[0][0]
@@ -229,6 +222,7 @@ export default class Router {
         const usdcPool = this._cachedPools
             .values()
             .find((cp) => cp.isQuest() && cp.tokenRight === token)
+        console.log(token, zeroForOne, usdcPool.name, diff)
         const [_, tOut] = usdcPool.sell(diff)
 
         this.tempSwapReturns += tOut
@@ -241,19 +235,13 @@ export default class Router {
      * @returns null
      */
     revertPathSwaps(swaps) {
-        // remove last bad trade (the one triggering the revert with [0,0] result as we can't "revert it")
         swaps.pop()
         const reverse = swaps.reverse()
-
-        let lastOut = reverse[0].out
 
         reverse.forEach((swap) => {
             const pool = this._cachedPools.get(swap.pool)
             const op = swap.op === 'SOLD' ? 'buy' : 'sell'
-
-            const [_, totalOut] = pool[op](lastOut)
-
-            lastOut = totalOut
+            pool[op](swap.out)
         })
     }
 
@@ -272,15 +260,12 @@ export default class Router {
                 continue
             }
 
-            // USDC in -100, AGORA 20
-
             const sums = [sumsTotal[0][0], sumsTotal[sumsTotal.length - 1][1]]
 
             if (sums[0] === 0 || sums[1] === 0) {
                 continue
             }
 
-            // outPrice = 20/100
             const outPrice = this.getOutInPrice(sums[0], sums[1])
 
             pathPrices.push({
@@ -326,7 +311,6 @@ export default class Router {
             }
 
             amountIn = Math.abs(sums[1])
-            // USDC-TOKEN_B: [-100, 50], TOKEN_B-AGORA: [-50, 20]
             sumsTotal.push(sums)
         }
         return sumsTotal

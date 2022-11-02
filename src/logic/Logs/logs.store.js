@@ -20,6 +20,16 @@ const useLogsStore = create(
                         logObjs: [...state.logObjs, logObj]
                     }))
                 ),
+            addMultipleLogs: (logs) =>
+                set(
+                    produce((state) => {
+                        logs.forEach((log) => {
+                            if (!state.logObjs.includes(log)) {
+                                state.logObjs.push(log)
+                            }
+                        })
+                    })
+                ),
             override: (newData) =>
                 set(() => overrideState(get(), newData, INITIAL_STATE))
         }),
