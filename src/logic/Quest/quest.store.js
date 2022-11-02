@@ -19,7 +19,11 @@ const useQuestStore = create(
         (set, get) => ({
             ...INITIAL_STATE,
             addQuest: (quest) =>
-                set((state) => ({ quests: [...state.quests, quest] })),
+                set(
+                    (state) => ({ quests: [...state.quests, quest] }),
+                    false,
+                    'addQuest'
+                ),
             addMultipleQuests: (quests) =>
                 set(
                     produce((state) => {
@@ -28,23 +32,41 @@ const useQuestStore = create(
                                 state.quests.push(quest)
                             }
                         })
-                    })
+                    }),
+                    false,
+                    'addMultipleQuests'
                 ),
             addHumanQuest: (quest) =>
-                set((state) => ({
-                    humanQuests: [...state.humanQuests, quest]
-                })),
+                set(
+                    (state) => ({
+                        humanQuests: [...state.humanQuests, quest]
+                    }),
+                    false,
+                    'addHumanQuest'
+                ),
             setSelectedQuests: (quests) =>
-                set(() => ({ selectedQuests: quests })),
-            setActive: (quest) => set(() => ({ active: quest })),
-            setProMode: (proMode) => set(() => ({ proMode })),
+                set(
+                    () => ({ selectedQuests: quests }),
+                    false,
+                    'setSelectedQuests'
+                ),
+            setActive: (quest) =>
+                set(() => ({ active: quest }), false, 'setActive'),
+            setProMode: (proMode) =>
+                set(() => ({ proMode }), false, 'setProMode'),
             override: (newData) =>
-                set(() => overrideState(get(), newData, INITIAL_STATE)),
+                set(
+                    () => overrideState(get(), newData, INITIAL_STATE),
+                    false,
+                    'override'
+                ),
             addMultipleQuest: (quests) =>
                 set(
                     produce((state) => ({
                         investors: [...state.quests, ...quests]
-                    }))
+                    })),
+                    false,
+                    'addMultipleQuest'
                 )
         }),
         devToolsOptions
