@@ -344,7 +344,7 @@ describe('Money loss sanity tests', () => {
         )
 
         let dayPerf = []
-        const genDays = 10
+        const genDays = 30
         for (let day = 1; day <= genDays; day++) {
             console.log(`Simulating day ${day}`)
             const d0 = performance.now()
