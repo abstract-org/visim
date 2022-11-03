@@ -271,85 +271,85 @@ describe('Basic math works', () => {
     fit('Sells out the entire cross pool with price 1:1 via smart route', () => {
         const investor = Investor.create('INV', 'INV', 10000)
         // Assume path: USDC-Praseodymium (5)-AGORA-Praseodymium (3)
-        const { quest: qPRA3, pool: PRA3 } = getQP('TEST_1', 1000000)
-        const { quest: qPRA5, pool: PRA5 } = getQP('TEST_2', 1000000)
+        const { quest: qTST3, pool: TST3 } = getQP('TEST_1', 1000000)
+        const { quest: qTST5, pool: TST5 } = getQP('TEST_2', 1000000)
         const { quest: qAGORA, pool: AGORA } = getQP('AGORA', 1000000)
 
         AGORA.buy(25000)
 
         AGORA.buy(555555)
-        PRA3.buy(1480)
-        PRA5.buy(5000)
-        PRA5.buy(650)
+        TST3.buy(1480)
+        TST5.buy(5000)
+        TST5.buy(650)
 
-        const { crossPool: AGORA_PRA3 } = getCP(
-            qPRA3,
+        const { crossPool: AGORA_TST3 } = getCP(
+            qTST3,
             qAGORA,
-            PRA3,
+            TST3,
             AGORA,
             0,
             50.025
         )
         const priceRange = investor.calculatePriceRange(
-            AGORA_PRA3,
+            AGORA_TST3,
             AGORA,
-            PRA3,
+            TST3,
             2
         )
         console.log(priceRange)
 
         investor.citeQuest(
-            AGORA_PRA3,
+            AGORA_TST3,
             priceRange.min,
             priceRange.max,
             0,
-            120,
+            12000,
             priceRange.native
         )
-        console.log(AGORA_PRA3)
-        // const { crossPool: AGORA_PRA5 } = getCP(
-        //     qPRA5,
-        //     qAGORA,
-        //     PRA5,
-        //     AGORA,
-        //     0,
-        //     50.025
+        console.log(AGORA_TST3)
+        const { crossPool: AGORA_TST5 } = getCP(
+            qTST5,
+            qAGORA,
+            TST5,
+            AGORA,
+            0,
+            100.06
+        )
+
+        // console.log(
+        //     'dry swap formula',
+        //     getMaxOneShotBuy(
+        //         AGORA_TST3.curLiq,
+        //         AGORA_TST3.curPrice,
+        //         AGORA_TST3.curRight
+        //     )
         // )
-
-        console.log(
-            'dry swap formula',
-            getMaxOneShotBuy(
-                AGORA_PRA3.curLiq,
-                AGORA_PRA3.curPrice,
-                AGORA_PRA3.curRight
-            )
-        )
-
-        console.log(
-            'how much I need to pay for 50.025',
-            maxSameLiqBuyIn(AGORA_PRA3.curLiq, AGORA_PRA3.curPrice, 50.025)
-        )
-        console.log(
-            'how much I need to pay for 0.566',
-            maxSameLiqBuyOut(AGORA_PRA3.curLiq, AGORA_PRA3.curPrice, 0.566)
-        )
+        //
+        // console.log(
+        //     'how much I need to pay for 50.025',
+        //     maxSameLiqBuyIn(AGORA_TST3.curLiq, AGORA_TST3.curPrice, 50.025)
+        // )
+        // console.log(
+        //     'how much I need to pay for 0.566',
+        //     maxSameLiqBuyOut(AGORA_TST3.curLiq, AGORA_TST3.curPrice, 0.566)
+        // )
 
         const pools = new HashMap()
         const quests = new HashMap()
         pools.set(AGORA.name, AGORA)
-        pools.set(PRA3.name, PRA3)
-        pools.set(PRA5.name, PRA5)
-        pools.set(AGORA_PRA3.name, AGORA_PRA3)
-        //pools.set(AGORA_PRA5.name, AGORA_PRA5)
+        pools.set(TST3.name, TST3)
+        pools.set(TST5.name, TST5)
+        pools.set(AGORA_TST3.name, AGORA_TST3)
+        pools.set(AGORA_TST5.name, AGORA_TST5)
 
-        quests.set(qPRA3.name, qPRA3)
+        quests.set(qTST3.name, qTST3)
         quests.set(qAGORA.name, qAGORA)
-        quests.set(qPRA5.name, qPRA5)
+        quests.set(qTST5.name, qTST5)
         quests.set('USDC', new UsdcToken())
 
         const router = new Router(quests, pools)
 
-        //console.log(router.smartSwap('USDC', 'Praseodymium (5)', 2000))
+        console.log(router.smartSwap('USDC', qTST5.name, 2000))
     })
 
     fit('After opening a position on drained cross pool it opens with correct price range', () => {})
