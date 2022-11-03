@@ -11,8 +11,8 @@ export default class Router {
     _PRICED_PATHS = []
     _SWAPS = []
     _PAIR_PATHS = {}
-    _DEFAULT_SWAP_SUM = 100
-    _SWAP_SUM = 100
+    _DEFAULT_SWAP_SUM = 10
+    _SWAP_SUM = 10
 
     /* eslint-disable no-loop-func */
     _DEBUG = false
@@ -85,9 +85,9 @@ export default class Router {
                 this._PRICED_PATHS[0].path,
                 priceLimit
             )
-            console.log(
-                `Swapping ${this._PRICED_PATHS[0].path} with ${amountIn}, got out ${sums}`
-            )
+            // console.log(
+            //     `Swapping ${this._PRICED_PATHS[0].path} with ${amountIn}, got out ${sums}`
+            // )
 
             if (this._DEBUG) {
                 console.log(
@@ -113,9 +113,9 @@ export default class Router {
             this._PRICED_PATHS.length
         )
 
-        console.log(
-            `Concluded ${token0}-${token1} from ${initialAmountCache} to ${totalInOut}`
-        )
+        // console.log(
+        //     `Concluded ${token0}-${token1} from ${initialAmountCache} to ${totalInOut}`
+        // )
         return totalInOut
     }
 
@@ -180,16 +180,19 @@ export default class Router {
 
             const poolSums = pool[action](amountIn)
 
-            // let diff = amountIn - Math.abs(poolSums[0])
-            // if (
-            //     !isNearZero(diff) &&
-            //     !isZero(diff) &&
-            //     ((zeroForOne && !isNearZero(pool.volumeToken1)) ||
-            //         (!zeroForOne && !isNearZero(pool.volumeToken0)))
-            // ) {
-            //     console.log('diff', diff)
-            //     this.returnSurplus(pool, zeroForOne, diff)
-            // }
+            let diff = amountIn - Math.abs(poolSums[0])
+            if (pathActions.length > 1 && !isNearZero(diff) && !isZero(diff)) {
+                console.log(
+                    'diff',
+                    path,
+                    pool.name,
+                    action,
+                    amountIn,
+                    poolSums,
+                    diff
+                )
+                this.returnSurplus(pool, zeroForOne, diff)
+            }
 
             pathSwaps.push({
                 path: path,
@@ -324,11 +327,16 @@ export default class Router {
         const usdcPool = this._cachedPools
             .values()
             .find((cp) => cp.isQuest() && cp.tokenRight === token)
-        console.log(token, zeroForOne, usdcPool.name, diff)
+        console.log(
+            'single surplus return - this should revert the entire chain',
+            token,
+            zeroForOne,
+            usdcPool.name,
+            diff
+        )
         const [_, tOut] = usdcPool.sell(diff)
 
         this.tempSwapReturns += tOut
-        this._cachedPools.set(usdcPool.name, usdcPool)
     }
 
     /**
