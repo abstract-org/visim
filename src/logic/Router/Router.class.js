@@ -11,8 +11,8 @@ export default class Router {
     _PRICED_PATHS = []
     _SWAPS = []
     _PAIR_PATHS = {}
-    _DEFAULT_SWAP_SUM = 10
-    _SWAP_SUM = 10
+    _DEFAULT_SWAP_SUM = 1
+    _SWAP_SUM = 1
 
     /* eslint-disable no-loop-func */
     _DEBUG = false
@@ -76,10 +76,14 @@ export default class Router {
 
             if (!this._PRICED_PATHS.length) return totalInOut
 
+            // path 0: 1:2
+            // path 1: 1:1.5
             const priceLimit = this._PRICED_PATHS[1]
                 ? this._PRICED_PATHS[1].price
                 : null
 
+            // amountIn: 1000, [-200, 150]
+            //const properAmountIn = this.swapPricedPathDry(amountIn, this._PRICED_PATHS[0].path, priceLimit)
             const sums = this.swapPricedPath(
                 amountIn,
                 this._PRICED_PATHS[0].path,
@@ -101,6 +105,7 @@ export default class Router {
                 )
             }
 
+            // 1000 - 200 = 800
             amountIn -= sums[0]
             totalInOut[0] -= sums[0]
             totalInOut[1] += sums[1]
@@ -119,15 +124,17 @@ export default class Router {
         return totalInOut
     }
 
+    // @TODO: cache global swaps somewhere where it's applicable (to avoid caching bad swaps)
     swapPricedPath(amountIn, path, priceLimit) {
         const swaps = this.swapPath(amountIn, path)
-        // @TODO: cache global swaps somewhere where it's applicable (to avoid caching bad swaps)
         const leftoverAmt = amountIn - swaps[0].in
 
+        // Pool state preserved
         if (swaps.length === 1 && (swaps[0].in === 0 || swaps[0].out === 0)) {
             return [0, 0]
         }
 
+        // in: 1000, [-1000, 150]
         if (isZero(leftoverAmt) || isNearZero(leftoverAmt)) {
             return [swaps[0].in, swaps[swaps.length - 1].out]
         }
@@ -178,21 +185,39 @@ export default class Router {
             const { action, pool } = pact
             const zeroForOne = action === 'buy'
 
+            // Ideal case:
+            // USDC-AGORA-B-C
+            // in: 1000
+            // USDC-AGORA dryBuy(1000) -> 500 AGORA
+            // AGORA-B dryBuy(500) -> 200 B
+            // B-C dryBuy(200) -> 100 C
+            // [-1000, 100]
+
+            // Inconsistent case:
+            // USDC-AGORA-B-C
+            // in: 1000
+            // USDC-AGORA dryBuy(1000) -> 500 AGORA -> maxSameLiqBuyIn(150AGORA)??? [-555USDC,150AGORA]
+            // AGORA-B dryBuy(500) -> exactOut [-300, 200 B] // surplus 200 AGORA -> maxSameLiqBuyIn(100B)??? [-150AGORA,100B]
+            // B-C dryBuy(200) -> [-100, 100 C] // surplus 100 B
+            // [-1000, 100] -> [-555, 100]
+
+            // getMaxOneShotBuy - to calculate max amount we can get from the pool
+            // maxSameLiqBuyIn - to calculate max amount we need to pay for amount
             const poolSums = pool[action](amountIn)
 
-            let diff = amountIn - Math.abs(poolSums[0])
-            if (pathActions.length > 1 && !isNearZero(diff) && !isZero(diff)) {
-                console.log(
-                    'diff',
-                    path,
-                    pool.name,
-                    action,
-                    amountIn,
-                    poolSums,
-                    diff
-                )
-                this.returnSurplus(pool, zeroForOne, diff)
-            }
+            // let diff = amountIn - Math.abs(poolSums[0])
+            // if (pathActions.length > 1 && !isNearZero(diff) && !isZero(diff)) {
+            //     console.log(
+            //         'diff',
+            //         path,
+            //         pool.name,
+            //         action,
+            //         amountIn,
+            //         poolSums,
+            //         diff
+            //     )
+            //     this.returnSurplus(pool, zeroForOne, diff)
+            // }
 
             pathSwaps.push({
                 path: path,
@@ -298,6 +323,9 @@ export default class Router {
             const inAmt = pathSums[0][0]
             const outAmt = pathSums[pathSums.length - 1][1]
 
+            // USDC-AGORA-B: 200USDC, 150B
+            // USDC-AGORA buy for 200, get (100 AGORA)
+            // AGORA-B buy for (100) get 150B
             lastOutPrice = this.getOutInPrice(inAmt, outAmt)
 
             if (this._DEBUG) {
@@ -327,14 +355,15 @@ export default class Router {
         const usdcPool = this._cachedPools
             .values()
             .find((cp) => cp.isQuest() && cp.tokenRight === token)
+        const [_, tOut] = usdcPool.sell(diff)
         console.log(
             'single surplus return - this should revert the entire chain',
             token,
             zeroForOne,
             usdcPool.name,
+            `sums: ${_}/${tOut}`,
             diff
         )
-        const [_, tOut] = usdcPool.sell(diff)
 
         this.tempSwapReturns += tOut
     }
@@ -538,6 +567,8 @@ export default class Router {
         return this._PAIR_PATHS[`${token0}-${token1}`]
     }
 
+    // 1:2 = 2
+    // 1:1.5 = 1.5
     getOutInPrice(inAmt, outAmt) {
         return Math.abs(outAmt) / Math.abs(inAmt)
     }
