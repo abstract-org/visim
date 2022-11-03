@@ -32,6 +32,8 @@ const useLogsStore = create(
                     false,
                     'addMultipleLogs'
                 ),
+            overrideSwaps: (logObjs) =>
+                set((state) => ({ logObjs: [...logObjs] })),
             override: (newData) =>
                 set(
                     () => overrideState(get(), newData, INITIAL_STATE),

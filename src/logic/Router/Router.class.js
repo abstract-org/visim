@@ -39,6 +39,8 @@ export default class Router {
      * @returns {*[]|number[]}
      */
     smartSwap(token0, token1, amountIn, smartRouteDepth) {
+        const initialAmountCache = amountIn
+
         if (this._DEBUG) {
             console.log(
                 `\n--- SMART ROUTE ${token0}/${token1}/${amountIn}---\n`
@@ -74,7 +76,18 @@ export default class Router {
 
             if (!this._PRICED_PATHS.length) return totalInOut
 
-            const sums = this.swapBestPath(amountIn, this._PRICED_PATHS[0])
+            const priceLimit = this._PRICED_PATHS[1]
+                ? this._PRICED_PATHS[1].price
+                : null
+
+            const sums = this.swapPricedPath(
+                amountIn,
+                this._PRICED_PATHS[0].path,
+                priceLimit
+            )
+            console.log(
+                `Swapping ${this._PRICED_PATHS[0].path} with ${amountIn}, got out ${sums}`
+            )
 
             if (this._DEBUG) {
                 console.log(
@@ -88,8 +101,8 @@ export default class Router {
                 )
             }
 
-            amountIn += sums[0]
-            totalInOut[0] += sums[0]
+            amountIn -= sums[0]
+            totalInOut[0] -= sums[0]
             totalInOut[1] += sums[1]
             totalInOut[2] += this.tempSwapReturns
             this.tempSwapReturns = 0
@@ -100,7 +113,98 @@ export default class Router {
             this._PRICED_PATHS.length
         )
 
+        console.log(
+            `Concluded ${token0}-${token1} from ${initialAmountCache} to ${totalInOut}`
+        )
         return totalInOut
+    }
+
+    swapPricedPath(amountIn, path, priceLimit) {
+        const swaps = this.swapPath(amountIn, path)
+        // @TODO: cache global swaps somewhere where it's applicable (to avoid caching bad swaps)
+        const leftoverAmt = amountIn - swaps[0].in
+
+        if (swaps.length === 1 && (swaps[0].in === 0 || swaps[0].out === 0)) {
+            return [0, 0]
+        }
+
+        if (isZero(leftoverAmt) || isNearZero(leftoverAmt)) {
+            return [swaps[0].in, swaps[swaps.length - 1].out]
+        }
+
+        // check if path needs revert and do so from here
+        const revertNeeded = swaps.filter(
+            (swap) => swap.in === 0 || swap.out === 0
+        )
+        if (revertNeeded.length > 1) {
+            console.log('reverting')
+            this.revertPathSwaps(swaps)
+            return [0, 0]
+        }
+        // check if surplus was generated and return it back
+        // Not needed?
+
+        // check if outPrice of current path swap is higher than priceLimit
+        // if true: return [totalIn/totalOut]
+        // if false: call swapPath again with updated amountIn and repeat the process
+        const outPrice = this.getOutInPrice(
+            swaps[0].in,
+            swaps[swaps.length - 1].out
+        )
+
+        if (outPrice < priceLimit || swaps.length === 1) {
+            return [swaps[0].in, swaps[swaps.length - 1].out]
+        } else {
+            const nextAmount = amountIn - swaps[0].in
+            console.log(
+                `Recursing ${path} with ${nextAmount} limit ${priceLimit}`
+            )
+            return this.swapPricedPath(nextAmount, path, priceLimit)
+        }
+    }
+
+    /**
+     * @description Swap once within a given path with total amountIn
+     * @param {number} amountIn
+     * @param {string[]} path
+     * @returns swaps array throughout the path
+     */
+    swapPath(amountIn, path) {
+        const pathActions = getPathActions(path, this)
+
+        let pathSwaps = []
+
+        for (const [id, pact] of pathActions.entries()) {
+            const { action, pool } = pact
+            const zeroForOne = action === 'buy'
+
+            const poolSums = pool[action](amountIn)
+
+            // let diff = amountIn - Math.abs(poolSums[0])
+            // if (
+            //     !isNearZero(diff) &&
+            //     !isZero(diff) &&
+            //     ((zeroForOne && !isNearZero(pool.volumeToken1)) ||
+            //         (!zeroForOne && !isNearZero(pool.volumeToken0)))
+            // ) {
+            //     console.log('diff', diff)
+            //     this.returnSurplus(pool, zeroForOne, diff)
+            // }
+
+            pathSwaps.push({
+                path: path,
+                pool: pool.name,
+                op: zeroForOne ? 'BOUGHT' : 'SOLD',
+                in: Math.abs(poolSums[0]),
+                out: Math.abs(poolSums[1])
+            })
+
+            if (poolSums[0] === 0 || poolSums[1] === 0) {
+                break
+            }
+        }
+
+        return pathSwaps
     }
 
     // Due to inconsistent amounts swapped between pools,
@@ -149,7 +253,6 @@ export default class Router {
                 ) {
                     this.revertPathSwaps(localSwaps)
                     localSwaps = []
-                    allSums = { in: 0, out: 0 }
                     shouldExitEmpty = true
                     break
                 }
@@ -186,7 +289,7 @@ export default class Router {
             }
 
             if (shouldExitEmpty) {
-                return [0, 0]
+                break
             }
 
             const inAmt = pathSums[0][0]
@@ -207,6 +310,7 @@ export default class Router {
         } while (
             (!isNaN(lastOutPrice) || lastOutPrice > 0) &&
             !isZero(amount) &&
+            !isNearZero(amount) &&
             nextPricedPath &&
             lastOutPrice > nextPricedPath.price
         )

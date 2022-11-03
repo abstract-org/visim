@@ -321,10 +321,10 @@ describe('Money loss sanity tests', () => {
             citeSingleName: 'AGORA'
         }
 
-        const creator = Investor.create('creator', 'creator', 10000, true)
+        const creator = Investor.create('creator', 'creator', 10000000, true)
         const fndQuest = creator.createQuest('AGORA')
         const fndPool = fndQuest.createPool()
-        const [totalIn, totalOut] = fndPool.buy(5550)
+        const [totalIn, totalOut] = fndPool.buy(555555)
         creator.addBalance(fndPool.tokenLeft, totalIn)
         creator.addBalance(fndPool.tokenRight, totalOut)
         globalState.investors.set(creator.hash, creator)
@@ -344,7 +344,7 @@ describe('Money loss sanity tests', () => {
         )
 
         let dayPerf = []
-        const genDays = 30
+        const genDays = 6
         for (let day = 1; day <= genDays; day++) {
             console.log(`Simulating day ${day}`)
             const d0 = performance.now()

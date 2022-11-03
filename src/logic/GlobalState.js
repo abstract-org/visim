@@ -35,6 +35,9 @@ const globalState = {
         invConfigs: [],
         questConfigs: []
     },
+    dayTrackerStore: {
+        currentDay: 0
+    },
     moneyDist: {
         citing: [],
         buying: [],
