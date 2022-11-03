@@ -694,3 +694,69 @@ describe('Routing', () => {
         expect(poolB.curPrice).toBeCloseTo(1, 0) // 1.69
     })
 })
+
+describe('getMaxAmountForPath', () => {
+    let quests = {}
+    let pools = {}
+    let router
+    const shouldDebugRouter = true
+
+    const createRouter = (questObj, poolsObj, isDbg = shouldDebugRouter) => {
+        const poolsHashMap = new HashMap(
+            Object.entries(pools).map(([, obj]) => [obj.name, obj])
+        )
+        const questsHashMap = new HashMap(
+            Object.entries(quests).map(([, obj]) => [obj.name, obj])
+        )
+
+        return new Router(questsHashMap, poolsHashMap, isDbg)
+    }
+
+    beforeEach(() => {
+        const { quest: questA, pool: poolA } = getQP('A', 1000000)
+        const { quest: questB, pool: poolB } = getQP('B', 1000000)
+        const { quest: questC, pool: poolC } = getQP('C', 1000000)
+        quests.A = questA
+        quests.B = questB
+        quests.C = questC
+        pools.A = poolA
+        pools.B = poolB
+        pools.C = poolC
+    })
+
+    it('swapPath A -> AB -> C', () => {
+        const investor = Investor.create('INV', 'INV', 10000)
+
+        pools.A.buy(25000)
+        pools.A.buy(555555)
+        pools.B.buy(1480)
+        pools.B.buy(5000)
+        pools.C.buy(650)
+
+        const { crossPool: poolAB } = getCP(
+            quests.B,
+            quests.A,
+            pools.B,
+            pools.A,
+            0,
+            1500
+        )
+        pools.AB = poolAB
+        const { crossPool: poolBC } = getCP(
+            quests.C,
+            quests.B,
+            pools.C,
+            pools.B,
+            0,
+            50
+        )
+        pools.BC = poolBC
+        const router = createRouter(quests, pools)
+
+        const path = ['A', 'B', 'C']
+
+        const result = router.getMaxAmountForPath(1000, path, 10)
+
+        expect(result).toBeGreaterThanOrEqual(10)
+    })
+})

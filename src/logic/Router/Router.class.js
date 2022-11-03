@@ -2,6 +2,7 @@ import HashMap from 'hashmap'
 
 import { getPathActions, isNearZero, isZero } from '../Utils/logicUtils'
 import { Graph } from './Graph.class'
+import { getMaxOneShotBuy, getMaxOneShotSell, maxSameLiqBuyIn } from './math'
 
 export default class Router {
     _cachedPools = new HashMap()
@@ -54,11 +55,7 @@ export default class Router {
             token1,
             smartRouteDepth
         )
-        if (amountIn < this._DEFAULT_SWAP_SUM) {
-            this._SWAP_SUM = amountIn
-        } else {
-            this._SWAP_SUM = this._DEFAULT_SWAP_SUM
-        }
+        this.setSwapSum(amountIn)
 
         const totalInOut = [0, 0, 0]
 
@@ -83,7 +80,16 @@ export default class Router {
                 : null
 
             // amountIn: 1000, [-200, 150]
-            //const properAmountIn = this.swapPricedPathDry(amountIn, this._PRICED_PATHS[0].path, priceLimit)
+
+            const properAmountIn = this.getMaxAmountForPath(
+                amountIn,
+                this._PRICED_PATHS[0].path,
+                priceLimit
+            )
+            console.log(
+                '###DEBUG### Calculated maxAvailable amount: ',
+                properAmountIn
+            )
             const sums = this.swapPricedPath(
                 amountIn,
                 this._PRICED_PATHS[0].path,
@@ -122,6 +128,83 @@ export default class Router {
         //     `Concluded ${token0}-${token1} from ${initialAmountCache} to ${totalInOut}`
         // )
         return totalInOut
+    }
+
+    setSwapSum(amountIn) {
+        if (amountIn < this._DEFAULT_SWAP_SUM) {
+            this._SWAP_SUM = amountIn
+        } else {
+            this._SWAP_SUM = this._DEFAULT_SWAP_SUM
+        }
+    }
+
+    /**
+     * @typedef {{ action: string, pool: Pool}} Step
+     */
+    /**
+     * @description
+     * @param {number} amountIn
+     * @param {Step[]} path
+     * @param {number} priceLimit
+     * @returns {[ number, number]}
+     */
+    getMaxAmountForPath(amountIn, path, priceLimit) {
+        let properAmountIn = amountIn
+        const pathActions = getPathActions(path, this)
+        let poolsMaxAmounts1 = []
+        let poolsMaxAmounts2 = []
+
+        for (const step of pathActions) {
+            const zeroForOne = step.action === 'buy'
+
+            //option 2 calculated via formulas
+            const [totalIn, totalOut] = zeroForOne
+                ? getMaxOneShotBuy(
+                      step.pool.curLiq,
+                      step.pool.curPrice,
+                      step.pool.curRight
+                  )
+                : getMaxOneShotSell(
+                      step.pool.curLiq,
+                      step.pool.curPrice,
+                      step.pool.curLeft
+                  )
+            const sums2 = [totalIn, totalOut]
+            // option 1 drySwap path with huge amount
+            const maxAmount = 1e9
+            const sums1 = step.pool.drySwap(maxAmount, zeroForOne)
+
+            poolsMaxAmounts1.push(sums1) // can delete this if formulas option is enough
+            poolsMaxAmounts2.push(sums2)
+            // TODO: should be tested more, both array are totally equal now
+        }
+
+        // calculate max iterating from the end of array poolsMaxAmounts
+        return this.getMinAcceptableOfPoolCaps(poolsMaxAmounts2, pathActions)
+    }
+
+    getMinAcceptableOfPoolCaps(poolCaps, pathActions) {
+        if (!poolCaps || !Array.isArray(poolCaps)) return 0
+
+        let nextAmount = poolCaps[0][pathActions[0].action === 'buy' ? 0 : 1]
+        poolCaps.forEach(([inSum, outSum], idx) => {
+            const zeroForOne = pathActions[idx].action === 'buy'
+            const { curLiq, curPrice } = pathActions[idx].pool
+
+            const canReceiveAmount = maxSameLiqBuyIn(
+                curLiq,
+                curPrice,
+                nextAmount
+            )
+
+            // @FIXME: it can be mistake here (need tests also)
+            nextAmount = zeroForOne ? inSum : -outSum
+            if (canReceiveAmount < nextAmount) {
+                nextAmount = canReceiveAmount
+            }
+        })
+
+        return nextAmount
     }
 
     // @TODO: cache global swaps somewhere where it's applicable (to avoid caching bad swaps)
@@ -421,13 +504,13 @@ export default class Router {
 
     /**
      * @description Takes array path and swaps through the entire path and returns prices along the way
-     * @param {array} path
-     * @returns {number, number}[]
+     * @param {string[]} path
+     * @param {number} [amount]
+     * @returns {[number, number][]} array of pairs
      */
-    drySwapPath(path) {
-        const amount = 1
+    drySwapPath(path, amount = 1) {
         let sumsTotal = []
-        let amountIn = amount
+        let nextAmountIn = amount
 
         const pathActions = getPathActions(path, this)
 
@@ -443,15 +526,16 @@ export default class Router {
                 return null
             }
 
-            const sums = pool.drySwap(amountIn, zeroForOne)
+            const sums = pool.drySwap(nextAmountIn, zeroForOne)
 
             if (Math.abs(sums[0]) === 0 && Math.abs(sums[1]) === 0) {
                 return null
             }
 
-            amountIn = Math.abs(sums[1])
+            nextAmountIn = Math.abs(sums[1])
             sumsTotal.push(sums)
         }
+
         return sumsTotal
     }
 
