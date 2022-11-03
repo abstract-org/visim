@@ -106,6 +106,7 @@ export const overrideStateBySnapshot = (state) => {
     globalState.poolStore = state.poolStore
     globalState.generatorStore = state.generatorStore
     globalState.investorStore = state.investorStore
+    globalState.dayTrackerStore = state.dayTrackerStore
 }
 
 export const base64ToState = (base64st) => {

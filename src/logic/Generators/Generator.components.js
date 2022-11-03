@@ -134,7 +134,7 @@ export const GeneratorRunner = () => {
     const addQuest = useQuestStore((state) => state.addQuest)
     const addMultipleQuests = useQuestStore((state) => state.addMultipleQuests)
     const addMultipleSwaps = usePoolStore((state) => state.addMultipleSwaps)
-    const addMultipleLogs = useLogsStore((state) => state.addMultipleLogs)
+    const overrideSwaps = useLogsStore((state) => state.overrideSwaps)
     const setDay = useDayTrackerStore((state) => state.setDay)
 
     const addInvConfig = useGeneratorStore((state) => state.addInvConfig)
@@ -346,13 +346,18 @@ export const GeneratorRunner = () => {
                 }
                 globalState.logStore.logObjs.push(action)
             })
-            addMultipleLogs(stepData.actions)
+
+            overrideSwaps(globalState.logStore.logObjs)
             addMultipleSwaps(
                 stepData.actions.filter((a) => boughtSoldArr.includes(a.action))
             )
 
             await genManager.sleep(50)
             setDay(day)
+            if (!globalState.dayTrackerStore) {
+                globalState.dayTrackerStore = { currentDay: 0 }
+            }
+            globalState.dayTrackerStore.currentDay = day
         }
         setPassedDays(passedDays + genDays)
         setGenActive(false)

@@ -782,7 +782,7 @@ class Generator {
             return
         }
 
-        tradePools.forEach(async (pool) => {
+        tradePools.forEach((pool) => {
             if (conf.excludeSingleName === pool.tokenRight) {
                 console.log(
                     `Trading ${pool.name} quest with excluded set as ${conf.excludeSingleName}`
@@ -817,6 +817,18 @@ class Generator {
 
             //collect pool price movements here and in other calls of router.smart Swap
             this.storeTradedPool(day, pool)
+
+            // if (router.getSwaps()) {
+            //     const usdcOut = router.getSwaps().reduce((acc, sw) => {
+            //         if (sw.pool.indexOf('USDC') !== -1 && sw.op === 'BOUGHT') {
+            //             return (acc += sw.in)
+            //         }
+
+            //         return (acc += 0)
+            //     }, 0)
+            //     console.log(`Total USDC consumed: ${usdcOut}`)
+            //     console.log(router.getSwaps())
+            // }
             this.processSwapData(
                 investor,
                 router.getSwaps(),
@@ -909,7 +921,7 @@ class Generator {
         this.measure('simulateTrade')
 
         const tradingDayKeys = Object.keys(this.tradingInvs)
-        tradingDayKeys.forEach(async (dayKey) => {
+        tradingDayKeys.forEach((dayKey) => {
             if (day % dayKey === 0) {
                 const investors = this.tradingInvs[dayKey]
                 investors.forEach((investorObj) => {
@@ -975,7 +987,10 @@ class Generator {
                     )
                 })
 
-                await Promise.all(this.tradingHandlers)
+                Promise.all(this.tradingHandlers).catch((reason) => {
+                    console.log(`Could not finish all operations: ${reason}`)
+                    console.log(reason)
+                })
             }
         })
 
