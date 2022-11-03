@@ -164,14 +164,7 @@ export default class Investor {
             pmax: priceMax,
             amt0: token0Amt,
             amt1: token1Amt,
-            type: 'investor',
-            liq: crossPool.getLiquidityForAmounts(
-                token0Amt,
-                token1Amt,
-                priceMin,
-                priceMax,
-                crossPool.curPrice
-            )
+            type: 'investor'
         })
         this.positions.set(crossPool.name, crossPool.pos.values())
 
@@ -216,18 +209,12 @@ export default class Investor {
             min = min / multiplier
         } else if (nativePos && max > crossPool.curPrice) {
             max = crossPool.curPrice
-
-            if (min === max) {
-                min = min / multiplier
-            }
+            min = min / multiplier
         } else if (!nativePos && min >= crossPool.curPrice) {
             max = max * multiplier
         } else if (!nativePos && min < crossPool.curPrice) {
             min = crossPool.curPrice
-
-            if (min === max) {
-                max = max * multiplier
-            }
+            max = max * multiplier
         }
 
         return { min: min, max: max, native: nativePos }

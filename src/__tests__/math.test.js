@@ -5,6 +5,12 @@ import HashMap from 'hashmap'
 import Investor from '../logic/Investor/Investor.class'
 import UsdcToken from '../logic/Quest/UsdcToken.class'
 import Router from '../logic/Router/Router.class'
+import {
+    getMaxOneShotBuy,
+    getMaxOneShotSell,
+    maxSameLiqBuyIn,
+    maxSameLiqBuyOut
+} from '../logic/Router/math'
 import { pp2p } from '../logic/Utils/logicUtils'
 import globalConfig from '../logic/config.global.json'
 import { getCP, getQP } from './helpers/getQuestPools'
@@ -263,6 +269,7 @@ describe('Basic math works', () => {
     })
 
     fit('Sells out the entire cross pool with price 1:1 via smart route', () => {
+        const investor = Investor.create('INV', 'INV', 10000)
         // Assume path: USDC-Praseodymium (5)-AGORA-Praseodymium (3)
         const { quest: qPRA3, pool: PRA3 } = getQP('TEST_1', 1000000)
         const { quest: qPRA5, pool: PRA5 } = getQP('TEST_2', 1000000)
@@ -283,44 +290,49 @@ describe('Basic math works', () => {
             0,
             50.025
         )
-        const { crossPool: AGORA_PRA5 } = getCP(
-            qPRA5,
-            qAGORA,
-            PRA5,
+        const priceRange = investor.calculatePriceRange(
+            AGORA_PRA3,
             AGORA,
+            PRA3,
+            2
+        )
+        console.log(priceRange)
+
+        investor.citeQuest(
+            AGORA_PRA3,
+            priceRange.min,
+            priceRange.max,
             0,
-            50.025
-        )
-
-        globalConfig.JOURNAL = true
-        globalConfig.JOURNAL_BUY = true
-        globalConfig.JOURNAL_SELL = true
-
-        console.log(
-            AGORA_PRA3.name,
-            AGORA_PRA3.curPrice,
-            pp2p(AGORA_PRA3.curPP),
-            AGORA_PRA3.volumeToken0,
-            AGORA_PRA3.volumeToken1
+            120,
+            priceRange.native
         )
         console.log(AGORA_PRA3)
-        // @TODO: If this returns anything higher than [0,0] -> this is the BUG
-        // Comment out Pool.setActiveLiq function to reproduce
-        console.log(AGORA_PRA3.sell(100))
-        console.log(AGORA_PRA3.buy(100))
-        // @TODO: Vitaliy do investor.citeQuest here again on AGORA_PRA3
-        //console.log(AGORA_PRA3.sell(100))
-        console.log(AGORA_PRA3)
+        // const { crossPool: AGORA_PRA5 } = getCP(
+        //     qPRA5,
+        //     qAGORA,
+        //     PRA5,
+        //     AGORA,
+        //     0,
+        //     50.025
+        // )
+
         console.log(
-            AGORA_PRA3.name,
-            AGORA_PRA3.curPrice,
-            AGORA_PRA3.volumeToken0,
-            AGORA_PRA3.volumeToken1
+            'dry swap formula',
+            getMaxOneShotBuy(
+                AGORA_PRA3.curLiq,
+                AGORA_PRA3.curPrice,
+                AGORA_PRA3.curRight
+            )
         )
 
-        globalConfig.JOURNAL = false
-        globalConfig.JOURNAL_BUY = true
-        globalConfig.JOURNAL_SELL = true
+        console.log(
+            'how much I need to pay for 50.025',
+            maxSameLiqBuyIn(AGORA_PRA3.curLiq, AGORA_PRA3.curPrice, 50.025)
+        )
+        console.log(
+            'how much I need to pay for 0.566',
+            maxSameLiqBuyOut(AGORA_PRA3.curLiq, AGORA_PRA3.curPrice, 0.566)
+        )
 
         const pools = new HashMap()
         const quests = new HashMap()
@@ -328,7 +340,7 @@ describe('Basic math works', () => {
         pools.set(PRA3.name, PRA3)
         pools.set(PRA5.name, PRA5)
         pools.set(AGORA_PRA3.name, AGORA_PRA3)
-        pools.set(AGORA_PRA5.name, AGORA_PRA5)
+        //pools.set(AGORA_PRA5.name, AGORA_PRA5)
 
         quests.set(qPRA3.name, qPRA3)
         quests.set(qAGORA.name, qAGORA)
