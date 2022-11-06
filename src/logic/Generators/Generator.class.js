@@ -717,16 +717,12 @@ class Generator {
             console.log(tradePool)
         }
 
-        const [totalIn, totalOut, returnUsdc] = router.smartSwap(
+        const [totalIn, totalOut] = router.smartSwap(
             this.#DEFAULT_TOKEN,
             tradePool.tokenRight,
             spendAmount,
             conf.smartRouteDepth
         )
-
-        if (returnUsdc > 0) {
-            investor.addBalance('USDC', returnUsdc)
-        }
 
         // collect pool price movements here and in other calls of router.smart Swap
         this.storeTradedPool(day, tradePool)
@@ -790,16 +786,12 @@ class Generator {
                 console.log(pool)
             }
 
-            const [totalIn, totalOut, returnUsdc] = router.smartSwap(
+            const [totalIn, totalOut] = router.smartSwap(
                 this.#DEFAULT_TOKEN,
                 pool.tokenRight,
                 perPoolAmt,
                 conf.smartRouteDepth
             )
-
-            if (returnUsdc > 0) {
-                investor.addBalance('USDC', returnUsdc)
-            }
 
             //That would be an edge case, rare, but if happens, need to debug why
             if (
@@ -1027,16 +1019,12 @@ class Generator {
                 console.log(selectedPools.length)
             }
 
-            const [totalIn, totalOut, returnUsdc] = router.smartSwap(
+            const [totalIn, totalOut] = router.smartSwap(
                 t0,
                 t1,
                 amount,
                 smartRouteDepth
             )
-
-            if (returnUsdc > 0) {
-                investor.addBalance('USDC', returnUsdc)
-            }
 
             // collect pool price movements here and in other calls of router.smartSwap
             this.storeTradedPool(day, pool)
@@ -1128,17 +1116,12 @@ class Generator {
                             )
                         }
 
-                        const [totalIn, totalOut, returnUsdc] =
-                            router.smartSwap(
-                                quest,
-                                this.#DEFAULT_TOKEN,
-                                sumIn,
-                                conf.smartRouteDepth
-                            )
-
-                        if (returnUsdc > 0) {
-                            author.addBalance('USDC', returnUsdc)
-                        }
+                        const [totalIn, totalOut] = router.smartSwap(
+                            quest,
+                            this.#DEFAULT_TOKEN,
+                            sumIn,
+                            conf.smartRouteDepth
+                        )
 
                         if (
                             isNaN(totalIn) ||
