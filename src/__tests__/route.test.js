@@ -724,7 +724,7 @@ describe('getMaxAmountForPath', () => {
         pools.C = poolC
     })
 
-    it('swapPath A -> AB -> C', () => {
+    fit('swapPath A -> AB -> C', () => {
         const investor = Investor.create('INV', 'INV', 10000)
 
         pools.A.buy(25000)

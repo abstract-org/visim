@@ -6,15 +6,6 @@ import UsdcToken from '../Quest/UsdcToken.class'
 import { isNearZero, isZero, p2pp, pp2p } from '../Utils/logicUtils'
 import globalConfig from '../config.global.json'
 
-// cosmetic constants to address left/right token balance
-const LEFT_TOKEN = 0
-const RIGHT_TOKEN = 1
-// cosmetic constants to address sell/buy result array items
-const TOTAL_IN = 0
-const TOTAL_OUT = 1
-
-let pp
-
 export default class Pool {
     name
 
@@ -272,40 +263,20 @@ export default class Pool {
             amounts[1] = amounts[1] - amounts[0]
         }
 
-        this.setActiveLiq(priceMin, priceMax)
+        this.setActiveLiq(priceMin)
 
         return amounts
     }
 
-    // USDC-TOKEN_A -> open pos (1-5000,20-5000...) x 20,000
-    // TOKEN_A-TOKEN_B -> citation(open pos) -> (1-2, 50 tokenB) crossPool === (0)CITED/CITING(50, 1-2)
-    setActiveLiq(pMin, pMax) {
-        //let shouldSeek = false
-        // if (this.curLeft === -Infinity && this.curPP === p2pp(this.curPrice)) {
-        //     const drySell = this.drySell(1000000000)
-        //     shouldSeek =
-        //         (isNaN(drySell[0]) && isNaN(drySell[1])) ||
-        //         (drySell[0] === 0 && drySell[1] === 0)
-        // } else if (
-        //     this.curRight === Infinity &&
-        //     this.curPP === p2pp(this.curPrice)
-        // ) {
-        //     const dryBuy = this.dryBuy(1000000000)
-        //     shouldSeek =
-        //         (isNaN(dryBuy[0]) && isNaN(dryBuy[1])) ||
-        //         (dryBuy[0] === 0 && dryBuy[1] === 0)
-        // }
-
-        // if (
-        //     (this.curLiq === 0 && this.FRESH) ||
-        //     (shouldSeek && this.curPrice > pMin) ||
-        //     (shouldSeek && this.curPrice > pMax)
-        // ) {
-
-        if (pp2p(this.curPP) !== this.curPrice) {
+    setActiveLiq(pMin, capPrice) {
+        if (
+            pp2p(this.curPP) !== this.curPrice ||
+            (this.curLiq === 0 && isZero(this.volumeToken1)) ||
+            isNearZero(this.volumeToken1)
+        ) {
             const ppNext =
-                pMin <= this.curPrice ? this.seekActiveLiq('left') : null
-            const ppPrev = !ppNext ? this.seekActiveLiq('right') : null
+                pMin <= this.curPrice ? this.findActiveLiq('left') : null
+            const ppPrev = !ppNext ? this.findActiveLiq('right') : null
 
             const toPP = ppNext ? ppNext : ppPrev ? ppPrev : null
 
@@ -314,14 +285,14 @@ export default class Pool {
                 this.curLeft = toPP.left
                 this.curRight = toPP.right
                 this.curLiq = toPP.liquidity
-                this.curPrice = pp2p(toPP.pp)
+                this.curPrice = capPrice ? pp2p(capPrice) : pp2p(toPP.pp)
                 this.priceToken0 = 1 / this.curPrice
                 this.priceToken1 = this.curPrice
             }
         }
     }
 
-    seekActiveLiq(dir) {
+    findActiveLiq(dir) {
         let localPP = this.curPP
 
         while (
