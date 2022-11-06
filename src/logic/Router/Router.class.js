@@ -40,8 +40,6 @@ export default class Router {
      * @returns {*[]|number[]}
      */
     smartSwap(token0, token1, amountIn, smartRouteDepth) {
-        const initialAmountCache = amountIn
-
         if (this._DEBUG) {
             console.log(
                 `\n--- SMART ROUTE ${token0}/${token1}/${amountIn}---\n`
@@ -57,7 +55,7 @@ export default class Router {
         )
         this.setSwapSum(amountIn)
 
-        const totalInOut = [0, 0, 0]
+        const totalInOut = [0, 0]
 
         do {
             this._PRICED_PATHS = this.drySwapForPricedPaths(
@@ -73,14 +71,11 @@ export default class Router {
 
             if (!this._PRICED_PATHS.length) return totalInOut
 
-            // path 0: 1:2
-            // path 1: 1:1.5
             const priceLimit = this._PRICED_PATHS[1]
                 ? this._PRICED_PATHS[1].price
                 : null
 
-            // amountIn: 1000, [-200, 150]
-
+            // @TODO: use getSwapAmtSameLiq to calculate amounts per pool
             const properAmountIn = this.getMaxAmountForPath(
                 amountIn,
                 this._PRICED_PATHS[0].path,
@@ -95,9 +90,6 @@ export default class Router {
                 this._PRICED_PATHS[0].path,
                 priceLimit
             )
-            // console.log(
-            //     `Swapping ${this._PRICED_PATHS[0].path} with ${amountIn}, got out ${sums}`
-            // )
 
             if (this._DEBUG) {
                 console.log(
@@ -111,12 +103,9 @@ export default class Router {
                 )
             }
 
-            // 1000 - 200 = 800
             amountIn -= sums[0]
             totalInOut[0] -= sums[0]
             totalInOut[1] += sums[1]
-            totalInOut[2] += this.tempSwapReturns
-            this.tempSwapReturns = 0
         } while (
             !isZero(amountIn) &&
             amountIn > 0 &&
@@ -124,9 +113,6 @@ export default class Router {
             this._PRICED_PATHS.length
         )
 
-        // console.log(
-        //     `Concluded ${token0}-${token1} from ${initialAmountCache} to ${totalInOut}`
-        // )
         return totalInOut
     }
 
@@ -222,18 +208,6 @@ export default class Router {
             return [swaps[0].in, swaps[swaps.length - 1].out]
         }
 
-        // check if path needs revert and do so from here
-        const revertNeeded = swaps.filter(
-            (swap) => swap.in === 0 || swap.out === 0
-        )
-        if (revertNeeded.length > 1) {
-            console.log('reverting')
-            this.revertPathSwaps(swaps)
-            return [0, 0]
-        }
-        // check if surplus was generated and return it back
-        // Not needed?
-
         // check if outPrice of current path swap is higher than priceLimit
         // if true: return [totalIn/totalOut]
         // if false: call swapPath again with updated amountIn and repeat the process
@@ -283,24 +257,7 @@ export default class Router {
             // AGORA-B dryBuy(500) -> exactOut [-300, 200 B] // surplus 200 AGORA -> maxSameLiqBuyIn(100B)??? [-150AGORA,100B]
             // B-C dryBuy(200) -> [-100, 100 C] // surplus 100 B
             // [-1000, 100] -> [-555, 100]
-
-            // getMaxOneShotBuy - to calculate max amount we can get from the pool
-            // maxSameLiqBuyIn - to calculate max amount we need to pay for amount
             const poolSums = pool[action](amountIn)
-
-            // let diff = amountIn - Math.abs(poolSums[0])
-            // if (pathActions.length > 1 && !isNearZero(diff) && !isZero(diff)) {
-            //     console.log(
-            //         'diff',
-            //         path,
-            //         pool.name,
-            //         action,
-            //         amountIn,
-            //         poolSums,
-            //         diff
-            //     )
-            //     this.returnSurplus(pool, zeroForOne, diff)
-            // }
 
             pathSwaps.push({
                 path: path,
@@ -323,6 +280,9 @@ export default class Router {
     // Also due to insufficient amount in some pools like cross pools, we have to revert swaps that are empty half-way through
     // Otherwise tokens leak - as intermediate leftovers are not regarded and get lost
     // @TODO: Implement math formula for exactIn exactOut calculation instead of those reverse/return operations
+    /**
+     * @deprecated
+     */
     swapBestPath(amount, pricedPath) {
         let localSwaps = []
         let shouldExitEmpty = false
