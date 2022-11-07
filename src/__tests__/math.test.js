@@ -6,6 +6,7 @@ import Router from '../logic/Router/Router.class'
 import {
     buySameLiqT0in,
     buySameLiqT1out,
+    getBuySameLiq,
     getSellSameLiq,
     getSwapAmtSameLiq,
     oneShotGetBuyCap,
@@ -15,7 +16,7 @@ import {
 } from '../logic/Router/math'
 import { pp2p } from '../logic/Utils/logicUtils'
 import globalConfig from '../logic/config.global.json'
-import { getCP, getQP } from './helpers/getQuestPools'
+import { getCP, getPoolCurrentPointers, getQP } from './helpers/getQuestPools'
 
 describe('Smart route math works', () => {
     let quests = {}
@@ -249,11 +250,20 @@ describe('Smart route math works', () => {
         expect(swapAmtsBuyDsell.t0fort1).toBeCloseTo(17378.057832830727, 5)
         expect(swapAmtsBuyDsell.t1fort0).toBeCloseTo(3885.8518631132183, 5)
 
+        console.log(
+            'poolD pointers BEFORE:',
+            getPoolCurrentPointers(pools.D, true)
+        )
         // flip the pool
         pools.D.buy(1000000000)
+        console.log(
+            'poolD pointers AFTER:',
+            getPoolCurrentPointers(pools.D, true)
+        )
+
         const swapAmtsBuyD_flipped = getSwapAmtSameLiq(pools.D, true)
-        expect(swapAmtsBuyD_flipped.t0fort1).toBeCloseTo(0, 5)
-        expect(swapAmtsBuyD_flipped.t1fort0).toBeCloseTo(0, 5)
+        expect(swapAmtsBuyD_flipped.t0fort1).toBeCloseTo(70710678.11865559, 5)
+        expect(swapAmtsBuyD_flipped.t1fort0).toBeCloseTo(5000.0, 5)
 
         const swapAmtsSellD_flipped = getSwapAmtSameLiq(pools.D, false)
         expect(swapAmtsSellD_flipped.t0fort1).toBeCloseTo(70710678.11865474, 5)

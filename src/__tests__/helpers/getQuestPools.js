@@ -1,5 +1,6 @@
 import Investor from '../../logic/Investor/Investor.class'
 import UsdcToken from '../../logic/Quest/UsdcToken.class'
+import { pp2p } from '../../logic/Utils/logicUtils'
 
 export const getQP = (name, priceMax = 10000) => {
     const investor = Investor.create('INV', 'INV', 10000)
@@ -49,4 +50,29 @@ export const getCP = (
     )
 
     return { crossPool: AB }
+}
+
+export const getPoolCurrentPointers = (poolRef, shouldPrint = false) => {
+    const curPointers = {
+        curLiq: poolRef.curLiq,
+        curPrice: poolRef.curPrice,
+        curLeft: poolRef.curLeft,
+        curPP: poolRef.curPP,
+        curRight: poolRef.curRight
+    }
+
+    if (shouldPrint) {
+        console.log(
+            `${pp2p(curPointers.curLeft)}[------------ ${pp2p(
+                curPointers.curPP
+            )} ---------]${pp2p(curPointers.curRight)}`
+        )
+        console.log(
+            [curPointers.curLeft, curPointers.curPP, curPointers.curRight].join(
+                '___'
+            )
+        )
+    }
+
+    return curPointers
 }
