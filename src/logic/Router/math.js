@@ -15,11 +15,8 @@ export const getSwapAmtSameLiq = (poolRef, zeroForOne = true) => {
     if (liq === 0) {
         let nextActiveLiqPos
 
-        if (zeroForOne) {
-            nextActiveLiqPos =
-                price < next
-                    ? poolRef.findActiveLiq('left')
-                    : poolRef.findActiveLiq('right')
+        if (zeroForOne && Math.log(price) >= next) {
+            nextActiveLiqPos = poolRef.findActiveLiq('right')
         } else {
             nextActiveLiqPos = poolRef.findActiveLiq('left')
         }

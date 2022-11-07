@@ -294,8 +294,10 @@ export default class Router {
 
         const pathActions = getPathActions(pricedPath.path, this)
 
+        let whileCounter = 0
         do {
             let pathSums = []
+            let poolsSaved = []
 
             for (const [id, pact] of pathActions.entries()) {
                 const sum = pathSums.length
@@ -314,7 +316,9 @@ export default class Router {
                     pool: pool.name,
                     op: zeroForOne ? 'BOUGHT' : 'SOLD',
                     in: Math.abs(poolSum[0]),
-                    out: Math.abs(poolSum[1])
+                    out: Math.abs(poolSum[1]),
+                    id,
+                    whileCounter
                 })
 
                 if (
@@ -381,6 +385,7 @@ export default class Router {
 
             this._SWAPS.push(...localSwaps)
             localSwaps = []
+            whileCounter++
         } while (
             (!isNaN(lastOutPrice) || lastOutPrice > 0) &&
             !isZero(amount) &&
@@ -521,6 +526,7 @@ export default class Router {
     /**
      * @description Finds all pools for a specific token under restricted depth
      * @param {string} tokenName
+     * @param {number} maxDepth
      * @param {number} depth
      * @returns {[]|*[]}
      */
