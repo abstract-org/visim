@@ -1,7 +1,5 @@
 import HashMap from 'hashmap'
 
-import Generator from '../logic/Generators/Generator.class'
-import { invGen, questGen } from '../logic/Generators/initialState'
 import Investor from '../logic/Investor/Investor.class'
 import UsdcToken from '../logic/Quest/UsdcToken.class'
 import Router from '../logic/Router/Router.class'
@@ -695,19 +693,16 @@ describe('Routing', () => {
     })
 })
 
-describe('getMaxAmountForPath', () => {
+describe('getMaxAmountInForPath()', () => {
     let quests = {}
     let pools = {}
-    let router
     const shouldDebugRouter = true
+    const objMapTo2dArray = (inpObj, mappingKey = 'name') =>
+        Object.entries(inpObj).map(([, obj]) => [obj[mappingKey], obj])
 
     const createRouter = (questObj, poolsObj, isDbg = shouldDebugRouter) => {
-        const poolsHashMap = new HashMap(
-            Object.entries(pools).map(([, obj]) => [obj.name, obj])
-        )
-        const questsHashMap = new HashMap(
-            Object.entries(quests).map(([, obj]) => [obj.name, obj])
-        )
+        const poolsHashMap = new HashMap(objMapTo2dArray(pools))
+        const questsHashMap = new HashMap(objMapTo2dArray(quests))
 
         return new Router(questsHashMap, poolsHashMap, isDbg)
     }
@@ -724,12 +719,8 @@ describe('getMaxAmountForPath', () => {
         pools.C = poolC
     })
 
-    fit('swapPath A -> AB -> C', () => {
-        const investor = Investor.create('INV', 'INV', 10000)
-
-        pools.A.buy(25000)
+    it('swapPath A -> B -> C', () => {
         pools.A.buy(555555)
-        pools.B.buy(1480)
         pools.B.buy(5000)
         pools.C.buy(650)
 
@@ -748,15 +739,196 @@ describe('getMaxAmountForPath', () => {
             pools.C,
             pools.B,
             0,
-            50
+            75
         )
         pools.BC = poolBC
         const router = createRouter(quests, pools)
 
         const path = ['A', 'B', 'C']
 
-        const result = router.getMaxAmountForPath(1000, path, 10)
+        const result = router.getMaxAmountInForPath(1000, path, 10)
 
-        expect(result).toBeGreaterThanOrEqual(10)
+        console.log(result)
+        expect(result).toBeGreaterThanOrEqual(1)
+    })
+
+    it('return 0 for impassable path A -> C', () => {
+        const router = createRouter(quests, pools)
+        const path = ['A', 'C']
+        const result = router.getMaxAmountInForPath(1000, path, 10)
+
+        expect(result).toBe(0)
+    })
+
+    it('return path A -> B -> C', () => {
+        const router = createRouter(quests, pools)
+        const path = ['A', 'B', 'C']
+
+        const result = router.getMaxAmountInForPath(1000, path)
+
+        expect(result).toBe(0)
+    })
+})
+
+describe('getPathWithActionCaps()', () => {
+    let quests = {}
+    let pools = {}
+    const shouldDebugRouter = true
+    const objMapTo2dArray = (inpObj, mappingKey = 'name') =>
+        Object.entries(inpObj).map(([, obj]) => [obj[mappingKey], obj])
+
+    const createRouter = (questObj, poolsObj, isDbg = shouldDebugRouter) => {
+        const poolsHashMap = new HashMap(objMapTo2dArray(pools))
+        const questsHashMap = new HashMap(objMapTo2dArray(quests))
+
+        return new Router(questsHashMap, poolsHashMap, isDbg)
+    }
+
+    beforeEach(() => {
+        const { quest: questA, pool: poolA } = getQP('A', 1000000)
+        const { quest: questB, pool: poolB } = getQP('B', 1000000)
+        const { quest: questC, pool: poolC } = getQP('C', 1000000)
+        quests.A = questA
+        quests.B = questB
+        quests.C = questC
+        pools.A = poolA
+        pools.B = poolB
+        pools.C = poolC
+        // pools.A.buy(50000)
+        // pools.B.buy(10000)
+        // pools.C.buy(651)
+
+        const { crossPool: poolAB } = getCP(
+            quests.B,
+            quests.A,
+            pools.B,
+            pools.A,
+            0,
+            1500
+        )
+        pools.AB = poolAB
+        const { crossPool: poolBC } = getCP(
+            quests.C,
+            quests.B,
+            pools.C,
+            pools.B,
+            0,
+            75
+        )
+        pools.BC = poolBC
+
+        // a-b-c-d
+        // ab b citing a: buy
+        // bc b citing c: sell
+        // cd d citing c: buy
+    })
+
+    it('empty array for empty pathActions', () => {
+        const router = createRouter(quests, pools)
+        const result = router.getPathWithActionCaps([])
+
+        expect(result).toMatchObject([])
+    })
+
+    it('returns array filled in with maxTotalIn/maxTotalOut', () => {
+        const router = createRouter(quests, pools)
+        const pathActions = getPathActions(['A', 'B', 'C'], router)
+        const result = router.getPathWithActionCaps(pathActions)
+
+        result.forEach((step) => {
+            expect(step).toHaveProperty('t0fort1')
+            expect(step).toHaveProperty('t1fort0')
+        })
+    })
+
+    it('returns correct direction for A-B-C', () => {
+        const router = createRouter(quests, pools)
+        const pathActions = getPathActions(['A', 'B', 'C'], router)
+        const result = router.getPathWithActionCaps(pathActions)
+
+        expect(result).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    action: 'buy',
+                    pool: expect.objectContaining({ name: pools.AB.name }),
+                    t0fort1: expect.any(Number),
+                    t1fort0: expect.any(Number)
+                }),
+                expect.objectContaining({
+                    action: 'buy',
+                    pool: expect.objectContaining({ name: pools.BC.name }),
+                    t0fort1: expect.any(Number),
+                    t1fort0: expect.any(Number)
+                })
+            ])
+        )
+    })
+
+    it('returns correct t1fort0 for A-B-C', () => {
+        const router = createRouter(quests, pools)
+        const pathActions = getPathActions(['A', 'B', 'C'], router)
+        const result = router.getPathWithActionCaps(pathActions)
+
+        const stepAB = result.find((s) => s.pool.name === 'A-B')
+        const stepBC = result.find((s) => s.pool.name === 'B-C')
+        expect(result).toBe(0)
+
+        expect(stepAB.t1fort0).toBeCloseTo(1500, 2)
+        expect(stepBC.t1fort0).toBeCloseTo(50, 2)
+    })
+
+    it('returns correct t1fort0 for USDC-B-C', () => {
+        const router = createRouter(quests, pools)
+        const pathActions = getPathActions(['USDC', 'B', 'C'], router)
+        const result = router.getPathWithActionCaps(pathActions)
+
+        const stepUsdcB = result.find((s) => s.pool.name === 'USDC-B')
+        const stepBC = result.find((s) => s.pool.name === 'B-C')
+
+        expect(stepUsdcB.t1fort0).toBeCloseTo(550.2948250878682, 2)
+        expect(stepBC.t1fort0).toBeCloseTo(50, 2)
+    })
+})
+
+describe('smartSwap()', () => {
+    let quests = {}
+    let pools = {}
+    const shouldDebugRouter = true
+    const objMapTo2dArray = (inpObj, mappingKey = 'name') =>
+        Object.entries(inpObj).map(([, obj]) => [obj[mappingKey], obj])
+
+    const createRouter = (questObj, poolsObj, isDbg = shouldDebugRouter) => {
+        const poolsHashMap = new HashMap(objMapTo2dArray(pools))
+        const questsHashMap = new HashMap(objMapTo2dArray(quests))
+
+        return new Router(questsHashMap, poolsHashMap, isDbg)
+    }
+
+    beforeEach(() => {
+        const { quest: questA, pool: poolA } = getQP('A', 1000000)
+        const { quest: questB, pool: poolB } = getQP('B', 1000000)
+        const { quest: questC, pool: poolC } = getQP('C', 1000000)
+        const { quest: questD, pool: poolD } = getQP('D', 1000000)
+        quests.A = questA
+        quests.B = questB
+        quests.C = questC
+        quests.D = questD
+        pools.A = poolA
+        pools.B = poolB
+        pools.C = poolC
+        pools.D = poolD
+
+        pools.A.buy(2000)
+        pools.B.buy(550)
+        pools.C.buy(5000)
+        pools.AB = getCP(quests.B, quests.A, pools.B, pools.A, 0, 150).crossPool
+        pools.BC = getCP(quests.C, quests.B, pools.C, pools.B, 0, 75).crossPool
+        pools.CD = getCP(quests.D, quests.C, pools.D, pools.C, 0, 220).crossPool
+    })
+
+    it('[A-buy-B-sell-USDC-buy-D] path', () => {
+        const router = createRouter(quests, pools)
+        const result = router.smartSwap(quests.A.name, quests.D.name, 1500)
+        console.log(result)
     })
 })

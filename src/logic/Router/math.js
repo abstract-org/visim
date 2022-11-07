@@ -1,4 +1,4 @@
-import { pp2p } from '../Utils/logicUtils'
+import { p2pp, pp2p } from '../Utils/logicUtils'
 
 /**
  * @description Unites all formula functions to produce exact amount in and out that can be traded in the pool given amountIn as a target
@@ -15,7 +15,7 @@ export const getSwapAmtSameLiq = (poolRef, zeroForOne = true) => {
     if (liq === 0) {
         let nextActiveLiqPos
 
-        if (zeroForOne && Math.log(price) >= next) {
+        if (zeroForOne && p2pp(price) >= next) {
             nextActiveLiqPos = poolRef.findActiveLiq('right')
         } else {
             nextActiveLiqPos = poolRef.findActiveLiq('left')
@@ -100,7 +100,7 @@ export const getSellSameLiq = (liq, price, t1amt, t0amt) => {
 }
 
 /**
- * @description [buy] Returns how many token0 will be consumed for specified amount within the same liquidity
+ * @description [exactOut] Returns how many token0 will be consumed for specified amount within the same liquidity
  * @param {number} liq
  * @param {number} price
  * @param {number} amount
@@ -113,7 +113,7 @@ export const buySameLiqT0inForT1out = (liq, price, amount) => {
 }
 
 /**
- * @description [buy] Returns how many token1 will be received for specified amount of token0 within the same liquidity
+ * @description [exactIn] Returns how many token1 will be received for specified amount of token0 within the same liquidity
  * @param {number} liq
  * @param {number} price
  * @param {number} amount
@@ -126,7 +126,7 @@ export const buySameLiqT1outForT0in = (liq, price, amount) => {
 }
 
 /**
- * @description [sell] Returns how many token1 will be consumed for specified amount within the same liquidity
+ * @description [exactIn] Returns how many token1 will be consumed for specified amount within the same liquidity
  * @param {number} liq
  * @param {number} price
  * @param {number} amount
@@ -137,7 +137,7 @@ export const sellSameLiqT1inForT0out = (liq, price, amount) => {
 }
 
 /**
- * @description [sell] Returns how many token0 will be received for specified amount of token1 within the same liquidity
+ * @description [exactOut] Returns how many token0 will be received for specified amount of token1 within the same liquidity
  * @param {number} liq
  * @param {number} price
  * @param {number} amount
