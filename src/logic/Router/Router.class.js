@@ -207,70 +207,83 @@ export default class Router {
         }
 
         const reversedPath = [...pathWithActionCaps].reverse()
-        const firstStep = reversedPath[0]
-        let nextAmountIn =
-            firstStep.action !== 'buy' ? firstStep.t0fort1 : firstStep.t1fort0
-        let canSpendAmount = 0
+        let carryOver = 0
+        let newAmount = 0
 
-        /**
-         * 1. buy: t0fort1 311.12C / t1fort0 219.99D
-            2. sell: t1fort0 106B / t0fort1 75C
-            3. buy: t0fort1 212.13A / t1fort0 150B
-
-            In this scenario, we need to know how much B we need to buy in AB to get 75C for x D
-         */
         reversedPath.forEach((step, idx) => {
+            if (idx === 0) return
+            const prev = reversedPath[idx - 1]
+            const prevZeroForOne = prev.action === 'buy'
             const zeroForOne = step.action === 'buy'
-            const activeLiq = step.pool.getNearestActiveLiq(zeroForOne)
-            const formulaArgs = [
-                activeLiq[0],
-                activeLiq[1],
-                zeroForOne ? step.t1fort0 : step.t0fort1
-            ]
-            canSpendAmount = zeroForOne
-                ? buySameLiqGiveT1GetT0(...formulaArgs)
-                : sellSameLiqGiveT0GetT1(...formulaArgs)
+            const activePrevLiq = prev.pool.getNearestActiveLiq(prevZeroForOne)
+            const activeCurLiq = step.pool.getNearestActiveLiq(zeroForOne)
+            const prevFormulaArgs = [activePrevLiq[0], activePrevLiq[1]]
+            const curFormulaArgs = [activeCurLiq[0], activeCurLiq[1]]
+
+            if (idx === reversedPath.length - 1) {
+                newAmount = zeroForOne
+                    ? buySameLiqGiveT1GetT0(...curFormulaArgs, carryOver)
+                    : sellSameLiqGiveT0GetT1(...curFormulaArgs, carryOver)
+            } else {
+                let prevT = prevZeroForOne
+                    ? buySameLiqGiveT1GetT0(...prevFormulaArgs, prev.t1fort0)
+                    : sellSameLiqGiveT0GetT1(...prevFormulaArgs, prev.t0fort1)
+
+                let curT = zeroForOne
+                    ? buySameLiqGiveT0GetT1(...curFormulaArgs, step.t0fort1)
+                    : sellSameLiqGiveT1GetT0(...curFormulaArgs, step.t1fort0)
+
+                if (prevT < curT) {
+                    curT = prevT
+                }
+
+                let newT = zeroForOne
+                    ? buySameLiqGiveT1GetT0(...curFormulaArgs, step.t1fort0)
+                    : sellSameLiqGiveT0GetT1(...curFormulaArgs, step.t0fort1)
+
+                carryOver = newT
+            }
 
             // @TODO: Which one should we use in sell?
             // first takes 75C and returns 106B
-            console.log(
-                step.t0fort1,
-                sellSameLiqGiveT0GetT1(activeLiq[0], activeLiq[1], step.t0fort1)
-            )
-            // second takes 106B and returns 75C
-            console.log(
-                step.t1fort0,
-                sellSameLiqGiveT1GetT0(activeLiq[0], activeLiq[1], step.t1fort0)
-            )
+            // console.log(
+            //     step.t0fort1,
+            //     sellSameLiqGiveT0GetT1(activeLiq[0], activeLiq[1], step.t0fort1)
+            // )
+            // // second takes 106B and returns 75C
+            // console.log(
+            //     step.t1fort0,
+            //     sellSameLiqGiveT1GetT0(activeLiq[0], activeLiq[1], step.t1fort0)
+            // )
 
-            console.log(
-                'canSpendAmount()',
-                `${zeroForOne ? 'buy' : 'sell'}`,
-                canSpendAmount,
-                nextAmountIn,
-                [...formulaArgs]
-            )
+            // console.log(
+            //     'canSpendAmount()',
+            //     `${zeroForOne ? 'buy' : 'sell'}`,
+            //     canSpendAmount,
+            //     nextAmountIn,
+            //     [...formulaArgs]
+            // )
 
-            // if buy and not last (exiting) operation
-            if (zeroForOne) {
-                if (idx === !reversedPath.length - 1) {
-                    // take t1 from buy formula and calculate x t0
-                }
-                // take t0 from buy formula
-            } else {
-                // take t0 from sell formula
-            }
+            // // if buy and not last (exiting) operation
+            // if (zeroForOne) {
+            //     if (idx === !reversedPath.length - 1) {
+            //         // take t1 from buy formula and calculate x t0
+            //     }
+            //     // take t0 from buy formula
+            // } else {
+            //     // take t0 from sell formula
+            // }
 
-            // if 311(t0) is more than we can get now 75C(t1), then take what would it take to get 75C (106B)
-            // if 106B(t1) is less than we want to get 150B(t0), take what it would take to get 106B (xA)
-            if (canSpendAmount < nextAmountIn) {
-                nextAmountIn = canSpendAmount
-            } else if (canSpendAmount === 0) {
-                return
-            }
+            // // if 311(t0) is more than we can get now 75C(t1), then take what would it take to get 75C (106B)
+            // // if 106B(t1) is less than we want to get 150B(t0), take what it would take to get 106B (xA)
+            // if (canSpendAmount < nextAmountIn) {
+            //     nextAmountIn = canSpendAmount
+            // } else if (canSpendAmount === 0) {
+            //     return
+            // }
         })
 
-        return nextAmountIn
+        return newAmount
     }
 
     // @TODO: cache global swaps somewhere where it's applicable (to avoid caching bad swaps)
@@ -310,11 +323,12 @@ export default class Router {
         const pathActions = getPathActions(path, this)
 
         let pathSwaps = []
+        let amountSwap = amountIn
 
         for (const [id, pact] of pathActions.entries()) {
             const { action, pool } = pact
             const zeroForOne = action === 'buy'
-            const poolSums = pool[action](amountIn)
+            const poolSums = pool[action](amountSwap)
 
             pathSwaps.push({
                 path: path,
@@ -327,6 +341,8 @@ export default class Router {
             if (poolSums[0] === 0 || poolSums[1] === 0) {
                 break
             }
+
+            amountSwap = poolSums[1]
         }
 
         return pathSwaps
