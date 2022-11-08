@@ -33,7 +33,6 @@ export const getCP = (
     citedSumB = 0
 ) => {
     const investor = Investor.create('INV', 'INV', 10000)
-
     const startingPrice = citingP.curPrice / citedP.curPrice
     const AB = investor.createPool(citedQ, citingQ, startingPrice)
     citedQ.addPool(AB)
@@ -52,26 +51,13 @@ export const getCP = (
     return { crossPool: AB }
 }
 
-export const getPoolCurrentPointers = (poolRef, shouldPrint = false) => {
+export const getPoolCurrentPointers = (poolRef) => {
     const curPointers = {
         curLiq: poolRef.curLiq,
         curPrice: poolRef.curPrice,
         curLeft: poolRef.curLeft,
         curPP: poolRef.curPP,
         curRight: poolRef.curRight
-    }
-
-    if (shouldPrint) {
-        console.log(
-            `${pp2p(curPointers.curLeft)}[------------ ${pp2p(
-                curPointers.curPP
-            )} ---------]${pp2p(curPointers.curRight)}`
-        )
-        console.log(
-            [curPointers.curLeft, curPointers.curPP, curPointers.curRight].join(
-                '___'
-            )
-        )
     }
 
     return curPointers

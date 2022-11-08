@@ -205,6 +205,18 @@ export default class Investor {
         min = nativePos ? 1 / unitPrice : unitPrice
         max = nativePos ? 1 / unitPrice : unitPrice
 
+        const dryBuyNonNative = crossPool.dryBuy(Infinity)
+        const drySellNative = crossPool.drySell(Infinity)
+        const freeMoveBuy = dryBuyNonNative[0] === 0 && dryBuyNonNative[1] === 0
+        const freeMoveSell = drySellNative[0] === 0 && drySellNative[1] === 0
+
+        // If we can move for free towards requested price, set that price as current to calculate position location properly
+        if (nativePos && max > crossPool.curPrice && freeMoveSell) {
+            crossPool.curPrice = max
+        } else if (!nativePos && min < this.curPrice && freeMoveBuy) {
+            crossPool.curPrice = min
+        }
+
         if (nativePos && max <= crossPool.curPrice) {
             min = min / multiplier
         } else if (nativePos && max > crossPool.curPrice) {

@@ -230,8 +230,6 @@ export default class Pool {
             Math.sqrt(this.curPrice)
         )
 
-        //console.log(token0Amt, token1Amt, priceMin, priceMax, liquidity)
-
         if (liquidity === 0) {
             return []
         }
@@ -263,36 +261,40 @@ export default class Pool {
             amounts[1] = amounts[1] - amounts[0]
         }
 
-        this.setActiveLiq(priceMin)
+        // Native direction needs to pick position at priceMax and set it instead, removing liquidity
+        this.setActiveLiq(priceMin, native)
 
         return amounts
     }
 
-    setActiveLiq(pMin, capPrice) {
+    setActiveLiq(pMin, native) {
         if (
             pp2p(this.curPP) !== this.curPrice ||
             (this.curLiq === 0 && isZero(this.volumeToken1)) ||
             isNearZero(this.volumeToken1)
         ) {
             const ppNext =
-                pMin <= this.curPrice ? this.findActiveLiq('left') : null
-            const ppPrev = !ppNext ? this.findActiveLiq('right') : null
+                pMin <= this.curPrice
+                    ? this.findActiveLiq('left', native)
+                    : null
+            const ppPrev = !ppNext ? this.findActiveLiq('right', native) : null
 
             const toPP = ppNext ? ppNext : ppPrev ? ppPrev : null
 
             if (toPP) {
+                const newLiq = this.curLiq + toPP.liquidity
                 this.curPP = toPP.pp
                 this.curLeft = toPP.left
                 this.curRight = toPP.right
-                this.curLiq = toPP.liquidity
-                this.curPrice = capPrice ? pp2p(capPrice) : pp2p(toPP.pp)
+                this.curLiq = newLiq <= 0 ? 0 : toPP.liquidity
+                this.curPrice = pp2p(toPP.pp)
                 this.priceToken0 = 1 / this.curPrice
                 this.priceToken1 = this.curPrice
             }
         }
     }
 
-    findActiveLiq(dir) {
+    findActiveLiq(dir, native = false) {
         let localPP = this.curPP
 
         while (
@@ -300,7 +302,9 @@ export default class Pool {
             this.pos.get(localPP)[dir] !== 'undefined' &&
             localPP !== this.pos.get(localPP)[dir]
         ) {
-            if (this.pos.get(localPP).liquidity > 0) {
+            if (!native && this.pos.get(localPP).liquidity > 0) {
+                return this.pos.get(localPP)
+            } else if (native && this.pos.get(localPP).liquidity < 0) {
                 return this.pos.get(localPP)
             }
 
@@ -308,6 +312,43 @@ export default class Pool {
         }
 
         return null
+    }
+
+    getNearestActiveLiq(zeroForOne) {
+        if (this.curLiq > 0) {
+            return [
+                this.curLiq,
+                this.curPrice,
+                zeroForOne ? this.curRight : this.curPP
+            ]
+        }
+
+        let nextActiveLiqPos
+        let liq = this.curLiq
+        let price = this.curPrice
+        let next = zeroForOne ? this.curRight : this.curPP
+
+        if (zeroForOne && p2pp(price) >= next) {
+            nextActiveLiqPos = this.findActiveLiq('right')
+        } else {
+            nextActiveLiqPos = this.findActiveLiq('left')
+        }
+
+        if (!nextActiveLiqPos || nextActiveLiqPos.liquidity <= 0) {
+            return null
+        }
+
+        if (zeroForOne) {
+            liq = nextActiveLiqPos.liquidity
+            price = pp2p(nextActiveLiqPos.pp)
+            next = nextActiveLiqPos.right
+        } else {
+            liq = nextActiveLiqPos.liquidity
+            price = pp2p(nextActiveLiqPos.right)
+            next = nextActiveLiqPos.pp
+        }
+
+        return [liq, price, next]
     }
 
     /**

@@ -13,27 +13,13 @@ export const getSwapAmtSameLiq = (poolRef, zeroForOne = true) => {
 
     // find active liq if none
     if (liq === 0) {
-        let nextActiveLiqPos
+        const nextActiveLiqPos = poolRef.getNearestActiveLiq(zeroForOne)
 
-        if (zeroForOne && p2pp(price) >= next) {
-            nextActiveLiqPos = poolRef.findActiveLiq('right')
-        } else {
-            nextActiveLiqPos = poolRef.findActiveLiq('left')
-        }
-
-        if (nextActiveLiqPos && nextActiveLiqPos.liquidity) {
-            if (zeroForOne) {
-                liq = nextActiveLiqPos.liquidity
-                price = pp2p(nextActiveLiqPos.pp)
-                next = nextActiveLiqPos.right
-            } else {
-                liq = nextActiveLiqPos.liquidity
-                price = pp2p(nextActiveLiqPos.right)
-                next = nextActiveLiqPos.pp
-            }
-        } else {
+        if (!nextActiveLiqPos) {
             return { t0fort1: 0, t1fort0: 0 }
         }
+
+        ;[liq, price, next] = [...nextActiveLiqPos]
     }
 
     // get one shot same liq
@@ -87,15 +73,15 @@ const sellOneShotGetT0cap = (liq, price, nextPP) => {
 
 export const getBuySameLiq = (liq, price, t0amt, t1amt) => {
     return {
-        t0fort1: buySameLiqT0inForT1out(liq, price, t1amt),
-        t1fort0: buySameLiqT1outForT0in(liq, price, t0amt)
+        t0fort1: buySameLiqGiveT1GetT0(liq, price, t1amt),
+        t1fort0: buySameLiqGiveT0GetT1(liq, price, t0amt)
     }
 }
 
 export const getSellSameLiq = (liq, price, t1amt, t0amt) => {
     return {
-        t1fort0: sellSameLiqT1inForT0out(liq, price, t0amt),
-        t0fort1: sellSameLiqT0outForT1in(liq, price, t1amt)
+        t1fort0: sellSameLiqGiveT0GetT1(liq, price, t0amt),
+        t0fort1: sellSameLiqGiveT1GetT0(liq, price, t1amt)
     }
 }
 
@@ -106,7 +92,7 @@ export const getSellSameLiq = (liq, price, t1amt, t0amt) => {
  * @param {number} amount
  * @returns
  */
-export const buySameLiqT0inForT1out = (liq, price, amount) => {
+export const buySameLiqGiveT1GetT0 = (liq, price, amount) => {
     return Math.abs(
         (liq * price * amount) / (liq + Math.sqrt(price) * (amount * -1))
     )
@@ -119,7 +105,7 @@ export const buySameLiqT0inForT1out = (liq, price, amount) => {
  * @param {number} amount
  * @returns
  */
-export const buySameLiqT1outForT0in = (liq, price, amount) => {
+export const buySameLiqGiveT0GetT1 = (liq, price, amount) => {
     return Math.abs(
         liq * (1 / (Math.sqrt(price) + amount / liq) - 1 / Math.sqrt(price))
     )
@@ -132,7 +118,7 @@ export const buySameLiqT1outForT0in = (liq, price, amount) => {
  * @param {number} amount
  * @returns
  */
-export const sellSameLiqT1inForT0out = (liq, price, amount) => {
+export const sellSameLiqGiveT0GetT1 = (liq, price, amount) => {
     return Math.abs((liq * amount) / (liq * price - Math.sqrt(price) * amount))
 }
 
@@ -143,7 +129,7 @@ export const sellSameLiqT1inForT0out = (liq, price, amount) => {
  * @param {number} amount
  * @returns
  */
-export const sellSameLiqT0outForT1in = (liq, price, amount) => {
+export const sellSameLiqGiveT1GetT0 = (liq, price, amount) => {
     return Math.abs(
         liq * (Math.sqrt(price) - liq / (amount + liq / Math.sqrt(price)))
     )
