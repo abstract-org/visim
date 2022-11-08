@@ -179,29 +179,32 @@ class Generator {
         })
 
         // Every X days - keep creating quests
-        this.handlers.push(
-            new Promise((resolve) => {
-                resolve(this.simulateKeepCreatingQuest(day))
-            })
-        )
+        // this.handlers.push(
+        //     new Promise((resolve) => {
+        //         resolve(this.simulateKeepCreatingQuest(day))
+        //     })
+        // )
+        this.simulateKeepCreatingQuest(day)
 
         // Every X days - buy/sell top gainers/increased or decreased in prices
-        this.handlers.push(
-            new Promise((resolve) => {
-                resolve(this.simulateTrade(day, this.router))
-            })
-        )
+        // this.handlers.push(
+        //     new Promise((resolve) => {
+        //         resolve(this.simulateTrade(day, this.router))
+        //     })
+        // )
+        this.simulateTrade(day, this.router)
 
         // Every X days - withdraw X in USDC value
-        this.handlers.push(
-            new Promise((resolve) => {
-                resolve(this.simulateWithdraw(day, this.router))
-            })
-        )
+        // this.handlers.push(
+        //     new Promise((resolve) => {
+        //         resolve(this.simulateWithdraw(day, this.router))
+        //     })
+        // )
+        this.simulateWithdraw(day, this.router)
 
-        await Promise.all(this.handlers).catch((reason) => {
-            console.log(`Rejected promise: ${reason}`)
-        })
+        // await Promise.all(this.handlers).catch((reason) => {
+        //     console.log(`Rejected promise: ${reason}`)
+        // })
 
         return this.#dayData[day]
     }
@@ -925,18 +928,19 @@ class Generator {
                         conf.includeSingleName.length > 0 &&
                         conf.buySinglePerc > 0
                     ) {
-                        this.tradingHandlers.push(
-                            new Promise((resolve) =>
-                                resolve(
-                                    this.tradeSpecificQuest(
-                                        conf,
-                                        day,
-                                        investor,
-                                        router
-                                    )
-                                )
-                            )
-                        )
+                        // this.tradingHandlers.push(
+                        //     new Promise((resolve) =>
+                        //         resolve(
+                        //             this.tradeSpecificQuest(
+                        //                 conf,
+                        //                 day,
+                        //                 investor,
+                        //                 router
+                        //             )
+                        //         )
+                        //     )
+                        // )
+                        this.tradeSpecificQuest(conf, day, investor, router)
                     }
 
                     // Buy top gainers/random
@@ -945,44 +949,47 @@ class Generator {
                         conf.buyGainerPerc &&
                         conf.buyQuestPerc
                     ) {
-                        this.tradingHandlers.push(
-                            new Promise((resolve) =>
-                                resolve(
-                                    this.tradeTopGainers(
-                                        conf,
-                                        day,
-                                        investor,
-                                        router
-                                    )
-                                )
-                            )
-                        )
+                        // this.tradingHandlers.push(
+                        //     new Promise((resolve) =>
+                        //         resolve(
+                        //             this.tradeTopGainers(
+                        //                 conf,
+                        //                 day,
+                        //                 investor,
+                        //                 router
+                        //             )
+                        //         )
+                        //     )
+                        // )
+                        this.tradeTopGainers(conf, day, investor, router)
                     }
 
                     // Swap owned:
                     // Tokens that increased in price
-                    this.tradingHandlers.push(
-                        new Promise((resolve) =>
-                            resolve(
-                                this.tradeIncQuests(conf, day, investor, router)
-                            )
-                        )
-                    )
+                    // this.tradingHandlers.push(
+                    //     new Promise((resolve) =>
+                    //         resolve(
+                    //             this.tradeIncQuests(conf, day, investor, router)
+                    //         )
+                    //     )
+                    // )
+                    this.tradeIncQuests(conf, day, investor, router)
 
                     // Tokens that decreased in price
-                    this.tradingHandlers.push(
-                        new Promise((resolve) =>
-                            resolve(
-                                this.tradeDecQuests(conf, day, investor, router)
-                            )
-                        )
-                    )
+                    // this.tradingHandlers.push(
+                    //     new Promise((resolve) =>
+                    //         resolve(
+                    //             this.tradeDecQuests(conf, day, investor, router)
+                    //         )
+                    //     )
+                    // )
+                    this.tradeDecQuests(conf, day, investor, router)
                 })
 
-                Promise.all(this.tradingHandlers).catch((reason) => {
-                    console.log(`Could not finish all operations: ${reason}`)
-                    console.log(reason)
-                })
+                // Promise.all(this.tradingHandlers).catch((reason) => {
+                //     console.log(`Could not finish all operations: ${reason}`)
+                //     console.log(reason)
+                // })
             }
         })
 
