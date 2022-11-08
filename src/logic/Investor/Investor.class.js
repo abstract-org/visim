@@ -205,6 +205,12 @@ export default class Investor {
         min = nativePos ? 1 / unitPrice : unitPrice
         max = nativePos ? 1 / unitPrice : unitPrice
 
+        // Try to correct rounding errors
+        if (nativePos) {
+            min -= 0.0000000000000000001
+            max -= 0.0000000000000000001
+        }
+
         const dryBuyNonNative = crossPool.dryBuy(Infinity)
         const drySellNative = crossPool.drySell(Infinity)
         const freeMoveBuy = dryBuyNonNative[0] === 0 && dryBuyNonNative[1] === 0
