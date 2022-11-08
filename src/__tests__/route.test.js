@@ -3,7 +3,7 @@ import HashMap from 'hashmap'
 import Investor from '../logic/Investor/Investor.class'
 import UsdcToken from '../logic/Quest/UsdcToken.class'
 import Router from '../logic/Router/Router.class'
-import { getPathActions, pp2p } from '../logic/Utils/logicUtils'
+import { getPathActions, hashmapToObj, pp2p } from '../logic/Utils/logicUtils'
 import { getCP, getQP } from './helpers/getQuestPools'
 import { prepareCrossPools, preparePool } from './helpers/poolManager'
 
@@ -887,45 +887,5 @@ describe('getPathWithActionCaps()', () => {
 
         expect(stepUsdcB.t1fort0).toBeCloseTo(550.2948250878682, 2)
         expect(stepBC.t1fort0).toBeCloseTo(50, 2)
-    })
-})
-
-describe('smartSwap()', () => {
-    let quests = {}
-    let pools = {}
-    const shouldDebugRouter = false
-    const objMapTo2dArray = (inpObj, mappingKey = 'name') =>
-        Object.entries(inpObj).map(([, obj]) => [obj[mappingKey], obj])
-
-    const createRouter = (questObj, poolsObj, isDbg = shouldDebugRouter) => {
-        const poolsHashMap = new HashMap(objMapTo2dArray(poolsObj))
-        const questsHashMap = new HashMap(objMapTo2dArray(questObj))
-
-        return new Router(questsHashMap, poolsHashMap, isDbg)
-    }
-
-    beforeEach(() => {
-        const { quest: questA, pool: poolA } = getQP('A', 1000000)
-        const { quest: questB, pool: poolB } = getQP('B', 1000000)
-        const { quest: questC, pool: poolC } = getQP('C', 1000000)
-        const { quest: questD, pool: poolD } = getQP('D', 1000000)
-        quests.A = questA
-        quests.B = questB
-        quests.C = questC
-        quests.D = questD
-        pools.A = poolA
-        pools.B = poolB
-        pools.C = poolC
-        pools.D = poolD
-
-        pools.AB = getCP(quests.B, quests.A, pools.B, pools.A, 0, 150).crossPool
-        pools.CB = getCP(quests.B, quests.C, pools.C, pools.B, 75, 0).crossPool
-        pools.CD = getCP(quests.D, quests.C, pools.D, pools.C, 0, 220).crossPool
-    })
-
-    it('[A-buy-B-sell-USDC-buy-D] path', () => {
-        const router = createRouter(quests, pools)
-        const result = router.smartSwap(quests.A.name, quests.D.name, 1500)
-        console.log('RESULT', result)
     })
 })
