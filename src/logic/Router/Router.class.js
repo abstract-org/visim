@@ -88,13 +88,13 @@ export default class Router {
                 this._PRICED_PATHS[0].path
             )
             console.log(`###DEBUG Calculated properAmountIn: ${properAmountIn}`)
-            // if (
-            //     isZero(properAmountIn) ||
-            //     isNearZero(properAmountIn) ||
-            //     properAmountIn <= 0
-            // ) {
-            //     break
-            // }
+            if (
+                isZero(properAmountIn) ||
+                isNearZero(properAmountIn) ||
+                properAmountIn <= 0
+            ) {
+                break
+            }
             const sums = this.swapPricedPath(
                 properAmountIn,
                 this._PRICED_PATHS[0].path,
@@ -149,6 +149,8 @@ export default class Router {
         if (!pathActions.length) return 0
 
         const pathWithActionsCaps = this.getPathWithActionCaps(pathActions)
+        if (!pathWithActionsCaps) return 0
+
         const maxAcceptable =
             this.calculateAcceptableForCappedPathActions(pathWithActionsCaps)
 
@@ -176,6 +178,26 @@ export default class Router {
                 step.pool,
                 zeroForOne
             )
+            if (
+                cappedAmountsSameLiq.t0fort1 === 0 ||
+                cappedAmountsSameLiq.t1fort0 === 0
+            ) {
+                console.log(
+                    step.pool.name,
+                    ' ',
+                    step.action,
+                    ' ### WARNING! getSwapAmtSameLiq returned  msg:',
+                    cappedAmountsSameLiq.msg,
+                    ' t0fort1=',
+                    cappedAmountsSameLiq.t0fort1,
+                    ' t1fort0=',
+                    cappedAmountsSameLiq.t1fort0,
+                    ' pathActions:',
+                    pathActions
+                )
+
+                return null
+            }
             pathActionsWithCaps.push({
                 ...step,
                 ...cappedAmountsSameLiq
@@ -213,6 +235,9 @@ export default class Router {
         reversedPath.forEach((step, idx) => {
             const zeroForOne = step.action === 'buy'
             const activeCurLiq = step.pool.getNearestActiveLiq(zeroForOne)
+            if (!Array.isArray(activeCurLiq) || activeCurLiq.length < 1) {
+                console.log(step)
+            }
             const curFormulaArgs = [activeCurLiq[0], activeCurLiq[1]]
             if (idx === 0) {
                 step.pool.getNearestActiveLiq(zeroForOne)
