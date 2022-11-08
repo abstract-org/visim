@@ -85,31 +85,31 @@ export default class Router {
             // @TODO: use getSwapAmtSameLiq to calculate amounts per pool
             properAmountIn = this.getMaxAmountInForPath(
                 amountIn,
-                this._PRICED_PATHS[0].path,
-                priceLimit
+                this._PRICED_PATHS[0].path
             )
-            this._DEBUG &&
-                console.log(
-                    '###DEBUG### Calculated maxAvailable amount: ',
-                    properAmountIn
-                )
+            console.log(`###DEBUG Calculated properAmountIn: ${properAmountIn}`)
+            // if (
+            //     isZero(properAmountIn) ||
+            //     isNearZero(properAmountIn) ||
+            //     properAmountIn <= 0
+            // ) {
+            //     break
+            // }
             const sums = this.swapPricedPath(
                 properAmountIn,
                 this._PRICED_PATHS[0].path,
                 priceLimit
             )
 
-            // if (this._DEBUG) {
-            //     console.log(
-            //         `[path-swap-result] ${sums}`,
-            //         `// token prices after swap:`,
-            //         `${token0}: ${
-            //             this.getPoolByTokens(token0, token1).priceToken0
-            //         } / ${token1}: ${
-            //             this.getPoolByTokens(token0, token1).priceToken1
-            //         }`
-            //     )
-            // }
+            // console.log(
+            //     `[path-swap-result] ${sums}`,
+            //     `// token prices after swap:`,
+            //     `${token0}: ${
+            //         this.getPoolByTokens(token0, token1).priceToken0
+            //     } / ${token1}: ${
+            //         this.getPoolByTokens(token0, token1).priceToken1
+            //     }`
+            // )
 
             amountIn -= sums[0]
             totalInOut[0] -= sums[0]
@@ -211,14 +211,22 @@ export default class Router {
         let newAmount = 0
 
         reversedPath.forEach((step, idx) => {
-            if (idx === 0) return
+            const zeroForOne = step.action === 'buy'
+            const activeCurLiq = step.pool.getNearestActiveLiq(zeroForOne)
+            const curFormulaArgs = [activeCurLiq[0], activeCurLiq[1]]
+            if (idx === 0) {
+                step.pool.getNearestActiveLiq(zeroForOne)
+                newAmount = zeroForOne
+                    ? buySameLiqGiveT1GetT0(...curFormulaArgs, step.t1fort0)
+                    : sellSameLiqGiveT0GetT1(...curFormulaArgs, step.t0fort1)
+                carryOver = newAmount
+                return
+            }
+
             const prev = reversedPath[idx - 1]
             const prevZeroForOne = prev.action === 'buy'
-            const zeroForOne = step.action === 'buy'
             const activePrevLiq = prev.pool.getNearestActiveLiq(prevZeroForOne)
-            const activeCurLiq = step.pool.getNearestActiveLiq(zeroForOne)
             const prevFormulaArgs = [activePrevLiq[0], activePrevLiq[1]]
-            const curFormulaArgs = [activeCurLiq[0], activeCurLiq[1]]
 
             if (idx === reversedPath.length - 1) {
                 newAmount = zeroForOne
@@ -289,19 +297,21 @@ export default class Router {
     // @TODO: cache global swaps somewhere where it's applicable (to avoid caching bad swaps)
     swapPricedPath(amountIn, path, priceLimit) {
         const swaps = this.swapPath(amountIn, path)
-        console.log('swapPricedPath() swaps', swaps) // TODO into this._SWAPS - only if trade incorrect
+        console.log('swapPricedPath() swaps to be', swaps)
         const leftoverAmt = amountIn - swaps[0].in
 
         // Pool state preserved
         if (swaps.length === 1 && (swaps[0].in === 0 || swaps[0].out === 0)) {
             return [0, 0]
         }
-        // save localswaps --> this._SWAPS
+        console.log('...swaps saved')
+        this._SWAPS = [...this._SWAPS, ...swaps]
         // in: 1000, [-1000, 150]
         if (isZero(leftoverAmt) || isNearZero(leftoverAmt)) {
             return [swaps[0].in, swaps[swaps.length - 1].out]
         }
 
+        // TODO: consider to change conditions and return from here
         // check if outPrice of current path swap is higher than priceLimit
         // if true: return [totalIn/totalOut]
         // if false: call swapPath again with updated amountIn and repeat the process
@@ -348,9 +358,7 @@ export default class Router {
         return pathSwaps
     }
 
-    /**
-     * @deprecated
-     */
+    /* @deprecated */
     swapBestPath(amount, pricedPath) {
         let localSwaps = []
         let shouldExitEmpty = false
