@@ -16,7 +16,11 @@ export const getSwapAmtSameLiq = (poolRef, zeroForOne = true) => {
         const nextActiveLiqPos = poolRef.getNearestActiveLiq(zeroForOne)
 
         if (!nextActiveLiqPos) {
-            return { t0fort1: 0, t1fort0: 0 }
+            return {
+                t0fort1: 0,
+                t1fort0: 0,
+                msg: 'No next active liquidity found'
+            }
         }
 
         ;[liq, price, next] = [...nextActiveLiqPos]
