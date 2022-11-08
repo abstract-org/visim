@@ -3,11 +3,11 @@ import HashMap from 'hashmap'
 import { getPathActions, isNearZero, isZero } from '../Utils/logicUtils'
 import { Graph } from './Graph.class'
 import {
-    buySameLiqT0inForT1out,
-    buySameLiqT1outForT0in,
+    buySameLiqGiveT0GetT1,
+    buySameLiqGiveT1GetT0,
     getSwapAmtSameLiq,
-    sellSameLiqT0outForT1in,
-    sellSameLiqT1inForT0out
+    sellSameLiqGiveT0GetT1,
+    sellSameLiqGiveT1GetT0
 } from './math'
 
 export default class Router {
@@ -143,34 +143,12 @@ export default class Router {
      * @param {number} priceLimit
      * @returns {number} max acceptable amount in for the path
      */
-    getMaxAmountInForPath(amountIn, path, priceLimit = 0) {
+    getMaxAmountInForPath(amountIn, path) {
         // @FIXME: remove or use priceLimit parameter if needed
         const pathActions = getPathActions(path, this)
         if (!pathActions.length) return 0
-        console.log(
-            'pathActions\n',
-            pathActions
-                .map((step) => `${step.pool.name} ${step.action}`)
-                .join('\n')
-        )
+
         const pathWithActionsCaps = this.getPathWithActionCaps(pathActions)
-        console.log(
-            'pathWithActionsCaps\n',
-            pathWithActionsCaps
-                .map(
-                    (step) =>
-                        `${step.pool.name} [${
-                            step.action
-                        }] volumeT1=${step.pool.volumeToken0.toFixed(
-                            3
-                        )} volumeT2=${step.pool.volumeToken1.toFixed(
-                            3
-                        )}\n\t\t t0fort1: ${step.t0fort1.toFixed(
-                            3
-                        )},\n\t\t t1fort0: ${step.t1fort0.toFixed(3)}`
-                )
-                .join('\n')
-        )
         const maxAcceptable =
             this.calculateAcceptableForCappedPathActions(pathWithActionsCaps)
 
@@ -188,7 +166,7 @@ export default class Router {
      * @param {boolean} shouldUseDrySwap - set true if formulas broken
      * @returns {StepWithCaps[]}
      */
-    getPathWithActionCaps(pathActions, shouldUseDrySwap = false) {
+    getPathWithActionCaps(pathActions) {
         const pathActionsWithCaps = []
 
         for (const step of pathActions) {
@@ -203,6 +181,8 @@ export default class Router {
                 ...cappedAmountsSameLiq
             })
         }
+
+        console.log('pathActionsWithCaps()', pathActionsWithCaps)
 
         return pathActionsWithCaps
     }
@@ -221,10 +201,7 @@ export default class Router {
      * @param {boolean} shouldDrySwap
      * @returns {number|*|number}
      */
-    calculateAcceptableForCappedPathActions(
-        pathWithActionCaps,
-        shouldDrySwap = false
-    ) {
+    calculateAcceptableForCappedPathActions(pathWithActionCaps) {
         if (!Array.isArray(pathWithActionCaps) || !pathWithActionCaps.length) {
             return 0
         }
@@ -233,23 +210,63 @@ export default class Router {
         const firstStep = reversedPath[0]
         let nextAmountIn =
             firstStep.action !== 'buy' ? firstStep.t0fort1 : firstStep.t1fort0
-
         let canSpendAmount = 0
 
-        reversedPath.forEach((step) => {
-            const { pool } = step
-            const zeroForOne = step.action === 'buy'
-            const formulaArgs = [pool.curLiq, pool.curPrice, nextAmountIn]
-            // prevstep if zeroforone buy-t1/buy-t0, curstep if zeroforone
-            canSpendAmount = zeroForOne
-                ? buySameLiqT1outForT0in(...formulaArgs)
-                : sellSameLiqT0outForT1in(...formulaArgs)
+        /**
+         * 1. buy: t0fort1 311.12C / t1fort0 219.99D
+            2. sell: t1fort0 106B / t0fort1 75C
+            3. buy: t0fort1 212.13A / t1fort0 150B
 
-            nextAmountIn = zeroForOne ? step.t0fort1 : step.t1fort0
+            In this scenario, we need to know how much B we need to buy in AB to get 75C for x D
+         */
+        reversedPath.forEach((step, idx) => {
+            const zeroForOne = step.action === 'buy'
+            const activeLiq = step.pool.getNearestActiveLiq(zeroForOne)
+            const formulaArgs = [
+                activeLiq[0],
+                activeLiq[1],
+                zeroForOne ? step.t1fort0 : step.t0fort1
+            ]
+            canSpendAmount = zeroForOne
+                ? buySameLiqGiveT1GetT0(...formulaArgs)
+                : sellSameLiqGiveT0GetT1(...formulaArgs)
+
+            // @TODO: Which one should we use in sell?
+            // first takes 75C and returns 106B
+            console.log(
+                step.t0fort1,
+                sellSameLiqGiveT0GetT1(activeLiq[0], activeLiq[1], step.t0fort1)
+            )
+            // second takes 106B and returns 75C
+            console.log(
+                step.t1fort0,
+                sellSameLiqGiveT1GetT0(activeLiq[0], activeLiq[1], step.t1fort0)
+            )
+
+            console.log(
+                'canSpendAmount()',
+                `${zeroForOne ? 'buy' : 'sell'}`,
+                canSpendAmount,
+                nextAmountIn,
+                [...formulaArgs]
+            )
+
+            // if buy and not last (exiting) operation
+            if (zeroForOne) {
+                if (idx === !reversedPath.length - 1) {
+                    // take t1 from buy formula and calculate x t0
+                }
+                // take t0 from buy formula
+            } else {
+                // take t0 from sell formula
+            }
+
+            // if 311(t0) is more than we can get now 75C(t1), then take what would it take to get 75C (106B)
+            // if 106B(t1) is less than we want to get 150B(t0), take what it would take to get 106B (xA)
             if (canSpendAmount < nextAmountIn) {
                 nextAmountIn = canSpendAmount
             } else if (canSpendAmount === 0) {
-                return 0
+                return
             }
         })
 
@@ -297,22 +314,6 @@ export default class Router {
         for (const [id, pact] of pathActions.entries()) {
             const { action, pool } = pact
             const zeroForOne = action === 'buy'
-
-            // Ideal case:
-            // USDC-AGORA-B-C
-            // in: 1000
-            // USDC-AGORA dryBuy(1000) -> 500 AGORA
-            // AGORA-B dryBuy(500) -> 200 B
-            // B-C dryBuy(200) -> 100 C
-            // [-1000, 100]
-
-            // Inconsistent case:
-            // USDC-AGORA-B-C
-            // in: 1000
-            // USDC-AGORA dryBuy(1000) -> 500 AGORA -> maxSameLiqBuyIn(150AGORA)??? [-555USDC,150AGORA]
-            // AGORA-B dryBuy(500) -> exactOut [-300, 200 B] // surplus 200 AGORA -> maxSameLiqBuyIn(100B)??? [-150AGORA,100B]
-            // B-C dryBuy(200) -> [-100, 100 C] // surplus 100 B
-            // [-1000, 100] -> [-555, 100]
             const poolSums = pool[action](amountIn)
 
             pathSwaps.push({
@@ -331,11 +332,6 @@ export default class Router {
         return pathSwaps
     }
 
-    // Due to inconsistent amounts swapped between pools,
-    // we have to calculate leftovers and return them to USDC pool by investor via direct sell
-    // Also due to insufficient amount in some pools like cross pools, we have to revert swaps that are empty half-way through
-    // Otherwise tokens leak - as intermediate leftovers are not regarded and get lost
-    // @TODO: Implement math formula for exactIn exactOut calculation instead of those reverse/return operations
     /**
      * @deprecated
      */

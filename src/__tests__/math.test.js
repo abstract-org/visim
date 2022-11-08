@@ -4,15 +4,15 @@ import Investor from '../logic/Investor/Investor.class'
 import UsdcToken from '../logic/Quest/UsdcToken.class'
 import Router from '../logic/Router/Router.class'
 import {
-    buySameLiqT0in,
-    buySameLiqT1out,
+    buySameLiqGiveT0GetT1,
+    buySameLiqGiveT1GetT0,
     getBuySameLiq,
     getSellSameLiq,
     getSwapAmtSameLiq,
     oneShotGetBuyCap,
     oneShotGetSellCap,
-    sellSameLiqT0out,
-    sellSameLiqT1in
+    sellSameLiqGiveT0GetT1,
+    sellSameLiqGiveT1GetT0
 } from '../logic/Router/math'
 import { pp2p } from '../logic/Utils/logicUtils'
 import globalConfig from '../logic/config.global.json'
@@ -50,7 +50,7 @@ describe('Smart route math works', () => {
         pools.D = poolD
     })
 
-    xit('maxOneShotBuy/maxOneShotSell with seeking next active liquidity', () => {
+    it('oneShotGetBuyCap() / oneShotGetSellCap()', () => {
         const investor = Investor.create('INV', 'INV', 10000)
 
         pools.A.buy(25000)
@@ -80,60 +80,42 @@ describe('Smart route math works', () => {
         pools.AB = poolAB
         pools.CB = poolCB
 
-        expect(
-            oneShotGetBuyCap(
-                poolAB.curLiq,
-                poolAB.curPrice,
-                poolAB.curRight,
-                poolAB
-            )
-        ).toEqual([3.550728855619725, 100])
+        const drySumAB = pools.AB.dryBuy(Infinity)
 
-        expect(
-            oneShotGetSellCap(
-                poolAB.curLiq,
-                poolAB.curPrice,
-                poolAB.curPP,
-                poolAB
-            )
-        ).toEqual([0, 0])
+        const [_liq1, _price1, _next1] = poolAB.getNearestActiveLiq(true)
+        expect(oneShotGetBuyCap(_liq1, _price1, _next1)).toEqual([
+            Math.abs(drySumAB[0]),
+            Math.abs(drySumAB[1])
+        ])
+
+        const [_liq2, _price2, _next2] = poolAB.getNearestActiveLiq(false)
+        expect(oneShotGetSellCap(_liq2, _price2, _next2)).toEqual([0, 0])
 
         // Flipping the pool
         poolAB.buy(100)
 
-        expect(
-            oneShotGetSellCap(
-                poolAB.curLiq,
-                poolAB.curPrice,
-                poolAB.curPP,
-                poolAB
-            )
-        ).toEqual([100, 3.550728855619725])
+        const [_liq3, _price3, _next3] = poolAB.getNearestActiveLiq(false)
+        expect(oneShotGetSellCap(_liq3, _price3, _next3)).toEqual([
+            Math.abs(drySumAB[1]),
+            Math.abs(drySumAB[0])
+        ])
 
         // flipping the pool
-        pools.A.buy(1000000000)
-        expect(
-            oneShotGetSellCap(
-                pools.A.curLiq,
-                pools.A.curPrice,
-                pools.A.curPP,
-                pools.A
-            )
-        ).toEqual([5000.000000000001, 70710678.11865474])
+        pools.A.buy(Infinity)
+        const [_liq4, _price4, _next4] = pools.A.getNearestActiveLiq(false)
+        expect(oneShotGetSellCap(_liq4, _price4, _next4)).toEqual([
+            5000.000000000001, 70710678.11865474
+        ])
 
         // flipping the pool
         pools.A.sell(1000000000)
-        expect(
-            oneShotGetBuyCap(
-                pools.A.curLiq,
-                pools.A.curPrice,
-                pools.A.curRight,
-                pools.A
-            )
-        ).toEqual([17378.057832830727, 3885.8518631132183])
+        const [_liq5, _price5, _next5] = pools.A.getNearestActiveLiq(true)
+        expect(oneShotGetBuyCap(_liq5, _price5, _next5)).toEqual([
+            17378.057832830727, 3885.8518631132183
+        ])
     })
 
-    xit('max buy in/out formula within the same liquidity and capping with oneShot', () => {
+    it('buySameLiqGiveT1GetT0() / buySameLiqGiveT0GetT1()', () => {
         const investor = Investor.create('INV', 'INV', 10000)
 
         pools.A.buy(25000)
@@ -152,23 +134,22 @@ describe('Smart route math works', () => {
         )
         pools.AB = poolAB
 
-        const buyCap = oneShotGetBuyCap(
-            poolAB.curLiq,
-            poolAB.curPrice,
-            poolAB.curRight,
-            poolAB
-        )
+        const [_liq1, _price1, _next1] = pools.AB.getNearestActiveLiq(true)
+        const buyCap = oneShotGetBuyCap(_liq1, _price1, _next1)
 
-        // T1 reserves are 100 after citing, should be able to consume
-        expect(
-            buySameLiqT0in(poolAB.curLiq, poolAB.curPrice, buyCap[1])
-        ).toBeCloseTo(buyCap[0], 5)
-        expect(
-            buySameLiqT1out(poolAB.curLiq, poolAB.curPrice, buyCap[0])
-        ).toBeCloseTo(buyCap[1], 5)
+        // GiveT1GetT0
+        expect(buySameLiqGiveT1GetT0(_liq1, _price1, buyCap[1])).toBeCloseTo(
+            buyCap[0],
+            5
+        )
+        // GiveT0GetT1
+        expect(buySameLiqGiveT0GetT1(_liq1, _price1, buyCap[0])).toBeCloseTo(
+            buyCap[1],
+            5
+        )
     })
 
-    xit('max sell in/out formula within the same liquidity on a cross pool', () => {
+    it('sellSameLiqGiveT0GetT1() / sellSameLiqGiveT1GetT0()', () => {
         const investor = Investor.create('INV', 'INV', 10000)
 
         pools.A.buy(25000)
@@ -188,26 +169,21 @@ describe('Smart route math works', () => {
         pools.AB = poolAB
 
         // flipping the pool
-        poolAB.buy(100)
+        poolAB.buy(Infinity)
 
-        const sellCap = oneShotGetSellCap(
-            poolAB.curLiq,
-            poolAB.curPrice,
-            poolAB.curPP,
-            poolAB
-        )
+        const [_liq1, _price1, _next1] = pools.AB.getNearestActiveLiq(false)
+        const sellCap = oneShotGetSellCap(_liq1, _price1, _next1)
 
-        const sameLiqAmts = getSellSameLiq(
-            poolAB.curLiq,
-            poolAB.curPrice,
-            poolAB,
+        // GiveT0GetT1
+        expect(sellSameLiqGiveT0GetT1(_liq1, _price1, sellCap[1])).toBeCloseTo(
             sellCap[0],
-            sellCap[1]
+            5
         )
-
-        expect(sameLiqAmts.t1fort0).toBeCloseTo(100)
-
-        expect(sameLiqAmts.t0fort1).toBeCloseTo(3.550728855619725, 5)
+        // GiveT1GetT0
+        expect(sellSameLiqGiveT1GetT0(_liq1, _price1, sellCap[0])).toBeCloseTo(
+            sellCap[1],
+            5
+        )
     })
 
     it('getSwapAmtSameLiq', () => {
@@ -250,17 +226,7 @@ describe('Smart route math works', () => {
         expect(swapAmtsBuyDsell.t0fort1).toBeCloseTo(17378.057832830727, 5)
         expect(swapAmtsBuyDsell.t1fort0).toBeCloseTo(3885.8518631132183, 5)
 
-        console.log(
-            'poolD pointers BEFORE:',
-            getPoolCurrentPointers(pools.D, true)
-        )
-        // flip the pool
-        pools.D.buy(1000000000)
-        console.log(
-            'poolD pointers AFTER:',
-            getPoolCurrentPointers(pools.D, true)
-        )
-
+        pools.D.buy(Infinity)
         const swapAmtsBuyD_flipped = getSwapAmtSameLiq(pools.D, true)
         expect(swapAmtsBuyD_flipped.t0fort1).toBeCloseTo(70710678.11865559, 5)
         expect(swapAmtsBuyD_flipped.t1fort0).toBeCloseTo(5000.0, 5)
@@ -270,7 +236,7 @@ describe('Smart route math works', () => {
         expect(swapAmtsSellD_flipped.t1fort0).toBeCloseTo(5000.000000000033, 5)
 
         // flip the pool backwards
-        pools.D.sell(1000000000)
+        pools.D.sell(Infinity)
         const swapAmtsSellD_flipped_bw = getSwapAmtSameLiq(pools.D, false)
         expect(swapAmtsSellD_flipped_bw.t0fort1).toBeCloseTo(0, 5)
         expect(swapAmtsSellD_flipped_bw.t1fort0).toBeCloseTo(0, 5)

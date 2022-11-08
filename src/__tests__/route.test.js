@@ -893,13 +893,13 @@ describe('getPathWithActionCaps()', () => {
 describe('smartSwap()', () => {
     let quests = {}
     let pools = {}
-    const shouldDebugRouter = true
+    const shouldDebugRouter = false
     const objMapTo2dArray = (inpObj, mappingKey = 'name') =>
         Object.entries(inpObj).map(([, obj]) => [obj[mappingKey], obj])
 
     const createRouter = (questObj, poolsObj, isDbg = shouldDebugRouter) => {
-        const poolsHashMap = new HashMap(objMapTo2dArray(pools))
-        const questsHashMap = new HashMap(objMapTo2dArray(quests))
+        const poolsHashMap = new HashMap(objMapTo2dArray(poolsObj))
+        const questsHashMap = new HashMap(objMapTo2dArray(questObj))
 
         return new Router(questsHashMap, poolsHashMap, isDbg)
     }
@@ -918,17 +918,14 @@ describe('smartSwap()', () => {
         pools.C = poolC
         pools.D = poolD
 
-        pools.A.buy(2000)
-        pools.B.buy(550)
-        pools.C.buy(5000)
         pools.AB = getCP(quests.B, quests.A, pools.B, pools.A, 0, 150).crossPool
-        pools.BC = getCP(quests.C, quests.B, pools.C, pools.B, 0, 75).crossPool
+        pools.CB = getCP(quests.B, quests.C, pools.C, pools.B, 75, 0).crossPool
         pools.CD = getCP(quests.D, quests.C, pools.D, pools.C, 0, 220).crossPool
     })
 
     it('[A-buy-B-sell-USDC-buy-D] path', () => {
         const router = createRouter(quests, pools)
         const result = router.smartSwap(quests.A.name, quests.D.name, 1500)
-        console.log(result)
+        console.log('RESULT', result)
     })
 })
