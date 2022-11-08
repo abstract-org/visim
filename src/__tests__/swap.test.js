@@ -108,7 +108,7 @@ describe('Cross Pool swapping', () => {
         const router = new Router(quests, pools)
         const swap = router.smartSwap('USDC', 'A', 1000)
         expect(swap[0]).toBeCloseTo(-1000, 0)
-        expect(swap[1]).toBeCloseTo(231.9, 0)
+        expect(swap[1]).toBeCloseTo(229.66, 1)
     })
 })
 

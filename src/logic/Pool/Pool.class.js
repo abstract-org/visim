@@ -853,4 +853,16 @@ export default class Pool {
     getUSDCValue() {
         return this.isQuest() ? this.volumeToken0 : 0
     }
+
+    getDecPos() {
+        return this.pos
+            .values()
+            .sort((s, a) => s.pp - a.pp)
+            .map((p) => ({
+                left: pp2p(p.left),
+                pp: pp2p(p.pp),
+                right: pp2p(p.left),
+                liq: p.liquidity
+            }))
+    }
 }

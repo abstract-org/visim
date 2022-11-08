@@ -450,5 +450,20 @@ describe('smartSwap()', () => {
             expect(amountSpent).toBeCloseTo(amountIn)
             expect(amountReceived).toBeGreaterThan(0)
         })
+
+        fit('Properly changes position when buying out exact liquidity amount and avoids rounding errors', () => {
+            const quests = new HashMap()
+            const pools = new HashMap()
+
+            const router = createRouter(quests.A, pools.A, true)
+            const amountIn = Math.ceil(Math.random() * 100)
+            const result = router.smartSwap(token0, token1, amountIn)
+            console.log(`amountIn: ${amountIn}\t\tRESULT ${result}`)
+            const amountSpent = -result[0]
+            const amountReceived = result[1]
+
+            expect(amountSpent).toBeCloseTo(amountIn)
+            expect(amountReceived).toBeGreaterThan(0)
+        })
     })
 })
