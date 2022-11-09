@@ -173,7 +173,7 @@ export default class Investor {
         // watcherStore('citations', crossPool.tokenRight, token1Amt, totalOut)
 
         if (!totalIn && !totalOut) {
-            return []
+            return null
         }
 
         crossPool.posOwners.push({
