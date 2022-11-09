@@ -265,15 +265,12 @@ const QuestLogTable = (props) => {
                 <Column field="idx" header="Block" sortable />
                 <Column field="day" header="Day" sortable />
                 <Column field="pool" header="Pool" body={poolBody} />
-                <Column field="price" header="Price" />
                 <Column
                     field="investorHash"
                     header="Investor"
                     body={investorBody}
                 />
                 <Column field="action" header="Action" />
-                <Column field="mcap" header="MarketCap" />
-                <Column field="tvl" header="TVL" />
                 <Column field="totalAmountIn" header="Total In" />
                 <Column field="totalAmountOut" header="Total Out" />
                 <Column field="price" header="Price" />
