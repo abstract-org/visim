@@ -11,6 +11,8 @@ import {
     sellSameLiqGiveT1GetT0
 } from './math'
 
+const ERR_MARGIN = 0.0000000001
+
 export default class Router {
     _cachedPools = new HashMap()
     _cachedQuests = new HashMap()
@@ -148,9 +150,7 @@ export default class Router {
         const maxAcceptable =
             this.calculateAcceptableForCappedPathActions(pathWithActionsCaps)
 
-        return maxAcceptable > amountIn
-            ? amountIn
-            : maxAcceptable + 0.0000000001 // @ostap forgive me....
+        return maxAcceptable > amountIn ? amountIn : maxAcceptable + ERR_MARGIN // @ostap forgive me....
     }
 
     /**
