@@ -432,7 +432,7 @@ class Generator {
             crossPool.tokenLeft === singleQuest.name ? 0 : citeSingleAmount
         const citeAmount1 = citeAmount0 === 0 ? citeSingleAmount : 0
 
-        const [totalIn, totalOut] = investor.citeQuest(
+        const totalInOut = investor.citeQuest(
             crossPool,
             priceRange.min,
             priceRange.max,
@@ -440,6 +440,14 @@ class Generator {
             citeAmount1,
             priceRange.native
         )
+
+        if (!totalInOut) {
+            console.log('### ALERT: CITATION ###')
+            console.log(`Failed to cite ${crossPool.name}`)
+            console.log(priceRange, citeAmount0, citeAmount1)
+            console.log(citingPool, singleUsdcPool)
+            return
+        }
 
         const orgQuest = this.#cachedQuests.get(citingQuest.name)
         const sinQuest = this.#cachedQuests.get(singleQuest.name)
@@ -454,10 +462,24 @@ class Generator {
             investorHash: investor.hash,
             action: 'CITED',
             totalAmountIn: citeSingleAmount.toFixed(3),
-            day
+            day,
+            opName:
+                Object.entries(priceRange)
+                    .map((a) => `${a[0]}:${a[1]}`)
+                    .join(', ') +
+                ' // ' +
+                totalInOut.join(',') +
+                ' // ' +
+                `Substract from ${citingQuest.name}, current balance: ${
+                    investor.balances[citingQuest.name]
+                }`
         })
 
-        investor.addBalance(citingQuest.name, -totalIn, 'citing single quest')
+        investor.addBalance(
+            citingQuest.name,
+            -totalInOut[0],
+            'citing single quest'
+        )
 
         this.#cachedPools.set(crossPool.name, crossPool)
         this.#dayData[day]['pools'].push(crossPool)
@@ -636,7 +658,7 @@ class Generator {
                 crossPool.tokenLeft === citedQuest.name ? 0 : citeOtherAmount
             const citeAmount1 = citeAmount0 === 0 ? citeOtherAmount : 0
 
-            const [totalIn, totalOut] = investor.citeQuest(
+            const totalInOut = investor.citeQuest(
                 crossPool,
                 priceRange.min,
                 priceRange.max,
@@ -644,6 +666,14 @@ class Generator {
                 citeAmount1,
                 priceRange.native
             )
+
+            if (!totalInOut) {
+                console.log('### ALERT: CITATION ###')
+                console.log(`Failed to cite ${crossPool.name}`)
+                console.log(priceRange, citeAmount0, citeAmount1)
+                console.log(citingPool, citedPool)
+                return
+            }
 
             const orgQuest = this.#cachedQuests.get(citingQuest.name)
             const ranQuest = this.#cachedQuests.get(citedQuest.name)
@@ -658,12 +688,22 @@ class Generator {
                 investorHash: investor.hash,
                 action: 'CITED',
                 totalAmountIn: citeOtherAmount.toFixed(3),
-                day
+                day,
+                opName:
+                    Object.entries(priceRange)
+                        .map((a) => `${a[0]}:${a[1]}`)
+                        .join(', ') +
+                    ' // ' +
+                    totalInOut.join(',') +
+                    ' // ' +
+                    `Substract from ${citingQuest.name}, current balance: ${
+                        investor.balances[citingQuest.name]
+                    }`
             })
 
             investor.addBalance(
                 citingQuest.name,
-                -totalIn,
+                -totalInOut[0],
                 'citing random quests'
             )
 

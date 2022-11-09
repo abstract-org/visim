@@ -742,8 +742,24 @@ describe('Citation Manager', () => {
         const ppAB = investor.calculatePriceRange(AB, B, A, 2)
         const ppBA = investor.calculatePriceRange(AB, A, B, 2)
 
-        investor.citeQuest(AB, ppAB.min, ppAB.max, 0, 1000, false)
-        investor.citeQuest(AB, ppBA.min, ppBA.max, 1000, 0, true)
+        const citingABout = investor.citeQuest(
+            AB,
+            ppAB.min,
+            ppAB.max,
+            0,
+            1000,
+            false
+        )
+        const citingBAout = investor.citeQuest(
+            AB,
+            ppBA.min,
+            ppBA.max,
+            1000,
+            0,
+            true
+        )
+
+        console.log(citingABout, citingBAout)
 
         const posOwnerAB = AB.posOwners.find(
             (p) => p.hash === investor.hash && p.amt1 === 1000
