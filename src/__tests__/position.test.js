@@ -2,7 +2,9 @@ import Investor from '../logic/Investor/Investor.class'
 import UsdcToken from '../logic/Quest/UsdcToken.class'
 import { p2pp, pp2p } from '../logic/Utils/logicUtils'
 import globalConfig from '../logic/config.global.json'
+import { getQP } from './helpers/getQuestPools'
 import { preparePool } from './helpers/poolManager'
+import { SNAPSHOT_TRADED_CROSSPOOL } from './resources/tradedCrossPoolSnapshot'
 
 describe('Position Manager', () => {
     it('Initializes with default positions', () => {
@@ -742,25 +744,6 @@ describe('Citation Manager', () => {
         const ppAB = investor.calculatePriceRange(AB, B, A, 2)
         const ppBA = investor.calculatePriceRange(AB, A, B, 2)
 
-        const citingABout = investor.citeQuest(
-            AB,
-            ppAB.min,
-            ppAB.max,
-            0,
-            1000,
-            false
-        )
-        const citingBAout = investor.citeQuest(
-            AB,
-            ppBA.min,
-            ppBA.max,
-            1000,
-            0,
-            true
-        )
-
-        console.log(citingABout, citingBAout)
-
         const posOwnerAB = AB.posOwners.find(
             (p) => p.hash === investor.hash && p.amt1 === 1000
         )
@@ -963,5 +946,92 @@ describe('Citation Manager', () => {
             )
 
         expect(poolTotalLiq).toBeCloseTo(expectedLiquidity)
+    })
+
+    it('Citing traded cross pool', () => {
+        const investor = Investor.create('INV', 'INV', 10000)
+        const { pool: agoraPool, quest: agoraQuest } = getQP('AGORA')
+        const { pool: pra5Pool, quest: pra5Quest } = getQP('Praseodymium (5)')
+        const { pool: pra7Pool, quest: pra7Quest } = getQP('Praseodymium (7)')
+        const startingPrice = 1
+        const agoraPra7Pool = investor.createPool(
+            agoraQuest,
+            pra7Quest,
+            startingPrice
+        )
+        const agoraPra5Pool = investor.createPool(
+            agoraQuest,
+            pra5Quest,
+            startingPrice
+        )
+
+        const poolSnapshot = SNAPSHOT_TRADED_CROSSPOOL
+
+        poolSnapshot.forEach((pact, idx) => {
+            let mutatingPool
+            switch (pact.pool.name) {
+                case 'AGORA-Praseodymium (7)':
+                    mutatingPool = agoraPra7Pool
+                    break
+                case 'AGORA-Praseodymium (5)':
+                    mutatingPool = agoraPra5Pool
+                    break
+                default:
+                    break
+            }
+
+            for (const [field, value] of Object.entries(pact.pool)) {
+                if (field !== 'pos') {
+                    mutatingPool[field] = value
+                } else {
+                    for (const [id, posArr] of Object.entries(
+                        pact.pool.pos._data
+                    )) {
+                        mutatingPool.pos.set(posArr[0], posArr[1])
+                    }
+                }
+                mutatingPool.FRESH = false
+            }
+
+            poolSnapshot[idx].pool = mutatingPool
+        })
+
+        const priceRange = {
+            min: 0.021357788680161555,
+            max: 0.04271557736032311,
+            native: false
+        }
+        investor.citeQuest(
+            agoraPra7Pool,
+            priceRange.min,
+            priceRange.max,
+            0,
+            70.372,
+            priceRange.native
+        )
+
+        expect(agoraPra7Pool.pos.get(p2pp(agoraPra7Pool.curPrice)).pp).toBe(
+            p2pp(agoraPra7Pool.curPrice)
+        )
+
+        const priceRangeSecond = {
+            min: 0.022217770431760896,
+            max: 0.04443554086352179,
+            native: false
+        }
+        investor.citeQuest(
+            agoraPra5Pool,
+            priceRangeSecond.min,
+            priceRangeSecond.max,
+            0,
+            68.359,
+            priceRangeSecond.native
+        )
+
+        console.log(agoraPra5Pool)
+
+        expect(agoraPra5Pool.pos.get(p2pp(agoraPra5Pool.curPrice)).pp).toBe(
+            p2pp(agoraPra5Pool.curPrice)
+        )
     })
 })

@@ -1,7 +1,9 @@
+import { FilterMatchMode } from 'primereact/api'
 import { Badge } from 'primereact/badge'
 import { Button } from 'primereact/button'
 import { Column } from 'primereact/column'
 import { DataTable } from 'primereact/datatable'
+import { Dropdown } from 'primereact/dropdown'
 import { OverlayPanel } from 'primereact/overlaypanel'
 import { Tooltip } from 'primereact/tooltip'
 import React, { useEffect, useId, useRef, useState } from 'react'
@@ -206,6 +208,10 @@ const TokenButton = (props) => {
 }
 
 const QuestLogTable = (props) => {
+    const [filters, setFilters] = useState({
+        action: { value: null, matchMode: FilterMatchMode.EQUALS }
+    })
+
     const pathsBody = (rowData) => {
         const pathNodes = rowData.paths ? rowData.paths.split('-') : []
         return (
@@ -250,10 +256,38 @@ const QuestLogTable = (props) => {
         })
     }
 
+    const actions = new Set()
+
+    props.data.forEach((log) => {
+        actions.add(log.action.toUpperCase())
+    })
+
+    const actTmpl = (rowData) => {
+        return <span>{rowData.action}</span>
+    }
+    const actItemTmpl = (option) => {
+        return <span>{option}</span>
+    }
+    const actFilterTmpl = (options) => {
+        return (
+            <Dropdown
+                value={options.value}
+                options={[...actions]}
+                onChange={(e) => options.filterApplyCallback(e.value)}
+                itemTemplate={actItemTmpl}
+                placeholder="Actions"
+                className="p-column-filter"
+                showClear
+            />
+        )
+    }
+
     return (
         <div>
             <DataTable
                 value={props.data}
+                filters={filters}
+                filterDisplay="row"
                 stripedRows
                 sortMode="single"
                 sortOrder={-1}
@@ -270,7 +304,14 @@ const QuestLogTable = (props) => {
                     header="Investor"
                     body={investorBody}
                 />
-                <Column field="action" header="Action" />
+                <Column
+                    field="action"
+                    header="Action"
+                    body={actTmpl}
+                    showFilterMenu={false}
+                    filter
+                    filterElement={actFilterTmpl}
+                />
                 <Column field="totalAmountIn" header="Total In" />
                 <Column field="totalAmountOut" header="Total Out" />
                 <Column field="price" header="Price" />
