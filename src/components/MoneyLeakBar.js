@@ -171,7 +171,7 @@ const TokenButton = (props) => {
                     Math.abs(props.value) > 1
                         ? props.value.toFixed(2)
                         : props.value.toFixed(12)
-                }\nLeaked-to-Locked ratio: ${props.ratio?.toFixed(6) * 100}%`}
+                }\nLeaked-to-Total ratio: ${props.ratio?.toFixed(6) * 100}%`}
                 tooltipOptions={{
                     position: 'bottom',
                     mouseTrack: true,
