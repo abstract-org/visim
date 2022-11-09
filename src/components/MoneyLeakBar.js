@@ -29,11 +29,12 @@ const calculateMoneyLeaked = () => {
     const quests = globalState.quests.values()
 
     const totalLockedUSDCAmount = totalLockedUSDC(pools)
+    const totalWalletsUSDCAmount = totalWalletsUSDC(investors)
     const totalMissingUSDCAmount =
         totalIssuedUSDC(investors) +
         totalIssuedUSDCDynamic(investors) -
         totalLockedUSDCAmount -
-        totalWalletsUSDC(investors)
+        totalWalletsUSDCAmount
 
     const totalIssuedTokensList = totalIssuedTokens(quests)
     const totalLockedTokensList = totalLockedTokens(quests, pools)
@@ -58,13 +59,17 @@ const calculateMoneyLeaked = () => {
             return {
                 name: q.name,
                 leakedValue: totalLeakedAmount,
-                leakRatio: totalLeakedAmount / totalLockedTokenAmount
+                leakRatio:
+                    totalLeakedAmount /
+                    (totalLockedTokenAmount + totalWalletTokenAmount)
             }
         })
 
     return {
         usdcLeaked: totalMissingUSDCAmount,
-        usdcLeakRatio: totalMissingUSDCAmount / totalLockedUSDCAmount,
+        usdcLeakRatio:
+            totalMissingUSDCAmount /
+            (totalLockedUSDCAmount + totalWalletsUSDCAmount),
         tokensLeaked: totalMissingTokensList.filter(
             (leakData) => leakData.leakedValue !== 0
         )
@@ -137,9 +142,9 @@ const TokenButton = (props) => {
 
     const getSeverity = (ratio) => {
         if (ratio < 0.000001) return 'success'
-        if (ratio < 0.0001) return 'info'
-        if (ratio < 0.01) return 'warning'
-        if (ratio < 0.1) return 'danger'
+        if (ratio < 0.001) return 'info' // less than 0.1%
+        if (ratio < 0.01) return 'warning' // less than 1%
+        return 'danger' // more than 1%
     }
 
     const filterQuestRelated = (logList, questName) => {
