@@ -11,7 +11,7 @@ import {
     isZero,
     priceDiff
 } from '../Utils/logicUtils'
-import { totalSingleMissingToken } from '../Utils/tokenCalc'
+import { totalMissingTokens, totalSingleMissingToken } from '../Utils/tokenCalc'
 
 const _OPS_TIME_INITIAL = {
     simulateQuestCreation: { time: 0, ops: 0, timeStarted: 0 },
@@ -433,6 +433,7 @@ class Generator {
             crossPool.tokenLeft === singleQuest.name ? 0 : citeSingleAmount
         const citeAmount1 = citeAmount0 === 0 ? citeSingleAmount : 0
 
+        const posBefore = [...crossPool.pos.values()]
         const totalInOut = investor.citeQuest(
             crossPool,
             priceRange.min,
@@ -441,8 +442,14 @@ class Generator {
             citeAmount1,
             priceRange.native
         )
+        const posAfter = [...crossPool.pos.values()]
 
-        if (!totalInOut) {
+        if (
+            posBefore.length === posAfter.length ||
+            !totalInOut ||
+            !Array.isArray(totalInOut) ||
+            totalInOut.length < 2
+        ) {
             console.log('### ALERT: CITATION ###')
             console.log(`Failed to cite ${crossPool.name}`)
             console.log(priceRange, citeAmount0, citeAmount1)
@@ -466,7 +473,7 @@ class Generator {
             day,
             opName:
                 Object.entries(priceRange)
-                    .map((a) => `${a[0]}:${a[1]}`)
+                    .map((a) => `${a[0]}:${a[1]}\n`)
                     .join(', ') +
                 ' // ' +
                 totalInOut.join(',') +
@@ -482,13 +489,21 @@ class Generator {
             'citing single quest'
         )
 
-        // const curTokenMissing = totalSingleMissingToken(
-        //     citingQuest.name,
-        //     this.#cachedQuests.values(),
-        //     this.#cachedPools.values(),
-        //     this.#cachedInvestors.values()
+        const cachedStateArgs = [
+            this.#cachedQuests.values(),
+            [...this.#cachedPools.values(), crossPool],
+            this.#cachedInvestors.values()
+        ]
+        const curTokenMissing = totalSingleMissingToken(
+            citingQuest.name,
+            ...cachedStateArgs
+        )
+        // const totalTokensMissing = totalMissingTokens(...cachedStateArgs)
+        // console.log(
+        //     totalTokensMissing.some((t) => t.total > 0)
+        //         ? totalTokensMissing
+        //         : 'none missing yet'
         // )
-        const curTokenMissing = 0
 
         if (curTokenMissing > 0) {
             console.log('### ALERT: CITATION #2 ###')
@@ -499,6 +514,16 @@ class Generator {
             console.log(crossPool)
             console.log(citingPool)
             console.log(singleUsdcPool)
+
+            // @TODO: breakpoint here and try trace citeSingleQuest
+            const totalInOut = investor.citeQuest(
+                crossPool,
+                priceRange.min,
+                priceRange.max,
+                citeAmount0,
+                citeAmount1,
+                priceRange.native
+            )
         }
 
         this.#cachedPools.set(crossPool.name, crossPool)
@@ -727,14 +752,21 @@ class Generator {
                 'citing random quests'
             )
 
-            // const curTokenMissing = totalSingleMissingToken(
-            //     citingQuest.name,
-            //     this.#cachedQuests.values(),
-            //     this.#cachedPools.values(),
-            //     this.#cachedInvestors.values()
+            const cachedStateArgs = [
+                this.#cachedQuests.values(),
+                [...this.#cachedPools.values(), crossPool],
+                this.#cachedInvestors.values()
+            ]
+            const curTokenMissing = totalSingleMissingToken(
+                citingQuest.name,
+                ...cachedStateArgs
+            )
+            // const totalTokensMissing = totalMissingTokens(...cachedStateArgs)
+            // console.log(
+            //     totalTokensMissing.some((t) => t.total > 0)
+            //         ? totalTokensMissing
+            //         : 'none missing yet'
             // )
-
-            const curTokenMissing = 0
 
             if (curTokenMissing > 0) {
                 console.log('### ALERT: CITATION #2 ###')
@@ -745,6 +777,16 @@ class Generator {
                 console.log(crossPool)
                 console.log(citingPool)
                 console.log(citedPool)
+
+                // @TODO: breakpoint here and try trace citeRandomQuest
+                const totalInOut = investor.citeQuest(
+                    crossPool,
+                    priceRange.min,
+                    priceRange.max,
+                    citeAmount0,
+                    citeAmount1,
+                    priceRange.native
+                )
             }
 
             this.#cachedPools.set(crossPool.name, crossPool)

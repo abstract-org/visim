@@ -103,7 +103,7 @@ export default class Router {
             ) {
                 continue
             }
-            console.log(`###DEBUG Calculated properAmountIn: ${properAmountIn}`)
+            // console.log(`###DEBUG Calculated properAmountIn: ${properAmountIn}`)
             const sums = this.swapPricedPath(
                 properAmountIn,
                 this._PRICED_PATHS[0].path
@@ -272,20 +272,12 @@ export default class Router {
                     ? buySameLiqGiveT0GetT1(...curFormulaArgs, step.t0fort1)
                     : sellSameLiqGiveT1GetT0(...curFormulaArgs, step.t1fort0)
 
-                console.log('carryOver (previous newT)', carryOver)
-                console.log('prevT (previous step capped amountIn)', prevT)
-                console.log('curT (current step capped amountOut)', curT)
                 curT = Math.min(prevT, curT)
 
                 // current step capped amountIn
                 let newT = zeroForOne
                     ? buySameLiqGiveT1GetT0(...curFormulaArgs, curT)
                     : sellSameLiqGiveT0GetT1(...curFormulaArgs, curT)
-
-                console.log(
-                    'newT -> caryOver (current step capped amountIn)',
-                    newT
-                )
 
                 // ###DEBUG
                 this._PROTO_SWAPS.push({

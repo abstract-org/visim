@@ -116,5 +116,7 @@ export const totalSingleMissingToken = (
     investors
 ) => {
     const totalMissing = totalMissingTokens(quests, pools, investors)
-    return totalMissing.filter((t) => t.name === tokenName)
+    const currentTokenData = totalMissing.find((t) => t.name === tokenName)
+
+    return currentTokenData ? currentTokenData.total : -0.000000000001 // @FIXME: might be better to return null
 }
