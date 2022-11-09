@@ -792,6 +792,12 @@ export default class Pool {
         return zeroForOne ? this.buy(amount) : this.sell(amount)
     }
 
+    /**
+     *
+     * @param {number} amount
+     * @param {boolean} zeroForOne
+     * @returns
+     */
     drySwap(amount, zeroForOne) {
         return zeroForOne ? this.dryBuy(amount) : this.drySell(amount)
     }

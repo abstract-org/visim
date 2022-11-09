@@ -9,6 +9,7 @@ import {
     sellSameLiqGiveT0GetT1,
     sellSameLiqGiveT1GetT0
 } from '../logic/Router/math'
+import { watcherGetCitations, watcherGetSwaps } from '../logic/Utils/watcher'
 
 /**
  * @description Expose internal functions to the browser for interactive debugging
@@ -23,6 +24,8 @@ export const api = {
     oneShotGetSellCap,
     sellSameLiqGiveT0GetT1,
     sellSameLiqGiveT1GetT0,
+    watcherGetCitations,
+    watcherGetSwaps,
     _methods: () => {
         var res = []
         for (var m in api) {

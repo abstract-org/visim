@@ -4,6 +4,7 @@ import HashMap from 'hashmap'
 import Pool from '../Pool/Pool.class'
 import Token from '../Quest/Token.class'
 import { isZero, p2pp } from '../Utils/logicUtils'
+import { watcherStore } from '../Utils/watcher'
 
 export default class Investor {
     hash = null
@@ -153,6 +154,23 @@ export default class Investor {
             token1Amt,
             native
         )
+
+        let compareToken = native ? token0Amt : token1Amt
+        let diff =
+            parseFloat(compareToken.toFixed(9)) !==
+            parseFloat(totalIn.toFixed(9))
+
+        // @FIXME: Saw this happening when triggering citeRandomWithPriceHigher, same investor, on the same day tried to cite twice the same crossPool with different amounts and position, last citation didn't go through
+        if (diff) {
+            console.log('### ALERT: CITATION ###')
+            console.log(
+                `During citation at ${crossPool.name} with pos[${priceMin}...${priceMax}] direction native=${native}, tokens passed token0: ${token0Amt}, token1: ${token1Amt}`
+            )
+            console.log(`Got response: in: ${totalIn}/out:${totalOut}`)
+        }
+
+        // watcherStore('citations', crossPool.tokenLeft, token0Amt, totalIn)
+        // watcherStore('citations', crossPool.tokenRight, token1Amt, totalOut)
 
         if (!totalIn && !totalOut) {
             return []
