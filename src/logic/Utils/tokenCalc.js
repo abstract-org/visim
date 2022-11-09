@@ -108,3 +108,13 @@ export const totalMissingTokens = (quests, pools, investors) =>
                     totalWalletToken.total
             }
         })
+
+export const totalSingleMissingToken = (
+    tokenName,
+    quests,
+    pools,
+    investors
+) => {
+    const totalMissing = totalMissingTokens(quests, pools, investors)
+    return totalMissing.filter((t) => t.name === tokenName)
+}
