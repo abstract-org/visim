@@ -3,7 +3,7 @@ import sha256 from 'crypto-js/sha256'
 import HashMap from 'hashmap'
 
 import UsdcToken from '../Quest/UsdcToken.class'
-import { isNearZero, isZero, p2pp, pp2p } from '../Utils/logicUtils'
+import { isE10Zero, isNearZero, isZero, p2pp, pp2p } from '../Utils/logicUtils'
 import globalConfig from '../config.global.json'
 
 export default class Pool {
@@ -222,6 +222,19 @@ export default class Pool {
         let amounts = []
         let amount1 = 0
 
+        // @TODO: Shift pool price before calculation liquidity if free in either direction
+        //const canShiftPriceUp = this.dryBuy(Infinity, this.curPrice)
+        //const canShiftPriceDown = this.drySell(Infinity, priceMin)
+
+        // Cannot open position non-native below curPrice
+        if (priceMin < this.curPrice && !native) {
+            priceMin = this.curPrice + 0.000000000000001
+
+            // Likewise cannot open native position with priceMax above current price
+        } else if (priceMax > this.curPrice && native) {
+            priceMax = this.curPrice - 0.000000000000001
+        }
+
         const liquidity = this.getLiquidityForAmounts(
             token0Amt,
             token1Amt,
@@ -234,8 +247,8 @@ export default class Pool {
             return []
         }
 
-        this.volumeToken0 += token0Amt
-        this.volumeToken1 += token1Amt
+        this.volumeToken0 += isZero(token0Amt) ? 0 : token0Amt
+        this.volumeToken1 += isZero(token1Amt) ? 0 : token1Amt
 
         this.setPositionSingle(p2pp(priceMin), liquidity)
         this.setPositionSingle(p2pp(priceMax), -liquidity)
@@ -270,7 +283,7 @@ export default class Pool {
     setActiveLiq(pMin, native) {
         if (
             pp2p(this.curPP) !== this.curPrice ||
-            (this.curLiq === 0 && isZero(this.volumeToken1)) ||
+            (this.curLiq === 0 && isE10Zero(this.volumeToken1)) ||
             isNearZero(this.volumeToken1)
         ) {
             const ppNext =

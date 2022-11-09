@@ -154,7 +154,7 @@ export const getMissingQuestNames = (scenario) => {
     return Array.from(quests)
 }
 
-export const isZero = (amount) => {
+export const isE10Zero = (amount) => {
     return Math.abs(amount) < 1e-10
 }
 
@@ -211,3 +211,5 @@ export const getPathActions = (path, router) => {
 
 export const hashmapToObj = (hm) =>
     hm.entries().reduce((o, [k, v]) => ({ ...o, [k]: v }), {})
+
+export const isZero = (num) => num === 0 || isE10Zero(num) || isNearZero(num)

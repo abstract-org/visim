@@ -1,6 +1,11 @@
 import HashMap from 'hashmap'
 
-import { getPathActions, isNearZero, isZero } from '../Utils/logicUtils'
+import {
+    getPathActions,
+    isE10Zero,
+    isNearZero,
+    isZero
+} from '../Utils/logicUtils'
 import { watcherStore } from '../Utils/watcher'
 import { Graph } from './Graph.class'
 import {
@@ -67,6 +72,7 @@ export default class Router {
 
         const totalInOut = [0, 0]
         let properAmountIn
+        let pathToSwap
         let counterWhileLoop = 0
         do {
             this._PRICED_PATHS = this.drySwapForPricedPaths(
@@ -82,45 +88,41 @@ export default class Router {
 
             if (!this._PRICED_PATHS.length) return totalInOut
 
-            const priceLimit = this._PRICED_PATHS[1]
-                ? this._PRICED_PATHS[1].price
-                : null
-
             // @TODO: Remove later, done for tests
             if (forcedPath) {
-                this._PRICED_PATHS[0].path = forcedPath
+                pathToSwap = forcedPath
             }
 
             // @TODO: Should use chunks as sums (this.setSwapSum) and priceLimit until next best path to eliminate arbitrage
-            properAmountIn = this.getMaxAmountInForPath(
-                amountIn,
-                this._PRICED_PATHS[0].path
-            )
-            if (
-                isZero(properAmountIn) ||
-                isNearZero(properAmountIn) ||
-                properAmountIn <= 0
-            ) {
-                continue
+
+            // Could be a replacement for drySwap - get anything above zero for available paths and trade it, otherwise exit trade
+            for (const pricedPath of this._PRICED_PATHS) {
+                properAmountIn = this.getMaxAmountInForPath(
+                    amountIn,
+                    pricedPath.path
+                )
+                if (!isZero(properAmountIn)) {
+                    //console.log('properAmountIn() > 0 loop', properAmountIn)
+                    pathToSwap = pricedPath.path
+                    break
+                }
             }
-            // console.log(`###DEBUG Calculated properAmountIn: ${properAmountIn}`)
-            const sums = this.swapPricedPath(
-                properAmountIn,
-                this._PRICED_PATHS[0].path
-            )
+
+            if (isZero(properAmountIn)) {
+                break
+            }
+
+            //console.log(`###DEBUG Calculated properAmountIn: ${properAmountIn}`)
+            const sums = this.swapPricedPath(properAmountIn, pathToSwap)
 
             amountIn -= sums[0]
             totalInOut[0] -= sums[0]
             totalInOut[1] += sums[1]
             //console.log('while-loop iteration ', counterWhileLoop++, 'ended')
         } while (
-            !isZero(amountIn) &&
-            amountIn > 0 &&
-            !isNearZero(amountIn) &&
             this._PRICED_PATHS.length &&
-            !isZero(properAmountIn) &&
-            properAmountIn > 0 &&
-            !isNearZero(properAmountIn)
+            !isZero(amountIn) &&
+            !isZero(properAmountIn)
         )
 
         return totalInOut
@@ -298,7 +300,7 @@ export default class Router {
 
     swapPricedPath(amountIn, path) {
         const swaps = this.swapPath(amountIn, path)
-        //console.log('swapPricedPath() swaps to be', swaps)
+        //console.log(amountIn, 'swapPricedPath() swaps to be', swaps)
         const leftoverAmt = amountIn - swaps[0].in
 
         // Pool state preserved
@@ -308,7 +310,7 @@ export default class Router {
 
         this._SWAPS = [...this._SWAPS, ...swaps]
 
-        if (isZero(leftoverAmt) || isNearZero(leftoverAmt)) {
+        if (isZero(leftoverAmt)) {
             return [swaps[0].in, swaps[swaps.length - 1].out]
         }
 
@@ -372,9 +374,7 @@ export default class Router {
                 const prevSum = prev.out
 
                 if (parseFloat(curSum) !== parseFloat(prevSum)) {
-                    const isLeak =
-                        !isZero(prevSum - curSum) &&
-                        !isNearZero(prevSum - curSum)
+                    const isLeak = !isZero(prevSum - curSum)
 
                     if (isLeak) {
                         console.log('### ALERT: ROUTER ###')
@@ -459,8 +459,8 @@ export default class Router {
             const zeroForOne = action === 'buy'
 
             const hasNextToken = zeroForOne
-                ? !isZero(pool.volumeToken1) && !isNearZero(pool.volumeToken1)
-                : !isZero(pool.volumeToken0) && !isNearZero(pool.volumeToken0)
+                ? !isZero(pool.volumeToken1)
+                : !isZero(pool.volumeToken0)
 
             if (!hasNextToken) {
                 return null

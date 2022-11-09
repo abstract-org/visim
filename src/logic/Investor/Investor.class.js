@@ -3,7 +3,7 @@ import HashMap from 'hashmap'
 
 import Pool from '../Pool/Pool.class'
 import Token from '../Quest/Token.class'
-import { isZero, p2pp } from '../Utils/logicUtils'
+import { isE10Zero, p2pp } from '../Utils/logicUtils'
 import { watcherStore } from '../Utils/watcher'
 
 export default class Investor {
@@ -15,6 +15,7 @@ export default class Investor {
     initialBalance = 0
     positions = new HashMap()
     questsCreated = []
+    balancesLogs = []
 
     #PRICE_RANGE_MULTIPLIER = 2
 
@@ -57,7 +58,7 @@ export default class Investor {
             return false
         }
 
-        if (isZero(balance) || balance === 0) {
+        if (isE10Zero(balance) || balance === 0) {
             return false
         }
 
@@ -73,9 +74,18 @@ export default class Investor {
             return false
         }
 
+        const prevBalance = this.balances[tokenName]
         this.balances[tokenName] += balance
+        this.balancesLogs.push({
+            tokenName,
+            dir: balance > 0 ? 'in' : 'out',
+            shift: balance,
+            was: prevBalance,
+            now: this.balances[tokenName],
+            msg
+        })
 
-        if (isZero(this.balances[tokenName])) {
+        if (isE10Zero(this.balances[tokenName])) {
             this.balances[tokenName] = 0
         }
 
@@ -155,22 +165,18 @@ export default class Investor {
             native
         )
 
-        let compareToken = native ? token0Amt : token1Amt
-        let diff =
-            parseFloat(compareToken.toFixed(9)) !==
-            parseFloat(totalIn.toFixed(9))
-
-        // @FIXME: Saw this happening when triggering citeRandomWithPriceHigher, same investor, on the same day tried to cite twice the same crossPool with different amounts and position, last citation didn't go through
-        if (diff) {
-            console.log('### ALERT: CITATION ###')
+        if (
+            typeof token0Amt === 'undefined' ||
+            typeof token1Amt === 'undefined' ||
+            (token0Amt === 0 && token1Amt === 0)
+        ) {
+            console.log('### ALERT: CITATION INVESTOR ###')
             console.log(
                 `During citation at ${crossPool.name} with pos[${priceMin}...${priceMax}] direction native=${native}, tokens passed token0: ${token0Amt}, token1: ${token1Amt}`
             )
             console.log(`Got response: in: ${totalIn}/out:${totalOut}`)
+            return null
         }
-
-        // watcherStore('citations', crossPool.tokenLeft, token0Amt, totalIn)
-        // watcherStore('citations', crossPool.tokenRight, token1Amt, totalOut)
 
         if (!totalIn && !totalOut) {
             return null

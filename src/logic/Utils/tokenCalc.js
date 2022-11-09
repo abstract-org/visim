@@ -1,4 +1,5 @@
 import UsdcToken from '../Quest/UsdcToken.class'
+import { isZero } from './logicUtils'
 
 export const totalIssuedUSDC = (investors) =>
     investors
@@ -33,7 +34,11 @@ export const totalLockedTokens = (quests, pools) =>
                     const pool = pools.find((qp) => qp.name === p)
                     totalQTokens +=
                         pool.tokenLeft === q.name
-                            ? pool.volumeToken0
+                            ? isZero(pool.volumeToken0)
+                                ? 0
+                                : pool.volumeToken0
+                            : isZero(pool.volumeToken1)
+                            ? 0
                             : pool.volumeToken1
                 }
             })

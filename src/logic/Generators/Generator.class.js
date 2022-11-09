@@ -8,6 +8,8 @@ import {
     calcGrowthRate,
     formSwapData,
     getCombinedSwaps,
+    isE10Zero,
+    isNearZero,
     isZero,
     priceDiff
 } from '../Utils/logicUtils'
@@ -180,32 +182,32 @@ class Generator {
         })
 
         // Every X days - keep creating quests
-        // this.handlers.push(
-        //     new Promise((resolve) => {
-        //         resolve(this.simulateKeepCreatingQuest(day))
-        //     })
-        // )
-        this.simulateKeepCreatingQuest(day)
+        this.handlers.push(
+            new Promise((resolve) => {
+                resolve(this.simulateKeepCreatingQuest(day))
+            })
+        )
+        //this.simulateKeepCreatingQuest(day)
 
         // Every X days - buy/sell top gainers/increased or decreased in prices
-        // this.handlers.push(
-        //     new Promise((resolve) => {
-        //         resolve(this.simulateTrade(day, this.router))
-        //     })
-        // )
-        this.simulateTrade(day, this.router)
+        this.handlers.push(
+            new Promise((resolve) => {
+                resolve(this.simulateTrade(day, this.router))
+            })
+        )
+        //this.simulateTrade(day, this.router)
 
         // Every X days - withdraw X in USDC value
-        // this.handlers.push(
-        //     new Promise((resolve) => {
-        //         resolve(this.simulateWithdraw(day, this.router))
-        //     })
-        // )
-        this.simulateWithdraw(day, this.router)
+        this.handlers.push(
+            new Promise((resolve) => {
+                resolve(this.simulateWithdraw(day, this.router))
+            })
+        )
+        //this.simulateWithdraw(day, this.router)
 
-        // await Promise.all(this.handlers).catch((reason) => {
-        //     console.log(`Rejected promise: ${reason}`)
-        // })
+        await Promise.all(this.handlers).catch((reason) => {
+            console.log(`Rejected promise: ${reason}`)
+        })
 
         return this.#dayData[day]
     }
@@ -419,6 +421,7 @@ class Generator {
                 action: 'CREATED',
                 day
             })
+            this.#cachedPools.set(crossPool.name, crossPool)
         }
 
         const priceRange = investor.calculatePriceRange(
@@ -480,7 +483,7 @@ class Generator {
                 ' // ' +
                 `Substract from ${citingQuest.name}, current balance: ${
                     investor.balances[citingQuest.name]
-                }`
+                } cross pool: ${crossPool.name} ${crossPool.type}`
         })
 
         investor.addBalance(
@@ -491,7 +494,7 @@ class Generator {
 
         const cachedStateArgs = [
             this.#cachedQuests.values(),
-            [...this.#cachedPools.values(), crossPool],
+            [...this.#cachedPools.values()],
             this.#cachedInvestors.values()
         ]
         const curTokenMissing = totalSingleMissingToken(
@@ -505,8 +508,12 @@ class Generator {
         //         : 'none missing yet'
         // )
 
-        if (curTokenMissing > 0) {
-            console.log('### ALERT: CITATION #2 ###')
+        if (
+            curTokenMissing > 0 &&
+            !isZero(curTokenMissing) &&
+            !isZero(curTokenMissing)
+        ) {
+            console.log('### ALERT: CITATION #2 SINGLE ###')
             console.log(
                 `Despite all the correct actions, token ${citingQuest.name} went missing by ${curTokenMissing}`
             )
@@ -515,18 +522,23 @@ class Generator {
             console.log(citingPool)
             console.log(singleUsdcPool)
 
-            // @TODO: breakpoint here and try trace citeSingleQuest
-            const totalInOut = investor.citeQuest(
-                crossPool,
-                priceRange.min,
-                priceRange.max,
-                citeAmount0,
-                citeAmount1,
-                priceRange.native
+            investor.addBalance(
+                citingQuest.name,
+                curTokenMissing,
+                'Reimbursement for failed citation of a single quest'
             )
+
+            // @TODO: breakpoint here and try trace citeSingleQuest
+            // const totalInOut = investor.citeQuest(
+            //     crossPool,
+            //     priceRange.min,
+            //     priceRange.max,
+            //     citeAmount0,
+            //     citeAmount1,
+            //     priceRange.native
+            // )
         }
 
-        this.#cachedPools.set(crossPool.name, crossPool)
         this.#dayData[day]['pools'].push(crossPool)
 
         this.measure('citeSingleQuest', true)
@@ -689,6 +701,7 @@ class Generator {
                     action: 'CREATED',
                     day
                 })
+                this.#cachedPools.set(crossPool.name, crossPool)
             }
 
             const priceRange = investor.calculatePriceRange(
@@ -743,7 +756,7 @@ class Generator {
                     ' // ' +
                     `Substract from ${citingQuest.name}, current balance: ${
                         investor.balances[citingQuest.name]
-                    }`
+                    } cross pool: ${crossPool.name} ${crossPool.type}`
             })
 
             investor.addBalance(
@@ -754,7 +767,7 @@ class Generator {
 
             const cachedStateArgs = [
                 this.#cachedQuests.values(),
-                [...this.#cachedPools.values(), crossPool],
+                [...this.#cachedPools.values()],
                 this.#cachedInvestors.values()
             ]
             const curTokenMissing = totalSingleMissingToken(
@@ -768,8 +781,8 @@ class Generator {
             //         : 'none missing yet'
             // )
 
-            if (curTokenMissing > 0) {
-                console.log('### ALERT: CITATION #2 ###')
+            if (curTokenMissing > 0 && !isZero(curTokenMissing)) {
+                console.log('### ALERT: CITATION #2 RANDOM ###')
                 console.log(
                     `Despite all the correct actions, token ${citingQuest.name} went missing by ${curTokenMissing}`
                 )
@@ -778,18 +791,22 @@ class Generator {
                 console.log(citingPool)
                 console.log(citedPool)
 
-                // @TODO: breakpoint here and try trace citeRandomQuest
-                const totalInOut = investor.citeQuest(
-                    crossPool,
-                    priceRange.min,
-                    priceRange.max,
-                    citeAmount0,
-                    citeAmount1,
-                    priceRange.native
+                investor.addBalance(
+                    citingQuest.name,
+                    curTokenMissing,
+                    'Reimbursement for failed citation of a random quest'
                 )
-            }
 
-            this.#cachedPools.set(crossPool.name, crossPool)
+                // @TODO: breakpoint here and try trace citeRandomQuest
+                // const totalInOut = investor.citeQuest(
+                //     crossPool,
+                //     priceRange.min,
+                //     priceRange.max,
+                //     citeAmount0,
+                //     citeAmount1,
+                //     priceRange.native
+                // )
+            }
             this.#dayData[day]['pools'].push(crossPool)
         })
 
@@ -855,7 +872,6 @@ class Generator {
         // That would be an edge case, rare, but if happens, need to debug why
         if (
             isZero(totalIn) ||
-            totalOut <= 0 ||
             isZero(totalOut) ||
             isNaN(totalIn) ||
             isNaN(totalOut)
@@ -921,13 +937,12 @@ class Generator {
             //That would be an edge case, rare, but if happens, need to debug why
             if (
                 isZero(totalIn) ||
-                totalOut <= 0 ||
                 isZero(totalOut) ||
                 isNaN(totalIn) ||
                 isNaN(totalOut)
             ) {
                 console.log(
-                    `[GAINERS] Bad trade at: ${pool.name} ${totalIn} ${totalOut} ${perPoolAmt}`
+                    `############################ [GAINERS] Bad trade at: ${pool.name} ${totalIn} ${totalOut} ${perPoolAmt}`
                 )
                 return
             }
