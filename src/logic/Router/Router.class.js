@@ -20,6 +20,7 @@ export default class Router {
 
     _PRICED_PATHS = []
     _SWAPS = []
+    _PROTO_SWAPS = []
     _PAIR_PATHS = {}
     _DEFAULT_SWAP_SUM = 1
     _SWAP_SUM = 1
@@ -102,7 +103,7 @@ export default class Router {
             ) {
                 continue
             }
-            //console.log(`###DEBUG Calculated properAmountIn: ${properAmountIn}`)
+            console.log(`###DEBUG Calculated properAmountIn: ${properAmountIn}`)
             const sums = this.swapPricedPath(
                 properAmountIn,
                 this._PRICED_PATHS[0].path
@@ -206,6 +207,7 @@ export default class Router {
      * @returns {number|*|number}
      */
     calculateAcceptableForCappedPathActions(pathWithActionCaps) {
+        this._PROTO_SWAPS = []
         if (!Array.isArray(pathWithActionCaps) || !pathWithActionCaps.length) {
             return 0
         }
@@ -219,7 +221,7 @@ export default class Router {
             const zeroForOne = step.action === 'buy'
             const activeCurLiq = step.pool.getNearestActiveLiq(zeroForOne)
             if (!Array.isArray(activeCurLiq) || activeCurLiq.length < 1) {
-                console.log(step)
+                console.log('Active liquidity NOT FOUND for step', step)
             }
             const curFormulaArgs = [activeCurLiq[0], activeCurLiq[1]]
             if (idx === 0) {
@@ -228,6 +230,15 @@ export default class Router {
                     ? buySameLiqGiveT1GetT0(...curFormulaArgs, step.t1fort0)
                     : sellSameLiqGiveT0GetT1(...curFormulaArgs, step.t0fort1)
                 carryOver = newAmount
+                // ###DEBUG
+                this._PROTO_SWAPS.push({
+                    path: this._PRICED_PATHS[0].path,
+                    pool: step.pool.name,
+                    op: zeroForOne ? 'SHOULD buy' : 'SHOULD sell',
+                    in: Math.abs(newAmount),
+                    out: Math.abs(zeroForOne ? step.t1fort0 : step.t0fort1)
+                })
+                // ###DEBUG
                 return
             }
 
@@ -240,23 +251,52 @@ export default class Router {
                 newAmount = zeroForOne
                     ? buySameLiqGiveT1GetT0(...curFormulaArgs, carryOver)
                     : sellSameLiqGiveT0GetT1(...curFormulaArgs, carryOver)
+
+                // ###DEBUG
+                this._PROTO_SWAPS.push({
+                    path: this._PRICED_PATHS[0].path,
+                    pool: step.pool.name,
+                    op: zeroForOne ? 'SHOULD buy' : 'SHOULD sell',
+                    in: Math.abs(newAmount),
+                    out: Math.abs(carryOver)
+                })
+                // ###DEBUG
             } else {
+                // previous step capped amountIn
                 let prevT = prevZeroForOne
                     ? buySameLiqGiveT1GetT0(...prevFormulaArgs, prev.t1fort0)
                     : sellSameLiqGiveT0GetT1(...prevFormulaArgs, prev.t0fort1)
 
+                // current step capped amountOut
                 let curT = zeroForOne
                     ? buySameLiqGiveT0GetT1(...curFormulaArgs, step.t0fort1)
                     : sellSameLiqGiveT1GetT0(...curFormulaArgs, step.t1fort0)
 
-                if (prevT < curT) {
-                    curT = prevT
-                }
+                console.log('carryOver (previous newT)', carryOver)
+                console.log('prevT (previous step capped amountIn)', prevT)
+                console.log('curT (current step capped amountOut)', curT)
+                curT = Math.min(prevT, curT)
 
+                // current step capped amountIn
                 let newT = zeroForOne
-                    ? buySameLiqGiveT1GetT0(...curFormulaArgs, step.t1fort0)
-                    : sellSameLiqGiveT0GetT1(...curFormulaArgs, step.t0fort1)
+                    ? buySameLiqGiveT1GetT0(...curFormulaArgs, curT)
+                    : sellSameLiqGiveT0GetT1(...curFormulaArgs, curT)
 
+                console.log(
+                    'newT -> caryOver (current step capped amountIn)',
+                    newT
+                )
+
+                // ###DEBUG
+                this._PROTO_SWAPS.push({
+                    path: this._PRICED_PATHS[0].path,
+                    pool: step.pool.name,
+                    op: zeroForOne ? 'SHOULD buy' : 'SHOULD sell',
+                    in: Math.abs(newT),
+                    out: Math.abs(curT)
+                    // out: Math.abs(carryOver)
+                })
+                // ###DEBUG
                 carryOver = newT
             }
         })
@@ -347,13 +387,26 @@ export default class Router {
                     if (isLeak) {
                         console.log('### ALERT: ROUTER ###')
                         console.log(
-                            `${path} traversal got ${prevSum} but passed further ${curSum} leaking ${
+                            `${path.join(
+                                ' -> '
+                            )} traversal\n got ${prevSum} but passed further ${curSum}\n leaking [${
                                 prevSum - curSum
-                            }`
+                            }]`
                         )
-                        console.log(pathSwaps)
-                        console.log('With calculated path amounts')
-                        console.log(pathWithActionsCaps)
+                        console.log(
+                            '_PROTO_SWAPS:\n',
+                            [...this._PROTO_SWAPS].reverse()
+                        )
+                        console.log('pathSwaps:\n', pathSwaps)
+                        console.log(
+                            'With calculated path amounts:\n',
+                            pathWithActionsCaps
+                        )
+                        try {
+                            throw new Error('Leak Error!!!')
+                        } catch (err) {
+                            console.log(err)
+                        }
                     }
                 }
             }
