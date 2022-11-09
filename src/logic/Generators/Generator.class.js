@@ -11,6 +11,7 @@ import {
     isZero,
     priceDiff
 } from '../Utils/logicUtils'
+import { totalSingleMissingToken } from '../Utils/tokenCalc'
 
 const _OPS_TIME_INITIAL = {
     simulateQuestCreation: { time: 0, ops: 0, timeStarted: 0 },
@@ -481,6 +482,25 @@ class Generator {
             'citing single quest'
         )
 
+        // const curTokenMissing = totalSingleMissingToken(
+        //     citingQuest.name,
+        //     this.#cachedQuests.values(),
+        //     this.#cachedPools.values(),
+        //     this.#cachedInvestors.values()
+        // )
+        const curTokenMissing = 0
+
+        if (curTokenMissing > 0) {
+            console.log('### ALERT: CITATION #2 ###')
+            console.log(
+                `Despite all the correct actions, token ${citingQuest.name} went missing by ${curTokenMissing}`
+            )
+            console.log(investor)
+            console.log(crossPool)
+            console.log(citingPool)
+            console.log(singleUsdcPool)
+        }
+
         this.#cachedPools.set(crossPool.name, crossPool)
         this.#dayData[day]['pools'].push(crossPool)
 
@@ -706,6 +726,26 @@ class Generator {
                 -totalInOut[0],
                 'citing random quests'
             )
+
+            // const curTokenMissing = totalSingleMissingToken(
+            //     citingQuest.name,
+            //     this.#cachedQuests.values(),
+            //     this.#cachedPools.values(),
+            //     this.#cachedInvestors.values()
+            // )
+
+            const curTokenMissing = 0
+
+            if (curTokenMissing > 0) {
+                console.log('### ALERT: CITATION #2 ###')
+                console.log(
+                    `Despite all the correct actions, token ${citingQuest.name} went missing by ${curTokenMissing}`
+                )
+                console.log(investor)
+                console.log(crossPool)
+                console.log(citingPool)
+                console.log(citedPool)
+            }
 
             this.#cachedPools.set(crossPool.name, crossPool)
             this.#dayData[day]['pools'].push(crossPool)
