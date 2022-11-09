@@ -98,14 +98,14 @@ describe('Pool.class', () => {
 
     describe('getUSDCValue()', () => {
         it('returns 0 for non-USDC crosspool', () => {
-            const [, { BA, AC }] = prepareCrossPools()
+            const [, { BA, AC }] = prepareCrossPools(100)
 
             expect(BA.getUSDCValue()).toBe(0)
             expect(AC.getUSDCValue()).toBe(0)
         })
 
         it('returns correct value of USDC in pool', () => {
-            const [, { poolA }] = prepareCrossPools()
+            const [, { poolA }] = prepareCrossPools(100)
 
             poolA.buy(1000)
             poolA.buy(2000)
@@ -156,7 +156,7 @@ describe('Pool.class', () => {
         })
 
         it('returns false for cross-pools', () => {
-            const [, { BA }] = prepareCrossPools()
+            const [, { BA }] = prepareCrossPools(100)
 
             expect(BA.isQuest()).toBe(false)
         })
