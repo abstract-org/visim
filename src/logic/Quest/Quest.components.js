@@ -102,9 +102,8 @@ export const QuestCitation = () => {
             return
         }
 
-        const calcAmountA = Math.floor(
-            (investor.balances[activeQuest] / 100) * citationRange
-        )
+        const calcAmountA =
+            (Math.floor(investor.balances[activeQuest]) / 100) * citationRange
         const cumulativeDeposit = selectedQuests.length * calcAmountA
 
         if (
@@ -365,13 +364,17 @@ export const CitingQuestLiquidity = (props) => {
     const calculatedDeposit =
         activeQuest &&
         activeInvestor &&
-        Math.floor((investor.balances[activeQuest] / 100) * props.citationRange)
+        parseFloat(
+            (
+                (Math.floor(investor.balances[activeQuest]) / 100) *
+                props.citationRange
+            ).toFixed(9)
+        )
 
     const cumulativeDeposit = props.selectedQuests.length * calculatedDeposit
 
     const shouldNotRender =
         investor.balances[activeQuest] <= 0 ||
-        calculatedDeposit < 1 ||
         investor.balances[activeQuest] < calculatedDeposit ||
         cumulativeDeposit > investor.balances[activeQuest]
 
