@@ -1,8 +1,10 @@
-import produce from 'immer'
+import produce, { setAutoFreeze } from 'immer'
 import create from 'zustand'
 import { devtools } from 'zustand/middleware'
 
 import { overrideState } from '../Utils/logicUtils'
+
+setAutoFreeze(false)
 
 const INITIAL_STATE = {
     logObjs: []
