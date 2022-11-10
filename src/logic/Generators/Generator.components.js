@@ -159,15 +159,15 @@ export const GeneratorRunner = () => {
             globalState.generatorStore = { invConfigs: [], questConfigs: [] }
 
             resetInvConfigs()
-            currentScenario.scenario.invConfigs.forEach((invGen) => {
-                addInvConfig(invGen)
-                globalState.generatorStore.invConfigs.push(invGen)
+            currentScenario.scenario.invConfigs.forEach((invGenItem) => {
+                addInvConfig(invGenItem)
+                globalState.generatorStore.invConfigs.push(invGenItem)
             })
 
             resetQuestConfigs()
-            currentScenario.scenario.questConfigs.forEach((questGen) => {
-                addQuestConfig(questGen)
-                globalState.generatorStore.questConfigs.push(questGen)
+            currentScenario.scenario.questConfigs.forEach((questGenItem) => {
+                addQuestConfig(questGenItem)
+                globalState.generatorStore.questConfigs.push(questGenItem)
             })
 
             setScenarioId(currentScenario.scenarioId)
@@ -266,6 +266,51 @@ export const GeneratorRunner = () => {
         setNewScenarioName('')
     }
 
+    function storeStepData(stepData) {
+        stepData.investors.forEach((investor) => {
+            if (!globalState.investors.has(investor.hash)) {
+                globalState.investors.set(investor.hash, investor)
+                globalState.investorStore.investors.push(investor.hash)
+            }
+        })
+        addMultipleInvestors(stepData.investors.map((i) => i.hash))
+
+        stepData.quests.forEach((quest) => {
+            if (!globalState.quests.has(quest.name)) {
+                globalState.quests.set(quest.name, quest)
+                globalState.questStore.quests.push(quest.name)
+            }
+        })
+        addMultipleQuests(stepData.quests.map((q) => q.name))
+
+        const newPoolNames = stepData.pools
+            .map((pool) => {
+                if (!globalState.pools.has(pool.name)) {
+                    globalState.pools.set(pool.name, pool)
+
+                    return pool.name
+                }
+
+                return null
+            })
+            .filter((pName) => pName)
+        addMultiplePools(newPoolNames)
+        globalState.poolStore.pools.push(...newPoolNames)
+
+        const boughtSoldArr = ['BOUGHT', 'SOLD']
+        stepData.actions.forEach((action) => {
+            if (boughtSoldArr.includes(action.action)) {
+                globalState.poolStore.swaps.push(action)
+            }
+            globalState.logStore.logObjs.push(action)
+        })
+
+        overrideSwaps(globalState.logStore.logObjs)
+        addMultipleSwaps(
+            stepData.actions.filter((a) => boughtSoldArr.includes(a.action))
+        )
+    }
+
     const handleGenerate = async () => {
         if (genDays <= 0) {
             console.log('Specify amount of days to simulate')
@@ -301,56 +346,7 @@ export const GeneratorRunner = () => {
                 day
             })
 
-            stepData.investors.forEach((investor) => {
-                if (!globalState.investors.has(investor.hash)) {
-                    globalState.investors.set(investor.hash, investor)
-                    globalState.investorStore.investors = [
-                        ...globalState.investorStore.investors,
-                        investor.hash
-                    ]
-                }
-            })
-            addMultipleInvestors(stepData.investors.map((i) => i.hash))
-
-            stepData.quests.forEach((quest) => {
-                if (!globalState.quests.has(quest.name)) {
-                    globalState.quests.set(quest.name, quest)
-                    globalState.questStore.quests = [
-                        ...globalState.questStore.quests,
-                        quest.name
-                    ]
-                }
-            })
-            addMultipleQuests(stepData.quests.map((q) => q.name))
-
-            stepData.pools.forEach((pool) => {
-                if (!globalState.pools.has(pool.name)) {
-                    globalState.pools.set(pool.name, pool)
-                    addPool(pool.name)
-                    globalState.poolStore.pools.push(pool.name)
-                    globalState.poolStore.pools = [
-                        ...globalState.poolStore.pools,
-                        pool.name
-                    ]
-                }
-            })
-            addMultiplePools(stepData.pools.map((p) => p.name))
-
-            const boughtSoldArr = ['BOUGHT', 'SOLD']
-            stepData.actions.forEach((action) => {
-                if (boughtSoldArr.includes(action.action)) {
-                    globalState.poolStore.swaps = [
-                        ...globalState.poolStore.swaps,
-                        action
-                    ]
-                }
-                globalState.logStore.logObjs.push(action)
-            })
-
-            overrideSwaps(globalState.logStore.logObjs)
-            addMultipleSwaps(
-                stepData.actions.filter((a) => boughtSoldArr.includes(a.action))
-            )
+            storeStepData(stepData)
 
             await genManager.sleep(50)
             setDay(day)
@@ -491,7 +487,7 @@ export const InvestorRandomGenerator = () => {
                 icon="pi pi-plus"
                 className="px-2 p-button-secondary"
                 onClick={handleNewInvestorGen}
-            ></Button>
+            />
             <div className="gen-wrapper flex flex-row flex-nowrap justify-content-start">
                 {invConfigs.map((gen) => {
                     return (

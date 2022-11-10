@@ -377,28 +377,29 @@ export default class Router {
                     const isLeak = !isZero(prevSum - curSum)
 
                     if (isLeak) {
-                        console.log('### ALERT: ROUTER ###')
-                        console.log(
+                        console.error('### ALERT: ROUTER ###')
+                        console.error(
                             `${path.join(
                                 ' -> '
                             )} traversal\n got ${prevSum} but passed further ${curSum}\n leaking [${
                                 prevSum - curSum
                             }]`
                         )
-                        console.log(
+                        console.error(
                             '_PROTO_SWAPS:\n',
                             [...this._PROTO_SWAPS].reverse()
                         )
-                        console.log('pathSwaps:\n', pathSwaps)
-                        console.log(
+                        console.error('pathSwaps:\n', pathSwaps)
+                        console.error(
                             'With calculated path amounts:\n',
                             pathWithActionsCaps
                         )
-                        try {
-                            throw new Error('Leak Error!!!')
-                        } catch (err) {
-                            console.log(err)
-                        }
+                        // Can be used to stop debugger on Eroor/Exception without expicit breakpoint
+                        // try {
+                        //     throw new Error('Leak Error!!!')
+                        // } catch (err) {
+                        //     console.error(err)
+                        // }
                     }
                 }
             }

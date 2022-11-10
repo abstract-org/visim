@@ -453,10 +453,10 @@ class Generator {
             !Array.isArray(totalInOut) ||
             totalInOut.length < 2
         ) {
-            console.log('### ALERT: CITATION ###')
-            console.log(`Failed to cite ${crossPool.name}`)
-            console.log(priceRange, citeAmount0, citeAmount1)
-            console.log(citingPool, singleUsdcPool)
+            console.warn('### ALERT: CITATION [' + day + ']###')
+            console.warn(`Failed to cite ${crossPool.name}`)
+            console.warn(priceRange, citeAmount0, citeAmount1)
+            console.warn(citingPool, singleUsdcPool)
             return
         }
 
@@ -500,14 +500,14 @@ class Generator {
         )
 
         if (curTokenMissing > 0 && !isZero(curTokenMissing)) {
-            console.log('### ALERT: CITATION #2 SINGLE ###')
-            console.log(
+            console.warn('### ALERT: CITATION #2 SINGLE [' + day + ']###')
+            console.warn(
                 `Despite all the correct actions, token ${citingQuest.name} went missing by ${curTokenMissing}`
             )
-            console.log(investor)
-            console.log(crossPool)
-            console.log(citingPool)
-            console.log(singleUsdcPool)
+            console.warn(investor)
+            console.warn(crossPool)
+            console.warn(citingPool)
+            console.warn(singleUsdcPool)
 
             investor.addBalance(
                 citingQuest.name,
@@ -713,10 +713,10 @@ class Generator {
             )
 
             if (!totalInOut) {
-                console.log('### ALERT: CITATION ###')
-                console.log(`Failed to cite ${crossPool.name}`)
-                console.log(priceRange, citeAmount0, citeAmount1)
-                console.log(citingPool, citedPool)
+                console.warn('### ALERT: CITATION [' + day + ']###')
+                console.warn(`Failed to cite ${crossPool.name}`)
+                console.warn(priceRange, citeAmount0, citeAmount1)
+                console.warn(citingPool, citedPool)
                 return
             }
 
@@ -760,14 +760,14 @@ class Generator {
             )
 
             if (curTokenMissing > 0 && !isZero(curTokenMissing)) {
-                console.log('### ALERT: CITATION #2 RANDOM ###')
-                console.log(
+                console.warn('### ALERT: CITATION #2 RANDOM [' + day + ']###')
+                console.warn(
                     `Despite all the correct actions, token ${citingQuest.name} went missing by ${curTokenMissing}`
                 )
-                console.log(investor)
-                console.log(crossPool)
-                console.log(citingPool)
-                console.log(citedPool)
+                console.warn(investor)
+                console.warn(crossPool)
+                console.warn(citingPool)
+                console.warn(citedPool)
 
                 investor.addBalance(
                     citingQuest.name,
