@@ -1,5 +1,10 @@
+import HashMap from 'hashmap'
+
 import Investor from '../logic/Investor/Investor.class'
+import UsdcToken from '../logic/Quest/UsdcToken.class'
+import Router from '../logic/Router/Router.class'
 import globalConfig from '../logic/config.global.json'
+import { getCP, getQP } from './helpers/getQuestPools'
 import { preparePool } from './helpers/poolManager'
 
 const initialPositions = [
@@ -28,6 +33,84 @@ const initialPositions = [
         tokenA: null
     }
 ]
+
+describe('Selling', () => {
+    it('Sells fractions directly', () => {
+        const { quest: questA, pool: A } = getQP('A')
+
+        A.buy(100000)
+
+        const res = A.sell(0.01)
+
+        expect(res[0]).toBeCloseTo(-0.0099, 0)
+        expect(res[1]).toBeCloseTo(0.518, 0)
+    })
+
+    it('Sells fractions into cross pool directly', () => {})
+
+    it('Sells fractions via smart route', () => {})
+})
+
+describe('Cross Pool swapping', () => {
+    const initialPositions = [
+        {
+            priceMin: 1,
+            priceMax: 10000,
+            tokenB: 5000,
+            tokenA: null
+        },
+        {
+            priceMin: 20,
+            priceMax: 10000,
+            tokenB: 5000,
+            tokenA: null
+        },
+        {
+            priceMin: 50,
+            priceMax: 10000,
+            tokenB: 5000,
+            tokenA: null
+        },
+        {
+            priceMin: 200,
+            priceMax: 10000,
+            tokenB: 5000,
+            tokenA: null
+        }
+    ]
+
+    it('Sells expensive cited token into cross pool for the right amount', () => {
+        const { quest: questA, pool: A } = getQP('A')
+        const { quest: questB, pool: B } = getQP('B')
+        const { quest: questC, pool: C } = getQP('C')
+
+        A.buy(5000)
+        B.buy(500000)
+        C.buy(5000)
+
+        const { crossPool: BA } = getCP(questA, questB, A, B, 0, 100)
+        const { crossPool: CB } = getCP(questB, questC, B, C, 0, 300)
+
+        const pools = new HashMap()
+        const quests = new HashMap()
+
+        pools.set(A.name, A)
+        pools.set(B.name, B)
+        pools.set(C.name, C)
+        pools.set(BA.name, BA)
+        pools.set(CB.name, CB)
+
+        quests.set(questA.name, questA)
+        quests.set(questB.name, questB)
+        quests.set(questC.name, questC)
+        quests.set('USDC', new UsdcToken())
+
+        const router = new Router(quests, pools)
+        const swap = router.smartSwap('USDC', 'A', 1000)
+        expect(swap[0]).toBeCloseTo(-1000, 0)
+        expect(swap[1]).toBeCloseTo(229.66, 1)
+    })
+})
 
 it('Does micro price buy properly within the same liquidity', () => {
     const { pool, investor, tokenLeft, tokenRight } = preparePool(

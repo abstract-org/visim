@@ -13,7 +13,12 @@ import useLogsStore from '../Logs/logs.store'
 import { QuestSelector } from '../Quest/Quest.components'
 import useQuestStore from '../Quest/quest.store'
 import Router from '../Router/Router.class'
-import { formSwapData, getCombinedSwaps, isZero } from '../Utils/logicUtils'
+import {
+    formSwapData,
+    getCombinedSwaps,
+    isE10Zero,
+    isZero
+} from '../Utils/logicUtils'
 import { appendIfNotExist } from '../Utils/uiUtils'
 import globalConfig from '../config.global.json'
 import useDayTrackerStore from '../dayTracker.store'
@@ -91,7 +96,7 @@ export const PoolChartStats = () => {
                             {pool.tokenLeft}:{' '}
                             {isZero(pool.volumeToken0)
                                 ? 0
-                                : nf.format(Math.round(pool.volumeToken0))}
+                                : nf.format(pool.volumeToken0.toFixed(3))}
                         </h4>
                     </span>
                     <span>
@@ -99,7 +104,7 @@ export const PoolChartStats = () => {
                             {pool.tokenRight}:{' '}
                             {isZero(pool.volumeToken1)
                                 ? 0
-                                : nf.format(Math.round(pool.volumeToken1))}
+                                : nf.format(pool.volumeToken1.toFixed(3))}
                         </h4>
                     </span>
                 </div>

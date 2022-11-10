@@ -125,12 +125,16 @@ export const GeneratorRunner = () => {
     const swaps = usePoolStore((state) => state.swaps)
 
     const addPool = usePoolStore((state) => state.addPool)
+    const addMultiplePools = usePoolStore((state) => state.addMultiplePools)
     const activeInvestor = useInvestorStore((state) => state.active)
-    const addInvestor = useInvestorStore((state) => state.addInvestor)
+    const addMultipleInvestors = useInvestorStore(
+        (state) => state.addMultipleInvestors
+    )
     const addHumanQuest = useQuestStore((state) => state.addHumanQuest)
     const addQuest = useQuestStore((state) => state.addQuest)
-    const addSwap = usePoolStore((state) => state.addSwap)
-    const addLogObj = useLogsStore((state) => state.addLogObj)
+    const addMultipleQuests = useQuestStore((state) => state.addMultipleQuests)
+    const addMultipleSwaps = usePoolStore((state) => state.addMultipleSwaps)
+    const overrideSwaps = useLogsStore((state) => state.overrideSwaps)
     const setDay = useDayTrackerStore((state) => state.setDay)
 
     const addInvConfig = useGeneratorStore((state) => state.addInvConfig)
@@ -300,38 +304,60 @@ export const GeneratorRunner = () => {
             stepData.investors.forEach((investor) => {
                 if (!globalState.investors.has(investor.hash)) {
                     globalState.investors.set(investor.hash, investor)
-                    addInvestor(investor.hash)
                     globalState.investorStore.investors = [
                         ...globalState.investorStore.investors,
                         investor.hash
                     ]
                 }
             })
+            addMultipleInvestors(stepData.investors.map((i) => i.hash))
+
             stepData.quests.forEach((quest) => {
                 if (!globalState.quests.has(quest.name)) {
                     globalState.quests.set(quest.name, quest)
-                    addQuest(quest.name)
-                    globalState.questStore.quests.push(quest.name)
+                    globalState.questStore.quests = [
+                        ...globalState.questStore.quests,
+                        quest.name
+                    ]
                 }
             })
+            addMultipleQuests(stepData.quests.map((q) => q.name))
+
             stepData.pools.forEach((pool) => {
                 if (!globalState.pools.has(pool.name)) {
                     globalState.pools.set(pool.name, pool)
                     addPool(pool.name)
                     globalState.poolStore.pools.push(pool.name)
+                    globalState.poolStore.pools = [
+                        ...globalState.poolStore.pools,
+                        pool.name
+                    ]
                 }
             })
+            addMultiplePools(stepData.pools.map((p) => p.name))
+
+            const boughtSoldArr = ['BOUGHT', 'SOLD']
             stepData.actions.forEach((action) => {
-                if (['BOUGHT', 'SOLD'].includes(action.action)) {
-                    addSwap(action)
-                    globalState.poolStore.swaps.push(action)
+                if (boughtSoldArr.includes(action.action)) {
+                    globalState.poolStore.swaps = [
+                        ...globalState.poolStore.swaps,
+                        action
+                    ]
                 }
-                addLogObj(action)
                 globalState.logStore.logObjs.push(action)
             })
 
-            await genManager.sleep(150)
+            overrideSwaps(globalState.logStore.logObjs)
+            addMultipleSwaps(
+                stepData.actions.filter((a) => boughtSoldArr.includes(a.action))
+            )
+
+            await genManager.sleep(50)
             setDay(day)
+            if (!globalState.dayTrackerStore) {
+                globalState.dayTrackerStore = { currentDay: 0 }
+            }
+            globalState.dayTrackerStore.currentDay = day
         }
         setPassedDays(passedDays + genDays)
         setGenActive(false)

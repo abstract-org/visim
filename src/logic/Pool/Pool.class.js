@@ -3,20 +3,13 @@ import sha256 from 'crypto-js/sha256'
 import HashMap from 'hashmap'
 
 import UsdcToken from '../Quest/UsdcToken.class'
-import { p2pp, pp2p } from '../Utils/logicUtils'
+import { isE10Zero, isNearZero, isZero, p2pp, pp2p } from '../Utils/logicUtils'
 import globalConfig from '../config.global.json'
-
-// cosmetic constants to address left/right token balance
-const LEFT_TOKEN = 0
-const RIGHT_TOKEN = 1
-// cosmetic constants to address sell/buy result array items
-const TOTAL_IN = 0
-const TOTAL_OUT = 1
-
-let pp
 
 export default class Pool {
     name
+
+    FRESH = true
 
     tokenLeft
     tokenRight
@@ -229,6 +222,19 @@ export default class Pool {
         let amounts = []
         let amount1 = 0
 
+        // @TODO: Shift pool price before calculation liquidity if free in either direction
+        //const canShiftPriceUp = this.dryBuy(Infinity, this.curPrice)
+        //const canShiftPriceDown = this.drySell(Infinity, priceMin)
+
+        // Cannot open position non-native below curPrice
+        if (priceMin < this.curPrice && !native) {
+            priceMin = this.curPrice + 0.000000000000001
+
+            // Likewise cannot open native position with priceMax above current price
+        } else if (priceMax > this.curPrice && native) {
+            priceMax = this.curPrice - 0.000000000000001
+        }
+
         const liquidity = this.getLiquidityForAmounts(
             token0Amt,
             token1Amt,
@@ -237,14 +243,12 @@ export default class Pool {
             Math.sqrt(this.curPrice)
         )
 
-        //console.log(token0Amt, token1Amt, priceMin, priceMax, liquidity)
-
         if (liquidity === 0) {
             return []
         }
 
-        this.volumeToken0 += token0Amt
-        this.volumeToken1 += token1Amt
+        this.volumeToken0 += isZero(token0Amt) ? 0 : token0Amt
+        this.volumeToken1 += isZero(token1Amt) ? 0 : token1Amt
 
         this.setPositionSingle(p2pp(priceMin), liquidity)
         this.setPositionSingle(p2pp(priceMax), -liquidity)
@@ -270,27 +274,32 @@ export default class Pool {
             amounts[1] = amounts[1] - amounts[0]
         }
 
-        this.setActiveLiq(priceMin, priceMax)
+        // Native direction needs to pick position at priceMax and set it instead, removing liquidity
+        this.setActiveLiq(priceMin, native)
 
         return amounts
     }
 
-    setActiveLiq(pMin, pMax) {
+    setActiveLiq(pMin, native) {
         if (
-            this.curLiq === 0 &&
-            (pMin < this.curPrice || pMax > this.curPrice)
+            pp2p(this.curPP) !== this.curPrice ||
+            (this.curLiq === 0 && isE10Zero(this.volumeToken1)) ||
+            isNearZero(this.volumeToken1)
         ) {
             const ppNext =
-                pMax > this.curPrice ? this.seekActiveLiq('right') : null
-            const ppPrev = !ppNext ? this.seekActiveLiq('left') : null
+                pMin <= this.curPrice
+                    ? this.findActiveLiq('left', native)
+                    : null
+            const ppPrev = !ppNext ? this.findActiveLiq('right', native) : null
 
             const toPP = ppNext ? ppNext : ppPrev ? ppPrev : null
 
             if (toPP) {
+                const newLiq = this.curLiq + toPP.liquidity
                 this.curPP = toPP.pp
                 this.curLeft = toPP.left
                 this.curRight = toPP.right
-                this.curLiq = toPP.liquidity
+                this.curLiq = newLiq <= 0 ? 0 : toPP.liquidity
                 this.curPrice = pp2p(toPP.pp)
                 this.priceToken0 = 1 / this.curPrice
                 this.priceToken1 = this.curPrice
@@ -298,7 +307,7 @@ export default class Pool {
         }
     }
 
-    seekActiveLiq(dir) {
+    findActiveLiq(dir, native = false) {
         let localPP = this.curPP
 
         while (
@@ -306,7 +315,9 @@ export default class Pool {
             this.pos.get(localPP)[dir] !== 'undefined' &&
             localPP !== this.pos.get(localPP)[dir]
         ) {
-            if (this.pos.get(localPP).liquidity > 0) {
+            if (!native && this.pos.get(localPP).liquidity > 0) {
+                return this.pos.get(localPP)
+            } else if (native && this.pos.get(localPP).liquidity < 0) {
                 return this.pos.get(localPP)
             }
 
@@ -314,6 +325,43 @@ export default class Pool {
         }
 
         return null
+    }
+
+    getNearestActiveLiq(zeroForOne) {
+        if (this.curLiq > 0) {
+            return [
+                this.curLiq,
+                this.curPrice,
+                zeroForOne ? this.curRight : this.curPP
+            ]
+        }
+
+        let nextActiveLiqPos
+        let liq = this.curLiq
+        let price = this.curPrice
+        let next = zeroForOne ? this.curRight : this.curPP
+
+        if (zeroForOne && p2pp(price) >= next) {
+            nextActiveLiqPos = this.findActiveLiq('right')
+        } else {
+            nextActiveLiqPos = this.findActiveLiq('left')
+        }
+
+        if (!nextActiveLiqPos || nextActiveLiqPos.liquidity <= 0) {
+            return null
+        }
+
+        if (zeroForOne) {
+            liq = nextActiveLiqPos.liquidity
+            price = pp2p(nextActiveLiqPos.pp)
+            next = nextActiveLiqPos.right
+        } else {
+            liq = nextActiveLiqPos.liquidity
+            price = pp2p(nextActiveLiqPos.right)
+            next = nextActiveLiqPos.pp
+        }
+
+        return [liq, price, next]
     }
 
     /**
@@ -369,7 +417,8 @@ export default class Pool {
             curPP: this.curPP,
             totalSold: this.totalSold,
             volumeToken0: this.volumeToken0,
-            volumeToken1: this.volumeToken1
+            volumeToken1: this.volumeToken1,
+            FRESH: this.FRESH
         }
 
         const [totalIn, totalOut] = this.buy(amount, priceLimit, true)
@@ -411,7 +460,9 @@ export default class Pool {
 
             arrivedAtSqrtPrice += amount / curLiq
 
+            journal[i].push(`POOL ${this.name}`)
             journal[i].push(`Op: buy ${i}`)
+            journal[i].push(`Amount: ${amount}`)
             journal[i].push(`Current price point: ${this.curPP}`)
             journal[i].push(`Current price: ${this.curPrice}`)
             journal[i].push(`Current liquidity: ${curLiq}`)
@@ -420,7 +471,7 @@ export default class Pool {
             )
             journal[i].push('---')
             journal[i].push(
-                `Next price point: ${nextPricePoint} (${Math.sqrt(
+                `Next price point: log2(${nextPricePoint}) dec(${pp2p(
                     nextPricePoint
                 )})`
             )
@@ -532,9 +583,12 @@ export default class Pool {
             this.volumeToken1 += -totalAmountOut
         }
 
+        this.FRESH = false
+
         return [totalAmountIn, totalAmountOut]
     }
 
+    // @TODO: Save pool state (all 5 variables) and if you cannot sell anything, restore state
     sell(amount, priceLimit = null, dry = false) {
         let totalAmountIn = 0,
             totalAmountOut = 0
@@ -561,14 +615,15 @@ export default class Pool {
                     : pp2p(nextPricePoint)
 
             curLiq = this.curLiq
-            // newprice = curPrice + amount/curliq
 
             arrivedAtSqrtPrice =
                 curLiq / (amount + curLiq / Math.sqrt(this.curPrice))
 
             // arrived
 
-            journal[i].push(`Op: sell ${i}`)
+            journal[i].push(`POOL ${this.name}`)
+            journal[i].push(`Op (sell) ${i}`)
+            journal[i].push(`Amount: ${amount}`)
             journal[i].push(
                 `Bottom (current for buy) price point: ${this.curPP} (${pp2p(
                     this.curPP
@@ -717,6 +772,8 @@ export default class Pool {
             }
         }
 
+        this.FRESH = false
+
         return [totalAmountIn, totalAmountOut]
     }
 
@@ -729,7 +786,8 @@ export default class Pool {
             curPP: this.curPP,
             totalSold: this.totalSold,
             volumeToken0: this.volumeToken0,
-            volumeToken1: this.volumeToken1
+            volumeToken1: this.volumeToken1,
+            FRESH: this.FRESH
         }
 
         const [totalIn, totalOut] = this.sell(amount, priceLimit, true)
@@ -747,6 +805,12 @@ export default class Pool {
         return zeroForOne ? this.buy(amount) : this.sell(amount)
     }
 
+    /**
+     *
+     * @param {number} amount
+     * @param {boolean} zeroForOne
+     * @returns
+     */
     drySwap(amount, zeroForOne) {
         return zeroForOne ? this.dryBuy(amount) : this.drySell(amount)
     }
@@ -807,5 +871,17 @@ export default class Pool {
 
     getUSDCValue() {
         return this.isQuest() ? this.volumeToken0 : 0
+    }
+
+    getDecPos() {
+        return this.pos
+            .values()
+            .sort((s, a) => s.pp - a.pp)
+            .map((p) => ({
+                left: pp2p(p.left),
+                pp: pp2p(p.pp),
+                right: pp2p(p.left),
+                liq: p.liquidity
+            }))
     }
 }

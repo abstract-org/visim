@@ -3,7 +3,8 @@ import HashMap from 'hashmap'
 
 import Pool from '../Pool/Pool.class'
 import Token from '../Quest/Token.class'
-import { isZero, p2pp } from '../Utils/logicUtils'
+import { isE10Zero, p2pp } from '../Utils/logicUtils'
+import { watcherStore } from '../Utils/watcher'
 
 export default class Investor {
     hash = null
@@ -14,6 +15,7 @@ export default class Investor {
     initialBalance = 0
     positions = new HashMap()
     questsCreated = []
+    balancesLogs = []
 
     #PRICE_RANGE_MULTIPLIER = 2
 
@@ -53,11 +55,11 @@ export default class Investor {
     addBalance(tokenName, balance, msg = null) {
         if (isNaN(balance)) {
             console.log('Trying to pass NaN amount', tokenName, balance, msg)
-            return
+            return false
         }
 
-        if (isZero(balance) || balance === 0) {
-            return
+        if (isE10Zero(balance) || balance === 0) {
+            return false
         }
 
         if (!this.balances[tokenName]) {
@@ -69,16 +71,25 @@ export default class Investor {
                 `You don't have ${balance} of ${tokenName} to spend, remaining amount is ${this.balances[tokenName]}`,
                 msg
             )
-            throw new Error(
-                `You don't have ${balance} of ${tokenName} to spend, remaining amount is ${this.balances[tokenName]}: ${msg}`
-            )
+            return false
         }
 
+        const prevBalance = this.balances[tokenName]
         this.balances[tokenName] += balance
+        this.balancesLogs.push({
+            tokenName,
+            dir: balance > 0 ? 'in' : 'out',
+            shift: balance,
+            was: prevBalance,
+            now: this.balances[tokenName],
+            msg
+        })
 
-        if (isZero(this.balances[tokenName])) {
+        if (isE10Zero(this.balances[tokenName])) {
             this.balances[tokenName] = 0
         }
+
+        return true
     }
 
     removeLiquidity(pool, priceMin, priceMax, amountLeft = 0, amountRight = 0) {
@@ -154,8 +165,21 @@ export default class Investor {
             native
         )
 
+        if (
+            typeof token0Amt === 'undefined' ||
+            typeof token1Amt === 'undefined' ||
+            (token0Amt === 0 && token1Amt === 0)
+        ) {
+            console.log('### ALERT: CITATION INVESTOR ###')
+            console.log(
+                `During citation at ${crossPool.name} with pos[${priceMin}...${priceMax}] direction native=${native}, tokens passed token0: ${token0Amt}, token1: ${token1Amt}`
+            )
+            console.log(`Got response: in: ${totalIn}/out:${totalOut}`)
+            return null
+        }
+
         if (!totalIn && !totalOut) {
-            return []
+            return null
         }
 
         crossPool.posOwners.push({
@@ -164,14 +188,7 @@ export default class Investor {
             pmax: priceMax,
             amt0: token0Amt,
             amt1: token1Amt,
-            type: 'investor',
-            liq: crossPool.getLiquidityForAmounts(
-                token0Amt,
-                token1Amt,
-                priceMin,
-                priceMax,
-                crossPool.curPrice
-            )
+            type: 'investor'
         })
         this.positions.set(crossPool.name, crossPool.pos.values())
 
@@ -212,22 +229,34 @@ export default class Investor {
         min = nativePos ? 1 / unitPrice : unitPrice
         max = nativePos ? 1 / unitPrice : unitPrice
 
+        // Try to correct rounding errors
+        if (nativePos) {
+            min -= 0.0000000000000000001
+            max -= 0.0000000000000000001
+        }
+
+        const dryBuyNonNative = crossPool.dryBuy(Infinity)
+        const drySellNative = crossPool.drySell(Infinity)
+        const freeMoveBuy = dryBuyNonNative[0] === 0 && dryBuyNonNative[1] === 0
+        const freeMoveSell = drySellNative[0] === 0 && drySellNative[1] === 0
+
+        // If we can move for free towards requested price, set that price as current to calculate position location properly
+        if (nativePos && max > crossPool.curPrice && freeMoveSell) {
+            crossPool.curPrice = max
+        } else if (!nativePos && min < this.curPrice && freeMoveBuy) {
+            crossPool.curPrice = min
+        }
+
         if (nativePos && max <= crossPool.curPrice) {
             min = min / multiplier
         } else if (nativePos && max > crossPool.curPrice) {
             max = crossPool.curPrice
-
-            if (min === max) {
-                min = min / multiplier
-            }
+            min = min / multiplier
         } else if (!nativePos && min >= crossPool.curPrice) {
             max = max * multiplier
         } else if (!nativePos && min < crossPool.curPrice) {
             min = crossPool.curPrice
-
-            if (min === max) {
-                max = max * multiplier
-            }
+            max = max * multiplier
         }
 
         return { min: min, max: max, native: nativePos }

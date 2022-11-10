@@ -59,6 +59,7 @@ const StatesTable = (props) => {
     const overridePools = usePoolStore(overrideSelector)
     const overrideGenerators = useGeneratorStore(overrideSelector)
     const overrideInvestors = useInvestorStore(overrideSelector)
+    const overrideDayTracker = useInvestorStore(overrideSelector)
     const setNeedScrollUp = useGeneratorStore((state) => state.setNeedScrollUp)
     const [snapshots, setSnapshots] = useState([])
     const [currentStateInfo, setCurrentStateInfo] = useState({})
@@ -213,6 +214,7 @@ const StatesTable = (props) => {
         overridePools(snapshot.poolStore)
         overrideGenerators(snapshot.generatorStore)
         overrideLogs(snapshot.logStore)
+        overrideDayTracker(snapshot.dayTrackerStore)
 
         overrideStateBySnapshot(snapshot)
 

@@ -1,4 +1,4 @@
-import { FilterMatchMode, FilterOperator } from 'primereact/api'
+import { FilterMatchMode } from 'primereact/api'
 import { Column } from 'primereact/column'
 import { DataTable } from 'primereact/datatable'
 import { Dropdown } from 'primereact/dropdown'
