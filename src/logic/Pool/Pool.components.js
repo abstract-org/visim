@@ -212,12 +212,7 @@ export const SwapModule = () => {
         let [totalAmountIn, totalAmountOut] =
             swapMode === 'direct'
                 ? tradePool.buy(amount)
-                : router.smartSwap(
-                      'USDC',
-                      activeQuest,
-                      amount,
-                      globalConfig.CHUNK_SIZE
-                  )
+                : router.smartSwap('USDC', activeQuest, amount)
 
         investor.addBalance('USDC', totalAmountIn)
         investor.addBalance(activeQuest, totalAmountOut)
@@ -296,12 +291,7 @@ export const SwapModule = () => {
         let [totalAmountIn, totalAmountOut] =
             swapMode === 'direct'
                 ? pool.sell(amount)
-                : router.smartSwap(
-                      activeQuest,
-                      'USDC',
-                      amount,
-                      globalConfig.CHUNK_SIZE
-                  )
+                : router.smartSwap(activeQuest, 'USDC', amount)
 
         investor.addBalance('USDC', totalAmountOut)
         investor.addBalance(activeQuest, totalAmountIn)
@@ -433,50 +423,55 @@ export const PoolPositions = (props) => {
     }
 
     const pool = globalState.pools.get(activePool)
-    const positions = pool.posOwners.map((pos, idx) => {
-        if (pos.liquidity === 0) return null
+    const positions = pool.posOwners
+        .sort((s, a) => s.pmin - a.pmin)
+        .map((pos, idx) => {
+            if (pos.liquidity === 0) return null
 
-        return (
-            <Chip
-                key={idx}
-                label={`[${pool.tokenLeft}: ${pos.amt0.toFixed(
-                    globalConfig.USDC_DECIMAL_POINTS
-                )}] ${pos.pmin.toFixed(2)}-${pos.pmax.toFixed(2)} [${
-                    pool.tokenRight
-                }: ${pos.amt1.toFixed(globalConfig.USDC_DECIMAL_POINTS)}]`}
-                icon={`${
-                    pos.type === 'investor' ? 'pi-user' : 'pi-bitcoin'
-                } pi pi-position-icon`}
-                className={`${
-                    pos.type === 'investor'
-                        ? 'investor-position'
-                        : 'token-position'
-                } mr-1 mb-1`}
-                template={(props) => (
-                    <div className={props.className}>
-                        <Tooltip target=".pi-position-icon" />
-                        <i
-                            className={props.icon}
-                            data-pr-tooltip={
-                                !pool.isQuest()
-                                    ? globalState.investors.get(pos.hash).name
-                                    : ''
-                            }
-                            data-pr-position="top"
-                            data-pr-at="bottom bottom+30"
-                            data-pr-my="left center-2"
-                            style={{
-                                fontSize: '1rem',
-                                cursor: 'pointer',
-                                margin: '0.4rem'
-                            }}
-                        ></i>
-                        <span>{props.label}</span>
-                    </div>
-                )}
-            />
-        )
-    })
+            const isPosActive =
+                pool.curPrice >= pos.pmin && pool.curPrice <= pos.pmax
+            //console.log()
+
+            return (
+                <Chip
+                    key={idx}
+                    label={`${pos.pmin.toFixed(
+                        globalConfig.USDC_DECIMAL_POINTS
+                    )}-${pos.pmax.toFixed(globalConfig.USDC_DECIMAL_POINTS)}`}
+                    icon={`${
+                        pos.type === 'investor' ? 'pi-user' : 'pi-bitcoin'
+                    } pi pi-position-icon`}
+                    className={`${
+                        pos.type === 'investor'
+                            ? 'investor-position'
+                            : 'token-position'
+                    } ${isPosActive ? 'active-position' : ''} mr-1 mb-1`}
+                    template={(props) => (
+                        <div className={props.className}>
+                            <Tooltip target=".pi-position-icon" />
+                            <i
+                                className={props.icon}
+                                data-pr-tooltip={
+                                    !pool.isQuest()
+                                        ? globalState.investors.get(pos.hash)
+                                              .name
+                                        : ''
+                                }
+                                data-pr-position="top"
+                                data-pr-at="bottom bottom+30"
+                                data-pr-my="left center-2"
+                                style={{
+                                    fontSize: '1rem',
+                                    cursor: 'pointer',
+                                    margin: '0.4rem'
+                                }}
+                            ></i>
+                            <span>{props.label}</span>
+                        </div>
+                    )}
+                />
+            )
+        })
 
     return <React.Fragment>{positions}</React.Fragment>
 }
