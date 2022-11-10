@@ -277,6 +277,11 @@ rect.fill-inactive {
     color: #fff;
 }
 
+.p-chip.investor-position.active-position {
+    background: #25277c;
+    color: #fff;
+}
+
 .p-chip.token-position {
     background: #afbdd5;
     color: #fff;
