@@ -492,27 +492,14 @@ class Generator {
             'citing single quest'
         )
 
-        const cachedStateArgs = [
-            this.#cachedQuests.values(),
-            [...this.#cachedPools.values()],
-            this.#cachedInvestors.values()
-        ]
         const curTokenMissing = totalSingleMissingToken(
             citingQuest.name,
-            ...cachedStateArgs
+            this.#cachedQuests.values(),
+            this.#cachedPools.values(),
+            this.#cachedInvestors.values()
         )
-        // const totalTokensMissing = totalMissingTokens(...cachedStateArgs)
-        // console.log(
-        //     totalTokensMissing.some((t) => t.total > 0)
-        //         ? totalTokensMissing
-        //         : 'none missing yet'
-        // )
 
-        if (
-            curTokenMissing > 0 &&
-            !isZero(curTokenMissing) &&
-            !isZero(curTokenMissing)
-        ) {
+        if (curTokenMissing > 0 && !isZero(curTokenMissing)) {
             console.log('### ALERT: CITATION #2 SINGLE ###')
             console.log(
                 `Despite all the correct actions, token ${citingQuest.name} went missing by ${curTokenMissing}`
@@ -765,21 +752,12 @@ class Generator {
                 'citing random quests'
             )
 
-            const cachedStateArgs = [
-                this.#cachedQuests.values(),
-                [...this.#cachedPools.values()],
-                this.#cachedInvestors.values()
-            ]
             const curTokenMissing = totalSingleMissingToken(
                 citingQuest.name,
-                ...cachedStateArgs
+                this.#cachedQuests.values(),
+                this.#cachedPools.values(),
+                this.#cachedInvestors.values()
             )
-            // const totalTokensMissing = totalMissingTokens(...cachedStateArgs)
-            // console.log(
-            //     totalTokensMissing.some((t) => t.total > 0)
-            //         ? totalTokensMissing
-            //         : 'none missing yet'
-            // )
 
             if (curTokenMissing > 0 && !isZero(curTokenMissing)) {
                 console.log('### ALERT: CITATION #2 RANDOM ###')
@@ -1175,7 +1153,6 @@ class Generator {
 
             if (
                 isZero(totalIn) ||
-                totalOut <= 0 ||
                 isZero(totalOut) ||
                 isNaN(totalIn) ||
                 isNaN(totalOut)
@@ -1269,7 +1246,6 @@ class Generator {
 
                         if (
                             isNaN(totalIn) ||
-                            totalOut <= 0 ||
                             isZero(totalIn) ||
                             isZero(totalOut)
                         ) {
