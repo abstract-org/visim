@@ -18,10 +18,28 @@ const useLogsStore = create(
                 set(
                     produce((state) => ({
                         logObjs: [...state.logObjs, logObj]
-                    }))
+                    })),
+                    false,
+                    'addLogObj'
                 ),
+            addMultipleLogs: (logs) =>
+                set(
+                    produce((state) => {
+                        logs.forEach((log) => {
+                            state.logObjs.push(log)
+                        })
+                    }),
+                    false,
+                    'addMultipleLogs'
+                ),
+            overrideSwaps: (logObjs) =>
+                set((state) => ({ logObjs: [...logObjs] })),
             override: (newData) =>
-                set(() => overrideState(get(), newData, INITIAL_STATE))
+                set(
+                    () => overrideState(get(), newData, INITIAL_STATE),
+                    false,
+                    'override'
+                )
         }),
         devToolsOptions
     )

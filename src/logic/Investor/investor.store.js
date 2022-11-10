@@ -19,13 +19,21 @@ const useInvestorStore = create(
                 set(
                     produce((state) => ({
                         investors: [...state.investors, hash]
-                    }))
+                    })),
+                    false,
+                    'addInvestor'
                 ),
-            addMultipleInvestors: (hashes) =>
+            addMultipleInvestors: (investors) =>
                 set(
-                    produce((state) => ({
-                        investors: [...state.investors, ...hashes]
-                    }))
+                    produce((state) => {
+                        investors.forEach((investor) => {
+                            if (!state.investors.includes(investor)) {
+                                state.investors.push(investor)
+                            }
+                        })
+                    }),
+                    false,
+                    'addMultipleInvestors'
                 ),
             addInvestors: (investorsList) =>
                 set(
@@ -35,18 +43,28 @@ const useInvestorStore = create(
                                 state.investors.push(hash)
                             }
                         })
-                    })
+                    }),
+                    false,
+                    'addInvestors'
                 ),
             setActive: (investorHash) =>
-                set({
-                    active: get().investors.find(
-                        (hash) => hash === investorHash
-                    )
-                }),
+                set(
+                    {
+                        active: get().investors.find(
+                            (hash) => hash === investorHash
+                        )
+                    },
+                    false,
+                    'setActive'
+                ),
             getByHash: (investorHash) =>
                 get().investors.find((hash) => hash === investorHash),
             override: (newData) =>
-                set(() => overrideState(get(), newData, INITIAL_STATE))
+                set(
+                    () => overrideState(get(), newData, INITIAL_STATE),
+                    false,
+                    'override'
+                )
         }),
         devToolsOptions
     )

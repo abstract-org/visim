@@ -18,18 +18,48 @@ const usePoolStore = create(
         (set, get) => ({
             ...INITIAL_STATE,
             addPool: (pool) =>
-                set((state) => ({ pools: [...state.pools, pool] })),
-            addSwap: (swap) =>
-                set((state) => ({ swaps: [...state.swaps, swap] })),
-            setActive: (pool) => set(() => ({ active: pool })),
-            setSwapMode: (mode) => set((state) => ({ swapMode: mode })),
-            override: (newData) =>
-                set(() => overrideState(get(), newData, INITIAL_STATE)),
+                set(
+                    (state) => ({ pools: [...state.pools, pool] }),
+                    false,
+                    'addPool'
+                ),
             addMultiplePools: (pools) =>
                 set(
-                    produce((state) => ({
-                        investors: [...state.pools, ...pools]
-                    }))
+                    produce((state) => {
+                        pools.forEach((pool) => {
+                            if (!state.pools.includes(pool)) {
+                                state.pools.push(pool)
+                            }
+                        })
+                    }),
+                    false,
+                    'addMultiplePools'
+                ),
+            addSwap: (swap) =>
+                set(
+                    (state) => ({ swaps: [...state.swaps, swap] }),
+                    false,
+                    'addSwap'
+                ),
+            addMultipleSwaps: (swaps) =>
+                set(
+                    produce((state) => {
+                        swaps.forEach((swap) => {
+                            state.swaps.push(swap)
+                        })
+                    }),
+                    false,
+                    'addMultipleSwaps'
+                ),
+            setActive: (pool) =>
+                set(() => ({ active: pool }), false, 'setActive'),
+            setSwapMode: (mode) =>
+                set((state) => ({ swapMode: mode }), false, 'setSwapMode'),
+            override: (newData) =>
+                set(
+                    () => overrideState(get(), newData, INITIAL_STATE),
+                    false,
+                    'override'
                 )
         }),
         devToolsOptions

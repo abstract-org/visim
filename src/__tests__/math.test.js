@@ -1,228 +1,516 @@
-import { faker } from '@faker-js/faker'
-import sha256 from 'crypto-js/sha256'
 import HashMap from 'hashmap'
 
 import Investor from '../logic/Investor/Investor.class'
 import UsdcToken from '../logic/Quest/UsdcToken.class'
 import Router from '../logic/Router/Router.class'
+import {
+    buySameLiqGiveT0GetT1,
+    buySameLiqGiveT1GetT0,
+    getBuySameLiq,
+    getSellSameLiq,
+    getSwapAmtSameLiq,
+    oneShotGetBuyCap,
+    oneShotGetSellCap,
+    sellSameLiqGiveT0GetT1,
+    sellSameLiqGiveT1GetT0
+} from '../logic/Router/math'
+import { pp2p } from '../logic/Utils/logicUtils'
+import globalConfig from '../logic/config.global.json'
+import { getCP, getPoolCurrentPointers, getQP } from './helpers/getQuestPools'
 
-describe('Uniswap Math formulas', () => {
-    it('constant product value is maintained when trading', () => {
-        const x = 2000
-        const y = 300
-        const k1 = x * y
+describe('Smart route math works', () => {
+    let quests = {}
+    let pools = {}
+    let router
+    const shouldDebugRouter = true
 
-        const dx = 500
-        const dy = (y * dx) / (x + dx)
-        const k2 = (x + dx) * (y - dy)
-
-        expect(k1).toBe(k2)
-    })
-
-    it('K is higher when new liquidity added', () => {
-        const x = 5000
-        const y = 200
-        const k = x * y
-
-        const dx = 500
-        const dy = 20
-
-        const k2 = (x + dx) * (y * dy)
-
-        expect(k2).toBeGreaterThan(k)
-    })
-
-    it('What is dy for dx?', () => {
-        const x = 5000
-        const y = 200
-
-        const dx = 500
-        const dy = (y * dx) / x
-
-        expect(dy).toBe(20)
-    })
-
-    it('Existing price is equal to the new to be added liquidity size', () => {
-        const x = 5000
-        const y = 200
-
-        const dx = 246
-        const dy = (y * dx) / x
-
-        expect(dx / dy).toBe(x / y)
-    })
-
-    it("price doesn't change when new liquidity added", () => {
-        const x = 1000
-        const y = 250
-
-        const dx = 100
-        const dy = (y * dx) / x
-
-        const p = x / y
-        const px = (x + dx) / (y + dy)
-
-        expect(p).toEqual(px)
-    })
-
-    it('calculate L of x', () => {
-        const x = 5000
-        const Pa = 1
-        const Pb = 10000
-        const Lx =
-            x *
-            ((Math.sqrt(Pa) * Math.sqrt(Pb)) / (Math.sqrt(Pb) - Math.sqrt(Pa)))
-
-        expect(Lx).toBeCloseTo(5050.505)
-    })
-
-    it('calculate L of y', () => {
-        const y = 5000
-        const Pa = 1
-        const Pb = 10000
-        const Ly = y / (Math.sqrt(Pb) - Math.sqrt(Pa))
-
-        expect(Ly).toBeCloseTo(50.505)
-    })
-
-    it('calculate L of x and y', () => {
-        const x = 5000
-        const y = 5000
-        const Px = 1
-        const Py = 10000
-        const Pa = 1
-        const Pb = 10000
-
-        const Lx =
-            x *
-            ((Math.sqrt(Px) * Math.sqrt(Pb)) / (Math.sqrt(Pb) - Math.sqrt(Px)))
-        const Ly = y / (Math.sqrt(Py) - Math.sqrt(Pa))
-
-        expect(Lx).toBeCloseTo(5050.505)
-        expect(Ly).toBeCloseTo(50.505)
-    })
-
-    it('calculate liquidity current-implementation', () => {
-        const amount0 = 0
-        const amount1 = 5000
-        const P = 1
-        const Pa = 1
-        const Pb = 10000
-        const liquidity0 = amount1 / (1 / Math.sqrt(Pa) - 1 / Math.sqrt(Pb))
-        const liquidity1 = amount0 / (Math.sqrt(P) - Math.sqrt(Pa))
-
-        expect(liquidity0).toBeCloseTo(5050.505)
-        expect(liquidity1).toBe(NaN)
-    })
-
-    describe('Liquidity Calculations', () => {
-        const amtNextBuy = (curLiq, sqrtPrice, arrivedSqrtPrice) => {
-            // Amount0 (curLiq * (arrivedSqrtPrice - sqrtPrice)
-            let amt0 = curLiq * (arrivedSqrtPrice - sqrtPrice)
-            // Amount1 (curLiq * (1/arrivedSqrtPrice - 1/sqrtPrice))
-            let amt1 = curLiq * (1 / arrivedSqrtPrice - 1 / sqrtPrice)
-
-            return [amt0, amt1]
-        }
-
-        const amtNextSell = (curLiq, sqrtPrice, arrivedSqrtPrice) => {
-            let amt0 = curLiq * (1 / sqrtPrice - 1 / arrivedSqrtPrice)
-            let amt1 = curLiq * (sqrtPrice - arrivedSqrtPrice)
-
-            return [amt0, amt1]
-        }
-
-        const nextPrice = (sqrtPrice, amt, curLiq) => {
-            return (sqrtPrice += amt / curLiq)
-        }
-
-        const investor = Investor.create('INV', 'INV', 10000)
-        const quest = investor.createQuest('QUEST')
-        const poolA = quest.createPool({
-            tokenLeft: new UsdcToken(),
-            initialPositions: [
-                { priceMin: 1, priceMax: 10000, tokenA: 0, tokenB: 5000 }
-            ]
-        })
-
-        const questB = investor.createQuest('QUEST_B')
-        const poolB = questB.createPool({
-            tokenLeft: new UsdcToken(),
-            initialPositions: [
-                { priceMin: 1, priceMax: 10000, tokenA: 0, tokenB: 5000 }
-            ]
-        })
-
-        poolA.buy(1000)
-        poolB.buy(6000)
-        const startingPrice = poolA.curPrice / poolB.curPrice
-        const crossPool = investor.createPool(questB, quest, startingPrice)
-        quest.addPool(crossPool)
-        questB.addPool(crossPool)
-
-        const priceRange = investor.calculatePriceRange(
-            crossPool,
-            poolB,
-            poolA,
-            3
+    const createRouter = (questObj, poolsObj, isDbg = shouldDebugRouter) => {
+        const poolsHashMap = new HashMap(
+            Object.entries(pools).map(([, obj]) => [obj.name, obj])
         )
-        investor.citeQuest(crossPool, priceRange.min, priceRange.max, 0, 2000)
+        const questsHashMap = new HashMap(
+            Object.entries(quests).map(([, obj]) => [obj.name, obj])
+        )
 
-        const pools = new HashMap()
-        const quests = new HashMap()
+        return new Router(questsHashMap, poolsHashMap, isDbg)
+    }
 
-        pools.set(poolA.name, poolA)
-        pools.set(poolB.name, poolB)
-        pools.set(crossPool.name, crossPool)
+    beforeEach(() => {
+        const { quest: questA, pool: poolA } = getQP('A', 1000000)
+        const { quest: questB, pool: poolB } = getQP('B', 1000000)
+        const { quest: questC, pool: poolC } = getQP('C', 1000000)
+        const { quest: questD, pool: poolD } = getQP('D', 1000000)
+        quests.A = questA
+        quests.B = questB
+        quests.C = questC
+        quests.D = questD
+        pools.A = poolA
+        pools.B = poolB
+        pools.C = poolC
+        pools.D = poolD
+    })
+
+    it('oneShotGetBuyCap() / oneShotGetSellCap()', () => {
+        const investor = Investor.create('INV', 'INV', 10000)
+
+        pools.A.buy(25000)
+        pools.A.buy(555555)
+        pools.B.buy(1480)
+        pools.B.buy(5000)
+        pools.C.buy(650)
+
+        const { crossPool: poolAB } = getCP(
+            quests.B,
+            quests.A,
+            pools.B,
+            pools.A,
+            0,
+            100
+        )
+        pools.AB = poolAB
+
+        const { crossPool: poolCB } = getCP(
+            quests.C,
+            quests.B,
+            pools.C,
+            pools.B,
+            0,
+            100
+        )
+        pools.AB = poolAB
+        pools.CB = poolCB
+
+        const drySumAB = pools.AB.dryBuy(Infinity)
+
+        const [_liq1, _price1, _next1] = poolAB.getNearestActiveLiq(true)
+        expect(oneShotGetBuyCap(_liq1, _price1, _next1)).toEqual([
+            Math.abs(drySumAB[0]),
+            Math.abs(drySumAB[1])
+        ])
+
+        const [_liq2, _price2, _next2] = poolAB.getNearestActiveLiq(false)
+        expect(oneShotGetSellCap(_liq2, _price2, _next2)).toEqual([0, 0])
+
+        // Flipping the pool
+        poolAB.buy(100)
+
+        const [_liq3, _price3, _next3] = poolAB.getNearestActiveLiq(false)
+        expect(oneShotGetSellCap(_liq3, _price3, _next3)).toEqual([
+            Math.abs(drySumAB[1]),
+            Math.abs(drySumAB[0])
+        ])
+
+        // flipping the pool
+        pools.A.buy(Infinity)
+        const [_liq4, _price4, _next4] = pools.A.getNearestActiveLiq(false)
+        expect(oneShotGetSellCap(_liq4, _price4, _next4)).toEqual([
+            5000.000000000001, 70710678.11865474
+        ])
+
+        // flipping the pool
+        pools.A.sell(1000000000)
+        const [_liq5, _price5, _next5] = pools.A.getNearestActiveLiq(true)
+        expect(oneShotGetBuyCap(_liq5, _price5, _next5)).toEqual([
+            17378.057832830727, 3885.8518631132183
+        ])
+    })
+
+    it('buySameLiqGiveT1GetT0() / buySameLiqGiveT0GetT1()', () => {
+        const investor = Investor.create('INV', 'INV', 10000)
+
+        pools.A.buy(25000)
+        pools.A.buy(555555)
+        pools.B.buy(1480)
+        pools.B.buy(5000)
+        pools.C.buy(650)
+
+        const { crossPool: poolAB } = getCP(
+            quests.B,
+            quests.A,
+            pools.B,
+            pools.A,
+            0,
+            100
+        )
+        pools.AB = poolAB
+
+        const [_liq1, _price1, _next1] = pools.AB.getNearestActiveLiq(true)
+        const buyCap = oneShotGetBuyCap(_liq1, _price1, _next1)
+
+        // GiveT1GetT0
+        expect(buySameLiqGiveT1GetT0(_liq1, _price1, buyCap[1])).toBeCloseTo(
+            buyCap[0],
+            5
+        )
+        // GiveT0GetT1
+        expect(buySameLiqGiveT0GetT1(_liq1, _price1, buyCap[0])).toBeCloseTo(
+            buyCap[1],
+            5
+        )
+    })
+
+    it('sellSameLiqGiveT0GetT1() / sellSameLiqGiveT1GetT0()', () => {
+        const investor = Investor.create('INV', 'INV', 10000)
+
+        pools.A.buy(25000)
+        pools.A.buy(555555)
+        pools.B.buy(1480)
+        pools.B.buy(5000)
+        pools.C.buy(650)
+
+        const { crossPool: poolAB } = getCP(
+            quests.B,
+            quests.A,
+            pools.B,
+            pools.A,
+            0,
+            100
+        )
+        pools.AB = poolAB
+
+        // flipping the pool
+        poolAB.buy(Infinity)
+
+        const [_liq1, _price1, _next1] = pools.AB.getNearestActiveLiq(false)
+        const sellCap = oneShotGetSellCap(_liq1, _price1, _next1)
+
+        // GiveT0GetT1
+        expect(sellSameLiqGiveT0GetT1(_liq1, _price1, sellCap[1])).toBeCloseTo(
+            sellCap[0],
+            5
+        )
+        // GiveT1GetT0
+        expect(sellSameLiqGiveT1GetT0(_liq1, _price1, sellCap[0])).toBeCloseTo(
+            sellCap[1],
+            5
+        )
+    })
+
+    it('getSwapAmtSameLiq', () => {
+        const investor = Investor.create('INV', 'INV', 10000)
+
+        pools.A.buy(25000)
+        pools.A.buy(555555)
+        pools.B.buy(1480)
+        pools.B.buy(5000)
+        pools.C.buy(650)
+
+        const { crossPool: poolAB } = getCP(
+            quests.B,
+            quests.A,
+            pools.B,
+            pools.A,
+            0,
+            100
+        )
+        pools.AB = poolAB
+
+        const swapAmts = getSwapAmtSameLiq(poolAB, true)
+        expect(swapAmts.t0fort1).toBeCloseTo(3.550728855619723, 5)
+        expect(swapAmts.t1fort0).toBe(100)
+
+        // flip the pool
+        poolAB.buy(100)
+        const swapAmtsSell = getSwapAmtSameLiq(poolAB, false)
+        expect(swapAmtsSell.t0fort1).toBeCloseTo(3.550728855619723, 5)
+        expect(swapAmtsSell.t1fort0).toBeCloseTo(100)
+
+        const swapAmtsBuyD = getSwapAmtSameLiq(pools.D, true)
+        expect(swapAmtsBuyD.t0fort1).toBeCloseTo(17378.057832830727, 5)
+        expect(swapAmtsBuyD.t1fort0).toBeCloseTo(3885.8518631132183, 5)
+
+        // we buy a fraction less, otherwise we'll active next position
+        pools.D.buy(swapAmtsBuyD.t0fort1 - 0.000000001)
+
+        const swapAmtsBuyDsell = getSwapAmtSameLiq(pools.D, false)
+        expect(swapAmtsBuyDsell.t0fort1).toBeCloseTo(17378.057832830727, 5)
+        expect(swapAmtsBuyDsell.t1fort0).toBeCloseTo(3885.8518631132183, 5)
+
+        pools.D.buy(Infinity)
+        const swapAmtsBuyD_flipped = getSwapAmtSameLiq(pools.D, true)
+        expect(swapAmtsBuyD_flipped.t0fort1).toBeCloseTo(70710678.11865559, 5)
+        expect(swapAmtsBuyD_flipped.t1fort0).toBeCloseTo(5000.0, 5)
+
+        const swapAmtsSellD_flipped = getSwapAmtSameLiq(pools.D, false)
+        expect(swapAmtsSellD_flipped.t0fort1).toBeCloseTo(70710678.11865474, 5)
+        expect(swapAmtsSellD_flipped.t1fort0).toBeCloseTo(5000.000000000033, 5)
+
+        // flip the pool backwards
+        pools.D.sell(Infinity)
+        const swapAmtsSellD_flipped_bw = getSwapAmtSameLiq(pools.D, false)
+        expect(swapAmtsSellD_flipped_bw.t0fort1).toBeCloseTo(0, 5)
+        expect(swapAmtsSellD_flipped_bw.t1fort0).toBeCloseTo(0, 5)
+
+        const swapAmtsBuyD_flipped_bw = getSwapAmtSameLiq(pools.D, true)
+        expect(swapAmtsBuyD_flipped_bw.t0fort1).toBeCloseTo(
+            17378.057832830727,
+            5
+        )
+        expect(swapAmtsBuyD_flipped_bw.t1fort0).toBeCloseTo(
+            3885.8518631132183,
+            5
+        )
+    })
+})
+
+describe.skip('Basic math works', () => {
+    let quests
+    let pools
+
+    beforeEach(() => {
+        quests = new HashMap()
+        pools = new HashMap()
+    })
+
+    it('Buys out the entire quest  pool without triggering surplus function', () => {
+        const { pool } = getQP('AGORA', 1000000)
+
+        const res = pool.buy(1000000000)
+        expect(res[0]).toBeCloseTo(-133426696.95, 2)
+        expect(res[1]).toBe(20000)
+    })
+
+    it('Sells out the entire quest  pool without triggering surplus function', () => {
+        const { pool } = getQP('AGORA', 1000000)
+
+        pool.buy(1000000000)
+        const res = pool.sell(1000000000)
+        expect(res[0]).toBeCloseTo(-20000)
+        expect(res[1]).toBeCloseTo(133426696.95, 2)
+    })
+
+    it('Buys out the entire quest pool without triggering surplus function via smart route', () => {
+        const { quest, pool } = getQP('AGORA')
 
         quests.set(quest.name, quest)
-        quests.set(questB.name, questB)
+        quests.set('USDC', new UsdcToken())
+
+        pools.set(pool.name, pool)
+
+        const router = new Router(quests, pools)
+        const res = router.smartSwap('USDC', 'AGORA', 1000000000)
+
+        expect(res[0]).toBeCloseTo(-13342669.695, 3)
+        expect(res[1]).toBeCloseTo(20000)
+    })
+
+    it('Sells out the entire quest pool without triggering surplus function via smart route', () => {
+        const { quest, pool } = getQP('AGORA')
+
+        quests.set(quest.name, quest)
+        quests.set('USDC', new UsdcToken())
+
+        pools.set(pool.name, pool)
 
         const router = new Router(quests, pools)
 
-        /**
-         * For amt0 
-            how much amt1 I get
-            with liq X
-            in path A
-         */
-        it('calculates amount until next price point', () => {
-            const inOut = poolA.dryBuy(1)
+        router.smartSwap('USDC', 'AGORA', 1000000000)
+        const res = router.smartSwap('AGORA', 'USDC', 1000000000)
 
-            const curLiq = poolA.curLiq
-            const totalLiq = poolA.pos
-                .values()
-                .reduce((prev, po) => prev + po.liquidity, 0)
+        expect(res[0]).toBeCloseTo(-20000, 0)
+        expect(res[1]).toBeCloseTo(13342669.695, 3)
+    })
 
-            const amt = 2500
-            const inOutRate = Math.abs(inOut[1]) / Math.abs(inOut[0])
-            const sqrtPrice = Math.sqrt(1)
-            const arrivedSqrtPrice = nextPrice(sqrtPrice, amt, curLiq)
+    it('Buys out the entire cross pool with 1:1 price', () => {
+        const { quest: qAGORA, pool: AGORA } = getQP('AGORA')
+        const { quest: qTEST, pool: TEST } = getQP('TEST')
 
-            //const paths = router.calculatePairPaths(questB.name, quest.name)
-            //console.log(router.drySwapForPricedPaths(paths))
+        const { crossPool: AGORA_TEST } = getCP(
+            qTEST,
+            qAGORA,
+            TEST,
+            AGORA,
+            0,
+            50.5
+        )
 
-            //console.log(router.smartSwap(questB.name, quest.name, 2500))
+        const res = AGORA_TEST.buy(1000)
+        expect(res[0]).toBeCloseTo(-71.417, 2)
+        expect(res[1]).toBeCloseTo(50.5, 1)
+    })
 
-            // console.log(
-            //     'liqs',
-            //     curLiq,
-            //     totalLiq,
-            //     'sqrt_prices',
-            //     sqrtPrice,
-            //     arrivedSqrtPrice,
-            //     'new price',
-            //     arrivedSqrtPrice ** 2,
-            //     'in/out',
-            //     inOutRate,
-            //     inOut
-            // )
+    it('Sells out the entire cross pool with 1:1 price', () => {
+        const { quest: qAGORA, pool: AGORA } = getQP('AGORA')
+        const { quest: qTEST, pool: TEST } = getQP('TEST')
 
-            //console.log(amtNextBuy(curLiq, sqrtPrice, arrivedSqrtPrice))
-            //console.log(amtNextSell(curLiq, sqrtPrice, arrivedSqrtPrice))
+        const { crossPool: AGORA_TEST } = getCP(
+            qTEST,
+            qAGORA,
+            TEST,
+            AGORA,
+            0,
+            50.5
+        )
 
-            //console.log(amtNextBuy(curLiq, sqrtPrice, Math.sqrt(4)))
-            //console.log(amtNextSell(curLiq, sqrtPrice, Math.sqrt(4)))
-        })
+        AGORA_TEST.buy(1000)
+        const res = AGORA_TEST.sell(1000)
+        expect(res[0]).toBeCloseTo(-50.5, 1)
+        expect(res[1]).toBeCloseTo(71.417, 2)
+    })
+
+    it('Doesnt buy anything at the end of the quest pool', () => {})
+    it('Doesnt buy anything at the end of the cross pool with price 1:1 pool', () => {})
+    it('Doesnt buy anything at the end of the cross pool with cited higher than citing pool', () => {})
+    it('Doesnt buy anything at the end of the cross pool with citing higher than cited pool', () => {})
+
+    it('Doesnt sell anything at the end of the quest pool', () => {})
+    it('Doesnt sell anything at the end of the cross pool with price 1:1 pool', () => {})
+    it('Doesnt sell anything at the end of the cross pool with cited higher than citing pool', () => {})
+    it('Doesnt sell anything at the end of the cross pool with citing higher than cited pool', () => {})
+
+    it('Doesnt buy anything at the end of the quest pool via smart route', () => {})
+    it('Doesnt buy anything at the end of the cross pool with price 1:1 pool via smart route', () => {})
+    it('Doesnt buy anything at the end of the cross pool with cited higher than citing pool via smart route', () => {})
+    it('Doesnt buy anything at the end of the cross pool with citing higher than cited pool via smart route', () => {})
+
+    it('Doesnt sell anything at the end of the quest pool via smart route', () => {})
+    it('Doesnt sell anything at the end of the cross pool with price 1:1 pool via smart route', () => {})
+    it('Doesnt sell anything at the end of the cross pool with cited higher than citing pool via smart route', () => {})
+    it('Doesnt sell anything at the end of the cross pool with citing higher than cited pool via smart route', () => {})
+
+    it('Buys out the entire cross pool with price 1:1 via smart route', () => {
+        const { quest: qAGORA, pool: AGORA } = getQP('AGORA')
+        const { quest: qTEST, pool: TEST } = getQP('TEST')
+
+        const { crossPool: AGORA_TEST } = getCP(
+            qTEST,
+            qAGORA,
+            TEST,
+            AGORA,
+            0,
+            50.5
+        )
+
+        quests.set(qAGORA.name, qAGORA)
+        quests.set(qTEST.name, qTEST)
+        quests.set('USDC', new UsdcToken())
+
+        pools.set(AGORA.name, AGORA)
+        pools.set(TEST.name, TEST)
+        pools.set(AGORA_TEST.name, AGORA_TEST)
+
+        const router = new Router(quests, pools)
+
+        const res = router.smartSwap('AGORA', 'TEST', 1000)
+        expect(res[0]).toBeCloseTo(-71.417, 2)
+        expect(res[1]).toBeCloseTo(50.5, 1)
+    })
+
+    it('Sells out the entire cross pool with price 1:1 via smart route', () => {
+        const investor = Investor.create('INV', 'INV', 10000)
+        // Assume path: USDC-Praseodymium (5)-AGORA-Praseodymium (3)
+        const { quest: qTST3, pool: TST3 } = getQP('TEST_1', 1000000)
+        const { quest: qTST5, pool: TST5 } = getQP('TEST_2', 1000000)
+        const { quest: qAGORA, pool: AGORA } = getQP('AGORA', 1000000)
+
+        AGORA.buy(25000)
+
+        AGORA.buy(555555)
+        TST3.buy(1480)
+        TST5.buy(5000)
+        TST5.buy(650)
+
+        const { crossPool: AGORA_TST3 } = getCP(
+            qTST3,
+            qAGORA,
+            TST3,
+            AGORA,
+            0,
+            50.025
+        )
+        const priceRange = investor.calculatePriceRange(
+            AGORA_TST3,
+            AGORA,
+            TST3,
+            2
+        )
+        console.log(priceRange)
+
+        investor.citeQuest(
+            AGORA_TST3,
+            priceRange.min,
+            priceRange.max,
+            0,
+            12000,
+            priceRange.native
+        )
+        console.log(AGORA_TST3)
+        const { crossPool: AGORA_TST5 } = getCP(
+            qTST5,
+            qAGORA,
+            TST5,
+            AGORA,
+            0,
+            100.06
+        )
+
+        // console.log(
+        //     'dry swap formula',
+        //     getMaxOneShotBuy(
+        //         AGORA_TST3.curLiq,
+        //         AGORA_TST3.curPrice,
+        //         AGORA_TST3.curRight
+        //     )
+        // )
+        //
+        // console.log(
+        //     'how much I need to pay for 50.025',
+        //     maxSameLiqBuyIn(AGORA_TST3.curLiq, AGORA_TST3.curPrice, 50.025)
+        // )
+        // console.log(
+        //     'how much I need to pay for 0.566',
+        //     maxSameLiqBuyOut(AGORA_TST3.curLiq, AGORA_TST3.curPrice, 0.566)
+        // )
+
+        const pools = new HashMap()
+        const quests = new HashMap()
+        pools.set(AGORA.name, AGORA)
+        pools.set(TST3.name, TST3)
+        pools.set(TST5.name, TST5)
+        pools.set(AGORA_TST3.name, AGORA_TST3)
+        pools.set(AGORA_TST5.name, AGORA_TST5)
+
+        quests.set(qTST3.name, qTST3)
+        quests.set(qAGORA.name, qAGORA)
+        quests.set(qTST5.name, qTST5)
+        quests.set('USDC', new UsdcToken())
+
+        const router = new Router(quests, pools)
+
+        console.log(router.smartSwap('USDC', qTST5.name, 2000))
+    })
+
+    it('After opening a position on drained cross pool it opens with correct price range', () => {})
+
+    it('When selling out drained pool it correctly sets active position', () => {
+        expect(0).toBe(1)
+    })
+
+    it('Left position - When opening a new position with lower priceMin than curPrice and price shift is free - do the change to another active liquidity', () => {
+        expect(0).toBe(1)
+    })
+
+    it('Right position - When opening a new position with lower priceMin than curPrice and price shift is free - do the change to another active liquidity', () => {
+        expect(0).toBe(1)
+    })
+
+    it('Never sells tokens that do not exist in the pool', () => {
+        expect(0).toBe(1)
+    })
+
+    it('Never consumes more than it can exchange for during swap', () => {
+        expect(0).toBe(1)
+    })
+
+    it('Properly exists when 0 is passed to buy/sell', () => {
+        expect(0).toBe(1)
+    })
+
+    it('Properly exists when NaN is passed to buy/sell', () => {
+        expect(0).toBe(1)
+    })
+
+    it('Properly exists when during buy/sell calculation it got to NaN', () => {
+        expect(0).toBe(1)
     })
 })

@@ -497,15 +497,24 @@ export const QuestCreation = () => {
         // Add Quest to state
         addQuest(tokenRight.name)
         // Add Quest to global state store
-        globalState.questStore.quests.push(tokenRight.name)
+        globalState.questStore.quests = [
+            ...globalState.questStore.quests,
+            tokenRight.name
+        ]
         // Mark Quest as human-made
         addHumanQuest(tokenRight.name)
         // Add human-made mark to global state
-        globalState.questStore.humanQuests.push(tokenRight.name)
+        globalState.questStore.humanQuests = [
+            ...globalState.questStore.humanQuests,
+            tokenRight.name
+        ]
         // Add Pool to state
         addPool(pool.name)
         // Add Pool to global state of pool store
-        globalState.poolStore.pools.push(pool.name)
+        globalState.poolStore.pools = [
+            ...globalState.poolStore.pools,
+            pool.name
+        ]
 
         setQuestName('')
 

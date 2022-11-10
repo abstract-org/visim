@@ -8,18 +8,44 @@ import {
     calcGrowthRate,
     formSwapData,
     getCombinedSwaps,
+    isE10Zero,
+    isNearZero,
     isZero,
     priceDiff
 } from '../Utils/logicUtils'
+import { totalMissingTokens, totalSingleMissingToken } from '../Utils/tokenCalc'
 
 const _OPS_TIME_INITIAL = {
-    invcreate: { time: 0, ops: 0 },
-    keepcrt: { time: 0, ops: 0 },
-    withdraw: { time: 0, ops: 0 },
-    invest: { time: 0, ops: 0 },
-    gainers: { time: 0, ops: 0 },
-    inc: { time: 0, ops: 0 },
-    dec: { time: 0, ops: 0 }
+    simulateQuestCreation: { time: 0, ops: 0, timeStarted: 0 },
+    addPeriodicInvestor: { time: 0, ops: 0, timeStarted: 0 },
+    initializeQuest: { time: 0, ops: 0, timeStarted: 0 },
+    initializeInvestor: { time: 0, ops: 0, timeStarted: 0 },
+    initialInvestment: { time: 0, ops: 0, timeStarted: 0 },
+    citeSingleQuest: { time: 0, ops: 0, timeStarted: 0 },
+    citeRandomQuests: { time: 0, ops: 0, timeStarted: 0 },
+    citeRandomWithPriceHigher: { time: 0, ops: 0, timeStarted: 0 },
+    citeQuests: { time: 0, ops: 0, timeStarted: 0 },
+    simulateKeepCreatingQuest: { time: 0, ops: 0, timeStarted: 0 },
+    tradeSpecificQuest: { time: 0, ops: 0, timeStarted: 0 },
+    tradeTopGainers: { time: 0, ops: 0, timeStarted: 0 },
+    tradeIncQuests: { time: 0, ops: 0, timeStarted: 0 },
+    tradeDecQuests: { time: 0, ops: 0, timeStarted: 0 },
+    simulateTrade: { time: 0, ops: 0, timeStarted: 0 },
+    smartSwapPools: { time: 0, ops: 0, timeStarted: 0 },
+    simulateWithdraw: { time: 0, ops: 0, timeStarted: 0 },
+    getChangedPriceQuests: { time: 0, ops: 0, timeStarted: 0 },
+    getTradePools: { time: 0, ops: 0, timeStarted: 0 },
+    getTopGainers: { time: 0, ops: 0, timeStarted: 0 },
+    getRandomGainers: { time: 0, ops: 0, timeStarted: 0 },
+    calculateCiteAmount: { time: 0, ops: 0, timeStarted: 0 },
+    spawnInvestor: { time: 0, ops: 0, timeStarted: 0 },
+    spawnQuest: { time: 0, ops: 0, timeStarted: 0 },
+    calculateQuestProbabilities: { time: 0, ops: 0, timeStarted: 0 },
+    calcProb: { time: 0, ops: 0, timeStarted: 0 },
+    calculateInvProbabilities: { time: 0, ops: 0, timeStarted: 0 },
+    storeTradedPool: { time: 0, ops: 0, timeStarted: 0 },
+    processSwapData: { time: 0, ops: 0, timeStarted: 0 },
+    getRandomElements: { time: 0, ops: 0, timeStarted: 0 }
 }
 
 class Generator {
@@ -32,13 +58,9 @@ class Generator {
     #cachedPools = new HashMap()
     #dailyTradedPools = []
 
-    #WEB_DEBUG = false
     #DEFAULT_TOKEN = 'USDC'
-    #PRICE_RANGE_MULTIPLIER = 2
-    #_OPS = 0
     #_OPS_TIME = _OPS_TIME_INITIAL
     #_PERFORMANCE = false
-    #_PERFORMANCE_OUTPUT = false
 
     keepCreatingInvs = {}
     tradingInvs = {}
@@ -74,7 +96,6 @@ class Generator {
         this.router = new Router(this.#cachedQuests, this.#cachedPools)
 
         this.#_PERFORMANCE = performance
-        this.#_PERFORMANCE_OUTPUT = performanceOutput
 
         if (swaps.length) {
             swaps.forEach((swap) => {
@@ -84,16 +105,23 @@ class Generator {
                 }
             })
         }
-
-        const locSplit = document.location.href.split('?')
-        if (locSplit && locSplit.length > 1 && locSplit[1] === 'debug') {
-            this.#WEB_DEBUG = true
-        }
     }
 
-    webdbg(msg) {
-        if (this.#WEB_DEBUG) {
-            console.log(msg)
+    measure(funcName, endMeasure) {
+        if (!this.#_PERFORMANCE) return
+
+        if (!this.#_OPS_TIME[funcName]) {
+            console.log(funcName)
+        }
+        if (!endMeasure) {
+            this.#_OPS_TIME[funcName].ops++
+            const time = performance.now()
+            this.#_OPS_TIME[funcName].timeStart = time
+        } else {
+            const time = performance.now()
+            this.#_OPS_TIME[funcName].time +=
+                time - this.#_OPS_TIME[funcName].timeStart
+            this.#_OPS_TIME[funcName].timeStart = 0
         }
     }
 
@@ -104,34 +132,17 @@ class Generator {
             pools: [],
             actions: []
         }
-        //const it0 =  = performance.now()
-        //this.#_OPS_TIME.invcreate.time = it0
-        this.#invConfigs.forEach((conf) => {
-            //this.#_OPS_TIME.invcreate.ops++
 
+        this.#invConfigs.forEach((conf) => {
             // Calculate probabilities
             const invProbs = this.calculateInvProbabilities(conf)
-            this.webdbg('[GENERATOR] Calculated investor probabilities')
-            this.webdbg(invProbs)
 
             // Generate investor with config by probability
             if (invProbs.spawnInv) {
                 for (let i = 1; i <= invProbs.spawnInvQuantity; i++) {
                     const investor = this.initializeInvestor(conf, day)
-                    this.webdbg(
-                        `[GENERATOR] Initialized investor ${investor.name} on day ${day}`
-                    )
-                    this.webdbg(investor)
 
                     const questType = conf.createQuest
-
-                    this.webdbg(
-                        `Spawned investor ${investor.name} will ${
-                            questType
-                                ? 'create a quest'
-                                : 'not create a quest, skipping'
-                        }`
-                    )
 
                     if (questType) {
                         this.simulateQuestCreation(
@@ -169,8 +180,6 @@ class Generator {
                 } // end of inv spawner loop
             } // end of inv spawner if
         })
-        //const it1 =  = performance.now()
-        //this.#_OPS_TIME.invcreate.time = it1 - this.#_OPS_TIME.invcreate.time
 
         // Every X days - keep creating quests
         this.handlers.push(
@@ -178,6 +187,7 @@ class Generator {
                 resolve(this.simulateKeepCreatingQuest(day))
             })
         )
+        //this.simulateKeepCreatingQuest(day)
 
         // Every X days - buy/sell top gainers/increased or decreased in prices
         this.handlers.push(
@@ -185,6 +195,7 @@ class Generator {
                 resolve(this.simulateTrade(day, this.router))
             })
         )
+        //this.simulateTrade(day, this.router)
 
         // Every X days - withdraw X in USDC value
         this.handlers.push(
@@ -192,8 +203,11 @@ class Generator {
                 resolve(this.simulateWithdraw(day, this.router))
             })
         )
+        //this.simulateWithdraw(day, this.router)
 
-        await Promise.all(this.handlers)
+        await Promise.all(this.handlers).catch((reason) => {
+            console.log(`Rejected promise: ${reason}`)
+        })
 
         return this.#dayData[day]
     }
@@ -204,11 +218,7 @@ class Generator {
         questType,
         creationType = 'regular-creation'
     ) {
-        this.webdbg(
-            `[GENERATOR] Simulating quest creation by ${investor.name} on day ${day}, type ${creationType}`
-        )
-        this.webdbg(questType)
-
+        this.measure('simulateQuestCreation')
         const questConfig = this.#questConfigs.find(
             (quest) => quest.questGenAlias === questType
         )
@@ -219,18 +229,8 @@ class Generator {
         }
 
         const questProbs = this.calculateQuestProbabilities(questConfig)
-        this.webdbg(
-            `[GENERATOR] Calculated quest probabilities (${creationType})`
-        )
-        this.webdbg(questProbs)
-        this.webdbg(questConfig)
 
         const { pool, quest } = this.initializeQuest(questConfig, day, investor)
-        this.webdbg(
-            `[GENERATOR] Initialized quest and USDC pool (${creationType})`
-        )
-        this.webdbg(quest)
-        this.webdbg(pool)
 
         this.#cachedQuests.set(quest.name, quest)
         this.#cachedPools.set(pool.name, pool)
@@ -243,9 +243,6 @@ class Generator {
             investor.balances[this.#DEFAULT_TOKEN] <
                 questConfig.initialAuthorInvest
         ) {
-            this.webdbg(
-                `${investor.name} Ran out of USDC, cannot invest and cite further`
-            )
             return
         }
 
@@ -281,9 +278,13 @@ class Generator {
                 creationType
             )
         }
+
+        this.measure('simulateQuestCreation', true)
     }
 
     addPeriodicInvestor(investor, conf, invType, periodInDays) {
+        this.measure('addPeriodicInvestor')
+
         if (parseInt(conf[periodInDays]) > 0) {
             if (!this[invType][conf[periodInDays]]) {
                 this[invType][conf[periodInDays]] = []
@@ -294,9 +295,13 @@ class Generator {
                 conf
             })
         }
+
+        this.measure('addPeriodicInvestor', true)
     }
 
     initializeQuest(questConfig, day, investor) {
+        this.measure('initializeQuest')
+
         // Generate quest by probability with config
         const questSum = this.#cachedQuests.size
         const { pool, quest } = this.spawnQuest(
@@ -312,10 +317,14 @@ class Generator {
         this.#dayData[day].quests.push(quest)
         this.#dayData[day].pools.push(pool)
 
+        this.measure('initializeQuest', true)
+
         return { pool, quest }
     }
 
     initializeInvestor(invConfig, day) {
+        this.measure('initializeInvestor')
+
         const invSum = this.#cachedInvestors.size
         const investor = this.spawnInvestor(
             invConfig.invGenAlias,
@@ -329,15 +338,15 @@ class Generator {
             day
         })
 
+        this.measure('initializeInvestor', true)
+
         return investor
     }
 
     initialInvestment(amountIn, day, pool, quest, investor, creationType) {
+        this.measure('initialInvestment')
+
         const [totalIn, totalOut] = pool.buy(amountIn)
-        this.webdbg(
-            `[GENERATOR] Made initial investment into pool ${pool.name}  (${creationType})`
-        )
-        this.webdbg(totalIn, totalOut)
 
         this.#dayData[day].actions.push({
             pool: pool.name,
@@ -355,6 +364,8 @@ class Generator {
         this.storeTradedPool(day, pool)
         investor.addBalance(this.#DEFAULT_TOKEN, totalIn, 'initially investing')
         investor.addBalance(quest.name, totalOut, 'initially investing')
+
+        this.measure('initialInvestment', true)
     }
 
     citeSingleQuest(
@@ -365,9 +376,7 @@ class Generator {
         investor,
         creationType
     ) {
-        this.webdbg(
-            `[GENERATOR] Trying to cite specific ${questConfig.citeSingleName} quest, citing: ${citingQuest.name}`
-        )
+        this.measure('citeSingleQuest')
 
         const singleQuest = this.#cachedQuests.get(questConfig.citeSingleName)
         if (!singleQuest) {
@@ -412,10 +421,7 @@ class Generator {
                 action: 'CREATED',
                 day
             })
-
-            this.webdbg(
-                `[GENERATOR:CITE-SINGLE] Created cross-pool ${crossPool.name}, starting price ${startingPrice}`
-            )
+            this.#cachedPools.set(crossPool.name, crossPool)
         }
 
         const priceRange = investor.calculatePriceRange(
@@ -430,10 +436,8 @@ class Generator {
             crossPool.tokenLeft === singleQuest.name ? 0 : citeSingleAmount
         const citeAmount1 = citeAmount0 === 0 ? citeSingleAmount : 0
 
-        this.webdbg(
-            `Previous volumes: ${crossPool.volumeToken0}, ${crossPool.volumeToken1}`
-        )
-        const [totalIn, totalOut] = investor.citeQuest(
+        const posBefore = [...crossPool.pos.values()]
+        const totalInOut = investor.citeQuest(
             crossPool,
             priceRange.min,
             priceRange.max,
@@ -441,15 +445,20 @@ class Generator {
             citeAmount1,
             priceRange.native
         )
-        this.webdbg(
-            `New volumes: ${crossPool.volumeToken0}, ${crossPool.volumeToken1}`
-        )
+        const posAfter = [...crossPool.pos.values()]
 
-        this.webdbg(
-            `[GENERATOR] ${investor.name} cited ${singleQuest.name} on day ${day} by depositing ${citeSingleAmount} of ${citingQuest.name}  (${creationType})`
-        )
-        this.webdbg(priceRange)
-        this.webdbg([totalIn, totalOut])
+        if (
+            posBefore.length === posAfter.length ||
+            !totalInOut ||
+            !Array.isArray(totalInOut) ||
+            totalInOut.length < 2
+        ) {
+            console.log('### ALERT: CITATION ###')
+            console.log(`Failed to cite ${crossPool.name}`)
+            console.log(priceRange, citeAmount0, citeAmount1)
+            console.log(citingPool, singleUsdcPool)
+            return
+        }
 
         const orgQuest = this.#cachedQuests.get(citingQuest.name)
         const sinQuest = this.#cachedQuests.get(singleQuest.name)
@@ -464,13 +473,75 @@ class Generator {
             investorHash: investor.hash,
             action: 'CITED',
             totalAmountIn: citeSingleAmount.toFixed(3),
-            day
+            day,
+            opName:
+                Object.entries(priceRange)
+                    .map((a) => `${a[0]}:${a[1]}\n`)
+                    .join(', ') +
+                ' // ' +
+                totalInOut.join(',') +
+                ' // ' +
+                `Substract from ${citingQuest.name}, current balance: ${
+                    investor.balances[citingQuest.name]
+                } cross pool: ${crossPool.name} ${crossPool.type}`
         })
 
-        investor.addBalance(citingQuest.name, -totalIn, 'citing single quest')
+        investor.addBalance(
+            citingQuest.name,
+            -totalInOut[0],
+            'citing single quest'
+        )
 
-        this.#cachedPools.set(crossPool.name, crossPool)
+        const cachedStateArgs = [
+            this.#cachedQuests.values(),
+            [...this.#cachedPools.values()],
+            this.#cachedInvestors.values()
+        ]
+        const curTokenMissing = totalSingleMissingToken(
+            citingQuest.name,
+            ...cachedStateArgs
+        )
+        // const totalTokensMissing = totalMissingTokens(...cachedStateArgs)
+        // console.log(
+        //     totalTokensMissing.some((t) => t.total > 0)
+        //         ? totalTokensMissing
+        //         : 'none missing yet'
+        // )
+
+        if (
+            curTokenMissing > 0 &&
+            !isZero(curTokenMissing) &&
+            !isZero(curTokenMissing)
+        ) {
+            console.log('### ALERT: CITATION #2 SINGLE ###')
+            console.log(
+                `Despite all the correct actions, token ${citingQuest.name} went missing by ${curTokenMissing}`
+            )
+            console.log(investor)
+            console.log(crossPool)
+            console.log(citingPool)
+            console.log(singleUsdcPool)
+
+            investor.addBalance(
+                citingQuest.name,
+                curTokenMissing,
+                'Reimbursement for failed citation of a single quest'
+            )
+
+            // @TODO: breakpoint here and try trace citeSingleQuest
+            // const totalInOut = investor.citeQuest(
+            //     crossPool,
+            //     priceRange.min,
+            //     priceRange.max,
+            //     citeAmount0,
+            //     citeAmount1,
+            //     priceRange.native
+            // )
+        }
+
         this.#dayData[day]['pools'].push(crossPool)
+
+        this.measure('citeSingleQuest', true)
     }
 
     citeRandomQuests(
@@ -482,14 +553,7 @@ class Generator {
         questProbs,
         creationType
     ) {
-        this.webdbg(`[GENERATOR] Citing random quests`)
-        this.webdbg(
-            `${
-                questConfig.citeRandomPreferOwn
-                    ? 'Prefers own'
-                    : 'Prefers random'
-            }`
-        )
+        this.measure('citeRandomQuests')
 
         let filteredQuests = questConfig.citeRandomPreferOwn
             ? investor.questsCreated.map((qc) => {
@@ -519,11 +583,6 @@ class Generator {
                 )
             }
         }
-        this.webdbg(`Got ${filteredQuests.length} filtered quests`)
-        this.webdbg(filteredQuests)
-
-        this.webdbg(`Got ${filteredQuests.length} randomized quests`)
-        this.webdbg(filteredQuests)
 
         this.citeQuests(
             day,
@@ -535,12 +594,17 @@ class Generator {
             questConfig.citeRandomMultiplier,
             creationType
         )
+
+        this.measure('citeRandomQuests', true)
     }
 
     citeRandomWithPriceHigher(conf, day, investor, quest, pool, creationType) {
+        this.measure('citeRandomWithPriceHigher')
+
         const shouldCiteRandom = this.calcProb(conf.keepCitingProbability)
 
         if (!shouldCiteRandom) {
+            this.measure('citeRandomWithPriceHigher', true)
             return
         }
 
@@ -561,6 +625,7 @@ class Generator {
         const randomQuests = this.getRandomElements(potentialQuests, 1)
 
         if (!randomQuests.length) {
+            this.measure('citeRandomWithPriceHigher', true)
             return
         }
 
@@ -574,6 +639,8 @@ class Generator {
             conf.keepCitingPosMultiplier,
             creationType
         )
+
+        this.measure('citeRandomWithPriceHigher', true)
     }
 
     citeQuests(
@@ -586,12 +653,9 @@ class Generator {
         citingPosMultiplier,
         creationType
     ) {
-        this.webdbg(`[GENERATOR] Trying to cite quests`)
+        this.measure('citeQuests')
 
         if (!citedQuests.length) {
-            this.webdbg(
-                `Did not pass any quests for citation, creation-type: ${creationType}`
-            )
             return
         }
 
@@ -616,10 +680,6 @@ class Generator {
             )
 
             if (!citedPool || citedPool.name === citingPool.name) {
-                this.webdbg(
-                    `Could not find pool for citing, wanted ${citedQuest.name} got`,
-                    citedPool
-                )
                 return
             }
 
@@ -635,16 +695,13 @@ class Generator {
                     startingPrice
                 )
 
-                this.webdbg(
-                    `Created cross-pool ${crossPool.name}, starting price ${startingPrice}`
-                )
-
                 this.#dayData[day].actions.push({
                     pool: crossPool.name,
                     investorHash: investor.hash,
                     action: 'CREATED',
                     day
                 })
+                this.#cachedPools.set(crossPool.name, crossPool)
             }
 
             const priceRange = investor.calculatePriceRange(
@@ -659,10 +716,7 @@ class Generator {
                 crossPool.tokenLeft === citedQuest.name ? 0 : citeOtherAmount
             const citeAmount1 = citeAmount0 === 0 ? citeOtherAmount : 0
 
-            this.webdbg(
-                `[GENERATOR:CITE-RANDOM] Previous volumes: ${crossPool.volumeToken0}, ${crossPool.volumeToken1}`
-            )
-            const [totalIn, totalOut] = investor.citeQuest(
+            const totalInOut = investor.citeQuest(
                 crossPool,
                 priceRange.min,
                 priceRange.max,
@@ -670,15 +724,14 @@ class Generator {
                 citeAmount1,
                 priceRange.native
             )
-            this.webdbg(
-                `[GENERATOR:CITE-RANDOM] New volumes: ${crossPool.volumeToken0}, ${crossPool.volumeToken1}`
-            )
 
-            this.webdbg(
-                `[GENERATOR] ${investor.name} cited random ${citedQuest.name} by depositing ${citeOtherAmount} of ${citingQuest.name}  (${creationType})`
-            )
-            this.webdbg(priceRange)
-            this.webdbg([totalIn, totalOut])
+            if (!totalInOut) {
+                console.log('### ALERT: CITATION ###')
+                console.log(`Failed to cite ${crossPool.name}`)
+                console.log(priceRange, citeAmount0, citeAmount1)
+                console.log(citingPool, citedPool)
+                return
+            }
 
             const orgQuest = this.#cachedQuests.get(citingQuest.name)
             const ranQuest = this.#cachedQuests.get(citedQuest.name)
@@ -693,24 +746,76 @@ class Generator {
                 investorHash: investor.hash,
                 action: 'CITED',
                 totalAmountIn: citeOtherAmount.toFixed(3),
-                day
+                day,
+                opName:
+                    Object.entries(priceRange)
+                        .map((a) => `${a[0]}:${a[1]}`)
+                        .join(', ') +
+                    ' // ' +
+                    totalInOut.join(',') +
+                    ' // ' +
+                    `Substract from ${citingQuest.name}, current balance: ${
+                        investor.balances[citingQuest.name]
+                    } cross pool: ${crossPool.name} ${crossPool.type}`
             })
 
             investor.addBalance(
                 citingQuest.name,
-                -totalIn,
+                -totalInOut[0],
                 'citing random quests'
             )
 
-            this.#cachedPools.set(crossPool.name, crossPool)
+            const cachedStateArgs = [
+                this.#cachedQuests.values(),
+                [...this.#cachedPools.values()],
+                this.#cachedInvestors.values()
+            ]
+            const curTokenMissing = totalSingleMissingToken(
+                citingQuest.name,
+                ...cachedStateArgs
+            )
+            // const totalTokensMissing = totalMissingTokens(...cachedStateArgs)
+            // console.log(
+            //     totalTokensMissing.some((t) => t.total > 0)
+            //         ? totalTokensMissing
+            //         : 'none missing yet'
+            // )
+
+            if (curTokenMissing > 0 && !isZero(curTokenMissing)) {
+                console.log('### ALERT: CITATION #2 RANDOM ###')
+                console.log(
+                    `Despite all the correct actions, token ${citingQuest.name} went missing by ${curTokenMissing}`
+                )
+                console.log(investor)
+                console.log(crossPool)
+                console.log(citingPool)
+                console.log(citedPool)
+
+                investor.addBalance(
+                    citingQuest.name,
+                    curTokenMissing,
+                    'Reimbursement for failed citation of a random quest'
+                )
+
+                // @TODO: breakpoint here and try trace citeRandomQuest
+                // const totalInOut = investor.citeQuest(
+                //     crossPool,
+                //     priceRange.min,
+                //     priceRange.max,
+                //     citeAmount0,
+                //     citeAmount1,
+                //     priceRange.native
+                // )
+            }
             this.#dayData[day]['pools'].push(crossPool)
         })
+
+        this.measure('citeQuests', true)
     }
 
     simulateKeepCreatingQuest(day) {
-        //const kt0 =  = performance.now()
-        //this.#_OPS_TIME.keepcrt.time = kt0
-        //this.#_OPS_TIME.keepcrt.ops++
+        this.measure('simulateKeepCreatingQuest')
+
         const keepCreatingDays = Object.keys(this.keepCreatingInvs)
         keepCreatingDays.forEach((dayKey) => {
             if (day % dayKey === 0) {
@@ -733,22 +838,19 @@ class Generator {
                 })
             }
         })
-        //const kt1 =  = performance.now()
-        //this.#_OPS_TIME.keepcrt.time = kt1 - this.#_OPS_TIME.keepcrt.time
+
+        this.measure('simulateKeepCreatingQuest', true)
     }
 
     tradeSpecificQuest(conf, day, investor, router) {
+        this.measure('tradeSpecificQuest')
+
         const spendAmount =
             (investor.balances[this.#DEFAULT_TOKEN] / 100) * conf.buySinglePerc
 
         let tradePool = this.#cachedPools.get(
             `${this.#DEFAULT_TOKEN}-${conf.includeSingleName}`
         )
-
-        let t0
-        if (this.#_PERFORMANCE) {
-            //t0 =  = performance.now()
-        }
 
         if (conf.excludeSingleName === tradePool.tokenRight) {
             console.log(
@@ -764,31 +866,12 @@ class Generator {
             conf.smartRouteDepth
         )
 
-        this.webdbg(
-            `[GENERATOR] Invested directly in ${tradePool.tokenRight} sum ${spendAmount} got in/out: ${totalIn}/${totalOut}`
-        )
-
-        //this.#_OPS++
-
-        if (this.#_PERFORMANCE) {
-            //const t1 =  = performance.now()
-            //if (this.#_PERFORMANCE_OUTPUT)
-            // console.log(
-            //     `[${day}][${investor.name}] Invested directly in ${
-            //         conf.includeSingleName
-            //     } amount ${spendAmount} in ${t1 - t0}ms`
-            // )
-            //this.#_OPS_TIME.invest.ops++
-            //this.#_OPS_TIME.invest.time += t1 - t0
-        }
-
-        // collect pool price movements here and in other calls of router.smartSwap
+        // collect pool price movements here and in other calls of router.smart Swap
         this.storeTradedPool(day, tradePool)
 
         // That would be an edge case, rare, but if happens, need to debug why
         if (
             isZero(totalIn) ||
-            totalOut <= 0 ||
             isZero(totalOut) ||
             isNaN(totalIn) ||
             isNaN(totalOut)
@@ -798,24 +881,25 @@ class Generator {
             )
             return
         }
-        this.#processSwapData(
+        this.processSwapData(
             investor,
             router.getSwaps(),
             day,
-            `Invest directly in ${conf.includeSingleName}, smart routed ${
-                router.getPaths().length
-            } times / total in ${totalIn.toFixed(
-                3
-            )}, total out ${totalOut.toFixed(
+            `Invest directly in ${
+                conf.includeSingleName
+            } / total in ${totalIn.toFixed(3)}, total out ${totalOut.toFixed(
                 3
             )}, initial amount in ${spendAmount}`
         )
         investor.addBalance(this.#DEFAULT_TOKEN, totalIn)
         investor.addBalance(tradePool.tokenRight, totalOut)
+
+        this.measure('tradeSpecificQuest', true)
     }
 
     tradeTopGainers(conf, day, investor, router) {
-        this.webdbg(`[GENERATOR] Buying top gainers on day ${day}`)
+        this.measure('tradeTopGainers')
+
         const spendAmount =
             (investor.balances[this.#DEFAULT_TOKEN] / 100) * conf.buySumPerc
 
@@ -827,7 +911,6 @@ class Generator {
         )
 
         if (!tradePools.length) {
-            this.webdbg(`Could not find top gainer pools on day ${day}`)
             return
         }
 
@@ -836,15 +919,7 @@ class Generator {
             return
         }
 
-        this.webdbg(`[GENERATOR] Found ${tradePools.length} top gainers`)
-        this.webdbg(tradePools)
-
-        tradePools.forEach(async (pool) => {
-            let t0
-            if (this.#_PERFORMANCE) {
-                //t0 =  = performance.now()
-            }
-
+        tradePools.forEach((pool) => {
             if (conf.excludeSingleName === pool.tokenRight) {
                 console.log(
                     `Trading ${pool.name} quest with excluded set as ${conf.excludeSingleName}`
@@ -859,46 +934,40 @@ class Generator {
                 conf.smartRouteDepth
             )
 
-            this.webdbg(
-                `Top gainer traded ${investor.name} buying ${pool.tokenRight}, put in ${totalIn} got out ${totalOut}`
-            )
-
-            //this.#_OPS++
-            if (this.#_PERFORMANCE) {
-                //const t1 =  = performance.now()
-                // if (this.#_PERFORMANCE_OUTPUT)
-                //     console.log(
-                //         `[${day}][${investor.name}] Traded top gainer in ${
-                //             pool.name
-                //         } amount ${perPoolAmt} in ${t1 - t0}ms`
-                //     )
-                // this.#_OPS_TIME.gainers.ops++
-                // this.#_OPS_TIME.gainers.time += t1 - t0
-            }
-
             //That would be an edge case, rare, but if happens, need to debug why
             if (
                 isZero(totalIn) ||
-                totalOut <= 0 ||
                 isZero(totalOut) ||
                 isNaN(totalIn) ||
                 isNaN(totalOut)
             ) {
                 console.log(
-                    `[GAINERS] Bad trade at: ${pool.name} ${totalIn} ${totalOut} ${perPoolAmt}`
+                    `############################ [GAINERS] Bad trade at: ${pool.name} ${totalIn} ${totalOut} ${perPoolAmt}`
                 )
                 return
             }
 
-            //collect pool price movements here and in other calls of router.smartSwap
+            //collect pool price movements here and in other calls of router.smart Swap
             this.storeTradedPool(day, pool)
-            this.#processSwapData(
+
+            // if (router.getSwaps()) {
+            //     const usdcOut = router.getSwaps().reduce((acc, sw) => {
+            //         if (sw.pool.indexOf('USDC') !== -1 && sw.op === 'BOUGHT') {
+            //             return (acc += sw.in)
+            //         }
+
+            //         return (acc += 0)
+            //     }, 0)
+            //     console.log(`Total USDC consumed: ${usdcOut}`)
+            //     console.log(router.getSwaps())
+            // }
+            this.processSwapData(
                 investor,
                 router.getSwaps(),
                 day,
-                `Buying top gainer ${pool.tokenRight}, smart routed ${
-                    router.getPaths().length
-                } times / total in ${totalIn.toFixed(
+                `Buying top gainer ${
+                    pool.tokenRight
+                } / total in ${totalIn.toFixed(
                     3
                 )}, total out ${totalOut.toFixed(
                     3
@@ -922,12 +991,13 @@ class Generator {
                 'keep-citing'
             )
         })
+
+        this.measure('tradeTopGainers', true)
     }
 
     tradeIncQuests(conf, day, investor, router) {
-        this.webdbg(
-            `[GENERATOR] Selecting pools that increased in price for ${investor.name} on day ${day}`
-        )
+        this.measure('tradeIncQuests')
+
         const incPools = this.getChangedPriceQuests(
             investor.balances,
             conf.swapIncFrequency,
@@ -937,10 +1007,6 @@ class Generator {
         )
 
         if (incPools.length) {
-            this.webdbg(
-                `[GENERATOR] Selected ${incPools.length} pools that increased in price over the last ${conf.swapIncFrequency}, will ${conf.swapIncDir}`
-            )
-            this.webdbg(incPools)
         }
 
         this.smartSwapPools(
@@ -952,12 +1018,13 @@ class Generator {
             conf.excludeSingleName,
             'inc'
         )
+
+        this.measure('tradeIncQuests', true)
     }
 
     tradeDecQuests(conf, day, investor, router) {
-        this.webdbg(
-            `[GENERATOR] Selecting pools that decreased in price for ${investor.name} on day ${day}`
-        )
+        this.measure('tradeDecQuests')
+
         const decPools = this.getChangedPriceQuests(
             investor.balances,
             conf.swapDecFrequency,
@@ -967,10 +1034,6 @@ class Generator {
         )
 
         if (decPools.length) {
-            this.webdbg(
-                `[GENERATOR] Selected ${decPools.length} pools that decreased in price over the last ${conf.swapDecFrequency}, will ${conf.swapDecDir}`
-            )
-            this.webdbg(decPools)
         }
 
         this.smartSwapPools(
@@ -982,14 +1045,15 @@ class Generator {
             conf.excludeSingleName,
             'dec'
         )
+
+        this.measure('tradeDecQuests', true)
     }
 
     simulateTrade(day, router) {
+        this.measure('simulateTrade')
+
         const tradingDayKeys = Object.keys(this.tradingInvs)
-        tradingDayKeys.forEach(async (dayKey) => {
-            this.webdbg(
-                `[GENERATOR] Simulating trade day ${day}, trading day current ${dayKey}`
-            )
+        tradingDayKeys.forEach((dayKey) => {
             if (day % dayKey === 0) {
                 const investors = this.tradingInvs[dayKey]
                 investors.forEach((investorObj) => {
@@ -1001,18 +1065,19 @@ class Generator {
                         conf.includeSingleName.length > 0 &&
                         conf.buySinglePerc > 0
                     ) {
-                        this.tradingHandlers.push(
-                            new Promise((resolve) =>
-                                resolve(
-                                    this.tradeSpecificQuest(
-                                        conf,
-                                        day,
-                                        investor,
-                                        router
-                                    )
-                                )
-                            )
-                        )
+                        // this.tradingHandlers.push(
+                        //     new Promise((resolve) =>
+                        //         resolve(
+                        //             this.tradeSpecificQuest(
+                        //                 conf,
+                        //                 day,
+                        //                 investor,
+                        //                 router
+                        //             )
+                        //         )
+                        //     )
+                        // )
+                        this.tradeSpecificQuest(conf, day, investor, router)
                     }
 
                     // Buy top gainers/random
@@ -1021,43 +1086,51 @@ class Generator {
                         conf.buyGainerPerc &&
                         conf.buyQuestPerc
                     ) {
-                        this.tradingHandlers.push(
-                            new Promise((resolve) =>
-                                resolve(
-                                    this.tradeTopGainers(
-                                        conf,
-                                        day,
-                                        investor,
-                                        router
-                                    )
-                                )
-                            )
-                        )
+                        // this.tradingHandlers.push(
+                        //     new Promise((resolve) =>
+                        //         resolve(
+                        //             this.tradeTopGainers(
+                        //                 conf,
+                        //                 day,
+                        //                 investor,
+                        //                 router
+                        //             )
+                        //         )
+                        //     )
+                        // )
+                        this.tradeTopGainers(conf, day, investor, router)
                     }
 
                     // Swap owned:
                     // Tokens that increased in price
-                    this.tradingHandlers.push(
-                        new Promise((resolve) =>
-                            resolve(
-                                this.tradeIncQuests(conf, day, investor, router)
-                            )
-                        )
-                    )
+                    // this.tradingHandlers.push(
+                    //     new Promise((resolve) =>
+                    //         resolve(
+                    //             this.tradeIncQuests(conf, day, investor, router)
+                    //         )
+                    //     )
+                    // )
+                    this.tradeIncQuests(conf, day, investor, router)
 
                     // Tokens that decreased in price
-                    this.tradingHandlers.push(
-                        new Promise((resolve) =>
-                            resolve(
-                                this.tradeDecQuests(conf, day, investor, router)
-                            )
-                        )
-                    )
+                    // this.tradingHandlers.push(
+                    //     new Promise((resolve) =>
+                    //         resolve(
+                    //             this.tradeDecQuests(conf, day, investor, router)
+                    //         )
+                    //     )
+                    // )
+                    this.tradeDecQuests(conf, day, investor, router)
                 })
 
-                await Promise.all(this.tradingHandlers)
+                // Promise.all(this.tradingHandlers).catch((reason) => {
+                //     console.log(`Could not finish all operations: ${reason}`)
+                //     console.log(reason)
+                // })
             }
         })
+
+        this.measure('simulateTrade', true)
     }
 
     smartSwapPools(
@@ -1069,8 +1142,9 @@ class Generator {
         excludeSingleName,
         debugStr
     ) {
+        this.measure('smartSwapPools')
+
         if (!selectedPools || !selectedPools.length) {
-            this.webdbg(`No pools passed for inc/dec swap`)
             return
         }
 
@@ -1082,21 +1156,11 @@ class Generator {
                     ? [pool.tokenLeft, pool.tokenRight]
                     : [pool.tokenRight, pool.tokenLeft]
 
-            let sp0
-            if (this.#_PERFORMANCE) {
-                //sp0 =  = performance.now()
-            }
-
-            this.webdbg(
-                `Will swap(${swapDir}) ${t0} for ${t1} with ${amount}, involved pool ${pool.name}`
-            )
-            this.webdbg(pool)
-
             if (excludeSingleName === t0 || excludeSingleName === t1) {
                 console.log(
                     `${swapDir} ${t0}/${t1} with excluded set as ${excludeSingleName}, direction ${debugStr}`
                 )
-                console.log(selectedPools)
+                console.log(selectedPools.length)
             }
 
             const [totalIn, totalOut] = router.smartSwap(
@@ -1105,27 +1169,6 @@ class Generator {
                 amount,
                 smartRouteDepth
             )
-
-            this.webdbg(
-                `[GENERATOR] Traded pool ${pool.name} that ${debugStr} in price, action ${swapDir}, amount ${amount}, token0 ${t0} for token1 ${t1}`
-            )
-            this.webdbg([totalIn, totalOut])
-
-            //this.#_OPS++
-
-            if (this.#_PERFORMANCE) {
-                //const sp1 =  = performance.now()
-                // if (this.#_PERFORMANCE_OUTPUT)
-                //     console.log(
-                //         `[${day}][${
-                //             investor.name
-                //         }] Swapped inc/dec tokens on day ${day} into ${
-                //             pool.name
-                //         } amount ${amount} in ${sp1 - sp0}ms`
-                //     )
-                // this.#_OPS_TIME[debugStr].ops++
-                // this.#_OPS_TIME[debugStr].time += sp1 - sp0
-            }
 
             // collect pool price movements here and in other calls of router.smartSwap
             this.storeTradedPool(day, pool)
@@ -1143,11 +1186,7 @@ class Generator {
                 return
             }
 
-            this.webdbg(
-                `[GENERATOR] Storing logs of increased/decreased token trade`
-            )
-
-            this.#processSwapData(
+            this.processSwapData(
                 investor,
                 router.getSwaps(),
                 day,
@@ -1155,9 +1194,7 @@ class Generator {
                     debugStr === 'inc' ? 'increased' : 'decreased'
                 } ${
                     swapDir === 'buy' ? pool.tokenLeft : pool.tokenRight
-                } in price, smart routed ${
-                    router.getPaths().length
-                } times / total in ${totalIn.toFixed(
+                } in price / total in ${totalIn.toFixed(
                     3
                 )}, total out ${totalOut.toFixed(
                     3
@@ -1166,9 +1203,13 @@ class Generator {
             investor.addBalance(t0, totalIn, 'selling gainers/losers')
             investor.addBalance(t1, totalOut, 'selling gainers/losers')
         })
+
+        this.measure('smartSwapPools', true)
     }
 
     simulateWithdraw(day, router) {
+        this.measure('simulateWithdraw')
+
         const valueSellingDayKeys = Object.keys(this.sellValueInvs)
         valueSellingDayKeys.forEach((dayKey) => {
             if (day % dayKey === 0) {
@@ -1213,11 +1254,6 @@ class Generator {
                                 ? 10
                                 : author.balances[quest]
 
-                        let t0
-                        if (this.#_PERFORMANCE) {
-                            //t0 =  = performance.now()
-                        }
-
                         if (conf.excludeSingleName) {
                             console.log(
                                 `Withdrawing ${quest} quest with excluded set as ${conf.excludeSingleName}`
@@ -1230,22 +1266,6 @@ class Generator {
                             sumIn,
                             conf.smartRouteDepth
                         )
-
-                        //this.#_OPS++
-
-                        if (this.#_PERFORMANCE) {
-                            //const t1 =  = performance.now()
-                            // if (this.#_PERFORMANCE_OUTPUT)
-                            //     console.log(
-                            //         `[${day}][${
-                            //             author.name
-                            //         }] Widthdrawn amount ${amtOut} for ${amtIn}${quest} in ${
-                            //             t1 - t0
-                            //         }ms`
-                            //     )
-                            // this.#_OPS_TIME.withdraw.ops++
-                            // this.#_OPS_TIME.withdraw.time += t1 - t0
-                        }
 
                         if (
                             isNaN(totalIn) ||
@@ -1263,15 +1283,13 @@ class Generator {
                             break
                         }
 
-                        this.#processSwapData(
+                        this.processSwapData(
                             author,
                             router.getSwaps(),
                             day,
                             `Withdrawing ${
                                 conf.valueSellAmount
-                            } ${quest}, smart routed ${
-                                router.getPaths().length
-                            } times / total in ${totalIn.toFixed(
+                            } ${quest} / total in ${totalIn.toFixed(
                                 3
                             )}, total out ${totalOut.toFixed(
                                 3
@@ -1293,6 +1311,8 @@ class Generator {
                 })
             }
         })
+
+        this.measure('simulateWithdraw', true)
     }
 
     getChangedPriceQuests(
@@ -1302,10 +1322,10 @@ class Generator {
         percentageChange,
         swapDir
     ) {
+        this.measure('getChangedPriceQuests')
+
         // Find investor's tokens by reading their balances
         const balancesLeftover = JSON.parse(JSON.stringify(invBalances))
-
-        this.webdbg(balancesLeftover)
 
         const invQuestPools = Object.keys(invBalances)
             .map((questName) =>
@@ -1318,13 +1338,8 @@ class Generator {
             !invQuestPools.length ||
             !this.#dailyTradedPools
         ) {
-            this.webdbg(
-                `Investor has no qualifying quest balances to ${swapDir}`
-            )
             return []
         }
-
-        this.webdbg(`Found potential ${invQuestPools.length} quests`)
 
         let selectedPools = []
 
@@ -1332,10 +1347,7 @@ class Generator {
             .filter((pd) => invQuestPools.find((ip) => ip.name === pd[0]))
             .forEach((poolData) => {
                 const data = poolData[1].slice(-freq)
-                this.webdbg(
-                    `[GENERATOR] Calculating growth rate for ${poolData[0]} during ${swapDir} of inc/dec`
-                )
-                this.webdbg(data)
+
                 const growthRate = data
                     .map((curr, id) => {
                         if (id === 0) return 0
@@ -1346,10 +1358,6 @@ class Generator {
                         return rate
                     })
                     .reduce((p, c) => p + c)
-
-                this.webdbg(
-                    `Pool ${poolData[0]} has a growth rate of ${growthRate}`
-                )
 
                 if (
                     growthRate === 0 ||
@@ -1370,10 +1378,6 @@ class Generator {
 
                 balancesLeftover[tokenTrade] -= swapAmount
 
-                this.webdbg(
-                    `Want to ${swapDir} ${tokenTrade} - amount ${swapAmount}`
-                )
-
                 if (
                     !swapAmount ||
                     swapAmount <= 0 ||
@@ -1381,9 +1385,6 @@ class Generator {
                     balancesLeftover[tokenTrade] < swapAmount ||
                     balancesLeftover[tokenTrade] === 0
                 ) {
-                    this.webdbg(
-                        `Not enough balance to trade ${swapAmount} ${tokenTrade}`
-                    )
                     return []
                 }
 
@@ -1393,6 +1394,9 @@ class Generator {
                     swapDir
                 })
             })
+
+        this.measure('getChangedPriceQuests', true)
+
         return selectedPools
     }
 
@@ -1402,6 +1406,8 @@ class Generator {
         excludeSingleName,
         buyGainersFrequency
     ) {
+        this.measure('getTradePools')
+
         const poolsAmount = Math.ceil(
             (this.#cachedQuests.size / 100) * buyGainerPerc
         )
@@ -1412,20 +1418,13 @@ class Generator {
             buyGainersFrequency
         )
 
-        this.webdbg(`Result of getting top gainers`)
-        this.webdbg(topGainers)
-
         let randomGainers = []
         if (topGainers.length < poolsAmount) {
-            this.webdbg(`Not enough top gainers, adding random`)
-
             const randomAmountToGet = poolsAmount - topGainers.length
             randomGainers = this.getRandomGainers(
                 buyQuestPerc,
                 randomAmountToGet
             )
-            this.webdbg(`Result of getting random gainers`)
-            this.webdbg(randomGainers)
         }
 
         let finalResult = Array.prototype.concat(topGainers, randomGainers)
@@ -1437,20 +1436,19 @@ class Generator {
             )
         }
 
-        this.webdbg(`Final result of top gainers`)
-        this.webdbg(finalResult)
+        this.measure('getTradePools', true)
 
         return finalResult
     }
 
     getTopGainers(buyQuestPerc, poolsAmount, buyGainersFrequency = 30) {
+        this.measure('getTopGainers')
+
         // Collect top gainers of the last X days
         let gainers = []
         Object.entries(this.#dailyTradedPools).forEach((poolData) => {
             const data = poolData[1].slice(-buyGainersFrequency)
-            this.webdbg(
-                `[GENERATOR:GET-TOP-GAINERS] Calculating growth rate for ${poolData[0]} during finding top gainers`
-            )
+
             const growthRate = data
                 .map((curr, id) => {
                     if (id === 0) return 0
@@ -1461,10 +1459,6 @@ class Generator {
                     return rate
                 })
                 .reduce((p, c) => p + c)
-
-            this.webdbg(
-                `Pool ${poolData[0]} has a growth rate of ${growthRate}`
-            )
 
             if (growthRate > 0) {
                 gainers.push({
@@ -1494,12 +1488,18 @@ class Generator {
 
         if (!selectedGainers.length) return []
 
-        return selectedGainers
+        const selectedGainersReturn = selectedGainers
             .filter((x) => x)
             .map((pdata) => this.#cachedPools.get(pdata.pool))
+
+        this.measure('getTopGainers', true)
+
+        return selectedGainersReturn
     }
 
     getRandomGainers(buyQuestPerc, questsAmount) {
+        this.measure('getRandomGainers')
+
         const randomQuests = this.getRandomElements(
             this.#cachedQuests.values(),
             questsAmount
@@ -1519,38 +1519,44 @@ class Generator {
             (toTradePools.length / 100) * buyQuestPerc
         )
 
+        this.measure('getRandomGainers', true)
+
         return this.getRandomElements(toTradePools, poolsAmount)
     }
 
     calculateCiteAmount(investor, quest, percentage, quantity = 1) {
+        this.measure('calculateCiteAmount')
+
         if (!investor || !investor.balances[quest]) {
-            this.webdbg(
-                `Could not calculate cite amount due to invalid investor or no balance exists for quest ${quest}`
-            )
             return null
         }
 
         const amount = (investor.balances[quest] / 100) * percentage
 
         if (amount < 2 || investor.balances[quest] < amount * quantity) {
-            this.webdbg(
-                `Could not get cite amount for quest ${quest} as not enough balance`
-            )
             return null
         }
+
+        this.measure('calculateCiteAmount', true)
 
         return amount
     }
 
     spawnInvestor(type, name, initialBalance) {
+        this.measure('spawnInvestor')
+
         const investor = Investor.create(type, name, initialBalance)
 
         this.#cachedInvestors.set(investor.hash, investor)
+
+        this.measure('spawnInvestor', true)
 
         return investor
     }
 
     spawnQuest(investor, name) {
+        this.measure('spawnQuest')
+
         const quest = investor.createQuest(name)
         const pool = quest.createPool()
 
@@ -1568,10 +1574,14 @@ class Generator {
 
         this.#cachedPools.set(pool.name, pool)
 
+        this.measure('spawnQuest', true)
+
         return { pool, quest }
     }
 
     calculateQuestProbabilities(questConfig) {
+        this.measure('calculateQuestProbabilities')
+
         const chances = {
             citeSingle: false,
             citeOther: false,
@@ -1586,35 +1596,45 @@ class Generator {
                 ? Math.floor(questConfig.probRandomCite / 100)
                 : 1
 
+        this.measure('calculateQuestProbabilities', true)
+
         return chances
     }
 
     calcProb(percentage) {
-        return this.#chance.bool({
+        this.measure('calcProb')
+
+        const calcProb = this.#chance.bool({
             likelihood: percentage > 100 ? 100 : percentage
         })
+        this.measure('calcProb', true)
+
+        return calcProb
     }
 
     calculateInvProbabilities(inv) {
+        this.measure('calculateInvProbabilities')
+
         const chances = {
             spawnInv: false,
             spawnInvQuantity: 0
         }
 
         chances.spawnInv = this.calcProb(inv.dailySpawnProbability)
-        this.webdbg(
-            `Calculating investor spawn probably with a daily chance of ${inv.dailySpawnProbability}`
-        )
 
         chances.spawnInvQuantity =
             chances.spawnInv && inv.dailySpawnProbability > 100
                 ? Math.floor(inv.dailySpawnProbability / 100)
                 : 1
 
+        this.measure('calculateInvProbabilities', true)
+
         return chances
     }
 
     storeTradedPool(day, pool) {
+        this.measure('storeTradedPool')
+
         if (!this.#dailyTradedPools[pool.name]) {
             this.#dailyTradedPools[pool.name] = []
         }
@@ -1630,9 +1650,13 @@ class Generator {
             tvl: pool.getTVL(),
             mcap: pool.getMarketCap()
         })
+
+        this.measure('storeTradedPool', true)
     }
 
-    #processSwapData(investor, swaps, day, opName = null) {
+    processSwapData(investor, swaps, day, opName = null) {
+        this.measure('processSwapData')
+
         const combSwaps = getCombinedSwaps(swaps, this.#cachedPools)
         Object.entries(combSwaps).forEach((ops) => {
             Object.entries(ops[1]).forEach((op) => {
@@ -1654,6 +1678,8 @@ class Generator {
                 this.#dayData[day].actions.push(swapData)
             })
         })
+
+        this.measure('processSwapData', true)
     }
 
     sleep(ms) {
@@ -1665,6 +1691,8 @@ class Generator {
     }
 
     getRandomElements(arr, n) {
+        this.measure('getRandomElements')
+
         let len = arr.length
         const result = new Array(n)
         const taken = new Array(len)
@@ -1682,6 +1710,8 @@ class Generator {
             result[n] = arr[x in taken ? taken[x] : x]
             taken[x] = --len in taken ? taken[len] : len
         }
+
+        this.measure('getRandomElements', true)
 
         return result.filter((x) => x)
     }
@@ -1702,10 +1732,6 @@ class Generator {
 
     getDailyTradedPools() {
         return this.#dailyTradedPools
-    }
-
-    getOps() {
-        return this.#_OPS
     }
 
     resetOpsTime() {

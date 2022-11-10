@@ -154,8 +154,17 @@ export const getMissingQuestNames = (scenario) => {
     return Array.from(quests)
 }
 
-export const isZero = (amount) => {
+export const isE10Zero = (amount) => {
     return Math.abs(amount) < 1e-10
+}
+
+export const isNearZero = (amount) => {
+    return (
+        0 ===
+        parseInt(
+            amount.toFixed(10).replace(/\D/g, '').split('').slice(0, 8).join('')
+        )
+    )
 }
 
 export const calcGrowthRate = (curr, prev) => {
@@ -167,3 +176,40 @@ export const isNumericString = (str) => parseFloat(str) === Number(str)
 export const priceDiff = (price1, price2) => {
     return ((price1 - price2) / price2) * 100
 }
+
+export const getPathActions = (path, router) => {
+    let out = []
+
+    for (const [id, quest] of path.entries()) {
+        if (id === 0) continue
+
+        const prev = path[id - 1] || null
+
+        const curPool = router.getPoolByTokens(quest, prev)
+
+        if (!curPool) {
+            break
+        }
+
+        let action
+        if (id === 1) {
+            action = curPool.tokenLeft === prev ? 'buy' : 'sell'
+        } else if (
+            quest === curPool.tokenLeft ||
+            (id === path.length - 1 && prev !== curPool.tokenLeft)
+        ) {
+            action = 'sell'
+        } else {
+            action = 'buy'
+        }
+
+        out.push({ pool: curPool, action })
+    }
+
+    return out
+}
+
+export const hashmapToObj = (hm) =>
+    hm.entries().reduce((o, [k, v]) => ({ ...o, [k]: v }), {})
+
+export const isZero = (num) => num === 0 || isE10Zero(num) || isNearZero(num)

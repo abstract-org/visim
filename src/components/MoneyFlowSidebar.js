@@ -3,7 +3,17 @@ import { Sidebar } from 'primereact/sidebar'
 import React from 'react'
 
 import globalState from '../logic/GlobalState'
-import UsdcToken from '../logic/Quest/UsdcToken.class'
+import {
+    totalIssuedTokens,
+    totalIssuedUSDC,
+    totalIssuedUSDCDynamic,
+    totalLockedTokens,
+    totalLockedUSDC,
+    totalMissingTokens,
+    totalMissingUSDC,
+    totalWalletsTokens,
+    totalWalletsUSDC
+} from '../logic/Utils/tokenCalc'
 
 export const MoneyFlowSidebar = (props) => {
     return (
@@ -24,91 +34,6 @@ export const MoneyFlowSidebar = (props) => {
 const MoneyFlow = () => {
     const nf = new Intl.NumberFormat('en-US')
 
-    const totalIssuedUSDC = globalState.investors
-        .values()
-        .filter((x) => x.default)
-        .reduce((acc, i) => acc + i.initialBalance, 0)
-
-    const totalIssuedUSDCDynamic = globalState.investors
-        .values()
-        .filter((x) => !x.default)
-        .reduce((acc, i) => acc + i.initialBalance, 0)
-
-    const totalIssuedTokens = globalState.quests
-        .values()
-        .filter((x) => !(x instanceof UsdcToken))
-        .map((q) => ({
-            name: q.name,
-            total: q.initialBalanceB
-        }))
-
-    const totalLockedUSDC = globalState.pools.values().reduce((acc, p) => {
-        return p.isQuest() ? acc + p.volumeToken0 : acc + 0
-    }, 0)
-
-    const totalLockedTokens = globalState.quests
-        .values()
-        .filter((x) => !(x instanceof UsdcToken))
-        .map((q) => {
-            let totalQTokens = 0
-
-            q.pools.forEach((p) => {
-                const pool = globalState.pools.get(p)
-                totalQTokens +=
-                    pool.tokenLeft === q.name
-                        ? pool.volumeToken0
-                        : pool.volumeToken1
-            })
-
-            return { name: q.name, total: totalQTokens }
-        })
-
-    const totalWalletsUSDC = globalState.investors
-        .values()
-        .reduce((acc, inv) => acc + inv.balances['USDC'], 0)
-
-    const totalWalletsTokens = globalState.quests
-        .values()
-        .filter((x) => !(x instanceof UsdcToken))
-        .map((q) => {
-            let totalQTokens = 0
-
-            globalState.investors.values().forEach((inv) => {
-                totalQTokens += inv.balances[q.name] ? inv.balances[q.name] : 0
-            })
-
-            return { name: q.name, total: totalQTokens }
-        })
-
-    const totalMissingUSDC =
-        totalIssuedUSDC +
-        totalIssuedUSDCDynamic -
-        totalLockedUSDC -
-        totalWalletsUSDC
-
-    const totalMissingTokens = globalState.quests
-        .values()
-        .filter((x) => !(x instanceof UsdcToken))
-        .map((q) => {
-            const totalIssuedToken = totalIssuedTokens.find(
-                (ti) => ti.name === q.name
-            )
-            const totalLockedToken = totalLockedTokens.find(
-                (tl) => tl.name === q.name
-            )
-            const totalWalletToken = totalWalletsTokens.find(
-                (tw) => tw.name === q.name
-            )
-
-            return {
-                name: q.name,
-                total:
-                    totalIssuedToken.total -
-                    totalLockedToken.total -
-                    totalWalletToken.total
-            }
-        })
-
     return (
         <React.Fragment>
             <div className="grid">
@@ -116,30 +41,46 @@ const MoneyFlow = () => {
                     <h3>Total Issued</h3>
                     <div className="ml-2">
                         <div>
-                            <b>Pre-Sim USDC</b>: {nf.format(totalIssuedUSDC)}
+                            <b>Pre-Sim USDC</b>:{' '}
+                            {nf.format(
+                                totalIssuedUSDC(globalState.investors.values())
+                            )}
                         </div>
                         <div>
                             <b>Generated USDC</b>:{' '}
-                            {nf.format(totalIssuedUSDCDynamic)}
+                            {nf.format(
+                                totalIssuedUSDCDynamic(
+                                    globalState.investors.values()
+                                )
+                            )}
                         </div>
                         <div>
-                            {totalIssuedTokens.map((td, idx) => {
-                                return (
-                                    <div key={idx}>
-                                        <b>{td.name}</b>: {nf.format(td.total)}
-                                    </div>
-                                )
-                            })}
+                            {totalIssuedTokens(globalState.quests.values()).map(
+                                (td, idx) => {
+                                    return (
+                                        <div key={idx}>
+                                            <b>{td.name}</b>:{' '}
+                                            {nf.format(td.total)}
+                                        </div>
+                                    )
+                                }
+                            )}
                         </div>
                     </div>
                     <Divider />
                     <h3>Total Locked</h3>
                     <div className="ml-2">
                         <div>
-                            <b>USDC</b>: {nf.format(totalLockedUSDC)}
+                            <b>USDC</b>:{' '}
+                            {nf.format(
+                                totalLockedUSDC(globalState.pools.values())
+                            )}
                         </div>
                         <div>
-                            {totalLockedTokens.map((td, idx) => {
+                            {totalLockedTokens(
+                                globalState.quests.values(),
+                                globalState.pools.values()
+                            ).map((td, idx) => {
                                 return (
                                     <div key={idx}>
                                         <b>{td.name}</b>: {nf.format(td.total)}
@@ -153,10 +94,16 @@ const MoneyFlow = () => {
                     <h3>In Wallets</h3>
                     <div className="ml-2">
                         <div>
-                            <b>USDC</b>: {nf.format(totalWalletsUSDC)}
+                            <b>USDC</b>:{' '}
+                            {nf.format(
+                                totalWalletsUSDC(globalState.investors.values())
+                            )}
                         </div>
                         <div>
-                            {totalWalletsTokens.map((td, idx) => {
+                            {totalWalletsTokens(
+                                globalState.quests.values(),
+                                globalState.investors.values()
+                            ).map((td, idx) => {
                                 return (
                                     <div key={idx}>
                                         <b>{td.name}</b>: {nf.format(td.total)}
@@ -173,14 +120,28 @@ const MoneyFlow = () => {
                             <span
                                 style={{
                                     color:
-                                        totalMissingUSDC !== 0 ? 'red' : 'green'
+                                        totalMissingUSDC(
+                                            globalState.investors.values(),
+                                            globalState.pools.values()
+                                        ) !== 0
+                                            ? 'red'
+                                            : 'green'
                                 }}
                             >
-                                {nf.format(totalMissingUSDC)}
+                                {nf.format(
+                                    totalMissingUSDC(
+                                        globalState.investors.values(),
+                                        globalState.pools.values()
+                                    )
+                                )}
                             </span>
                         </div>
                         <div style={{ fontWeight: 'bold' }}>
-                            {totalMissingTokens.map((td, idx) => {
+                            {totalMissingTokens(
+                                globalState.quests.values(),
+                                globalState.pools.values(),
+                                globalState.investors.values()
+                            ).map((td, idx) => {
                                 return (
                                     <div key={idx}>
                                         {td.name}:{' '}

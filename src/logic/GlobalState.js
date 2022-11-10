@@ -34,6 +34,16 @@ const globalState = {
     generatorStore: {
         invConfigs: [],
         questConfigs: []
+    },
+    dayTrackerStore: {
+        currentDay: 0
+    },
+    moneyDist: {
+        citing: [],
+        buying: [],
+        selling: [],
+        buyingSmart: [],
+        sellingSmart: []
     }
 }
 
