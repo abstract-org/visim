@@ -170,11 +170,11 @@ export default class Investor {
             typeof token1Amt === 'undefined' ||
             (token0Amt === 0 && token1Amt === 0)
         ) {
-            console.log('### ALERT: CITATION INVESTOR ###')
-            console.log(
+            console.warn('### ALERT: CITATION INVESTOR ###')
+            console.warn(
                 `During citation at ${crossPool.name} with pos[${priceMin}...${priceMax}] direction native=${native}, tokens passed token0: ${token0Amt}, token1: ${token1Amt}`
             )
-            console.log(`Got response: in: ${totalIn}/out:${totalOut}`)
+            console.warn(`Got response: in: ${totalIn}/out:${totalOut}`)
             return null
         }
 
