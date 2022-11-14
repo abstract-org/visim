@@ -188,7 +188,8 @@ export default class Investor {
             pmax: priceMax,
             amt0: token0Amt,
             amt1: token1Amt,
-            type: 'investor'
+            type: 'investor',
+            native
         })
         this.positions.set(crossPool.name, crossPool.pos.values())
 

@@ -52,10 +52,10 @@ class Generator {
     #invConfigs = []
     #questConfigs = []
     #chance = null
-    #dayData = {}
-    #cachedInvestors = new HashMap()
-    #cachedQuests = new HashMap()
-    #cachedPools = new HashMap()
+    _dayData = {}
+    _cachedInvestors = new HashMap()
+    _cachedQuests = new HashMap()
+    _cachedPools = new HashMap()
     #dailyTradedPools = []
 
     #DEFAULT_TOKEN = 'USDC'
@@ -84,22 +84,22 @@ class Generator {
 
         this.#invConfigs = invConfigs
         this.#questConfigs = questConfigs
-        this.#cachedQuests = globalQuests.clone()
-        this.#cachedPools = globalPools.clone()
+        this._cachedQuests = globalQuests.clone()
+        this._cachedPools = globalPools.clone()
 
         globalInvestors.values().forEach((investor) => {
             if (!investor.default) {
-                this.#cachedInvestors.set(investor.hash, investor)
+                this._cachedInvestors.set(investor.hash, investor)
             }
         })
 
-        this.router = new Router(this.#cachedQuests, this.#cachedPools)
+        this.router = new Router(this._cachedQuests, this._cachedPools)
 
         this.#_PERFORMANCE = performance
 
         if (swaps.length) {
             swaps.forEach((swap) => {
-                const pool = this.#cachedPools.get(swap.pool)
+                const pool = this._cachedPools.get(swap.pool)
                 if (pool.isQuest()) {
                     this.storeTradedPool(swap.day, pool)
                 }
@@ -126,7 +126,7 @@ class Generator {
     }
 
     async step(day) {
-        this.#dayData[day] = {
+        this._dayData[day] = {
             investors: [],
             quests: [],
             pools: [],
@@ -152,7 +152,7 @@ class Generator {
                         )
                     }
 
-                    this.#dayData[day]['investors'].push(investor)
+                    this._dayData[day]['investors'].push(investor)
 
                     // Keep creating quests every X days
                     this.addPeriodicInvestor(
@@ -209,7 +209,7 @@ class Generator {
             console.log(`Rejected promise: ${reason}`)
         })
 
-        return this.#dayData[day]
+        return this._dayData[day]
     }
 
     simulateQuestCreation(
@@ -232,10 +232,10 @@ class Generator {
 
         const { pool, quest } = this.initializeQuest(questConfig, day, investor)
 
-        this.#cachedQuests.set(quest.name, quest)
-        this.#cachedPools.set(pool.name, pool)
-        this.#dayData[day]['pools'].push(pool)
-        this.#dayData[day]['quests'].push(quest)
+        this._cachedQuests.set(quest.name, quest)
+        this._cachedPools.set(pool.name, pool)
+        this._dayData[day]['pools'].push(pool)
+        this._dayData[day]['quests'].push(quest)
 
         // Initial investment
         if (
@@ -303,19 +303,19 @@ class Generator {
         this.measure('initializeQuest')
 
         // Generate quest by probability with config
-        const questSum = this.#cachedQuests.size
+        const questSum = this._cachedQuests.size
         const { pool, quest } = this.spawnQuest(
             investor,
             `${questConfig.questGenName} (${questSum + 1})`
         )
-        this.#dayData[day].actions.push({
+        this._dayData[day].actions.push({
             pool: pool.name,
             investorHash: investor.hash,
             action: 'CREATED',
             day
         })
-        this.#dayData[day].quests.push(quest)
-        this.#dayData[day].pools.push(pool)
+        this._dayData[day].quests.push(quest)
+        this._dayData[day].pools.push(pool)
 
         this.measure('initializeQuest', true)
 
@@ -325,14 +325,14 @@ class Generator {
     initializeInvestor(invConfig, day) {
         this.measure('initializeInvestor')
 
-        const invSum = this.#cachedInvestors.size
+        const invSum = this._cachedInvestors.size
         const investor = this.spawnInvestor(
             invConfig.invGenAlias,
             `${invConfig.invGenName} (${invSum + 1})`,
             invConfig.initialBalance
         )
-        this.#dayData[day].investors.push(investor)
-        this.#dayData[day].actions.push({
+        this._dayData[day].investors.push(investor)
+        this._dayData[day].actions.push({
             investorHash: investor.hash,
             action: 'SPAWNED',
             day
@@ -348,7 +348,7 @@ class Generator {
 
         const [totalIn, totalOut] = pool.buy(amountIn)
 
-        this.#dayData[day].actions.push({
+        this._dayData[day].actions.push({
             pool: pool.name,
             price: pool.curPrice.toFixed(3),
             investorHash: investor.hash,
@@ -378,7 +378,7 @@ class Generator {
     ) {
         this.measure('citeSingleQuest')
 
-        const singleQuest = this.#cachedQuests.get(questConfig.citeSingleName)
+        const singleQuest = this._cachedQuests.get(questConfig.citeSingleName)
         if (!singleQuest) {
             return
         }
@@ -398,13 +398,13 @@ class Generator {
         }
 
         const pName = `${this.#DEFAULT_TOKEN}-${singleQuest.name}`
-        if (!this.#cachedPools.has(pName)) {
+        if (!this._cachedPools.has(pName)) {
             return
         }
 
-        const singleUsdcPool = this.#cachedPools.get(pName)
+        const singleUsdcPool = this._cachedPools.get(pName)
 
-        let crossPool = this.#cachedPools.get(
+        let crossPool = this._cachedPools.get(
             `${singleQuest.name}-${citingQuest.name}`
         )
 
@@ -415,13 +415,13 @@ class Generator {
                 citingQuest,
                 startingPrice
             )
-            this.#dayData[day].actions.push({
+            this._dayData[day].actions.push({
                 pool: crossPool.name,
                 investorHash: investor.hash,
                 action: 'CREATED',
                 day
             })
-            this.#cachedPools.set(crossPool.name, crossPool)
+            this._cachedPools.set(crossPool.name, crossPool)
         }
 
         const priceRange = investor.calculatePriceRange(
@@ -430,7 +430,7 @@ class Generator {
             citingPool,
             questConfig.citeSingleMultiplier
         )
-        this.#dayData[day].pools.push(crossPool)
+        this._dayData[day].pools.push(crossPool)
 
         const citeAmount0 =
             crossPool.tokenLeft === singleQuest.name ? 0 : citeSingleAmount
@@ -445,6 +445,7 @@ class Generator {
             citeAmount1,
             priceRange.native
         )
+
         const posAfter = [...crossPool.pos.values()]
 
         if (
@@ -460,14 +461,14 @@ class Generator {
             return
         }
 
-        const orgQuest = this.#cachedQuests.get(citingQuest.name)
-        const sinQuest = this.#cachedQuests.get(singleQuest.name)
+        const orgQuest = this._cachedQuests.get(citingQuest.name)
+        const sinQuest = this._cachedQuests.get(singleQuest.name)
         orgQuest.addPool(crossPool)
         sinQuest.addPool(crossPool)
-        this.#cachedQuests.set(orgQuest.name, orgQuest)
-        this.#cachedQuests.set(sinQuest.name, sinQuest)
+        this._cachedQuests.set(orgQuest.name, orgQuest)
+        this._cachedQuests.set(sinQuest.name, sinQuest)
 
-        this.#dayData[day].actions.push({
+        this._dayData[day].actions.push({
             pool: crossPool.name,
             price: crossPool.curPrice.toFixed(3),
             investorHash: investor.hash,
@@ -494,11 +495,13 @@ class Generator {
 
         const curTokenMissing = totalSingleMissingToken(
             citingQuest.name,
-            this.#cachedQuests.values(),
-            this.#cachedPools.values(),
-            this.#cachedInvestors.values()
+            this._cachedQuests.values(),
+            this._cachedPools.values(),
+            this._cachedInvestors.values()
         )
 
+        // @TODO: check current leak against preserved leak data
+        // @TODO: (curTokenMissing - prevTokensLeakData[citingQuest.name].total) > 0
         if (curTokenMissing > 0 && !isZero(curTokenMissing)) {
             console.warn('### ALERT: CITATION #2 SINGLE [' + day + ']###')
             console.warn(
@@ -526,7 +529,7 @@ class Generator {
             // )
         }
 
-        this.#dayData[day]['pools'].push(crossPool)
+        this._dayData[day]['pools'].push(crossPool)
 
         this.measure('citeSingleQuest', true)
     }
@@ -544,12 +547,12 @@ class Generator {
 
         let filteredQuests = questConfig.citeRandomPreferOwn
             ? investor.questsCreated.map((qc) => {
-                  return this.#cachedQuests.get(qc)
+                  return this._cachedQuests.get(qc)
               })
             : []
 
         if (filteredQuests.length < questProbs.citeOtherQuantity) {
-            const randomFilteredQuests = this.#cachedQuests
+            const randomFilteredQuests = this._cachedQuests
                 .values()
                 .filter(
                     (questIter) =>
@@ -596,7 +599,7 @@ class Generator {
         }
 
         const priceMark = conf.keepCitingPriceHigherThan
-        const potentialQuestPools = this.#cachedPools.values().filter((cp) => {
+        const potentialQuestPools = this._cachedPools.values().filter((cp) => {
             if (cp.isQuest() && cp.tokenRight !== quest.name) {
                 const diff = priceDiff(cp.curPrice, pool.curPrice)
 
@@ -607,7 +610,7 @@ class Generator {
             return false
         })
         const potentialQuests = potentialQuestPools.map((pqp) =>
-            this.#cachedQuests.get(pqp.tokenRight)
+            this._cachedQuests.get(pqp.tokenRight)
         )
         const randomQuests = this.getRandomElements(potentialQuests, 1)
 
@@ -662,7 +665,7 @@ class Generator {
                 return
             }
 
-            const citedPool = this.#cachedPools.get(
+            const citedPool = this._cachedPools.get(
                 `${this.#DEFAULT_TOKEN}-${citedQuest.name}`
             )
 
@@ -670,8 +673,8 @@ class Generator {
                 return
             }
 
-            let crossPool = this.#cachedPools.get(
-                `${citedQuest.tokenLeft}-${citingQuest.name}`
+            let crossPool = this._cachedPools.get(
+                `${citedQuest.name}-${citingQuest.name}`
             )
 
             if (!crossPool) {
@@ -682,13 +685,13 @@ class Generator {
                     startingPrice
                 )
 
-                this.#dayData[day].actions.push({
+                this._dayData[day].actions.push({
                     pool: crossPool.name,
                     investorHash: investor.hash,
                     action: 'CREATED',
                     day
                 })
-                this.#cachedPools.set(crossPool.name, crossPool)
+                this._cachedPools.set(crossPool.name, crossPool)
             }
 
             const priceRange = investor.calculatePriceRange(
@@ -697,7 +700,7 @@ class Generator {
                 citingPool,
                 citingPosMultiplier
             )
-            this.#dayData[day].pools.push(crossPool)
+            this._dayData[day].pools.push(crossPool)
 
             const citeAmount0 =
                 crossPool.tokenLeft === citedQuest.name ? 0 : citeOtherAmount
@@ -714,20 +717,21 @@ class Generator {
 
             if (!totalInOut) {
                 console.warn('### ALERT: CITATION [' + day + ']###')
+                console.warn(this._cachedPools)
                 console.warn(`Failed to cite ${crossPool.name}`)
                 console.warn(priceRange, citeAmount0, citeAmount1)
                 console.warn(citingPool, citedPool)
                 return
             }
 
-            const orgQuest = this.#cachedQuests.get(citingQuest.name)
-            const ranQuest = this.#cachedQuests.get(citedQuest.name)
+            const orgQuest = this._cachedQuests.get(citingQuest.name)
+            const ranQuest = this._cachedQuests.get(citedQuest.name)
             orgQuest.addPool(crossPool)
             ranQuest.addPool(crossPool)
-            this.#cachedQuests.set(orgQuest.name, orgQuest)
-            this.#cachedQuests.set(ranQuest.name, ranQuest)
+            this._cachedQuests.set(orgQuest.name, orgQuest)
+            this._cachedQuests.set(ranQuest.name, ranQuest)
 
-            this.#dayData[day].actions.push({
+            this._dayData[day].actions.push({
                 pool: crossPool.name,
                 price: crossPool.curPrice.toFixed(3),
                 investorHash: investor.hash,
@@ -754,11 +758,13 @@ class Generator {
 
             const curTokenMissing = totalSingleMissingToken(
                 citingQuest.name,
-                this.#cachedQuests.values(),
-                this.#cachedPools.values(),
-                this.#cachedInvestors.values()
+                this._cachedQuests.values(),
+                this._cachedPools.values(),
+                this._cachedInvestors.values()
             )
 
+            // @TODO: check current leak against preserved leak data
+            // @TODO: (curTokenMissing - prevTokensLeakData[citingQuest.name].total) > 0
             if (curTokenMissing > 0 && !isZero(curTokenMissing)) {
                 console.warn('### ALERT: CITATION #2 RANDOM [' + day + ']###')
                 console.warn(
@@ -785,7 +791,7 @@ class Generator {
                 //     priceRange.native
                 // )
             }
-            this.#dayData[day]['pools'].push(crossPool)
+            this._dayData[day]['pools'].push(crossPool)
         })
 
         this.measure('citeQuests', true)
@@ -826,7 +832,7 @@ class Generator {
         const spendAmount =
             (investor.balances[this.#DEFAULT_TOKEN] / 100) * conf.buySinglePerc
 
-        let tradePool = this.#cachedPools.get(
+        let tradePool = this._cachedPools.get(
             `${this.#DEFAULT_TOKEN}-${conf.includeSingleName}`
         )
 
@@ -959,7 +965,7 @@ class Generator {
             investor.addBalance(pool.tokenRight, totalOut, 'buying top traders')
 
             // Cite random quest by probabiliy
-            const tradedQuest = this.#cachedQuests.get(pool.tokenRight)
+            const tradedQuest = this._cachedQuests.get(pool.tokenRight)
             this.citeRandomWithPriceHigher(
                 conf,
                 day,
@@ -1249,7 +1255,7 @@ class Generator {
                             isZero(totalIn) ||
                             isZero(totalOut)
                         ) {
-                            const pool = this.#cachedPools.get(
+                            const pool = this._cachedPools.get(
                                 `${this.#DEFAULT_TOKEN}-${quest}`
                             )
 
@@ -1305,7 +1311,7 @@ class Generator {
 
         const invQuestPools = Object.keys(invBalances)
             .map((questName) =>
-                this.#cachedPools.get(`${this.#DEFAULT_TOKEN}-${questName}`)
+                this._cachedPools.get(`${this.#DEFAULT_TOKEN}-${questName}`)
             )
             .filter((x) => x)
 
@@ -1385,7 +1391,7 @@ class Generator {
         this.measure('getTradePools')
 
         const poolsAmount = Math.ceil(
-            (this.#cachedQuests.size / 100) * buyGainerPerc
+            (this._cachedQuests.size / 100) * buyGainerPerc
         )
 
         const topGainers = this.getTopGainers(
@@ -1466,7 +1472,7 @@ class Generator {
 
         const selectedGainersReturn = selectedGainers
             .filter((x) => x)
-            .map((pdata) => this.#cachedPools.get(pdata.pool))
+            .map((pdata) => this._cachedPools.get(pdata.pool))
 
         this.measure('getTopGainers', true)
 
@@ -1477,7 +1483,7 @@ class Generator {
         this.measure('getRandomGainers')
 
         const randomQuests = this.getRandomElements(
-            this.#cachedQuests.values(),
+            this._cachedQuests.values(),
             questsAmount
         )
 
@@ -1487,7 +1493,7 @@ class Generator {
 
         const toTradePools = randomQuests
             .map((quest) =>
-                this.#cachedPools.get(`${this.#DEFAULT_TOKEN}-${quest.name}`)
+                this._cachedPools.get(`${this.#DEFAULT_TOKEN}-${quest.name}`)
             )
             .filter((x) => x)
 
@@ -1523,7 +1529,7 @@ class Generator {
 
         const investor = Investor.create(type, name, initialBalance)
 
-        this.#cachedInvestors.set(investor.hash, investor)
+        this._cachedInvestors.set(investor.hash, investor)
 
         this.measure('spawnInvestor', true)
 
@@ -1536,19 +1542,19 @@ class Generator {
         const quest = investor.createQuest(name)
         const pool = quest.createPool()
 
-        this.#cachedQuests.set(quest.name, quest)
-        let leftSideQuest = this.#cachedQuests.get(`${this.#DEFAULT_TOKEN}`)
+        this._cachedQuests.set(quest.name, quest)
+        let leftSideQuest = this._cachedQuests.get(`${this.#DEFAULT_TOKEN}`)
 
         if (leftSideQuest) {
             leftSideQuest.addPool(pool)
-            this.#cachedQuests.set(leftSideQuest.name, leftSideQuest)
+            this._cachedQuests.set(leftSideQuest.name, leftSideQuest)
         } else {
             leftSideQuest = new UsdcToken()
             leftSideQuest.addPool(pool)
-            this.#cachedQuests.set(leftSideQuest.name, leftSideQuest)
+            this._cachedQuests.set(leftSideQuest.name, leftSideQuest)
         }
 
-        this.#cachedPools.set(pool.name, pool)
+        this._cachedPools.set(pool.name, pool)
 
         this.measure('spawnQuest', true)
 
@@ -1633,14 +1639,14 @@ class Generator {
     processSwapData(investor, swaps, day, opName = null) {
         this.measure('processSwapData')
 
-        const combSwaps = getCombinedSwaps(swaps, this.#cachedPools)
+        const combSwaps = getCombinedSwaps(swaps, this._cachedPools)
         Object.entries(combSwaps).forEach((ops) => {
             Object.entries(ops[1]).forEach((op) => {
-                if (!this.#dayData[day]) {
-                    this.#dayData[day] = { actions: [] }
+                if (!this._dayData[day]) {
+                    this._dayData[day] = { actions: [] }
                 }
 
-                const pool = this.#cachedPools.get(ops[0])
+                const pool = this._cachedPools.get(ops[0])
                 const swapData = formSwapData(
                     pool,
                     investor,
@@ -1651,7 +1657,7 @@ class Generator {
                     day,
                     opName
                 )
-                this.#dayData[day].actions.push(swapData)
+                this._dayData[day].actions.push(swapData)
             })
         })
 
@@ -1663,7 +1669,7 @@ class Generator {
     }
 
     getDayData(day) {
-        return day ? this.#dayData[day] : this.#dayData
+        return day ? this._dayData[day] : this._dayData
     }
 
     getRandomElements(arr, n) {
@@ -1693,17 +1699,17 @@ class Generator {
     }
 
     getQuests() {
-        return this.#cachedQuests
+        return this._cachedQuests
             .values()
             .filter((q) => q.name !== this.#DEFAULT_TOKEN)
     }
 
     getInvestors() {
-        return this.#cachedInvestors.values()
+        return this._cachedInvestors.values()
     }
 
     getPools() {
-        return this.#cachedPools.values()
+        return this._cachedPools.values()
     }
 
     getDailyTradedPools() {
