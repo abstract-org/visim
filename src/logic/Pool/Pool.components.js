@@ -13,12 +13,7 @@ import useLogsStore from '../Logs/logs.store'
 import { QuestSelector } from '../Quest/Quest.components'
 import useQuestStore from '../Quest/quest.store'
 import Router from '../Router/Router.class'
-import {
-    formSwapData,
-    getCombinedSwaps,
-    isE10Zero,
-    isZero
-} from '../Utils/logicUtils'
+import { formSwapData, getCombinedSwaps, isZero } from '../Utils/logicUtils'
 import { appendIfNotExist } from '../Utils/uiUtils'
 import globalConfig from '../config.global.json'
 import useDayTrackerStore from '../dayTracker.store'

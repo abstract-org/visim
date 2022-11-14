@@ -79,7 +79,7 @@ describe('Cross Pool swapping', () => {
         }
     ]
 
-    it('Sells expensive cited token into cross pool for the right amount', () => {
+    fit('Sells expensive cited token into cross pool for the right amount', () => {
         const { quest: questA, pool: A } = getQP('A')
         const { quest: questB, pool: B } = getQP('B')
         const { quest: questC, pool: C } = getQP('C')

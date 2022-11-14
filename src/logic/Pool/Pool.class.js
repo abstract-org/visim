@@ -3,7 +3,7 @@ import sha256 from 'crypto-js/sha256'
 import HashMap from 'hashmap'
 
 import UsdcToken from '../Quest/UsdcToken.class'
-import { isE10Zero, isNearZero, isZero, p2pp, pp2p } from '../Utils/logicUtils'
+import { isZero, p2pp, pp2p } from '../Utils/logicUtils'
 import globalConfig from '../config.global.json'
 
 export default class Pool {
@@ -222,26 +222,26 @@ export default class Pool {
         let amounts = []
         let amount1 = 0
 
-        // @TODO: Shift pool price before calculation liquidity if free in either direction
-        //const canShiftPriceUp = this.dryBuy(Infinity, this.curPrice)
-        //const canShiftPriceDown = this.drySell(Infinity, priceMin)
-
-        // Cannot open position non-native below curPrice
-        if (priceMin < this.curPrice && !native) {
-            priceMin = this.curPrice + 0.000000000000001
-
-            // Likewise cannot open native position with priceMax above current price
-        } else if (priceMax > this.curPrice && native) {
-            priceMax = this.curPrice - 0.000000000000001
+        if (priceMax > this.curPrice && native) {
+            priceMax = this.curPrice
+        } else if (priceMin < this.curPrice && !native) {
+            priceMin = this.curPrice
         }
 
         const liquidity = this.getLiquidityForAmounts(
             token0Amt,
             token1Amt,
-            Math.sqrt(priceMin),
-            Math.sqrt(priceMax),
-            Math.sqrt(this.curPrice)
+            priceMin,
+            priceMax,
+            this.curPrice
         )
+
+        console.assert(
+            liquidity > 0,
+            `Cannot calculate liquidity for price range ${priceMin} ${priceMax} at price ${this.curPrice} (native=${native}) (t0=${token0Amt} t1=${token1Amt})`
+        )
+
+        //console.log(this.curPrice, priceMin, priceMax, liquidity)
 
         if (liquidity === 0) {
             return []
@@ -283,8 +283,8 @@ export default class Pool {
     setActiveLiq(pMin, native) {
         if (
             pp2p(this.curPP) !== this.curPrice ||
-            (this.curLiq === 0 && isE10Zero(this.volumeToken1)) ||
-            isNearZero(this.volumeToken1)
+            (this.curLiq === 0 && isZero(this.volumeToken1)) ||
+            isZero(this.volumeToken1)
         ) {
             const ppNext =
                 pMin <= this.curPrice
@@ -373,13 +373,11 @@ export default class Pool {
      * @param {number} currentSqrtPrice
      * @returns {number}
      */
-    getLiquidityForAmounts(
-        token0,
-        token1,
-        sqrtPriceMin,
-        sqrtPriceMax,
-        currentSqrtPrice
-    ) {
+    getLiquidityForAmounts(token0, token1, priceMin, priceMax, curPrice) {
+        const sqrtPriceMin = Math.sqrt(priceMin)
+        const sqrtPriceMax = Math.sqrt(priceMax)
+        const currentSqrtPrice = Math.sqrt(curPrice)
+
         const liquidity0 = token0 / (currentSqrtPrice - sqrtPriceMin)
         const liquidity1 = token1 / (1 / sqrtPriceMin - 1 / sqrtPriceMax)
 

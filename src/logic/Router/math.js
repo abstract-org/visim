@@ -1,4 +1,4 @@
-import { p2pp, pp2p } from '../Utils/logicUtils'
+import { isZero } from '../Utils/logicUtils'
 
 /**
  * @description Unites all formula functions to produce exact amount in and out that can be traded in the pool given amountIn as a target
@@ -12,7 +12,7 @@ export const getSwapAmtSameLiq = (poolRef, zeroForOne = true) => {
     let capSwap
 
     // find active liq if none
-    if (liq === 0) {
+    if (isZero(liq)) {
         const nextActiveLiqPos = poolRef.getNearestActiveLiq(zeroForOne)
 
         if (!nextActiveLiqPos) {

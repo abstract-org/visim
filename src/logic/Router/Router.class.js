@@ -1,12 +1,6 @@
 import HashMap from 'hashmap'
 
-import {
-    getPathActions,
-    isE10Zero,
-    isNearZero,
-    isZero
-} from '../Utils/logicUtils'
-import { watcherStore } from '../Utils/watcher'
+import { getPathActions, isZero } from '../Utils/logicUtils'
 import { Graph } from './Graph.class'
 import {
     buySameLiqGiveT0GetT1,
@@ -88,6 +82,8 @@ export default class Router {
 
             if (!this._PRICED_PATHS.length) return totalInOut
 
+            console.log(this._PRICED_PATHS)
+
             // @TODO: Remove later, done for tests
             if (forcedPath) {
                 pathToSwap = forcedPath
@@ -119,6 +115,10 @@ export default class Router {
 
             //console.log(`###DEBUG Calculated properAmountIn: ${properAmountIn}`)
             const sums = this.swapPricedPath(properAmountIn, pathToSwap)
+
+            if (!sums) {
+                continue
+            }
 
             amountIn -= sums[0]
             totalInOut[0] -= sums[0]
@@ -183,8 +183,8 @@ export default class Router {
                 zeroForOne
             )
             if (
-                cappedAmountsSameLiq.t0fort1 === 0 ||
-                cappedAmountsSameLiq.t1fort0 === 0
+                isZero(cappedAmountsSameLiq.t0fort1) ||
+                isZero(cappedAmountsSameLiq.t1fort0)
             ) {
                 return null
             }
@@ -223,7 +223,6 @@ export default class Router {
         let carryOver = 0
         let newAmount = 0
 
-        // @FIXME: I don't work as intended, probably should cap last iteration too before calculating real amount
         reversedPath.forEach((step, idx) => {
             const zeroForOne = step.action === 'buy'
             const activeCurLiq = step.pool.getNearestActiveLiq(zeroForOne)
@@ -239,7 +238,7 @@ export default class Router {
                 carryOver = newAmount
                 // ###DEBUG
                 this._PROTO_SWAPS.push({
-                    path: this._PRICED_PATHS[0].path,
+                    path: step.path,
                     pool: step.pool.name,
                     op: zeroForOne ? 'SHOULD buy' : 'SHOULD sell',
                     in: Math.abs(newAmount),
@@ -261,7 +260,7 @@ export default class Router {
 
                 // ###DEBUG
                 this._PROTO_SWAPS.push({
-                    path: this._PRICED_PATHS[0].path,
+                    path: step.path,
                     pool: step.pool.name,
                     op: zeroForOne ? 'SHOULD buy' : 'SHOULD sell',
                     in: Math.abs(newAmount),
@@ -288,7 +287,7 @@ export default class Router {
 
                 // ###DEBUG
                 this._PROTO_SWAPS.push({
-                    path: this._PRICED_PATHS[0].path,
+                    path: step.path,
                     pool: step.pool.name,
                     op: zeroForOne ? 'SHOULD buy' : 'SHOULD sell',
                     in: Math.abs(newT),
@@ -305,11 +304,19 @@ export default class Router {
 
     swapPricedPath(amountIn, path) {
         const swaps = this.swapPath(amountIn, path)
+
+        if (!swaps) {
+            return
+        }
+
         //console.log(amountIn, 'swapPricedPath() swaps to be', swaps)
         const leftoverAmt = amountIn - swaps[0].in
 
         // Pool state preserved
-        if (swaps.length === 1 && (swaps[0].in === 0 || swaps[0].out === 0)) {
+        if (
+            swaps.length === 1 &&
+            (isZero(swaps[0].in) || isZero(swaps[0].out))
+        ) {
             return [0, 0]
         }
 
@@ -340,21 +347,6 @@ export default class Router {
             const zeroForOne = action === 'buy'
             const poolSums = pool[action](amountSwap)
 
-            // if wanted to buy 10A, but bought 9A
-            // if wanted to sell 9A, but sold 8A
-            // buy: t0 in, t1 out
-            // sell: t1 in, t0 out
-            // buy: t0 amountSwap, poolSums[0], desiredOutDry[0], t1 desiredOutDry[1], poolSums[1]
-            // sell: t1 amountSwap, poolSums[0], desiredOutDry[0], t0 desiredOutDry[1], poolSums[1]
-            // const desiredOutDry = pool.drySwap(amountSwap, zeroForOne)
-            // const leftDesired = zeroForOne ? amountSwap : desiredOutDry[1]
-            // const rightDesired = zeroForOne ? desiredOutDry[1] : amountSwap
-            // const leftActual = zeroForOne ? poolSums[0] : poolSums[1]
-            // const rightActual = zeroForOne ? poolSums[1] : poolSums[0]
-
-            // watcherStore('swaps', pool.tokenLeft, leftDesired, leftActual)
-            // watcherStore('swaps', pool.tokenRight, rightDesired, rightActual)
-
             pathSwaps.push({
                 path: path,
                 pool: pool.name,
@@ -363,9 +355,9 @@ export default class Router {
                 out: Math.abs(poolSums[1])
             })
 
-            if (poolSums[0] === 0 || poolSums[1] === 0) {
+            if (isZero(poolSums[0]) || isZero(poolSums[1])) {
                 console.log('Should never happen')
-                break
+                return
             }
 
             amountSwap = poolSums[1]
@@ -430,7 +422,7 @@ export default class Router {
 
             const sums = [sumsTotal[0][0], sumsTotal[sumsTotal.length - 1][1]]
 
-            if (sums[0] === 0 || sums[1] === 0) {
+            if (isZero(sums[0]) || isZero(sums[1])) {
                 continue
             }
 
@@ -474,7 +466,7 @@ export default class Router {
 
             const sums = pool.drySwap(nextAmountIn, zeroForOne)
 
-            if (Math.abs(sums[0]) === 0 && Math.abs(sums[1]) === 0) {
+            if (Math.abs(isZero(sums[0])) && isZero(Math.abs(sums[1]))) {
                 return null
             }
 

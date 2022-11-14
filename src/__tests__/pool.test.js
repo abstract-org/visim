@@ -35,13 +35,7 @@ describe('Pool.class', () => {
         it('calculates liquidity for token0', () => {
             const { pool } = preparePool()
 
-            const liquidity = pool.getLiquidityForAmounts(
-                0,
-                5000,
-                Math.sqrt(1),
-                Math.sqrt(10000),
-                1
-            )
+            const liquidity = pool.getLiquidityForAmounts(0, 5000, 1, 10000, 1)
             expect(liquidity).toBeCloseTo(5050.505)
         })
 
@@ -51,8 +45,8 @@ describe('Pool.class', () => {
             const liquidity = pool.getLiquidityForAmounts(
                 5000,
                 0,
-                Math.sqrt(0.0001),
-                Math.sqrt(0.0002),
+                0.0001,
+                0.0002,
                 1
             )
             expect(liquidity).toBeCloseTo(5050.505)

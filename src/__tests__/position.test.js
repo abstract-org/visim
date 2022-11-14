@@ -46,8 +46,8 @@ describe('Position Manager', () => {
             pool.getLiquidityForAmounts(
                 initialPositions[0].tokenA,
                 initialPositions[0].tokenB,
-                Math.sqrt(initialPositions[0].priceMin),
-                Math.sqrt(initialPositions[0].priceMax),
+                initialPositions[0].priceMin,
+                initialPositions[0].priceMax,
                 pool.curPrice
             )
         )
@@ -58,32 +58,32 @@ describe('Position Manager', () => {
             pool.getLiquidityForAmounts(
                 initialPositions[1].tokenA,
                 initialPositions[1].tokenB,
-                Math.sqrt(initialPositions[1].priceMin),
-                Math.sqrt(initialPositions[1].priceMax),
+                initialPositions[1].priceMin,
+                initialPositions[1].priceMax,
                 pool.curPrice
             )
         )
         expect(p20.left).toBeCloseTo(p1.pp)
         expect(p20.right).toBeCloseTo(p50.pp)
 
-        expect(p50.liquidity).toBe(
+        expect(p50.liquidity).toBeCloseTo(
             pool.getLiquidityForAmounts(
                 initialPositions[2].tokenA,
                 initialPositions[2].tokenB,
-                Math.sqrt(initialPositions[2].priceMin),
-                Math.sqrt(initialPositions[2].priceMax),
+                initialPositions[2].priceMin,
+                initialPositions[2].priceMax,
                 pool.curPrice
             )
         )
         expect(p50.left).toBeCloseTo(p20.pp)
         expect(p50.right).toBeCloseTo(p200.pp)
 
-        expect(p200.liquidity).toBe(
+        expect(p200.liquidity).toBeCloseTo(
             pool.getLiquidityForAmounts(
                 initialPositions[3].tokenA,
                 initialPositions[3].tokenB,
-                Math.sqrt(initialPositions[3].priceMin),
-                Math.sqrt(initialPositions[3].priceMax),
+                initialPositions[3].priceMin,
+                initialPositions[3].priceMax,
                 pool.curPrice
             )
         )
@@ -144,8 +144,8 @@ describe('Position Manager', () => {
             pool.getLiquidityForAmounts(
                 p10TokenA,
                 p10TokenB,
-                Math.sqrt(p10MinPrice),
-                Math.sqrt(p10MaxPrice),
+                p10MinPrice,
+                p10MaxPrice,
                 pool.curPrice
             )
         )
@@ -156,8 +156,8 @@ describe('Position Manager', () => {
             pool.getLiquidityForAmounts(
                 initialPositions[1].tokenA,
                 initialPositions[1].tokenB,
-                Math.sqrt(initialPositions[1].priceMin),
-                Math.sqrt(initialPositions[1].priceMax),
+                initialPositions[1].priceMin,
+                initialPositions[1].priceMax,
                 pool.curPrice
             )
         )
@@ -168,8 +168,8 @@ describe('Position Manager', () => {
             pool.getLiquidityForAmounts(
                 initialPositions[3].tokenA,
                 initialPositions[3].tokenB,
-                Math.sqrt(initialPositions[3].priceMin),
-                Math.sqrt(initialPositions[3].priceMax),
+                initialPositions[3].priceMin,
+                initialPositions[3].priceMax,
                 pool.curPrice
             )
         )
@@ -227,8 +227,8 @@ describe('Position Manager', () => {
             pool.getLiquidityForAmounts(
                 initialPositions[2].tokenA,
                 initialPositions[2].tokenB,
-                Math.sqrt(initialPositions[2].priceMin),
-                Math.sqrt(initialPositions[2].priceMax),
+                initialPositions[2].priceMin,
+                initialPositions[2].priceMax,
                 pool.curPrice
             )
         )
@@ -245,8 +245,8 @@ describe('Position Manager', () => {
             pool.getLiquidityForAmounts(
                 initialPositions[2].tokenA,
                 initialPositions[2].tokenB - removeTokenB,
-                Math.sqrt(initialPositions[2].priceMin),
-                Math.sqrt(initialPositions[2].priceMax),
+                initialPositions[2].priceMin,
+                initialPositions[2].priceMax,
                 pool.curPrice
             )
         )
@@ -290,8 +290,8 @@ describe('Position Manager', () => {
             pool.getLiquidityForAmounts(
                 initialPositions[2].tokenA,
                 initialPositions[2].tokenB,
-                Math.sqrt(initialPositions[2].priceMin),
-                Math.sqrt(initialPositions[2].priceMax),
+                initialPositions[2].priceMin,
+                initialPositions[2].priceMax,
                 pool.curPrice
             )
         )
@@ -389,8 +389,8 @@ describe('Position Manager', () => {
         investor.addBalance(tokenLeft.name, amountLeft)
         investor.addBalance(tokenRight.name, amountRight)
 
-        expect(pool.volumeToken1).toBe(17000)
-        expect(investor.balances[tokenRight.name]).toBe(3000)
+        expect(pool.volumeToken1).toBeCloseTo(17000)
+        expect(investor.balances[tokenRight.name]).toBeCloseTo(3000)
     })
 })
 
@@ -541,10 +541,10 @@ describe('Price Range Manager', () => {
         const ppAB = investor.calculatePriceRange(AB, B, A, 3)
         const ppBA = investor.calculatePriceRange(AB, A, B, 3)
 
-        expect(ppAB.min).toBe(1)
-        expect(ppAB.max).toBe(3)
+        expect(ppAB.min).toBeCloseTo(1)
+        expect(ppAB.max).toBeCloseTo(3)
         expect(ppBA.min).toBeCloseTo(0.33, 0)
-        expect(ppBA.max).toBe(1)
+        expect(ppBA.max).toBeCloseTo(1)
         expect(ppAB.native).toBe(false)
         expect(ppBA.native).toBe(true)
     })
@@ -561,10 +561,10 @@ describe('Price Range Manager', () => {
         const ppAB = investor.calculatePriceRange(AB, B, A, 2)
         const ppBA = investor.calculatePriceRange(AB, A, B, 2)
 
-        expect(ppAB.min).toBe(1)
-        expect(ppAB.max).toBe(2)
-        expect(ppBA.min).toBe(0.5)
-        expect(ppBA.max).toBe(1)
+        expect(ppAB.min).toBeCloseTo(1)
+        expect(ppAB.max).toBeCloseTo(2)
+        expect(ppBA.min).toBeCloseTo(0.5)
+        expect(ppBA.max).toBeCloseTo(1)
         expect(ppAB.native).toBe(false)
         expect(ppBA.native).toBe(true)
     })
@@ -584,10 +584,10 @@ describe('Price Range Manager', () => {
         const ppAB = investor.calculatePriceRange(AB, B, A, 2)
         const ppBA = investor.calculatePriceRange(AB, A, B, 2)
 
-        expect(ppAB.min).toBe(1)
-        expect(ppAB.max).toBe(2)
+        expect(ppAB.min).toBeCloseTo(1)
+        expect(ppAB.max).toBeCloseTo(2)
         expect(ppBA.min).toBeCloseTo(0.5, 0)
-        expect(ppBA.max).toBe(1)
+        expect(ppBA.max).toBeCloseTo(1)
         expect(ppAB.native).toBe(false)
         expect(ppBA.native).toBe(true)
     })
@@ -700,28 +700,30 @@ describe('Citation Manager', () => {
         const posMinBA = AB.pos.get(p2pp(ppBA.min))
         const posMaxBA = AB.pos.get(p2pp(ppBA.max))
 
-        expect(AB.volumeToken0).toBe(1000)
-        expect(AB.volumeToken1).toBe(1000)
-        expect(AB.curPrice).toBe(1)
-        expect(AB.pos.get(-1).liquidity).toBeCloseTo(3414, 0)
-        expect(AB.pos.get(0).liquidity).toBeCloseTo(0, 0)
-        expect(AB.pos.get(1).liquidity).toBeCloseTo(-3414, 0)
+        expect(AB.volumeToken0).toBeCloseTo(1000)
+        expect(AB.volumeToken1).toBeCloseTo(1000)
+        expect(AB.curPrice).toBeCloseTo(1)
+        expect(AB.pos.get(-1.0000000000001443).liquidity).toBeCloseTo(3414, 0)
+        expect(AB.pos.get(-1.4431436399686926e-13).liquidity).toBeCloseTo(
+            -3414,
+            0
+        )
 
         // A->B
-        expect(posMinAB.liquidity).toBeCloseTo(0)
-        expect(posMaxAB.liquidity).toBeCloseTo(-3414, 0)
+        expect(posMinAB.liquidity).toBeCloseTo(3414.2, 0)
+        expect(posMaxAB.liquidity).toBeCloseTo(-3414.2, 0)
 
-        expect(posOwnerAB.amt1).toBe(1000)
-        expect(posOwnerAB.pmin).toBe(1)
-        expect(posOwnerAB.pmax).toBe(2)
+        expect(posOwnerAB.amt1).toBeCloseTo(1000)
+        expect(posOwnerAB.pmin).toBeCloseTo(1)
+        expect(posOwnerAB.pmax).toBeCloseTo(2)
 
         // B->A
-        expect(posOwnerBA.amt0).toBe(1000)
-        expect(posOwnerBA.pmin).toBe(0.5)
-        expect(posOwnerBA.pmax).toBe(1)
+        expect(posOwnerBA.amt0).toBeCloseTo(1000)
+        expect(posOwnerBA.pmin).toBeCloseTo(0.5)
+        expect(posOwnerBA.pmax).toBeCloseTo(1)
 
-        expect(posMinBA.liquidity).toBeCloseTo(3414, 0)
-        expect(posMaxBA.liquidity).toBeCloseTo(0, 0)
+        expect(posMinBA.liquidity).toBeCloseTo(3414.2, 0)
+        expect(posMaxBA.liquidity).toBeCloseTo(-3414.2, 0)
     })
 
     it('Cites both sides with maxed out A', () => {
@@ -744,6 +746,9 @@ describe('Citation Manager', () => {
         const ppAB = investor.calculatePriceRange(AB, B, A, 2)
         const ppBA = investor.calculatePriceRange(AB, A, B, 2)
 
+        investor.citeQuest(AB, ppAB.min, ppAB.max, 0, 1000, false)
+        investor.citeQuest(AB, ppBA.min, ppBA.max, 1000, 0, true)
+
         const posOwnerAB = AB.posOwners.find(
             (p) => p.hash === investor.hash && p.amt1 === 1000
         )
@@ -757,8 +762,8 @@ describe('Citation Manager', () => {
         const posMinBA = AB.pos.get(p2pp(ppBA.min))
         const posMaxBA = AB.pos.get(p2pp(ppBA.max))
 
-        expect(AB.volumeToken0).toBe(1000)
-        expect(AB.volumeToken1).toBe(1000)
+        expect(AB.volumeToken0).toBeCloseTo(1000)
+        expect(AB.volumeToken1).toBeCloseTo(1000)
         expect(AB.curPrice).toBeCloseTo(10000)
         expect(AB.pos.get(p2pp(10000)).liquidity).toBeCloseTo(341387, 0)
         expect(AB.pos.get(p2pp(5000)).liquidity).toBeCloseTo(34, 0)
@@ -768,12 +773,12 @@ describe('Citation Manager', () => {
         expect(posMinAB.liquidity).toBeCloseTo(341387, 0)
         expect(posMaxAB.liquidity).toBeCloseTo(-341421, 0)
 
-        expect(posOwnerAB.amt1).toBe(1000)
+        expect(posOwnerAB.amt1).toBeCloseTo(1000)
         expect(posOwnerAB.pmin).toBeCloseTo(10000, 0)
         expect(posOwnerAB.pmax).toBeCloseTo(20000, 0)
 
         // B->A
-        expect(posOwnerBA.amt0).toBe(1000)
+        expect(posOwnerBA.amt0).toBeCloseTo(1000)
         expect(posOwnerBA.pmin).toBeCloseTo(5000, 0)
         expect(posOwnerBA.pmax).toBeCloseTo(10000, 0)
 
@@ -824,8 +829,8 @@ describe('Citation Manager', () => {
         expect(dryBuy[1]).toBeCloseTo(1000, 0)
         expect(drySell[1]).toBeCloseTo(1000, 0)
 
-        expect(AB.volumeToken0).toBe(1000)
-        expect(AB.volumeToken1).toBe(1000)
+        expect(AB.volumeToken0).toBeCloseTo(1000)
+        expect(AB.volumeToken1).toBeCloseTo(1000)
         expect(AB.curPrice).toBeCloseTo(0.0002)
         expect(AB.pos.get(p2pp(ppAB.min)).liquidity).toBeCloseTo(34.14, 2)
         expect(AB.pos.get(p2pp(ppAB.max)).liquidity).toBeCloseTo(-34.14, 0)
@@ -836,7 +841,7 @@ describe('Citation Manager', () => {
         expect(posMinAB.liquidity).toBeCloseTo(34.14, 0)
         expect(posMaxAB.liquidity).toBeCloseTo(-34.14, 0)
 
-        expect(posOwnerAB.amt1).toBe(1000)
+        expect(posOwnerAB.amt1).toBeCloseTo(1000)
         expect(posOwnerAB.pmin).toBeCloseTo(0.0001, 0)
         expect(posOwnerAB.pmax).toBeCloseTo(0.0002, 0)
 
@@ -844,7 +849,7 @@ describe('Citation Manager', () => {
         expect(posMinBA.liquidity).toBeCloseTo(341421, 0)
         expect(posMaxBA.liquidity).toBeCloseTo(-341421, 0)
 
-        expect(posOwnerBA.amt0).toBe(1000)
+        expect(posOwnerBA.amt0).toBeCloseTo(1000)
         expect(posOwnerBA.pmin).toBeCloseTo(0.0005, 0)
         expect(posOwnerBA.pmax).toBeCloseTo(0.0001, 0)
     })
@@ -887,8 +892,8 @@ describe('Citation Manager', () => {
         const posMinBA = AB.pos.get(p2pp(ppBA.min))
         const posMaxBA = AB.pos.get(p2pp(ppBA.max))
 
-        expect(AB.volumeToken0).toBe(1000)
-        expect(AB.volumeToken1).toBe(1000)
+        expect(AB.volumeToken0).toBeCloseTo(1000)
+        expect(AB.volumeToken1).toBeCloseTo(1000)
         expect(AB.curPrice).toBeCloseTo(5.66, 0) // was 3.69
     })
 
@@ -922,8 +927,8 @@ describe('Citation Manager', () => {
                 AB.getLiquidityForAmounts(
                     token0in,
                     token1in,
-                    Math.sqrt(ppAB.min),
-                    Math.sqrt(ppAB.max),
+                    ppAB.min,
+                    ppAB.max,
                     AB.curPrice
                 )
             )
@@ -997,8 +1002,8 @@ describe('Citation Manager', () => {
         })
 
         const priceRange = {
-            min: 0.021357788680161555,
-            max: 0.04271557736032311,
+            min: 0.02997778868016155,
+            max: 0.04271557736032315,
             native: false
         }
         investor.citeQuest(
@@ -1010,15 +1015,16 @@ describe('Citation Manager', () => {
             priceRange.native
         )
 
-        expect(agoraPra7Pool.pos.get(p2pp(agoraPra7Pool.curPrice)).pp).toBe(
-            p2pp(agoraPra7Pool.curPrice)
-        )
+        expect(
+            agoraPra7Pool.pos.get(p2pp(agoraPra7Pool.curPrice)).pp
+        ).toBeCloseTo(p2pp(agoraPra7Pool.curPrice))
 
         const priceRangeSecond = {
-            min: 0.022217770431760896,
-            max: 0.04443554086352179,
+            min: 0.03073777043176085,
+            max: 0.04443554086352175,
             native: false
         }
+
         investor.citeQuest(
             agoraPra5Pool,
             priceRangeSecond.min,
@@ -1028,10 +1034,8 @@ describe('Citation Manager', () => {
             priceRangeSecond.native
         )
 
-        console.log(agoraPra5Pool)
-
-        expect(agoraPra5Pool.pos.get(p2pp(agoraPra5Pool.curPrice)).pp).toBe(
-            p2pp(agoraPra5Pool.curPrice)
-        )
+        expect(
+            agoraPra5Pool.pos.get(p2pp(agoraPra5Pool.curPrice)).pp
+        ).toBeCloseTo(p2pp(agoraPra5Pool.curPrice))
     })
 })

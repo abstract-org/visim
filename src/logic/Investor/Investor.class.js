@@ -3,8 +3,7 @@ import HashMap from 'hashmap'
 
 import Pool from '../Pool/Pool.class'
 import Token from '../Quest/Token.class'
-import { isE10Zero, p2pp } from '../Utils/logicUtils'
-import { watcherStore } from '../Utils/watcher'
+import { isZero, p2pp, rup } from '../Utils/logicUtils'
 
 export default class Investor {
     hash = null
@@ -58,7 +57,7 @@ export default class Investor {
             return false
         }
 
-        if (isE10Zero(balance) || balance === 0) {
+        if (isZero(balance)) {
             return false
         }
 
@@ -85,7 +84,7 @@ export default class Investor {
             msg
         })
 
-        if (isE10Zero(this.balances[tokenName])) {
+        if (isZero(this.balances[tokenName])) {
             this.balances[tokenName] = 0
         }
 
@@ -106,9 +105,9 @@ export default class Investor {
         const liquidity = pool.getLiquidityForAmounts(
             amountLeft,
             amountRight,
-            Math.sqrt(priceMin),
-            Math.sqrt(priceMax),
-            Math.sqrt(pool.curPrice)
+            priceMin,
+            priceMax,
+            pool.curPrice
         )
         pool.modifyPositionSingle(p2pp(priceMin), liquidity)
         pool.modifyPositionSingle(p2pp(priceMax), -liquidity)
@@ -165,6 +164,11 @@ export default class Investor {
             native
         )
 
+        console.assert(
+            totalIn > 0,
+            `Failed opening position ${priceMin}-${priceMax} in ${crossPool.name}`
+        )
+
         if (
             typeof token0Amt === 'undefined' ||
             typeof token1Amt === 'undefined' ||
@@ -216,6 +220,7 @@ export default class Investor {
         const baseUnitName = crossPool.name
         const baseUnitCompName = `${citedQuestPool.tokenRight}-${citingQuestPool.tokenRight}`
 
+        const errMargin = 0.0000000000001
         let min = 0
         let max = 0
 
@@ -224,41 +229,43 @@ export default class Investor {
         // position we're planning to open in pool B/A is B for A (native) or "on the left side" of the current price
         // B for A left position here [0.5...1(curPrice)...2] right position here A for B
         // right position min cannot be lower than curPrice, adapt if necessary
-        const nativePos = baseUnitName !== baseUnitCompName
+        const native = baseUnitName !== baseUnitCompName
 
-        min = nativePos ? 1 / unitPrice : unitPrice
-        max = nativePos ? 1 / unitPrice : unitPrice
-
-        // Try to correct rounding errors
-        if (nativePos) {
-            min -= 0.0000000000000000001
-            max -= 0.0000000000000000001
-        }
+        min = native ? 1 / unitPrice : unitPrice
+        max = native ? 1 / unitPrice : unitPrice
 
         const dryBuyNonNative = crossPool.dryBuy(Infinity)
         const drySellNative = crossPool.drySell(Infinity)
         const freeMoveBuy = dryBuyNonNative[0] === 0 && dryBuyNonNative[1] === 0
         const freeMoveSell = drySellNative[0] === 0 && drySellNative[1] === 0
 
+        if (native) {
+            min -= errMargin
+            max -= errMargin
+        } else {
+            min += errMargin * Number.EPSILON
+            max += errMargin * Number.EPSILON
+        }
+
         // If we can move for free towards requested price, set that price as current to calculate position location properly
-        if (nativePos && max > crossPool.curPrice && freeMoveSell) {
+        if (native && max > crossPool.curPrice && freeMoveSell) {
             crossPool.curPrice = max
-        } else if (!nativePos && min < this.curPrice && freeMoveBuy) {
+        } else if (!native && min < crossPool.curPrice && freeMoveBuy) {
             crossPool.curPrice = min
         }
 
-        if (nativePos && max <= crossPool.curPrice) {
+        if (native && max <= crossPool.curPrice) {
             min = min / multiplier
-        } else if (nativePos && max > crossPool.curPrice) {
-            max = crossPool.curPrice
+        } else if (native && max > crossPool.curPrice) {
+            max = crossPool.curPrice // Cannot open position non-native below curPrice
             min = min / multiplier
-        } else if (!nativePos && min >= crossPool.curPrice) {
+        } else if (!native && min >= crossPool.curPrice) {
             max = max * multiplier
-        } else if (!nativePos && min < crossPool.curPrice) {
-            min = crossPool.curPrice
+        } else if (!native && min < crossPool.curPrice) {
+            min = crossPool.curPrice // Likewise cannot open native position with priceMax above current price
             max = max * multiplier
         }
 
-        return { min: min, max: max, native: nativePos }
+        return { min: min, max: max, native: native }
     }
 }

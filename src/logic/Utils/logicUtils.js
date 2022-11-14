@@ -159,13 +159,21 @@ export const isE10Zero = (amount) => {
 }
 
 export const isNearZero = (amount) => {
-    return (
-        0 ===
-        parseInt(
-            amount.toFixed(10).replace(/\D/g, '').split('').slice(0, 8).join('')
-        )
-    )
+    return matchFloat16(amount) && matchFloat16(amount)[0] >= 16
 }
+
+const matchFloat16 = (amount) =>
+    parseFloat(amount)
+        .toPrecision(16)
+        .match(/\.(0*)/)
+
+const calcFloatingPoints = (amount) =>
+    parseFloat(amount)
+        .toPrecision(16)
+        .match(/\.([0-9])*/) &&
+    parseFloat(amount)
+        .toPrecision(16)
+        .match(/\.([0-9])*/)[0].length
 
 export const calcGrowthRate = (curr, prev) => {
     return ((curr - prev) / prev) * 100
@@ -203,7 +211,7 @@ export const getPathActions = (path, router) => {
             action = 'buy'
         }
 
-        out.push({ pool: curPool, action })
+        out.push({ pool: curPool, action, path })
     }
 
     return out
@@ -212,4 +220,33 @@ export const getPathActions = (path, router) => {
 export const hashmapToObj = (hm) =>
     hm.entries().reduce((o, [k, v]) => ({ ...o, [k]: v }), {})
 
-export const isZero = (num) => num === 0 || isE10Zero(num) || isNearZero(num)
+export const isZero = (num) => num === 0 || isNearZero(num)
+
+export const rup = (num) => {
+    if (num >= 0.1) {
+        return num
+    }
+
+    const floatPoints = parseFloat(num)
+        .toFixed(16)
+        .match(/\.([0-9]*)/)
+
+    if (floatPoints && floatPoints[1]) {
+        let fpNum = floatPoints[1]
+        const reverseFloatPoints = fpNum.split('').reverse().join('')
+        const trailingZeroesMatch = reverseFloatPoints.match(/([1-9]+)/)
+        if (trailingZeroesMatch && trailingZeroesMatch.index > 0) {
+            num = reverseFloatPoints.substring(0, trailingZeroesMatch.index + 1)
+        }
+
+        const len = num.length
+        if (len >= 16) {
+            const p14 = num.substring(0, 14)
+            num = '0.' + p14 + '99'
+        } else {
+            num = '0.' + num
+        }
+    }
+
+    return parseFloat(num)
+}

@@ -8,12 +8,10 @@ import {
     calcGrowthRate,
     formSwapData,
     getCombinedSwaps,
-    isE10Zero,
-    isNearZero,
     isZero,
     priceDiff
 } from '../Utils/logicUtils'
-import { totalMissingTokens, totalSingleMissingToken } from '../Utils/tokenCalc'
+import { totalSingleMissingToken } from '../Utils/tokenCalc'
 
 const _OPS_TIME_INITIAL = {
     simulateQuestCreation: { time: 0, ops: 0, timeStarted: 0 },
@@ -408,6 +406,8 @@ class Generator {
             `${singleQuest.name}-${citingQuest.name}`
         )
 
+        console.assert(!crossPool, 'cross pool %s exist', "doesn't")
+
         if (!crossPool) {
             const startingPrice = citingPool.curPrice / singleUsdcPool.curPrice
             crossPool = investor.createPool(
@@ -446,6 +446,17 @@ class Generator {
             priceRange.native
         )
         const posAfter = [...crossPool.pos.values()]
+
+        console.assert(
+            crossPool.name === `${singleQuest.name}-${citingQuest.name}`,
+            'Cross pool %s as expected',
+            'didn\t'
+        )
+        console.assert(
+            posBefore.length === posAfter.length,
+            'Positions %s change',
+            "didn't"
+        )
 
         if (
             posBefore.length === posAfter.length ||
@@ -674,6 +685,8 @@ class Generator {
                 `${citedQuest.tokenLeft}-${citingQuest.name}`
             )
 
+            console.assert(!crossPool, 'cross pool %s exist', "doesn't")
+
             if (!crossPool) {
                 const startingPrice = citingPool.curPrice / citedPool.curPrice
                 crossPool = investor.createPool(
@@ -703,6 +716,11 @@ class Generator {
                 crossPool.tokenLeft === citedQuest.name ? 0 : citeOtherAmount
             const citeAmount1 = citeAmount0 === 0 ? citeOtherAmount : 0
 
+            console.assert(
+                crossPool.name === `${this.#DEFAULT_TOKEN}-${citedQuest.name}`
+            )
+
+            const posBefore = [...crossPool.pos.values()]
             const totalInOut = investor.citeQuest(
                 crossPool,
                 priceRange.min,
@@ -710,6 +728,18 @@ class Generator {
                 citeAmount0,
                 citeAmount1,
                 priceRange.native
+            )
+            const posAfter = [...crossPool.pos.values()]
+
+            console.assert(
+                crossPool.name === `${citedQuest.name}-${citingQuest.name}`,
+                'Cross pool %s as expected',
+                'didn\t'
+            )
+            console.assert(
+                posBefore.length === posAfter.length,
+                'Positions %s change',
+                "didn't"
             )
 
             if (!totalInOut) {
