@@ -155,8 +155,10 @@ export default class Router {
         const pathWithActionsCaps = this.getPathWithActionCaps(pathActions)
         if (!pathWithActionsCaps || !pathWithActionsCaps.length) return 0
 
-        const maxAcceptable =
-            this.calculateAcceptableForCappedPathActions(pathWithActionsCaps)
+        const maxAcceptable = this.calculateAcceptableForCappedPathActions(
+            pathWithActionsCaps,
+            path
+        )
 
         return maxAcceptable > amountIn ? amountIn : maxAcceptable + ERR_MARGIN // @ostap forgive me....
     }
@@ -210,10 +212,10 @@ export default class Router {
     /**
      * @description Iterates path from the end verifying each step throughput
      * @param {StepWithCaps[]} pathWithActionCaps
-     * @param {boolean} shouldDrySwap
+     * @param {string[]} path - list of token names, needed to debug with _PROTO_SWAPS
      * @returns {number|*|number}
      */
-    calculateAcceptableForCappedPathActions(pathWithActionCaps) {
+    calculateAcceptableForCappedPathActions(pathWithActionCaps, path = []) {
         this._PROTO_SWAPS = []
         if (!Array.isArray(pathWithActionCaps) || !pathWithActionCaps.length) {
             return 0
@@ -239,7 +241,7 @@ export default class Router {
                 carryOver = newAmount
                 // ###DEBUG
                 this._PROTO_SWAPS.push({
-                    path: this._PRICED_PATHS[0].path,
+                    path,
                     pool: step.pool.name,
                     op: zeroForOne ? 'SHOULD buy' : 'SHOULD sell',
                     in: Math.abs(newAmount),
@@ -261,7 +263,7 @@ export default class Router {
 
                 // ###DEBUG
                 this._PROTO_SWAPS.push({
-                    path: this._PRICED_PATHS[0].path,
+                    path,
                     pool: step.pool.name,
                     op: zeroForOne ? 'SHOULD buy' : 'SHOULD sell',
                     in: Math.abs(newAmount),
@@ -288,7 +290,7 @@ export default class Router {
 
                 // ###DEBUG
                 this._PROTO_SWAPS.push({
-                    path: this._PRICED_PATHS[0].path,
+                    path,
                     pool: step.pool.name,
                     op: zeroForOne ? 'SHOULD buy' : 'SHOULD sell',
                     in: Math.abs(newT),

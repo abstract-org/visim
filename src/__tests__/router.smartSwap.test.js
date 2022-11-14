@@ -556,7 +556,8 @@ describe('smartSwap()', () => {
 
             // calc amts
             const res = router.calculateAcceptableForCappedPathActions(
-                pathWithActionCapsSnapshot
+                pathWithActionCapsSnapshot,
+                ['USDC', agoraQuest.name, pra5Quest.name, pra3Quest.name]
             )
 
             const forcedPath = [
