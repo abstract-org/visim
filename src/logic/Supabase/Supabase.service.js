@@ -1,9 +1,38 @@
 import {createClient} from '@supabase/supabase-js'
+import globalState from "../GlobalState";
 
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL
 const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY
 
 export const SupabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+
+export const aggregateDataForSnapshot = (globalState) => {
+    const currentDate = new Date();
+
+    const investors = globalState.investorStore.investors.map(investorAddress => {
+        const {name, hash, type} = globalState.investors.get(investorAddress);
+
+        return {
+            name,
+            hash,
+            type,
+            createdAt: currentDate
+        };
+    });
+
+    const pools = globalState.poolStore.pools.map(poolName => {
+        const {name, hash, type, tokenLeft, tokenRight} = globalState.pools.get(poolName);
+
+        return {
+            name,
+            hash,
+            type,
+            tokenO: tokenLeft,
+            token1: tokenRight,
+            createdAt: currentDate
+        };
+    });
+};
 
 export const fetchSnapshots = async () => {
     let {data, error, status} = await SupabaseClient
