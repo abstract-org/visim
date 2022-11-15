@@ -1,4 +1,5 @@
 import { Menubar } from 'primereact/menubar'
+import { ToggleButton } from 'primereact/togglebutton'
 import React from 'react'
 
 export const TopMenu = (props) => {
@@ -23,10 +24,26 @@ export const TopMenu = (props) => {
             command: () => {
                 props.setMoneyflowVisible(!props.moneyflowVisible)
             }
+        },
+        {
+            label: 'Expert Mode',
+            icon: ''
         }
     ]
 
     const start = <React.Fragment />
+    const end = (
+        <React.Fragment>
+            <ToggleButton
+                checked={props.isExpert}
+                onChange={(e) => props.setExpertMode(e.value)}
+                onIcon="pi pi-prime"
+                offIcon="pi pi-user"
+                onLabel="PRO"
+                offLabel="NRM"
+            />
+        </React.Fragment>
+    )
 
-    return <Menubar start={start} model={items} />
+    return <Menubar start={start} end={end} model={items} />
 }
