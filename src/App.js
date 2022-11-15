@@ -1,23 +1,23 @@
 import 'primeflex/primeflex.css'
 import 'primeicons/primeicons.css'
-import {Card} from 'primereact/card'
+import { Card } from 'primereact/card'
 import 'primereact/resources/primereact.min.css'
 import 'primereact/resources/themes/lara-light-indigo/theme.css'
-import {useEffect, useRef, useState} from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-import {KnowledgeGraphV2} from './components/KnowledgeGraphV2'
-import {MoneyFlowSidebar} from './components/MoneyFlowSidebar'
-import {MoneyLeakBar} from './components/MoneyLeakBar'
-import {PoolChart} from './components/PoolChart'
-import {CapTableSidebar} from './logic/CapTable/CapTable.component'
-import {GeneratorRunner} from './logic/Generators/Generator.components'
+import { KnowledgeGraphV2 } from './components/KnowledgeGraphV2'
+import { MoneyFlowSidebar } from './components/MoneyFlowSidebar'
+import { MoneyLeakBar } from './components/MoneyLeakBar'
+import { PoolChart } from './components/PoolChart'
+import { CapTableSidebar } from './logic/CapTable/CapTable.component'
+import { GeneratorRunner } from './logic/Generators/Generator.components'
 import useGeneratorStore from './logic/Generators/generator.store'
 import {
     InvestorModule,
     InvestorPoolBalance,
     InvestorSelector
 } from './logic/Investor/Investor.components'
-import {LogsModule} from './logic/Logs/Logs'
+import { LogsModule } from './logic/Logs/Logs'
 import {
     KnowledgeGraphStats,
     PoolChartStats,
@@ -26,11 +26,11 @@ import {
     SwapMode,
     SwapModule
 } from './logic/Pool/Pool.components'
-import {QuestCitation, QuestCreation} from './logic/Quest/Quest.components'
-import {StatesSidebar} from './logic/States/StatesSidebar.component'
-import {TopMenu} from './logic/TopMenu.component'
-import {isWebDebug} from './logic/Utils/uiUtils'
-import {SupabaseAuthProvider} from "./logic/Supabase/Supabase.components";
+import { QuestCitation, QuestCreation } from './logic/Quest/Quest.components'
+import { StatesSidebar } from './logic/States/StatesSidebar.component'
+import { TopMenu } from './logic/TopMenu.component'
+import { isWebDebug } from './logic/Utils/uiUtils'
+import { SupabaseAuthProvider } from "./logic/Supabase/Supabase.components";
 
 export default function Home() {
     const [statesVisible, setStatesVisible] = useState(false)
