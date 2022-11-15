@@ -5,11 +5,11 @@ import 'primereact/resources/primereact.min.css'
 import 'primereact/resources/themes/lara-light-indigo/theme.css'
 import { useEffect, useRef, useState } from 'react'
 
+import { CapTableSidebar } from './components/CapTable'
 import { KnowledgeGraphV2 } from './components/KnowledgeGraphV2'
 import { MoneyFlowSidebar } from './components/MoneyFlowSidebar'
 import { MoneyLeakBar } from './components/MoneyLeakBar'
 import { PoolChart } from './components/PoolChart'
-import { CapTableSidebar } from './logic/CapTable/CapTable.component'
 import { GeneratorRunner } from './logic/Generators/Generator.components'
 import useGeneratorStore from './logic/Generators/generator.store'
 import {
@@ -29,7 +29,7 @@ import {
 import { QuestCitation, QuestCreation } from './logic/Quest/Quest.components'
 import { StatesSidebar } from './logic/States/StatesSidebar.component'
 import { TopMenu } from './logic/TopMenu.component'
-import { isWebDebug } from './logic/Utils/uiUtils'
+import useExpertModeStore from './stores/expertMode.store'
 
 export default function Home() {
     const [statesVisible, setStatesVisible] = useState(false)
@@ -37,6 +37,8 @@ export default function Home() {
     const [moneyflowVisible, setMoneyflowVisible] = useState(false)
     const needScrollUp = useGeneratorStore((state) => state.needScrollUp)
     const setNeedScrollUp = useGeneratorStore((state) => state.setNeedScrollUp)
+    const setExpertMode = useExpertModeStore((state) => state.setExpertMode)
+    const isExpert = useExpertModeStore((state) => state.isExpert)
     const graphCard = useRef(null)
 
     useEffect(() => {
@@ -57,9 +59,11 @@ export default function Home() {
                         setCapTableVisible={setCapTableVisible}
                         moneyflowVisible={moneyflowVisible}
                         setMoneyflowVisible={setMoneyflowVisible}
+                        isExpert={isExpert}
+                        setExpertMode={setExpertMode}
                     />
                 </div>
-                {isWebDebug() && (
+                {isExpert && (
                     <div className="col-12">
                         <MoneyLeakBar />
                     </div>
