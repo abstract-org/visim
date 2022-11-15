@@ -7,6 +7,7 @@ import { ScrollPanel } from 'primereact/scrollpanel'
 import { Slider } from 'primereact/slider'
 import React, { useRef, useState } from 'react'
 
+import useExpertModeStore from '../../stores/expertMode.store'
 import globalState from '../GlobalState'
 import useInvestorStore from '../Investor/investor.store'
 import useLogsStore from '../Logs/logs.store'
@@ -71,8 +72,7 @@ export const QuestCitation = () => {
     const swaps = usePoolStore((state) => state.swaps)
     const logObjs = useLogsStore((state) => state.logObjs)
     const addLogObj = useLogsStore((state) => state.addLogObj)
-    const proMode = useQuestStore((state) => state.proMode)
-    const setProMode = useQuestStore((state) => state.setProMode)
+    const isExpert = useExpertModeStore((state) => state.isExpert)
     const activeQuest = useQuestStore((state) => state.active)
 
     const msgs = useRef(null)
@@ -218,15 +218,6 @@ export const QuestCitation = () => {
         })
     }
 
-    const handleModifyParameters = () => {
-        setProMode(!proMode)
-        globalState.questStore.proMode = !proMode
-
-        if (!proMode) {
-            handleCitationRange(5)
-        }
-    }
-
     const showParentError = (obj) => {
         console.log('No active investor')
         msgs.current.show(obj)
@@ -255,16 +246,6 @@ export const QuestCitation = () => {
                     onClick={handleCiteQuest}
                 >
                     Cite Quest
-                </Button>
-            </div>
-            <div className="flex justify-content-center mt-2">
-                <Button
-                    className={`${
-                        proMode ? 'p-button-outlined' : 'p-button-text'
-                    } p-button-secondary`}
-                    onClick={handleModifyParameters}
-                >
-                    Modify Parameters
                 </Button>
             </div>
             <div>
@@ -344,7 +325,7 @@ export const CitingQuestLiquidity = (props) => {
     const investor = globalState.investors.get(activeInvestor)
     const activeQuest = useQuestStore((state) => state.active)
     const swaps = usePoolStore((state) => state.swaps)
-    const proMode = useQuestStore((state) => state.proMode)
+    const isExpert = useExpertModeStore((state) => state.isExpert)
     const msgs = useRef(null)
 
     if (props.selectedQuests.length <= 0) {
@@ -412,7 +393,7 @@ export const CitingQuestLiquidity = (props) => {
                     </span>
                 </div>
             </div>
-            {proMode ? (
+            {isExpert ? (
                 <React.Fragment>
                     <CitationRangeSlider
                         citationRange={props.citationRange}
