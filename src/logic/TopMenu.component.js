@@ -33,7 +33,7 @@ export const TopMenu = (props) => {
 
     const onLoginClick = async () => {
         try {
-            const {error} = await signIn({email: 'nikita@agora-labs.com'});
+            const {error} = await signIn({email: ''});
 
             if (!error) {
                 toast.current.show({
