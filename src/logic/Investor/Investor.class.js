@@ -260,6 +260,16 @@ export default class Investor {
             max = max * multiplier
         }
 
+        console.assert(
+            min < max,
+            `Calculated price range incorrectly: min(${min})-max(${max}) multiplier ${multiplier}`
+        )
+        if (min > max) {
+            console.error(crossPool)
+            console.error(citingQuestPool)
+            console.error(citedQuestPool)
+        }
+
         return { min: min, max: max, native: nativePos }
     }
 }
