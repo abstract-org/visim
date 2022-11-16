@@ -79,10 +79,10 @@ export default function Home() {
                 />
                 <div className="col-8">
                     <Card className="h-full">
-                        <PoolSelector/>
-                        <PoolChartStats/>
-                        <PoolChart height={215}/>
-                        <PoolPositions/>
+                        <PoolSelector />
+                        <PoolChartStats />
+                        <PoolChart height={215} />
+                        <PoolPositions />
                     </Card>
                 </div>
                 <div className="col-4">
@@ -91,21 +91,21 @@ export default function Home() {
                             <div className="grid">
                                 <div className="col-10">
                                     <InvestorModule>
-                                        <InvestorSelector/>
+                                        <InvestorSelector />
                                     </InvestorModule>
                                 </div>
                                 <div className="col-2 flex">
-                                    <SwapMode/>
+                                    <SwapMode />
                                 </div>
                             </div>
                             <div className="grid">
                                 <div className="col-12">
-                                    <InvestorPoolBalance/>
+                                    <InvestorPoolBalance />
                                 </div>
                             </div>
                             <div className="grid">
                                 <div className="col-12">
-                                    <SwapModule/>
+                                    <SwapModule />
                                 </div>
                             </div>
                         </div>
@@ -118,12 +118,12 @@ export default function Home() {
                         <div className="grid">
                             <div className="col-12" ref={graphCard}>
                                 <h2>Knowledge Graph</h2>
-                                <KnowledgeGraphStats/>
+                                <KnowledgeGraphStats />
                             </div>
                         </div>
                         <div className="grid">
                             <div className="col-12 h-full">
-                                <KnowledgeGraphV2/>
+                                <KnowledgeGraphV2 />
                             </div>
                         </div>
                     </Card>
@@ -131,12 +131,12 @@ export default function Home() {
                 <div className="col-4 pr-3 pl-3">
                     <div className="grid">
                         <Card className="col-12 w-full h-full">
-                            <QuestCreation/>
+                            <QuestCreation />
                         </Card>
                     </div>
                     <div className="grid mt-2">
                         <Card className="col-12 w-full h-full">
-                            <QuestCitation/>
+                            <QuestCitation />
                         </Card>
                     </div>
                 </div>
@@ -145,7 +145,7 @@ export default function Home() {
             <div className="grid">
                 <div className="col-12">
                     <Card>
-                        <LogsModule/>
+                        <LogsModule />
                     </Card>
                 </div>
             </div>
