@@ -1,11 +1,75 @@
 import { BlockUI } from 'primereact/blockui'
 import { Button } from 'primereact/button'
 import { Message } from 'primereact/message'
-import { useRef } from 'react'
+import React, { useRef } from 'react'
 
+import useExpertModeStore from '../../stores/expertMode.store'
+import { AceEditorWrapped } from './AceEditor'
 import { InPlaceElement } from './InPlaceComponents'
 
 export const InvestorModuleComponent = (props) => {
+    const isExpert = useExpertModeStore((state) => state.isExpert)
+
+    const aliasAlert = useRef(null)
+    const userMode = <UserModeComponent {...props} />
+    const expertMode = <ExpertModeComponent {...props} />
+
+    const CurrentMode = isExpert ? expertMode : userMode
+    return (
+        <React.Fragment>
+            <div className="flex flex-column gen-card">
+                <div className="header flex">
+                    <div className="flex flex-grow-1">
+                        <span className="inplace-static-text">Investor -</span>
+                        <div className="flex flex-grow-none">
+                            <InPlaceElement
+                                id="invGenName"
+                                active={true}
+                                type="text"
+                                element="input"
+                                handleChange={props.handleChange}
+                                state={props.state}
+                                style={{ width: '14rem' }}
+                            />
+                        </div>
+                        <div className="flex flex-grow-1 justify-content-end">
+                            <Message
+                                className="alias-alert"
+                                severity="error"
+                                text="Alias is required"
+                                ref={aliasAlert}
+                                style={{ display: 'none' }}
+                            />
+                            <div className="mr-3"></div>
+                            <Button
+                                icon="pi pi-trash"
+                                className="w-2rem h-2rem p-button-danger"
+                                onClick={() =>
+                                    props.handleDelete(props.state.invGenAlias)
+                                }
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div id="editorInv">{CurrentMode}</div>
+            </div>
+        </React.Fragment>
+    )
+}
+
+const ExpertModeComponent = (props) => {
+    const onChange = (newValue) => {
+        const objStr = JSON.parse(newValue)
+        const newState = { ...objStr }
+        props.handleChange(newState)
+    }
+
+    const strConfig = JSON.stringify(props.state, null, 2)
+
+    return <AceEditorWrapped state={strConfig} onChange={onChange} />
+}
+
+const UserModeComponent = (props) => {
     const quests = props.quests
     const questConfigs = props.questConfigs
 
@@ -41,42 +105,8 @@ export const InvestorModuleComponent = (props) => {
         value: el
     }))
 
-    const aliasAlert = useRef(null)
     return (
-        <div className="flex flex-column gen-card">
-            <div className="header flex">
-                <div className="flex flex-grow-1">
-                    <span className="inplace-static-text">Investor -</span>
-                    <div className="flex flex-grow-none">
-                        <InPlaceElement
-                            id="invGenName"
-                            active={true}
-                            type="text"
-                            element="input"
-                            handleChange={props.handleChange}
-                            state={props.state}
-                            style={{ width: '14rem' }}
-                        />
-                    </div>
-                    <div className="flex flex-grow-1 justify-content-end">
-                        <Message
-                            className="alias-alert"
-                            severity="error"
-                            text="Alias is required"
-                            ref={aliasAlert}
-                            style={{ display: 'none' }}
-                        />
-                        <div className="mr-3"></div>
-                        <Button
-                            icon="pi pi-trash"
-                            className="w-2rem h-2rem p-button-danger"
-                            onClick={() =>
-                                props.handleDelete(props.state.invGenAlias)
-                            }
-                        />
-                    </div>
-                </div>
-            </div>
+        <React.Fragment>
             <div className="column flex">
                 <span className="inplace-static-text">
                     Daily probability to spawn
@@ -492,6 +522,6 @@ export const InvestorModuleComponent = (props) => {
                     />
                 </BlockUI>
             </div>
-        </div>
+        </React.Fragment>
     )
 }
