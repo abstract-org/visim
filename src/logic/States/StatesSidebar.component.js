@@ -27,7 +27,6 @@ import {
     sanitizeSnapshot
 } from './states.service'
 import { uploadStateTo } from './upload.service'
-import { aggregateAndStoreDataForSnapshot, uploadLogs } from '../Supabase/Supabase.service';
 const overrideSelector = (state) => state.override
 
 export const StatesSidebar = (props) => {
@@ -71,27 +70,6 @@ const StatesTable = (props) => {
     })
     const [newStateName, setNewStateName] = useState('')
     const toast = useRef(null)
-
-    const saveStateToDb = async () => {
-        try {
-            const stateId = generateCurrentStateId()
-            const stateDetails = aggregateSnapshotTotals({
-                stateId,
-                stateName: newStateName,
-                state: globalState,
-                scenarioId
-            });
-
-            await aggregateAndStoreDataForSnapshot({
-                stateId,
-                stateName: newStateName,
-                state: globalState,
-                scenarioId
-            });
-        } catch (e) {
-
-        }
-    };
 
     const saveCurrentState = async () => {
         const stateId = generateCurrentStateId()
@@ -269,13 +247,6 @@ const StatesTable = (props) => {
                     label={`Save state`}
                     className="p-button-success mr-2"
                     onClick={saveCurrentState}
-                />
-                <Button
-                    icon="pi pi-save"
-                    iconPos="left"
-                    label={`Save to DB`}
-                    className="p-button-success mr-2"
-                    onClick={saveStateToDb}
                 />
             </div>
         )
