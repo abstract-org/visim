@@ -27,7 +27,7 @@ import {
     sanitizeSnapshot
 } from './states.service'
 import { uploadStateTo } from './upload.service'
-import {uploadLogs} from '../Supabase/Supabase.service';
+import { aggregateAndStoreDataForSnapshot, uploadLogs } from '../Supabase/Supabase.service';
 const overrideSelector = (state) => state.override
 
 export const StatesSidebar = (props) => {
@@ -82,9 +82,12 @@ const StatesTable = (props) => {
                 scenarioId
             });
 
-            const logs = globalState.logStore;
-
-            console.log('logs: ', globalState);
+            await aggregateAndStoreDataForSnapshot({
+                stateId,
+                stateName: newStateName,
+                state: globalState,
+                scenarioId
+            });
         } catch (e) {
 
         }
@@ -270,7 +273,7 @@ const StatesTable = (props) => {
                 <Button
                     icon="pi pi-save"
                     iconPos="left"
-                    label={`Save Supabase`}
+                    label={`Save to DB`}
                     className="p-button-success mr-2"
                     onClick={saveStateToDb}
                 />
