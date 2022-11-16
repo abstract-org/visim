@@ -62,7 +62,7 @@ export default function Home() {
                 </div>
                 {isWebDebug() && (
                     <div className="col-12">
-                        <MoneyLeakBar/>
+                        <MoneyLeakBar />
                     </div>
                 )}
                 <StatesSidebar
@@ -141,7 +141,7 @@ export default function Home() {
                     </div>
                 </div>
             </div>
-            <GeneratorRunner/>
+            <GeneratorRunner />
             <div className="grid">
                 <div className="col-12">
                     <Card>
