@@ -80,7 +80,7 @@ const StatesTable = (props) => {
                 stateId,
                 stateName: newStateName,
                 state: globalState,
-                scenarioId
+                scenarioId: 1
             });
         } catch (e) {
 
