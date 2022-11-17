@@ -1,10 +1,10 @@
-export class InvestorDto {
+export class QuestDto {
     /** @type {number} */
     id
+    /** @type {number} */
+    author_id
     /** @type {string} */
     name
-    /** @type {string} */
-    type
     /** @type {string} */
     hash
     /** @type {Date} */
@@ -12,8 +12,8 @@ export class InvestorDto {
 
     constructor(data) {
         this.id = data.id
+        this.author_id = data.author_id
         this.name = data.name
-        this.type = data.type
         this.hash = data.hash
         this.created_at = data.created_at
     }
@@ -21,35 +21,35 @@ export class InvestorDto {
     toObj() {
         return {
             id: this.id,
+            author_id: this.author_id,
             name: this.name,
-            type: this.type,
             hash: this.hash,
             created_at: this.created_at
         }
     }
 }
 
-export class InvestorUploadDto {
+export class QuestUploadDto {
+    /** @type {number} */
+    author_id
     /** @type {string} */
     name
-    /** @type {string} */
-    type
     /** @type {string} */
     hash
     /** @type {Date} */
     created_at
 
-    constructor(data) {
+    constructor(data, investorMappings) {
+        this.author_id = investorMappings.get(data.name) // returns investor_id
         this.name = data.name
-        this.type = data.type
-        this.hash = data.hash
+        this.hash = data.hash || '0x0000'
         this.created_at = data.created_at || new Date()
     }
 
     toObj() {
         return {
+            author_id: this.author_id,
             name: this.name,
-            type: this.type,
             hash: this.hash,
             created_at: this.created_at
         }
