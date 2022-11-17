@@ -43,7 +43,7 @@ export class InvestorUploadDto {
         this.name = data.name
         this.type = data.type
         this.hash = data.hash
-        this.created_at = data.created_at
+        this.created_at = data.created_at || new Date()
     }
 
     toObj() {

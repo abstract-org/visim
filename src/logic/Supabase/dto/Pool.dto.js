@@ -2,10 +2,6 @@ import Pool from '../../Pool/Pool.class'
 import convertObjToHashMap from '../../Utils/serializer'
 
 export class PoolDto {
-    /** @type {string} */
-    /** @type {number} */
-    /** @type {boolean} */
-
     /** @type {number} */
     id
     /** @type {string} */
@@ -62,12 +58,6 @@ export class PoolDto {
 
 export class PoolUploadDto {
     /** @type {string} */
-    /** @type {number} */
-    /** @type {boolean} */
-
-    /** @type {number} */
-    id
-    /** @type {string} */
     name
     /** @type {string} */
     token0
@@ -81,13 +71,12 @@ export class PoolUploadDto {
     created_at
 
     constructor(data) {
-        this.id = data.id
         this.name = data.name
         this.token0 = data.tokenLeft
         this.token1 = data.tokenRight
         this.type = data.type
         this.hash = data.hash || 'hash'
-        this.created_at = data.created_at
+        this.created_at = data.created_at || new Date()
     }
 
     toObj() {
