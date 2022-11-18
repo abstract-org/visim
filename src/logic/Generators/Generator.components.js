@@ -508,7 +508,6 @@ export const InvestorRandomGenerator = () => {
 export const GenCardInvestor = (props) => {
     const questConfigs = useGeneratorStore((state) => state.questConfigs)
     const quests = useQuestStore((state) => state.quests)
-    const isExpert = useExpertModeStore((state) => state.isExpert)
 
     const handleChange = (evt) => {
         if (
@@ -528,12 +527,18 @@ export const GenCardInvestor = (props) => {
         )
     }
 
-    const handleChangeExpert = (obj) => {
-        const newState = { ...obj }
-        props.updateInvConfig(newState)
+    const handleChangeExpert = (strState) => {
+        let objState
+        try {
+            objState = JSON.parse(strState)
+        } catch (e) {
+            return
+        }
+
+        props.updateInvConfig(objState)
         globalState.generatorStore.invConfigs = updateStateInvestorConfig(
             globalState.generatorStore.invConfigs,
-            newState
+            objState
         )
     }
 
@@ -548,8 +553,9 @@ export const GenCardInvestor = (props) => {
     return (
         <InvestorModuleComponent
             state={props.state}
-            handleChange={isExpert ? handleChangeExpert : handleChange}
+            handleChange={handleChange}
             handleDelete={handleDelete}
+            handleChangeExpert={handleChangeExpert}
             questConfigs={questConfigs}
             quests={quests}
         />
@@ -601,7 +607,6 @@ export const QuestRandomGenerator = () => {
 }
 
 export const GenCardQuest = (props) => {
-    const isExpert = useExpertModeStore((state) => state.isExpert)
     const quests = useQuestStore((state) => state.quests)
 
     const handleChange = (evt) => {
@@ -622,12 +627,19 @@ export const GenCardQuest = (props) => {
         )
     }
 
-    const handleChangeExpert = (obj) => {
-        const newState = { ...obj }
-        props.updateQuestConfig(newState)
+    const handleChangeExpert = (strState) => {
+        let objState
+        try {
+            objState = JSON.parse(strState)
+            console.log(objState)
+        } catch (e) {
+            return
+        }
+
+        props.updateQuestConfig(objState)
         globalState.generatorStore.questConfigs = updateStateQuestConfig(
             globalState.generatorStore.questConfigs,
-            newState
+            objState
         )
     }
 
@@ -642,8 +654,9 @@ export const GenCardQuest = (props) => {
     return (
         <QuestModuleComponent
             state={props.state}
-            handleChange={isExpert ? handleChangeExpert : handleChange}
+            handleChange={handleChange}
             handleDelete={handleDelete}
+            handleChangeExpert={handleChangeExpert}
             quests={quests}
         />
     )
