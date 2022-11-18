@@ -101,13 +101,9 @@ export default class Router {
                     amountIn,
                     pricedPath.path
                 )
-                console.log(
-                    'seeking proper amt in',
-                    properAmountIn,
-                    pricedPath.path
-                )
+
                 if (!isZero(properAmountIn)) {
-                    //console.log('properAmountIn() > 0 loop', properAmountIn)
+                    console.log('properAmountIn() > 0 loop', properAmountIn)
                     pathToSwap = pricedPath.path
                     break
                 }
