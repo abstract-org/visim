@@ -17,10 +17,11 @@ const renderSwitch = (param, props) => {
 }
 
 export const InPlaceElement = (props) => {
+    const defaultValue = props.type === 'number' ? 0 : ''
     return (
         <Inplace active={props.active} closable onToggle={props.onToggle}>
             <InplaceDisplay style={{ ...props.displayStyle }}>
-                {props.display}
+                {props.display || defaultValue}
             </InplaceDisplay>
             <InplaceContent>
                 {renderSwitch(props.element, props)}
@@ -30,11 +31,12 @@ export const InPlaceElement = (props) => {
 }
 
 export const PresetInPlaceInput = (props) => {
+    const defaultValue = props.type === 'number' ? 0 : ''
     return (
         <div className="flex">
             <InputText
                 id={props.id}
-                value={props.state[props.id]}
+                value={props.state[props.id] || defaultValue}
                 autoFocus
                 type={props.type || 'text'}
                 className="block p-inputtext-sm"

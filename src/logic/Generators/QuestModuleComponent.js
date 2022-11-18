@@ -63,16 +63,20 @@ export const QuestModuleComponent = (props) => {
                         />
                     </div>
                 </div>
-                <div
-                    style={{
-                        color: 'red',
-                        backgroundColor: '#272822',
-                        fontStyle: 'italic',
-                        fontSize: 14
-                    }}
-                >
-                    Don't change the alias "questGenName"
-                </div>
+                {isExpert ? (
+                    <div
+                        style={{
+                            color: 'red',
+                            backgroundColor: '#272822',
+                            fontStyle: 'italic',
+                            fontSize: 14
+                        }}
+                    >
+                        Don't change the alias "questGenName"
+                    </div>
+                ) : (
+                    ''
+                )}
                 {CurrentMode}
             </div>
         </React.Fragment>
