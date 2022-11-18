@@ -11,6 +11,7 @@ import { Toast } from 'primereact/toast'
 import React, { useEffect, useRef, useState } from 'react'
 
 import { createScenario, getScenarios } from '../../api/scenarios'
+import useExpertModeStore from '../../stores/expertMode.store'
 import globalState from '../GlobalState'
 import useInvestorStore from '../Investor/investor.store'
 import useLogsStore from '../Logs/logs.store'
@@ -526,6 +527,21 @@ export const GenCardInvestor = (props) => {
         )
     }
 
+    const handleChangeExpert = (strState) => {
+        let objState
+        try {
+            objState = JSON.parse(strState)
+        } catch (e) {
+            return
+        }
+
+        props.updateInvConfig(objState)
+        globalState.generatorStore.invConfigs = updateStateInvestorConfig(
+            globalState.generatorStore.invConfigs,
+            objState
+        )
+    }
+
     const handleDelete = (invGenAlias) => {
         props.deleteInvConfig(invGenAlias)
         globalState.generatorStore.invConfigs = deleteStateInvestorConfig(
@@ -539,6 +555,7 @@ export const GenCardInvestor = (props) => {
             state={props.state}
             handleChange={handleChange}
             handleDelete={handleDelete}
+            handleChangeExpert={handleChangeExpert}
             questConfigs={questConfigs}
             quests={quests}
         />
@@ -610,6 +627,22 @@ export const GenCardQuest = (props) => {
         )
     }
 
+    const handleChangeExpert = (strState) => {
+        let objState
+        try {
+            objState = JSON.parse(strState)
+            console.log(objState)
+        } catch (e) {
+            return
+        }
+
+        props.updateQuestConfig(objState)
+        globalState.generatorStore.questConfigs = updateStateQuestConfig(
+            globalState.generatorStore.questConfigs,
+            objState
+        )
+    }
+
     const handleDelete = (id) => {
         props.deleteQuestConfig(id)
         globalState.generatorStore.questConfigs = deleteStateQuestConfig(
@@ -623,6 +656,7 @@ export const GenCardQuest = (props) => {
             state={props.state}
             handleChange={handleChange}
             handleDelete={handleDelete}
+            handleChangeExpert={handleChangeExpert}
             quests={quests}
         />
     )
