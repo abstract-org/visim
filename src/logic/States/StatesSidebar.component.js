@@ -18,6 +18,7 @@ import useInvestorStore from '../Investor/investor.store'
 import useLogsStore from '../Logs/logs.store'
 import usePoolStore from '../Pool/pool.store'
 import useQuestStore from '../Quest/quest.store'
+import { aggregateAndStoreDataForSnapshot } from '../Supabase/Supabase.service'
 import { formatBytes } from '../Utils/logicUtils'
 import { downloadStateFrom, getContentLength } from './download.service'
 import {
@@ -27,7 +28,7 @@ import {
     sanitizeSnapshot
 } from './states.service'
 import { uploadStateTo } from './upload.service'
-import { aggregateAndStoreDataForSnapshot } from "../Supabase/Supabase.service";
+
 const overrideSelector = (state) => state.override
 
 export const StatesSidebar = (props) => {
@@ -81,11 +82,9 @@ const StatesTable = (props) => {
                 stateName: newStateName,
                 state: globalState,
                 scenarioId: 1
-            });
-        } catch (e) {
-
-        }
-    };
+            })
+        } catch (e) {}
+    }
 
     const saveCurrentState = async () => {
         const stateId = generateCurrentStateId()
