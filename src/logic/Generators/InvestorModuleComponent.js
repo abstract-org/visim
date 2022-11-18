@@ -239,16 +239,16 @@ const UserModeComponent = (props) => {
                     </span>
 
                     <InPlaceElement
-                        id="buyInvestorPerc"
+                        id="buyQuestPerc"
                         active={false}
-                        display={`${props.state.buyInvestorPerc}%`}
+                        display={`${props.state.buyQuestPerc}%`}
                         type="number"
                         element="input"
                         handleChange={props.handleChange}
                         state={props.state}
                     />
                     <span className="inplace-static-text">
-                        investors that are top
+                        quests that are top
                     </span>
 
                     <InPlaceElement
