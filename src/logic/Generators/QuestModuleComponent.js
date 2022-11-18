@@ -1,12 +1,95 @@
 import { Button } from 'primereact/button'
 import { Checkbox } from 'primereact/checkbox'
 import { Message } from 'primereact/message'
-import { useRef } from 'react'
+import React, { useRef, useState } from 'react'
 
+import useExpertModeStore from '../../stores/expertMode.store'
+import { AceEditorWrapped } from './AceEditor'
 import { InPlaceElement } from './InPlaceComponents'
 
 export const QuestModuleComponent = (props) => {
     const aliasAlert = useRef(null)
+
+    const strDraft = JSON.stringify({ ...props.state }, null, 2)
+    const [draft, saveDraft] = useState(strDraft)
+
+    const isExpert = useExpertModeStore((state) => state.isExpert)
+
+    const userMode = <UserModeComponent {...props} />
+    const expertMode = (
+        <ExpertModeComponent {...props} draft={draft} saveDraft={saveDraft} />
+    )
+
+    const CurrentMode = isExpert ? expertMode : userMode
+
+    return (
+        <React.Fragment>
+            <div className="flex flex-column gen-card">
+                <div className="header flex">
+                    <span className="inplace-static-text">Quest -</span>
+                    <div className="flex flex-grow-none">
+                        <InPlaceElement
+                            id="questGenName"
+                            active={isExpert ? false : true}
+                            display={props.state.questGenName}
+                            element="input"
+                            type="text"
+                            handleChange={props.handleChange}
+                            state={props.state}
+                            style={{ width: '14rem' }}
+                        />
+                    </div>
+
+                    <div className="flex flex-grow-1 justify-content-end">
+                        <Message
+                            className="alias-alert"
+                            severity="error"
+                            text="Alias is required"
+                            ref={aliasAlert}
+                            style={{ display: 'none' }}
+                        />
+                        <div className="mr-3"></div>
+                        <Button
+                            icon="pi pi-save"
+                            className="w-2rem h-2rem p-button-success mr-2"
+                            onClick={() => props.handleChangeExpert(draft)}
+                        />
+                        <Button
+                            icon="pi pi-trash"
+                            className="w-2rem h-2rem p-button-danger"
+                            onClick={() =>
+                                props.handleDelete(props.state.questGenAlias)
+                            }
+                        />
+                    </div>
+                </div>
+                <div
+                    style={{
+                        color: 'red',
+                        backgroundColor: '#272822',
+                        fontStyle: 'italic',
+                        fontSize: 14
+                    }}
+                >
+                    Don't change the alias "questGenName"
+                </div>
+                {CurrentMode}
+            </div>
+        </React.Fragment>
+    )
+}
+
+const ExpertModeComponent = (props) => {
+    return (
+        <AceEditorWrapped
+            state={props.draft}
+            onChange={props.saveDraft}
+            onBlur={props.handleChangeExpert}
+        />
+    )
+}
+
+const UserModeComponent = (props) => {
     const quests = props.quests
 
     const defaultOption = [{ label: 'Select Quest', value: '' }]
@@ -20,40 +103,7 @@ export const QuestModuleComponent = (props) => {
     )
 
     return (
-        <div className="flex flex-column gen-card">
-            <div className="header flex">
-                <span className="inplace-static-text">Quest -</span>
-                <div className="flex flex-grow-none">
-                    <InPlaceElement
-                        id="questGenName"
-                        active={true}
-                        display={props.state.questGenName}
-                        element="input"
-                        type="text"
-                        handleChange={props.handleChange}
-                        state={props.state}
-                        style={{ width: '14rem' }}
-                    />
-                </div>
-
-                <div className="flex flex-grow-1 justify-content-end">
-                    <Message
-                        className="alias-alert"
-                        severity="error"
-                        text="Alias is required"
-                        ref={aliasAlert}
-                        style={{ display: 'none' }}
-                    />
-                    <div className="mr-3"></div>
-                    <Button
-                        icon="pi pi-trash"
-                        className="w-2rem h-2rem p-button-danger"
-                        onClick={() =>
-                            props.handleDelete(props.state.questGenAlias)
-                        }
-                    />
-                </div>
-            </div>
+        <React.Fragment>
             <div className="column flex">
                 <span className="inplace-static-text">
                     Initial investment from author
@@ -183,6 +233,6 @@ export const QuestModuleComponent = (props) => {
                     checked={props.state.citeRandomPreferOwn}
                 ></Checkbox>
             </div>
-        </div>
+        </React.Fragment>
     )
 }
