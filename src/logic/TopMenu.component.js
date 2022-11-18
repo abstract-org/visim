@@ -24,10 +24,6 @@ export const TopMenu = (props) => {
             command: () => {
                 props.setMoneyflowVisible(!props.moneyflowVisible)
             }
-        },
-        {
-            label: 'Expert Mode',
-            icon: ''
         }
     ]
 
