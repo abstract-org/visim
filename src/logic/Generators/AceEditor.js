@@ -11,6 +11,7 @@ export const AceEditorWrapped = (props) => {
             mode="json"
             theme="monokai"
             onChange={props.onChange}
+            onBlur={(e, code) => props.onBlur(code.getValue())}
             name="editorInv"
             editorProps={{ $blockScrolling: true }}
             fontSize={18}

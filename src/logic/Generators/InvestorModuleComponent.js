@@ -1,18 +1,23 @@
 import { BlockUI } from 'primereact/blockui'
 import { Button } from 'primereact/button'
 import { Message } from 'primereact/message'
-import React, { useRef } from 'react'
+import React, { useRef, useState } from 'react'
 
 import useExpertModeStore from '../../stores/expertMode.store'
 import { AceEditorWrapped } from './AceEditor'
 import { InPlaceElement } from './InPlaceComponents'
 
 export const InvestorModuleComponent = (props) => {
+    const strDraft = JSON.stringify({ ...props.state }, null, 2)
+    const [draft, saveDraft] = useState(strDraft)
+
     const isExpert = useExpertModeStore((state) => state.isExpert)
 
     const aliasAlert = useRef(null)
     const userMode = <UserModeComponent {...props} />
-    const expertMode = <ExpertModeComponent {...props} />
+    const expertMode = (
+        <ExpertModeComponent {...props} draft={draft} saveDraft={saveDraft} />
+    )
 
     const CurrentMode = isExpert ? expertMode : userMode
     return (
@@ -24,7 +29,8 @@ export const InvestorModuleComponent = (props) => {
                         <div className="flex flex-grow-none">
                             <InPlaceElement
                                 id="invGenName"
-                                active={true}
+                                active={isExpert ? false : true}
+                                display={props.state.invGenName}
                                 type="text"
                                 element="input"
                                 handleChange={props.handleChange}
@@ -42,6 +48,11 @@ export const InvestorModuleComponent = (props) => {
                             />
                             <div className="mr-3"></div>
                             <Button
+                                icon="pi pi-save"
+                                className="w-2rem h-2rem p-button-success mr-2"
+                                onClick={() => props.handleChangeExpert(draft)}
+                            />
+                            <Button
                                 icon="pi pi-trash"
                                 className="w-2rem h-2rem p-button-danger"
                                 onClick={() =>
@@ -51,22 +62,32 @@ export const InvestorModuleComponent = (props) => {
                         </div>
                     </div>
                 </div>
-                <div id="editorInv">{CurrentMode}</div>
+                <div id="editorInv">
+                    <div
+                        style={{
+                            color: 'red',
+                            backgroundColor: '#272822',
+                            fontStyle: 'italic',
+                            fontSize: 14
+                        }}
+                    >
+                        Don't change the alias "invGenAlias"
+                    </div>
+                    {CurrentMode}
+                </div>
             </div>
         </React.Fragment>
     )
 }
 
 const ExpertModeComponent = (props) => {
-    const onChange = (newValue) => {
-        const objStr = JSON.parse(newValue)
-        const newState = { ...objStr }
-        props.handleChange(newState)
-    }
-
-    const strConfig = JSON.stringify(props.state, null, 2)
-
-    return <AceEditorWrapped state={strConfig} onChange={onChange} />
+    return (
+        <AceEditorWrapped
+            state={props.draft}
+            onChange={props.saveDraft}
+            onBlur={props.handleChangeExpert}
+        />
+    )
 }
 
 const UserModeComponent = (props) => {
@@ -199,16 +220,16 @@ const UserModeComponent = (props) => {
                     </span>
 
                     <InPlaceElement
-                        id="buyQuestPerc"
+                        id="buyInvestorPerc"
                         active={false}
-                        display={`${props.state.buyQuestPerc}%`}
+                        display={`${props.state.buyInvestorPerc}%`}
                         type="number"
                         element="input"
                         handleChange={props.handleChange}
                         state={props.state}
                     />
                     <span className="inplace-static-text">
-                        quests that are top
+                        investors that are top
                     </span>
 
                     <InPlaceElement
@@ -365,7 +386,7 @@ const UserModeComponent = (props) => {
                     className="flex w-full"
                 >
                     <span className="inplace-static-text">
-                        On initialization create Quest
+                        On initialization create quest of type
                     </span>
                     <InPlaceElement
                         id="createQuest"
@@ -444,7 +465,8 @@ const UserModeComponent = (props) => {
             >
                 <div className="ml-2 flex mt-3">
                     <span className="inplace-static-text">
-                        When bought quest, chance to cite other random quest is
+                        When bought a quest, chance to cite other random quest
+                        is
                     </span>
                     <InPlaceElement
                         id="keepCitingProbability"
