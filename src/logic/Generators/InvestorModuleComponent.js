@@ -63,16 +63,20 @@ export const InvestorModuleComponent = (props) => {
                     </div>
                 </div>
                 <div id="editorInv">
-                    <div
-                        style={{
-                            color: 'red',
-                            backgroundColor: '#272822',
-                            fontStyle: 'italic',
-                            fontSize: 14
-                        }}
-                    >
-                        Don't change the alias "invGenAlias"
-                    </div>
+                    {isExpert ? (
+                        <div
+                            style={{
+                                color: 'red',
+                                backgroundColor: '#272822',
+                                fontStyle: 'italic',
+                                fontSize: 14
+                            }}
+                        >
+                            Don't change the alias "invGenAlias"
+                        </div>
+                    ) : (
+                        ''
+                    )}
                     {CurrentMode}
                 </div>
             </div>
@@ -128,6 +132,21 @@ const UserModeComponent = (props) => {
 
     return (
         <React.Fragment>
+            <div className="column flex">
+                <span className="inplace-static-text">
+                    Don't execute any buy/sell operation unless higher than $n
+                    value:
+                </span>
+                <InPlaceElement
+                    id="globalSwapThreshold"
+                    active={false}
+                    display={props.state.globalSwapThreshold}
+                    type="number"
+                    element="input"
+                    handleChange={props.handleChange}
+                    state={props.state}
+                />
+            </div>
             <div className="column flex">
                 <span className="inplace-static-text">
                     Daily probability to spawn
