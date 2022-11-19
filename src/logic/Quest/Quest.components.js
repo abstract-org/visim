@@ -176,6 +176,11 @@ export const QuestCitation = () => {
                 citingPool,
                 citationMultiplier
             )
+
+            if (!priceRange) {
+                return
+            }
+
             const [totalIn, _] = investor.citeQuest(
                 crossPool,
                 priceRange.min,

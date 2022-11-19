@@ -260,6 +260,21 @@ export default class Investor {
             max = max * multiplier
         }
 
+        // @FIXME: Solve the issue instead of skipping it
+        console.assert(
+            min < max,
+            'priceMin (%s) is higher than priceMax (%s), skipping position opening for %s, unit price %s, direction native=%s',
+            min,
+            max,
+            crossPool.name,
+            unitPrice,
+            nativePos
+        )
+
+        if (min > max) {
+            return null
+        }
+
         return { min: min, max: max, native: nativePos }
     }
 }
