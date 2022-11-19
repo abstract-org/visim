@@ -430,6 +430,11 @@ class Generator {
             citingPool,
             questConfig.citeSingleMultiplier
         )
+
+        if (!priceRange) {
+            return
+        }
+
         this._dayData[day].pools.push(crossPool)
 
         const citeAmount0 =
@@ -700,6 +705,11 @@ class Generator {
                 citingPool,
                 citingPosMultiplier
             )
+
+            if (!priceRange) {
+                return
+            }
+
             this._dayData[day].pools.push(crossPool)
 
             const citeAmount0 =
@@ -1693,6 +1703,8 @@ class Generator {
 
         return [totalIn, totalOut]
     }
+
+    getSwapSumMin(investor, token, fixedAmount, percentage) {}
 
     sleep(ms) {
         return new Promise((resolve) => setTimeout(resolve, ms))
