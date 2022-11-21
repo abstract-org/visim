@@ -190,6 +190,7 @@ model snapshot {
   snapshot_investor snapshot_investor[]
   snapshot_pool     snapshot_pool[]
   snapshot_quest    snapshot_quest[]
+  snapshot_totals   snapshot_totals[]
 
   @@index([scenario_id], map: "snapshot_scenario_id_index")
 }
@@ -229,6 +230,18 @@ model snapshot_quest {
   snapshot_id Int?
   entity_id   Int?
   quest       quest?    @relation(fields: [entity_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  snapshot    snapshot? @relation(fields: [snapshot_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model snapshot_totals {
+  id          BigInt    @id @default(autoincrement())
+  snapshot_id Int
+  quests      Int
+  cross_pools Int
+  investors   Int
+  tvl         Int
+  mcap        Int
+  usdc        Int
   snapshot    snapshot? @relation(fields: [snapshot_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
