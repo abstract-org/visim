@@ -1,14 +1,15 @@
-import { Menubar } from 'primereact/menubar'
-import React, { useRef, useState } from 'react'
 import { Button } from 'primereact/button'
-import { useSupabaseAuth } from "./Supabase/Supabase.components";
-import { Toast } from "primereact/toast";
-import { InputText } from "primereact/inputtext";
+import { InputText } from 'primereact/inputtext'
+import { Menubar } from 'primereact/menubar'
+import { Toast } from 'primereact/toast'
+import React, { useRef, useState } from 'react'
+
+import { useSupabaseAuth } from './Supabase/Supabase.components'
 
 export const TopMenu = (props) => {
-    const {user, signIn, signOut} = useSupabaseAuth();
-    const [email, setEmail] = useState('');
-    const toast = useRef(null);
+    const { user, signIn, signOut } = useSupabaseAuth()
+    const [email, setEmail] = useState('')
+    const toast = useRef(null)
     const items = [
         {
             label: props.statesVisible ? 'Hide states' : 'Show states',
@@ -35,7 +36,7 @@ export const TopMenu = (props) => {
 
     const onLoginClick = async () => {
         try {
-            const {error} = await signIn({email: email});
+            const { error } = await signIn({ email: email })
 
             if (!error) {
                 toast.current.show({
@@ -57,10 +58,10 @@ export const TopMenu = (props) => {
                 life: 2000
             })
         }
-    };
+    }
     const onLogoutClick = async () => {
         try {
-            const {error} = await signOut();
+            const { error } = await signOut()
 
             if (error) {
                 toast.current.show({
@@ -76,23 +77,29 @@ export const TopMenu = (props) => {
                 life: 2000
             })
         }
-    };
+    }
 
-    const end = user ?
+    const end = user ? (
         <div className="flex align-items-center gap-3">
             <span>Logged in as {user.email}</span>
-            <Button label="Logout" onClick={onLogoutClick}/>
-        </div> :
+            <Button label="Logout" onClick={onLogoutClick} />
+        </div>
+    ) : (
         <div className="flex align-items-center gap-3">
-            <InputText placeholder="Seed"
-                       className="w-15rem"
-                       value={email}
-                       onChange={(e) => setEmail(e.target.value)}/>
-            <Button label="Login" onClick={onLoginClick}/>
-        </div>;
+            <InputText
+                placeholder="Seed"
+                className="w-15rem"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+            />
+            <Button label="Login" onClick={onLoginClick} />
+        </div>
+    )
 
-    return <>
-        <Menubar model={items} end={end}/>
-        <Toast ref={toast}/>
-    </>
+    return (
+        <>
+            <Menubar model={items} end={end} />
+            <Toast ref={toast} />
+        </>
+    )
 }
