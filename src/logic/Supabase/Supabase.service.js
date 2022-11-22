@@ -1,7 +1,7 @@
 import HashMap from 'hashmap'
 
 import { createHashMappings } from '../Utils/logicUtils'
-import { SupabaseClient } from './SupabaseClient'
+import { SupabaseClient, TABLE } from './SupabaseClient'
 import {
     InvestorUploadDto,
     LogUploadDto,
@@ -13,21 +13,6 @@ import {
     SnapshotUploadDto,
     SwapUploadDto
 } from './dto'
-
-const TABLE = {
-    quest: 'quest',
-    investor: 'investor',
-    pool: 'pool',
-    pool_data: 'pool_data',
-    position: 'position',
-    snapshot_investor: 'snapshot_investor',
-    snapshot_quest: 'snapshot_quest',
-    snapshot_pool: 'snapshot_pool',
-    swap: 'swap',
-    log: 'log',
-    snapshot_totals: 'snapshot_totals',
-    snapshot: 'snapshot'
-}
 
 /**
  * @description Creates relation to snapshot for certain entity type
