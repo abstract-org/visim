@@ -6,6 +6,10 @@ import { PosOwnersDto, PosOwnersUploadDto } from './PosOwners.dto'
 import { PositionDto, PositionUploadDto } from './Position.dto'
 import { QuestDto, QuestUploadDto } from './Quest.dto'
 import { SnapshotDto, SnapshotUploadDto } from './Snapshot.dto'
+import {
+    SnapshotTotalsDto,
+    SnapshotTotalsUploadDto
+} from './SnapshotTotals.dto'
 import { SwapDto, SwapUploadDto } from './Swap.dto'
 
 export {
@@ -26,5 +30,7 @@ export {
     PosOwnersDto,
     PosOwnersUploadDto,
     QuestDto,
-    QuestUploadDto
+    QuestUploadDto,
+    SnapshotTotalsDto,
+    SnapshotTotalsUploadDto
 }
