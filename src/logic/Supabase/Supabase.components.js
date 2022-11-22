@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 
-import { SupabaseClient } from './Supabase.service'
+import { SupabaseClient } from './SupabaseClient'
 
 const initialState = {
     session: null,

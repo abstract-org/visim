@@ -2,6 +2,7 @@ import { Button } from 'primereact/button'
 import { InputText } from 'primereact/inputtext'
 import { Menubar } from 'primereact/menubar'
 import { Toast } from 'primereact/toast'
+import { ToggleButton } from 'primereact/togglebutton'
 import React, { useRef, useState } from 'react'
 
 import { useSupabaseAuth } from './Supabase/Supabase.components'
@@ -79,27 +80,39 @@ export const TopMenu = (props) => {
         }
     }
 
-    const end = user ? (
+    const end = (
         <div className="flex align-items-center gap-3">
-            <span>Logged in as {user.email}</span>
-            <Button label="Logout" onClick={onLogoutClick} />
-        </div>
-    ) : (
-        <div className="flex align-items-center gap-3">
-            <InputText
-                placeholder="Seed"
-                className="w-15rem"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+            {user ? (
+                <React.Fragment>
+                    <span>Logged in as {user.email}</span>
+                    <Button label="Logout" onClick={onLogoutClick} />
+                </React.Fragment>
+            ) : (
+              <React.Fragment>
+                    <InputText
+                        placeholder="Seed"
+                        className="w-15rem"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
+                    <Button label="Login" onClick={onLoginClick} />
+              </React.Fragment>
+            )}
+            <ToggleButton
+                checked={props.isExpert}
+                onChange={(e) => props.setExpertMode(e.value)}
+                onIcon="pi pi-prime"
+                offIcon="pi pi-user"
+                onLabel="PRO"
+                offLabel="NRM"
             />
-            <Button label="Login" onClick={onLoginClick} />
         </div>
     )
 
     return (
-        <>
+        <React.Fragment>
             <Menubar model={items} end={end} />
             <Toast ref={toast} />
-        </>
+        </React.Fragment>
     )
 }

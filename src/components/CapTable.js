@@ -6,8 +6,8 @@ import { Row } from 'primereact/row'
 import { Sidebar } from 'primereact/sidebar'
 import React, { useEffect, useRef, useState } from 'react'
 
-import globalState from '../GlobalState'
-import UsdcToken from '../Quest/UsdcToken.class'
+import globalState from '../logic/GlobalState'
+import UsdcToken from '../logic/Quest/UsdcToken.class'
 
 export const CapTableSidebar = (props) => {
     return (
