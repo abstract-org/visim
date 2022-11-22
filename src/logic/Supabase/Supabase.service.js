@@ -9,6 +9,7 @@ import {
     PoolUploadDto,
     PositionUploadDto,
     QuestUploadDto,
+    SnapshotTotalsUploadDto,
     SnapshotUploadDto,
     SwapUploadDto
 } from './dto'
@@ -24,6 +25,7 @@ const TABLE = {
     snapshot_pool: 'snapshot_pool',
     swap: 'swap',
     log: 'log',
+    snapshot_totals: 'snapshot_totals',
     snapshot: 'snapshot'
 }
 
@@ -276,6 +278,37 @@ export const aggregateQuestData = async (
     console.log('[SupabaseService] aggregateQuests completed')
 }
 
+/**
+ * @description Saves aggregated totals for current snapshot
+ * @param {number} snapshotId
+ * @param {Object} state
+ * @returns {Promise<void>}
+ */
+export const aggregateSnapshotTotals = async (snapshotId, state) => {
+    let marketCap = 0
+    let totalValueLocked = 0
+    let totalUSDCLocked = 0
+    state.pools.values().forEach((pool) => {
+        if (pool.isQuest()) {
+            marketCap += pool.getMarketCap()
+            totalValueLocked += pool.getTVL()
+            totalUSDCLocked += pool.getUSDCValue()
+        }
+    })
+
+    const preparedTotals = new SnapshotTotalsUploadDto({
+        snapshot_id: snapshotId,
+        quests: state.quests.values().length,
+        cross_pools: state.pools.values().filter((p) => !p.isQuest()).length,
+        investors: state.investors.values().length,
+        tvl: totalValueLocked,
+        mcap: marketCap,
+        usdc: totalUSDCLocked
+    }).toObj()
+
+    return SupabaseClient.from(TABLE.snapshot_totals).insert(preparedTotals)
+}
+
 export const aggregateAndStoreDataForSnapshot = async ({
     state,
     stateName,
@@ -299,6 +332,9 @@ export const aggregateAndStoreDataForSnapshot = async ({
         // Layer 2 creation
         // Inserting Investors and Pools data with linking to snapshot by ID
         console.log('[Snapshot Generator] Launching Layer 2 creation...')
+
+        await aggregateSnapshotTotals(snapshotDbId, state)
+
         const [investorHashToInvestorId, poolNameToPoolId] = await Promise.all([
             await aggregateInvestorsData(state.investors, snapshotDbId),
             await aggregatePoolsData(state.pools, snapshotDbId)
