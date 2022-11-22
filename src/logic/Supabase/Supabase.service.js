@@ -1,4 +1,3 @@
-import { log } from '@craco/craco/dist/lib/logger'
 import HashMap from 'hashmap'
 
 import { createHashMappings } from '../Utils/logicUtils'
