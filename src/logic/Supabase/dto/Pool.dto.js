@@ -70,10 +70,10 @@ export class PoolUploadDto {
     /** @type {Date} */
     created_at
 
-    constructor(data) {
+    constructor(data, questNameToQuestId) {
         this.name = data.name
-        this.token0 = data.tokenLeft
-        this.token1 = data.tokenRight
+        this.token0 = questNameToQuestId.get(data.tokenLeft)
+        this.token1 = questNameToQuestId.get(data.tokenRight)
         this.type = data.type
         this.hash = data.hash || 'hash'
         this.created_at = data.created_at || new Date()
