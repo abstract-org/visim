@@ -18,7 +18,10 @@ import useInvestorStore from '../Investor/investor.store'
 import useLogsStore from '../Logs/logs.store'
 import usePoolStore from '../Pool/pool.store'
 import useQuestStore from '../Quest/quest.store'
-import { fetchTotalsList } from '../Supabase/Supabase.download-service'
+import {
+    fetchSnapshotById,
+    fetchTotalsList
+} from '../Supabase/Supabase.download-service'
 import { aggregateAndStoreDataForSnapshot } from '../Supabase/Supabase.service'
 import { formatBytes } from '../Utils/logicUtils'
 import { downloadStateFrom, getContentLength } from './download.service'
@@ -86,6 +89,8 @@ const StatesTable = (props) => {
                 stateName: newStateName,
                 state: globalState
             })
+
+            await handleDbStatesLoaded()
         } catch (e) {
             toast.current.show({
                 severity: 'error',
@@ -271,6 +276,13 @@ const StatesTable = (props) => {
         )
     }
 
+    const loadFromDb = async (snapshotId) => {
+        const newState = await fetchSnapshotById(snapshotId)
+        console.debug(`New state [${snapshotId}] =`, newState)
+
+        return null
+    }
+
     const actionSaveButton = () => {
         return (
             <div className="flex flex-column gap-2">
@@ -292,10 +304,10 @@ const StatesTable = (props) => {
         )
     }
 
-    const stateNameBody = (rowData) => {
+    const stateNameBody = (rowData, { field }) => {
         return (
             <div className="state-name-cell" data-pr-tooltip={rowData.stateId}>
-                {rowData.stateName}
+                {rowData[field]}
                 <Tooltip
                     target=".state-name-cell"
                     position="bottom"
@@ -328,9 +340,7 @@ const StatesTable = (props) => {
                     iconPos="left"
                     label="Load from DB"
                     className="p-button-danger mr-2"
-                    onClick={() =>
-                        console.log('fetchSnapshotById(', rowData.id, ')')
-                    }
+                    onClick={() => loadFromDb(rowData.id)}
                 />
             </React.Fragment>
         )
@@ -396,9 +406,69 @@ const StatesTable = (props) => {
             <Divider />
 
             <Fieldset
-                legend="Remote states"
+                legend="SQL State"
                 toggleable
                 collapsed={false}
+                onExpand={handleDbStatesLoaded}
+            >
+                <DataTable
+                    value={dbSnapshots}
+                    selectionMode="single"
+                    sortField="created_at"
+                    sortOrder={-1}
+                    paginator
+                    rows={10}
+                    size="small"
+                >
+                    <Column
+                        field="seed"
+                        header="Name"
+                        style={{ width: '18rem' }}
+                        sortable
+                    />
+                    <Column field="scenario_id" header="Scenario" sortable />
+                    <Column field="quests" header="Total Quests" />
+                    <Column field="cross_pools" header="Total CrossPools" />
+                    <Column field="investors" header="Total Investors" />
+                    <Column
+                        field="tvl"
+                        header="Total TVL"
+                        body={numberFormatter}
+                        sortable
+                    />
+                    <Column
+                        field="mcap"
+                        header="Total MCAP"
+                        body={numberFormatter}
+                        sortable
+                    />
+                    <Column
+                        field="usdc"
+                        header="Total USDC"
+                        body={numberFormatter}
+                        sortable
+                    />
+                    <Column
+                        field="created_at"
+                        header="Execution Date"
+                        body={dateFormatter}
+                        sortable
+                    />
+
+                    <Column
+                        body={actionLoadFromDbButton}
+                        exportable={false}
+                        style={{ minWidth: '8rem' }}
+                    />
+                </DataTable>
+            </Fieldset>
+
+            <Divider />
+
+            <Fieldset
+                legend="Remote states"
+                toggleable
+                collapsed={true}
                 onExpand={handleStatesLoaded}
             >
                 <DataTable
@@ -434,67 +504,6 @@ const StatesTable = (props) => {
 
                     <Column
                         body={actionLoadButton}
-                        exportable={false}
-                        style={{ minWidth: '8rem' }}
-                    />
-                </DataTable>
-            </Fieldset>
-
-            <Divider />
-
-            <Fieldset
-                legend="SQL State"
-                toggleable
-                collapsed={false}
-                onExpand={handleDbStatesLoaded}
-            >
-                <DataTable
-                    value={dbSnapshots}
-                    selectionMode="single"
-                    sortField="executionDate"
-                    sortOrder={-1}
-                    paginator
-                    rows={10}
-                    size="small"
-                >
-                    <Column
-                        field="stateName"
-                        header="Name"
-                        body={stateNameBody}
-                        style={{ width: '18rem' }}
-                        sortable
-                    />
-                    <Column field="scenario_id" header="Scenario" sortable />
-                    <Column field="quests" header="Total Quests" />
-                    <Column field="cross_pools" header="Total CrossPools" />
-                    <Column field="investors" header="Total Investors" />
-                    <Column
-                        field="tvl"
-                        header="Total TVL"
-                        body={numberFormatter}
-                        sortable
-                    />
-                    <Column
-                        field="mcap"
-                        header="Total MCAP"
-                        body={numberFormatter}
-                        sortable
-                    />
-                    <Column
-                        field="usdc"
-                        header="Total USDC"
-                        body={numberFormatter}
-                        sortable
-                    />
-                    <Column
-                        field="created_at"
-                        header="Execution Date"
-                        body={dateFormatter}
-                        sortable
-                    />
-
-                    <Column
-                        body={actionLoadFromDbButton}
                         exportable={false}
                         style={{ minWidth: '8rem' }}
                     />

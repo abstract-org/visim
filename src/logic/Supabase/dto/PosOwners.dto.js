@@ -2,25 +2,40 @@ export class PosOwnersDto {
     /** @type {number} */
     id
     /** @type {number} */
-    owner_id
+    amt0
     /** @type {number} */
-    position_id
+    amt1
+    /** @type {string} */
+    hash
+    /** @type {boolean} */
+    native
     /** @type {number} */
-    owner_type
+    pmax
+    /** @type {number} */
+    pmin
+    /** @type {string} */
+    type
 
     constructor(data) {
         this.id = data.id
-        this.owner_id = data.owner_id
-        this.position_id = data.position_id
-        this.owner_type = data.owner_type
+        this.amt0 = data.amt0
+        this.amt1 = data.amt1
+        this.hash = data.hash
+        this.native = data.native
+        this.pmax = data.pmax
+        this.pmin = data.pmin
+        this.type = data.type
     }
 
     toObj() {
         return {
-            id: this.id,
-            owner_id: this.owner_id,
-            position_id: this.position_id,
-            owner_type: this.owner_type
+            amt0: this.amt0,
+            amt1: this.amt1,
+            hash: this.hash,
+            native: this.native,
+            pmax: this.pmax,
+            pmin: this.pmin,
+            type: this.type
         }
     }
 }
@@ -46,7 +61,7 @@ export class PosOwnersUploadDto {
             native: this.native,
             pmax: this.pmax,
             pmin: this.pmin,
-            type: this.type,
+            type: this.type
         }
     }
 }
