@@ -18,6 +18,7 @@ import useInvestorStore from '../Investor/investor.store'
 import useLogsStore from '../Logs/logs.store'
 import usePoolStore from '../Pool/pool.store'
 import useQuestStore from '../Quest/quest.store'
+import { fetchTotalsList } from '../Supabase/Supabase.download-service'
 import { aggregateAndStoreDataForSnapshot } from '../Supabase/Supabase.service'
 import { formatBytes } from '../Utils/logicUtils'
 import { downloadStateFrom, getContentLength } from './download.service'
@@ -30,6 +31,8 @@ import {
 import { uploadStateTo } from './upload.service'
 
 const overrideSelector = (state) => state.override
+
+const nf = new Intl.NumberFormat('en-US')
 
 export const StatesSidebar = (props) => {
     return (
@@ -63,6 +66,7 @@ const StatesTable = (props) => {
     const overrideDayTracker = useInvestorStore(overrideSelector)
     const setNeedScrollUp = useGeneratorStore((state) => state.setNeedScrollUp)
     const [snapshots, setSnapshots] = useState([])
+    const [dbSnapshots, setDbSnapshots] = useState([])
     const [currentStateInfo, setCurrentStateInfo] = useState({})
     const isMounted = useRef(null)
     const [loaderData, setLoaderData] = useState({
@@ -200,6 +204,11 @@ const StatesTable = (props) => {
             .catch((err) => {
                 console.log(err)
             })
+        fetchTotalsList()
+            .then((res) => setDbSnapshots(res))
+            .catch((err) => {
+                console.log(err)
+            })
     }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
@@ -216,6 +225,10 @@ const StatesTable = (props) => {
         const snapshotsLoaded = await StorageApi.getStates()
 
         updateSnapshots(snapshotsLoaded)
+    }
+
+    const handleDbStatesLoaded = async () => {
+        setDbSnapshots(await fetchTotalsList())
     }
 
     const loadState = async ({ stateId, stateLocation }) => {
@@ -308,14 +321,34 @@ const StatesTable = (props) => {
         )
     }
 
-    const execDateFormatter = (rowData) => {
+    const actionLoadFromDbButton = (rowData) => {
+        return (
+            <React.Fragment>
+                <Button
+                    icon="pi pi-database"
+                    iconPos="left"
+                    label="Load from DB"
+                    className="p-button-danger mr-2"
+                    onClick={() =>
+                        console.log('fetchSnapshotById(', rowData.id, ')')
+                    }
+                />
+            </React.Fragment>
+        )
+    }
+
+    const dateFormatter = (rowData, { field }) => {
         return (
             <span>
-                {new Date(rowData.executionDate).toDateString() +
+                {new Date(rowData[field]).toDateString() +
                     ' ' +
-                    new Date(rowData.executionDate).toLocaleTimeString()}
+                    new Date(rowData[field]).toLocaleTimeString()}
             </span>
         )
+    }
+
+    const numberFormatter = (rowData, { field }) => {
+        return <span>{nf.format(rowData[field])}</span>
     }
 
     return (
@@ -331,7 +364,7 @@ const StatesTable = (props) => {
                     size="small"
                 >
                     <Column
-                        key="stateName"
+                        key="seed"
                         field="stateName"
                         frozen={true}
                         header="Name"
@@ -349,7 +382,7 @@ const StatesTable = (props) => {
                     <Column
                         field="executionDate"
                         header="Execution Date"
-                        body={execDateFormatter}
+                        body={dateFormatter}
                         sortable
                     />
 
@@ -396,12 +429,73 @@ const StatesTable = (props) => {
                     <Column
                         field="executionDate"
                         header="Execution Date"
-                        body={execDateFormatter}
+                        body={dateFormatter}
                         sortable
                     />
 
                     <Column
                         body={actionLoadButton}
+                        exportable={false}
+                        style={{ minWidth: '8rem' }}
+                    />
+                </DataTable>
+            </Fieldset>
+
+            <Divider />
+
+            <Fieldset
+                legend="SQL State"
+                toggleable
+                collapsed={false}
+                onExpand={handleDbStatesLoaded}
+            >
+                <DataTable
+                    value={dbSnapshots}
+                    selectionMode="single"
+                    sortField="executionDate"
+                    sortOrder={-1}
+                    paginator
+                    rows={10}
+                    size="small"
+                >
+                    <Column
+                        field="stateName"
+                        header="Name"
+                        body={stateNameBody}
+                        style={{ width: '18rem' }}
+                        sortable
+                    />
+                    <Column field="scenario_id" header="Scenario" sortable />
+                    <Column field="quests" header="Total Quests" />
+                    <Column field="cross_pools" header="Total CrossPools" />
+                    <Column field="investors" header="Total Investors" />
+                    <Column
+                        field="tvl"
+                        header="Total TVL"
+                        body={numberFormatter}
+                        sortable
+                    />
+                    <Column
+                        field="mcap"
+                        header="Total MCAP"
+                        body={numberFormatter}
+                        sortable
+                    />
+                    <Column
+                        field="usdc"
+                        header="Total USDC"
+                        body={numberFormatter}
+                        sortable
+                    />
+                    <Column
+                        field="created_at"
+                        header="Execution Date"
+                        body={dateFormatter}
+                        sortable
+                    />
+
+                    <Column
+                        body={actionLoadFromDbButton}
                         exportable={false}
                         style={{ minWidth: '8rem' }}
                     />
