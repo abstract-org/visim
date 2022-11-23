@@ -24,7 +24,7 @@ model investor {
 }
 
 model investor_balances {
-  id          Int      @id
+  id          Int      @id @default(autoincrement())
   investor_id Int
   quest_id    Int
   balance     Decimal  @db.Decimal
@@ -140,7 +140,7 @@ model quest {
   author_id         Int?
   name              String              @db.VarChar(255)
   hash              String              @db.VarChar(255)
-  created_at        DateTime            @db.Timestamptz(0)
+  created_at        DateTime?           @default(now())
   investor          investor?           @relation(fields: [author_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   investor_balances investor_balances[]
   investor_quests   investor_quests[]
@@ -184,7 +184,7 @@ model snapshot {
   id                Int                 @id @default(autoincrement())
   seed              String              @db.VarChar(255)
   scenario_id       Int
-  created_at        DateTime            @db.Timestamptz(0)
+  created_at        DateTime?           @default(now())
   scenario          scenario            @relation(fields: [scenario_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "snapshot_scenario_id_foreign")
   snapshot_data     snapshot_data[]
   snapshot_investor snapshot_investor[]

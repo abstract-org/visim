@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 export const TABLE = {
     quest: 'quest',
     investor: 'investor',
+    investor_balances: 'investor_balances',
     pool: 'pool',
     pool_data: 'pool_data',
     position: 'position',
