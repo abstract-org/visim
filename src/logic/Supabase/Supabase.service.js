@@ -1,4 +1,4 @@
-import { classToPlain } from 'class-transformer'
+import { instanceToPlain } from 'class-transformer'
 import HashMap from 'hashmap'
 
 import { createHashMappings } from '../Utils/logicUtils'
@@ -12,13 +12,13 @@ import {
     PosOwnersUploadDto,
     PositionUploadDto,
     QuestUploadDto,
+    ScenarioDto,
+    ScenarioInvestorConfigDto,
+    ScenarioQuestConfigDto,
     SnapshotTotalsUploadDto,
     SnapshotUploadDto,
     SwapUploadDto
 } from './dto'
-import { ScenarioDto } from './dto/Scenario.dto'
-import { ScenarioInvestorConfigDto } from './dto/ScenarioInvestorConfig.dto'
-import { ScenarioQuestConfigDto } from './dto/ScenarioQuestConfig.dto'
 
 const RELATION_TYPE = {
     INVESTOR: 'investor',
@@ -187,13 +187,13 @@ export const aggregateInvestorBalances = async (
                 inv.balances
             )) {
                 const instance = new InvestorBalancesDto(
-                  inv,
-                  questName,
-                  investorBalance,
-                  0,
-                  investorHashToInvestorId,
-                  questNameToQuestId
-                ).toObj();
+                    inv,
+                    questName,
+                    investorBalance,
+                    0,
+                    investorHashToInvestorId,
+                    questNameToQuestId
+                ).toObj()
 
                 preparedInvestorBalances.push(instance)
             }
@@ -218,7 +218,7 @@ export const aggregateScenarioData = async (
     try {
         const scenarioDbResponse = await SupabaseClient.from(TABLE.scenario)
             .insert(
-                classToPlain(
+                instanceToPlain(
                     new ScenarioDto({ name: `scenario-${scenarioName}` })
                 )
             )
@@ -235,13 +235,13 @@ export const aggregateScenarioData = async (
             )
 
             const preparedInvestorConfigs = investorConfigs.map((invConfig) =>
-                classToPlain(
+                instanceToPlain(
                     new ScenarioInvestorConfigDto(invConfig, scenarioId)
                 )
             )
 
             const preparedQuestConfigs = questConfigs.map((questConfig) =>
-                classToPlain(
+                instanceToPlain(
                     new ScenarioQuestConfigDto(questConfig, scenarioId)
                 )
             )

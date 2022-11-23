@@ -1,5 +1,8 @@
 import Pool from '../../Pool/Pool.class'
-import convertObjToHashMap from '../../Utils/serializer'
+import { convertArrayToHashMapByKey } from '../../Utils/serializer'
+import { PoolDataDto } from './PoolData.dto'
+import { PosOwnersDto } from './PosOwners.dto'
+import { PositionDto } from './Position.dto'
 
 export class PoolDto {
     /** @type {number} */
@@ -16,6 +19,8 @@ export class PoolDto {
     hash
     /** @type {Date} */
     created_at
+    /** @type {PoolDataDto} */
+    pool_data
 
     constructor(data) {
         this.id = data.id
@@ -25,9 +30,14 @@ export class PoolDto {
         this.type = data.type
         this.hash = data.hash
         this.created_at = data.created_at
+        this.pool_data = new PoolDataDto(data.pool_data[0])
+        this.pos = data.position.map((posItem) => new PositionDto(posItem))
+        this.posOwners = data.position_owner.map(
+            (posOwner) => new PosOwnersDto(posOwner)
+        )
     }
 
-    toPool(pos = {}, posOwners = [], poolData = {}) {
+    toPool(pos = {}) {
         const pool = new Pool()
 
         pool.name = this.name
@@ -35,24 +45,30 @@ export class PoolDto {
         pool.tokenRight = this.token1
         pool.type = this.type
 
-        pool.pos = convertObjToHashMap(pos)
-        pool.posOwners = [...posOwners]
+        const poolData = this.pool_data.toObj()
+        pool.priceToken0 = poolData.token0_price
+        pool.priceToken1 = poolData.token1_price
+        pool.curLeft = poolData.current_left_lg2
+        pool.curRight = poolData.current_right_lg2
+        pool.curPrice = poolData.current_price
+        pool.curPP = poolData.current_price_point_lg2
+        pool.curLiq = poolData.current_liquidity
+        pool.volumeToken0 = poolData.volume_token0
+        pool.volumeToken1 = poolData.volume_token0
+        // @TODO: add saving to DB.poo_data following params
+        // pool.totalSold = poolData.totalSold
+        // pool.FRESH = poolData.FRESH
+        // pool.soldToken0 = poolData.soldToken0
+        // pool.soldToken1 = poolData.soldToken1
 
-        pool.priceToken0 = poolData.priceToken0
-        pool.priceToken1 = poolData.priceToken1
-        pool.FRESH = poolData.FRESH
-        pool.curLeft = poolData.curLeft
-        pool.curRight = poolData.curRight
-        pool.curPrice = poolData.curPrice
-        pool.curPP = poolData.curPP
-        pool.curLiq = poolData.curLiq
-        pool.totalSold = poolData.totalSold
-        pool.volumeToken0 = poolData.volumeToken0
-        pool.volumeToken1 = poolData.volumeToken1
-        pool.soldToken0 = poolData.soldToken0
-        pool.soldToken1 = poolData.soldToken1
-
+        pool.posOwners = this.posOwners.map((posOwner) => posOwner.toObj())
+        const positions = this.pos.map((position) => position.toObj())
+        pool.pos = convertArrayToHashMapByKey(positions, 'pp')
         return pool
+    }
+
+    toName() {
+        return this.name
     }
 }
 
