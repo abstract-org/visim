@@ -35,8 +35,6 @@ export const TopMenu = (props) => {
         }
     ]
 
-    const start = <React.Fragment />
-
     const onLoginClick = async () => {
         try {
             const { error } = await signIn({ email: email })
@@ -90,7 +88,7 @@ export const TopMenu = (props) => {
                     <Button label="Logout" onClick={onLogoutClick} />
                 </React.Fragment>
             ) : (
-                <React.Fragment>
+              <React.Fragment>
                     <InputText
                         placeholder="Seed"
                         className="w-15rem"
@@ -98,7 +96,7 @@ export const TopMenu = (props) => {
                         onChange={(e) => setEmail(e.target.value)}
                     />
                     <Button label="Login" onClick={onLoginClick} />
-                </React.Fragment>
+              </React.Fragment>
             )}
             <ToggleButton
                 checked={props.isExpert}
@@ -113,7 +111,7 @@ export const TopMenu = (props) => {
 
     return (
         <React.Fragment>
-            <Menubar start={start} model={items} end={end} />
+            <Menubar model={items} end={end} />
             <Toast ref={toast} />
         </React.Fragment>
     )
