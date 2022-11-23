@@ -1,7 +1,7 @@
 import HashMap from 'hashmap'
 
 import { createHashMappings } from '../Utils/logicUtils'
-import { SupabaseClient } from './SupabaseClient'
+import { SupabaseClient, TABLE } from './SupabaseClient'
 import {
     InvestorBalancesDto,
     InvestorUploadDto,
@@ -10,6 +10,7 @@ import {
     PoolUploadDto,
     PositionUploadDto,
     QuestUploadDto,
+    SnapshotTotalsUploadDto,
     SnapshotUploadDto,
     SwapUploadDto
 } from './dto'
@@ -18,21 +19,6 @@ const RELATION_TYPE = {
     INVESTOR: 'investor',
     QUEST: 'quest',
     POOL: 'pool'
-}
-
-const TABLE = {
-    quest: 'quest',
-    investor: 'investor',
-    investor_balances: 'investor_balances',
-    pool: 'pool',
-    pool_data: 'pool_data',
-    position: 'position',
-    snapshot_investor: 'snapshot_investor',
-    snapshot_quest: 'snapshot_quest',
-    snapshot_pool: 'snapshot_pool',
-    swap: 'swap',
-    log: 'log',
-    snapshot: 'snapshot'
 }
 
 /**
@@ -346,6 +332,37 @@ export const aggregateQuestData = async (
     return questNameToQuestId
 }
 
+/**
+ * @description Saves aggregated totals for current snapshot
+ * @param {number} snapshotId
+ * @param {Object} state
+ * @returns {Promise<void>}
+ */
+export const aggregateSnapshotTotals = async (snapshotId, state) => {
+    let marketCap = 0
+    let totalValueLocked = 0
+    let totalUSDCLocked = 0
+    state.pools.values().forEach((pool) => {
+        if (pool.isQuest()) {
+            marketCap += pool.getMarketCap()
+            totalValueLocked += pool.getTVL()
+            totalUSDCLocked += pool.getUSDCValue()
+        }
+    })
+
+    const preparedTotals = new SnapshotTotalsUploadDto({
+        snapshot_id: snapshotId,
+        quests: state.quests.values().length,
+        cross_pools: state.pools.values().filter((p) => !p.isQuest()).length,
+        investors: state.investors.values().length,
+        tvl: totalValueLocked,
+        mcap: marketCap,
+        usdc: totalUSDCLocked
+    }).toObj()
+
+    return SupabaseClient.from(TABLE.snapshot_totals).insert(preparedTotals)
+}
+
 export const aggregateAndStoreDataForSnapshot = async ({
     state,
     stateName,
@@ -369,6 +386,9 @@ export const aggregateAndStoreDataForSnapshot = async ({
         // Layer 2 creation
         // Inserting Investors and Pools data with linking to snapshot by ID
         console.log('[Snapshot Generator] Launching Layer 2 creation...')
+
+        await aggregateSnapshotTotals(snapshotDbId, state)
+
         const investorHashToInvestorId = await aggregateInvestorsData(
             state.investors,
             snapshotDbId
