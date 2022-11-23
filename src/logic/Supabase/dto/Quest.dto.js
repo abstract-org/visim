@@ -36,14 +36,11 @@ export class QuestUploadDto {
     name
     /** @type {string} */
     hash
-    /** @type {Date} */
-    created_at
 
     constructor(data, investorMappings) {
         this.author_id = investorMappings.get(data.name) // returns investor_id
         this.name = data.name
         this.hash = data.hash || '0x0000'
-        this.created_at = data.created_at || new Date()
     }
 
     toObj() {
@@ -51,7 +48,6 @@ export class QuestUploadDto {
             author_id: this.author_id,
             name: this.name,
             hash: this.hash,
-            created_at: this.created_at
         }
     }
 }
