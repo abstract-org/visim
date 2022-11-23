@@ -30,13 +30,10 @@ export class SnapshotUploadDto {
     seed
     /** @type {number} */
     scenario_id
-    /** @type {Date} */
-    created_at
 
     constructor(data) {
         this.seed = data.seed
         this.scenario_id = data.scenarioId
-        this.created_at = new Date(data.created_at) || new Date()
     }
 
     toObj() {
