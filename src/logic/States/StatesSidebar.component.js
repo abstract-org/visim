@@ -84,8 +84,7 @@ const StatesTable = (props) => {
             await aggregateAndStoreDataForSnapshot({
                 stateId,
                 stateName: newStateName,
-                state: globalState,
-                scenarioId: 1
+                state: globalState
             })
         } catch (e) {
             toast.current.show({
