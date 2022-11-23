@@ -83,7 +83,13 @@ const StatesTable = (props) => {
                 state: globalState,
                 scenarioId: 1
             })
-        } catch (e) {}
+        } catch (e) {
+            toast.current.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: e.message
+            })
+        }
     }
 
     const saveCurrentState = async () => {

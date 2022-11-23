@@ -3,6 +3,7 @@ import HashMap from 'hashmap'
 import { createHashMappings } from '../Utils/logicUtils'
 import { SupabaseClient } from './SupabaseClient'
 import {
+    InvestorBalancesDto,
     InvestorUploadDto,
     LogUploadDto,
     PoolDataUploadDto,
@@ -13,9 +14,16 @@ import {
     SwapUploadDto
 } from './dto'
 
+const RELATION_TYPE = {
+    INVESTOR: 'investor',
+    QUEST: 'quest',
+    POOL: 'pool'
+}
+
 const TABLE = {
     quest: 'quest',
     investor: 'investor',
+    investor_balances: 'investor_balances',
     pool: 'pool',
     pool_data: 'pool_data',
     position: 'position',
@@ -46,15 +54,15 @@ export const createSnapshotDataRelation = async (
         }))
 
         switch (relationType) {
-            case 'investor':
+            case RELATION_TYPE.INVESTOR:
                 return await SupabaseClient.from(
                     TABLE.snapshot_investor
                 ).insert(formattedSnapshotData)
-            case 'quest':
+            case RELATION_TYPE.QUEST:
                 return await SupabaseClient.from(TABLE.snapshot_quest).insert(
                     formattedSnapshotData
                 )
-            case 'pool':
+            case RELATION_TYPE.POOL:
                 return await SupabaseClient.from(TABLE.snapshot_pool).insert(
                     formattedSnapshotData
                 )
@@ -62,7 +70,10 @@ export const createSnapshotDataRelation = async (
                 break
         }
     } catch (e) {
-        console.log('createSnapshotDataRelation error: ', e.message)
+        console.log(
+            `createSnapshotDataRelation error (relation ${relationType}): `,
+            e.message
+        )
     }
 }
 
@@ -98,16 +109,23 @@ export const aggregatePositionsData = async (poolsMap, poolMappings) => {
 /**
  *
  * @param poolsMap
+ * @param questNameToQuestId
  * @param snapshotId
  * @returns {Promise<null|*>}
  */
-export const aggregatePoolsData = async (poolsMap, snapshotId) => {
+export const aggregatePoolsData = async (
+    poolsMap,
+    questNameToQuestId,
+    snapshotId
+) => {
     try {
         let poolNameToPoolId
 
         const pools = poolsMap
             .values()
-            .map((poolValue) => new PoolUploadDto(poolValue).toObj())
+            .map((poolValue) =>
+                new PoolUploadDto(poolValue, questNameToQuestId).toObj()
+            )
 
         const poolDbResponse = await SupabaseClient.from(TABLE.pool)
             .insert(pools)
@@ -143,6 +161,46 @@ export const aggregatePoolsData = async (poolsMap, snapshotId) => {
         return poolNameToPoolId
     } catch (e) {
         console.log('aggregatePoolsData error: ', e.message)
+        return null
+    }
+}
+
+/**
+ * @description Saves aggregated investors balances to DB
+ * @param investorsMap
+ * @param investorHashToInvestorId
+ * @param questNameToQuestId
+ * @returns {Promise<void>}
+ */
+export const aggregateInvestorBalances = async (
+    investorsMap,
+    investorHashToInvestorId,
+    questNameToQuestId
+) => {
+    try {
+        const preparedInvestorBalances = []
+
+        investorsMap.forEach((inv) => {
+            for (const [questName, investorBalance] of Object.entries(
+                inv.balances
+            )) {
+                preparedInvestorBalances.push(
+                    new InvestorBalancesDto(
+                        investorHashToInvestorId.get(inv.hash),
+                        questNameToQuestId.get(questName),
+                        investorBalance
+                    ).toObj()
+                )
+            }
+        })
+
+        await SupabaseClient.from(TABLE.investor_balances).insert(
+            preparedInvestorBalances
+        )
+
+        console.log('[SupabaseService] aggregateInvestorBalances completed')
+    } catch (e) {
+        console.log('aggregateInvestorBalances error: ', e.message)
         return null
     }
 }
@@ -264,16 +322,28 @@ export const aggregateQuestData = async (
     investorMappings,
     snapshotId
 ) => {
+    let questNameToQuestId
     const preparedQuests = quests
         .values()
         .map((quest) => new QuestUploadDto(quest, investorMappings).toObj())
 
-    const questDbResponse = await SupabaseClient.from(TABLE.quest).insert(
-        preparedQuests
-    )
+    const questDbResponse = await SupabaseClient.from(TABLE.quest)
+        .insert(preparedQuests)
+        .select('id, name')
+
     await createSnapshotDataRelation('quest', snapshotId, questDbResponse.data)
 
+    if (questDbResponse.data) {
+        questNameToQuestId = createHashMappings(
+            questDbResponse.data,
+            'name',
+            'id'
+        )
+    }
+
     console.log('[SupabaseService] aggregateQuests completed')
+
+    return questNameToQuestId
 }
 
 export const aggregateAndStoreDataForSnapshot = async ({
@@ -299,20 +369,32 @@ export const aggregateAndStoreDataForSnapshot = async ({
         // Layer 2 creation
         // Inserting Investors and Pools data with linking to snapshot by ID
         console.log('[Snapshot Generator] Launching Layer 2 creation...')
-        const [investorHashToInvestorId, poolNameToPoolId] = await Promise.all([
-            await aggregateInvestorsData(state.investors, snapshotDbId),
-            await aggregatePoolsData(state.pools, snapshotDbId)
-        ])
+        const investorHashToInvestorId = await aggregateInvestorsData(
+            state.investors,
+            snapshotDbId
+        )
 
         const questNamesToInvestorIdMappings = new HashMap()
         state.investors.values().forEach((inv) => {
             inv.questsCreated.forEach((questName) =>
                 questNamesToInvestorIdMappings.set(
                     questName,
-                    investorHashToInvestorId.get(inv.investorHash)
+                    investorHashToInvestorId.get(inv.hash)
                 )
             )
         })
+
+        const questNameToQuestId = await aggregateQuestData(
+            state.quests,
+            questNamesToInvestorIdMappings,
+            snapshotDbId
+        )
+
+        const poolNameToPoolId = await aggregatePoolsData(
+            state.pools,
+            questNameToQuestId,
+            snapshotDbId
+        )
 
         // Layer 3 creation
         // Inserting data, related on Investors and Pools entities IDs
@@ -328,12 +410,12 @@ export const aggregateAndStoreDataForSnapshot = async ({
                 poolNameToPoolId,
                 investorHashToInvestorId
             ),
-            aggregateQuestData(
-                state.quests,
-                questNamesToInvestorIdMappings,
-                snapshotDbId
-            ),
-            aggregatePositionsData(state.pools, poolNameToPoolId)
+            aggregatePositionsData(state.pools, poolNameToPoolId),
+            aggregateInvestorBalances(
+                state.investors,
+                investorHashToInvestorId,
+                questNameToQuestId
+            )
         ])
 
         console.timeEnd('[Snapshot Generator]')
