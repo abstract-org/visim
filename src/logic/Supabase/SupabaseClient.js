@@ -7,6 +7,7 @@ export const TABLE = {
     pool: 'pool',
     pool_data: 'pool_data',
     position: 'position',
+    position_owner: 'position_owner',
     snapshot_investor: 'snapshot_investor',
     snapshot_quest: 'snapshot_quest',
     snapshot_pool: 'snapshot_pool',
