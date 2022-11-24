@@ -8,9 +8,9 @@ export class InvestorBalancesDto {
     /** @type {number} */
     day
 
-    constructor(investorId, questId, balance, day = 0) {
-        this.investor_id = investorId
-        this.quest_id = questId
+    constructor(investor, questName, balance, day = 0, investorHashToInvestorId, questNameToQuestId) {
+        this.investor_id = investorHashToInvestorId.get(investor.hash)
+        this.quest_id = questNameToQuestId.get(questName)
         this.balance = balance
         this.day = day
     }

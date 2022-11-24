@@ -81,7 +81,7 @@ const StatesTable = (props) => {
                 stateId,
                 stateName: newStateName,
                 state: globalState,
-                scenarioId: 1
+                scenarioId: 4
             })
         } catch (e) {
             toast.current.show({
