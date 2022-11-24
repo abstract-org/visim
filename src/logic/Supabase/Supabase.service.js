@@ -25,7 +25,6 @@ const RELATION_TYPE = {
     POOL: 'pool'
 }
 
-
 /**
  * @description Creates relation to snapshot for certain entity type
  * @param {("investor"|"quest"|"pool")} relationType
@@ -209,9 +208,11 @@ export const aggregateScenarioData = async (
                 )
             )
             .select('id')
+            .limit(1)
+            .single()
 
         if (scenarioDbResponse.data) {
-            const scenarioId = scenarioDbResponse.data[0].id
+            const scenarioId = scenarioDbResponse.data.id
 
             console.log(
                 '[SupabaseService] aggregateScenarioData Scenario Created with ID: ',
@@ -350,12 +351,14 @@ export const createSnapshot = async ({ scenarioId = 1, seed }) => {
     const preparedSnapshot = new SnapshotUploadDto({
         seed,
         scenarioId
-    })
+    }).toObj()
     const snapshotDbResponse = await SupabaseClient.from(TABLE.snapshot)
         .insert(preparedSnapshot)
         .select('id')
+        .limit(1)
+        .single()
 
-    return snapshotDbResponse.data[0].id
+    return snapshotDbResponse.data.id
 }
 
 /**
