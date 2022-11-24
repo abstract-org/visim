@@ -1,3 +1,4 @@
+import { classToPlain } from 'class-transformer'
 import HashMap from 'hashmap'
 
 import { createHashMappings } from '../Utils/logicUtils'
@@ -14,6 +15,9 @@ import {
     SnapshotUploadDto,
     SwapUploadDto
 } from './dto'
+import { ScenarioDto } from './dto/Scenario.dto'
+import { ScenarioInvestorConfigDto } from './dto/ScenarioInvestorConfig.dto'
+import { ScenarioQuestConfigDto } from './dto/ScenarioQuestConfig.dto'
 
 const RELATION_TYPE = {
     INVESTOR: 'investor',
@@ -191,6 +195,65 @@ export const aggregateInvestorBalances = async (
     }
 }
 
+export const aggregateScenarioData = async (
+    scenarioName,
+    investorConfigs,
+    questConfigs
+) => {
+    try {
+        const scenarioDbResponse = await SupabaseClient.from(TABLE.scenario)
+            .insert(
+                classToPlain(
+                    new ScenarioDto({ name: `scenario-${scenarioName}` })
+                )
+            )
+            .select('id')
+            .limit(1)
+            .single()
+
+        if (scenarioDbResponse.data) {
+            const scenarioId = scenarioDbResponse.data.id
+
+            console.log(
+                '[SupabaseService] aggregateScenarioData Scenario Created with ID: ',
+                scenarioId
+            )
+
+            const preparedInvestorConfigs = investorConfigs.map((invConfig) =>
+                classToPlain(
+                    new ScenarioInvestorConfigDto(invConfig, scenarioId)
+                )
+            )
+
+            const preparedQuestConfigs = questConfigs.map((questConfig) =>
+                classToPlain(
+                    new ScenarioQuestConfigDto(questConfig, scenarioId)
+                )
+            )
+
+            await Promise.all([
+                SupabaseClient.from(TABLE.scenario_investor_config).insert(
+                    preparedInvestorConfigs
+                ),
+                SupabaseClient.from(TABLE.scenario_quest_config).insert(
+                    preparedQuestConfigs
+                )
+            ])
+
+            console.log(
+                '[SupabaseService] aggregateScenarioData: Scenario inserted'
+            )
+
+            return scenarioId
+        } else {
+            return null
+        }
+    } catch (e) {
+        console.log('aggregateScenarioData error: ', e.message)
+        return null
+    }
+}
+
 /**
  * @description Saves aggregated investors to DB
  * @param investorsMap
@@ -288,12 +351,14 @@ export const createSnapshot = async ({ scenarioId = 1, seed }) => {
     const preparedSnapshot = new SnapshotUploadDto({
         seed,
         scenarioId
-    })
+    }).toObj()
     const snapshotDbResponse = await SupabaseClient.from(TABLE.snapshot)
         .insert(preparedSnapshot)
         .select('id')
+        .limit(1)
+        .single()
 
-    return snapshotDbResponse.data[0].id
+    return snapshotDbResponse.data.id
 }
 
 /**
@@ -365,8 +430,7 @@ export const aggregateSnapshotTotals = async (snapshotId, state) => {
 
 export const aggregateAndStoreDataForSnapshot = async ({
     state,
-    stateName,
-    scenarioId
+    stateName
 }) => {
     try {
         console.time('[Snapshot Generator]')
@@ -374,7 +438,13 @@ export const aggregateAndStoreDataForSnapshot = async ({
         // Top Layer creation
         // Creating Snapshot to use ID for linking Layer 2 entities (investors, pools, quests)
         console.log('[Snapshot Generator] Launching Top Layer creation...')
-        // @TODO: scenarioId should be either currently loaded untouched scenario or new pre-saved one from curren invConfigs and questConfigs
+
+        const scenarioId = await aggregateScenarioData(
+            stateName,
+            state.generatorStore.invConfigs,
+            state.generatorStore.questConfigs
+        )
+
         const snapshotDbId = await createSnapshot({
             scenarioId,
             seed: stateName

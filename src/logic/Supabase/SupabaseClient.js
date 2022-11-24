@@ -12,8 +12,11 @@ export const TABLE = {
     snapshot_pool: 'snapshot_pool',
     swap: 'swap',
     log: 'log',
+    snapshot: 'snapshot',
     snapshot_totals: 'snapshot_totals',
-    snapshot: 'snapshot'
+    scenario: 'scenario',
+    scenario_investor_config: 'scenario_investor_config',
+    scenario_quest_config: 'scenario_quest_config'
 }
 
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL
