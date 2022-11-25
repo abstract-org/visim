@@ -9,6 +9,7 @@ import {
     LogUploadDto,
     PoolDataUploadDto,
     PoolUploadDto,
+    PosOwnersUploadDto,
     PositionUploadDto,
     QuestUploadDto,
     SnapshotTotalsUploadDto,
@@ -76,6 +77,7 @@ export const createSnapshotDataRelation = async (
 export const aggregatePositionsData = async (poolsMap, poolMappings) => {
     try {
         let preparedPositions = []
+        let preparedPosOwners = []
 
         poolsMap.values().forEach((pool) => {
             const poolId = poolMappings.get(pool.name)
@@ -84,10 +86,20 @@ export const aggregatePositionsData = async (poolsMap, poolMappings) => {
                 .map((position) =>
                     new PositionUploadDto(position, poolId).toObj()
                 )
+            const poolPosOwners = pool.posOwners.map((posOwnerData) =>
+                new PosOwnersUploadDto(posOwnerData, poolId).toObj()
+            )
+
+            preparedPosOwners.push(...poolPosOwners)
             preparedPositions.push(...poolPositions)
         })
 
-        await SupabaseClient.from(TABLE.position).insert(preparedPositions)
+        await Promise.all([
+            SupabaseClient.from(TABLE.position).insert(preparedPositions),
+            SupabaseClient.from(TABLE.position_owner).insert(preparedPosOwners)
+        ])
+
+        console.log('[Snapshot Generator] Positions/PosOwners inserted')
 
         return true
     } catch (e) {
@@ -174,13 +186,16 @@ export const aggregateInvestorBalances = async (
             for (const [questName, investorBalance] of Object.entries(
                 inv.balances
             )) {
-                preparedInvestorBalances.push(
-                    new InvestorBalancesDto(
-                        investorHashToInvestorId.get(inv.hash),
-                        questNameToQuestId.get(questName),
-                        investorBalance
-                    ).toObj()
-                )
+                const instance = new InvestorBalancesDto(
+                  inv,
+                  questName,
+                  investorBalance,
+                  0,
+                  investorHashToInvestorId,
+                  questNameToQuestId
+                ).toObj();
+
+                preparedInvestorBalances.push(instance)
             }
         })
 
