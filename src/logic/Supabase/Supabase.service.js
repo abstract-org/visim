@@ -1,4 +1,4 @@
-import { classToPlain } from 'class-transformer'
+import { classToPlain, instanceToPlain } from 'class-transformer'
 import HashMap from 'hashmap'
 
 import { createHashMappings } from '../Utils/logicUtils'
@@ -187,13 +187,13 @@ export const aggregateInvestorBalances = async (
                 inv.balances
             )) {
                 const instance = new InvestorBalancesDto(
-                  inv,
-                  questName,
-                  investorBalance,
-                  0,
-                  investorHashToInvestorId,
-                  questNameToQuestId
-                ).toObj();
+                    inv,
+                    questName,
+                    investorBalance,
+                    0,
+                    investorHashToInvestorId,
+                    questNameToQuestId
+                ).toObj()
 
                 preparedInvestorBalances.push(instance)
             }
@@ -235,13 +235,17 @@ export const aggregateScenarioData = async (
             )
 
             const preparedInvestorConfigs = investorConfigs.map((invConfig) =>
-                classToPlain(
-                    new ScenarioInvestorConfigDto(invConfig, scenarioId)
+                instanceToPlain(
+                    new ScenarioInvestorConfigDto({
+                        ...invConfig,
+                        scenarioId,
+                        globalSwapThreshold: 0
+                    })
                 )
             )
 
             const preparedQuestConfigs = questConfigs.map((questConfig) =>
-                classToPlain(
+                instanceToPlain(
                     new ScenarioQuestConfigDto(questConfig, scenarioId)
                 )
             )

@@ -18,16 +18,19 @@ import useInvestorStore from '../Investor/investor.store'
 import useLogsStore from '../Logs/logs.store'
 import usePoolStore from '../Pool/pool.store'
 import useQuestStore from '../Quest/quest.store'
-import { fetchTotalsList } from '../Supabase/Supabase.download-service'
+import {
+    fetchSnapshotWithDataById,
+    fetchTotalsList
+} from '../Supabase/Supabase.download-service'
 import { aggregateAndStoreDataForSnapshot } from '../Supabase/Supabase.service'
 import { formatBytes } from '../Utils/logicUtils'
 import { downloadStateFrom, getContentLength } from './download.service'
 import {
     aggregateSnapshotTotals,
     base64ToState,
-    overrideStateBySnapshot,
+    overrideStateBySnapshot, rehydrateState,
     sanitizeSnapshot
-} from './states.service'
+} from "./states.service";
 import { uploadStateTo } from './upload.service'
 
 const overrideSelector = (state) => state.override
@@ -230,6 +233,43 @@ const StatesTable = (props) => {
         setDbSnapshots(await fetchTotalsList())
     }
 
+    const loadStateFromDB = async (snapshotId) => {
+        try {
+            const data = await fetchSnapshotWithDataById(snapshotId)
+
+            console.log('snapshot data: ', data);
+
+            const snapshot = rehydrateState(data)
+
+            console.log(snapshot);
+
+            // overrideInvestors(snapshot.investorStore)
+            // overrideQuests(snapshot.questStore)
+            // overridePools(snapshot.poolStore)
+            // overrideGenerators(snapshot.generatorStore)
+            // overrideLogs(snapshot.logStore)
+            // overrideDayTracker(snapshot.dayTrackerStore)
+
+            // overrideStateBySnapshot(snapshot)
+
+            toast.current.show({
+                severity: 'success',
+                summary: 'Success',
+                detail: `Current state was overriden by snapshot`
+            })
+
+            setLoaderData({ active: false })
+            setNeedScrollUp(true)
+            props.setSidebarVisible(false)
+        } catch (e) {
+            toast.current.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: `Something went wrong during importing state from DB`
+            })
+        }
+    }
+
     const loadState = async ({ stateId, stateLocation }) => {
         const size = await getContentLength(stateLocation)
         setLoaderData({
@@ -247,6 +287,8 @@ const StatesTable = (props) => {
         overrideGenerators(snapshot.generatorStore)
         overrideLogs(snapshot.logStore)
         overrideDayTracker(snapshot.dayTrackerStore)
+
+        console.log(snapshot);
 
         overrideStateBySnapshot(snapshot)
 
@@ -328,9 +370,7 @@ const StatesTable = (props) => {
                     iconPos="left"
                     label="Load from DB"
                     className="p-button-danger mr-2"
-                    onClick={() =>
-                        console.log('fetchSnapshotById(', rowData.id, ')')
-                    }
+                    onClick={() => loadStateFromDB(rowData.id)}
                 />
             </React.Fragment>
         )

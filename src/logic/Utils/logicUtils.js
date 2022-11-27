@@ -1,4 +1,5 @@
 import HashMap from 'hashmap'
+import camelCase from "lodash/camelCase";
 
 export const pp2p = (pricePoint) => {
     return 2 ** pricePoint
@@ -230,4 +231,16 @@ export const createHashMappings = (arr, linkingKey, linkingValue) => {
     ])
 
     return new HashMap(mappingsArray)
+}
+
+export const toCamelCase = (data) => {
+    let result = {};
+
+    for (const [key, value] of Object.entries(data)) {
+        const camelCasedKey = camelCase(key)
+
+        result[camelCasedKey] = value
+    }
+
+    return result
 }
