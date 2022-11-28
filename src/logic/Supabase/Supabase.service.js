@@ -13,8 +13,8 @@ import {
     PositionUploadDto,
     QuestUploadDto,
     ScenarioDto,
-    ScenarioInvestorConfigDto,
-    ScenarioQuestConfigDto,
+    ScenarioInvestorConfigUploadDto,
+    ScenarioQuestConfigUploadDto,
     SnapshotTotalsUploadDto,
     SnapshotUploadDto,
     SwapUploadDto
@@ -236,13 +236,13 @@ export const aggregateScenarioData = async (
 
             const preparedInvestorConfigs = investorConfigs.map((invConfig) =>
                 instanceToPlain(
-                    new ScenarioInvestorConfigDto(invConfig, scenarioId)
+                    new ScenarioInvestorConfigUploadDto(invConfig, scenarioId)
                 )
             )
 
             const preparedQuestConfigs = questConfigs.map((questConfig) =>
                 instanceToPlain(
-                    new ScenarioQuestConfigDto(questConfig, scenarioId)
+                    new ScenarioQuestConfigUploadDto(questConfig, scenarioId)
                 )
             )
 

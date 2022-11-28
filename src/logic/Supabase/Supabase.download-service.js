@@ -1,4 +1,3 @@
-import { instanceToPlain } from 'class-transformer'
 import HashMap from 'hashmap'
 
 import { convertArrayToHashMapByKey } from '../Utils/serializer'
@@ -6,7 +5,6 @@ import { SupabaseClient, TABLE } from './SupabaseClient'
 import {
     InvestorDto,
     PoolDto,
-    QuestDto,
     ScenarioInvestorConfigDto,
     ScenarioQuestConfigDto,
     SnapshotWithTotalsDto
@@ -155,11 +153,11 @@ const gatherStateFromSnapshot = (data) => {
 
 const transformScenario = (scenario) => {
     return {
-        invConfigs: scenario.scenario_quest_config.map((cfg) =>
-            instanceToPlain(new ScenarioInvestorConfigDto(cfg))
+        invConfigs: scenario.scenario_investor_config.map((cfg) =>
+            new ScenarioInvestorConfigDto(cfg).toObj()
         ),
         questConfigs: scenario.scenario_quest_config.map((cfg) =>
-            instanceToPlain(new ScenarioQuestConfigDto(cfg))
+            new ScenarioQuestConfigDto(cfg).toObj()
         )
     }
 }
