@@ -1,3 +1,6 @@
+import Investor from '../../Investor/Investor.class'
+import Pool from '../../Pool/Pool.class'
+
 export class InvestorDto {
     /** @type {number} */
     id
@@ -9,6 +12,10 @@ export class InvestorDto {
     hash
     /** @type {Date} */
     created_at
+    /** @type {Object[]} */
+    investor_balances
+    /** @type {{name:string}[]} */
+    quests
 
     constructor(data) {
         this.id = data.id
@@ -16,16 +23,38 @@ export class InvestorDto {
         this.type = data.type
         this.hash = data.hash
         this.created_at = data.created_at
+        this.investor_balances = data.investor_balances
+        this.quests = data.quests
     }
 
     toObj() {
+        const balances = this.investor_balances.reduce((resultObj, item) => {
+            resultObj[item.quest.name] = item.balance
+
+            return resultObj
+        }, {})
+
+        const questsCreated = this.quests.map((q) => q.name)
+
         return {
             id: this.id,
             name: this.name,
             type: this.type,
             hash: this.hash,
-            created_at: this.created_at
+            created_at: this.created_at,
+            balances,
+            questsCreated
         }
+    }
+
+    toHash() {
+        return this.hash
+    }
+
+    toInvestor() {
+        const investor = new Investor()
+
+        return { ...investor, ...this.toObj() }
     }
 }
 
