@@ -132,6 +132,18 @@ const aggregateLogsForStore = (data) => {
 
 const aggregateQuestsForStore = () => {}
 
+const aggregateTotalSwapsAndLogs = (data) => {
+    return data.reduce(
+      (sum, current) => {
+          return {
+              totalSwaps: [...sum.totalSwaps, ...current.swap],
+              totalLogs: [...sum.totalLogs, ...current.log]
+          }
+      },
+      { totalSwaps: [], totalLogs: [] }
+    )
+}
+
 const gatherStateFromSnapshot = (data) => {
     let newState = {
         generatorStore: { invConfigs: [], questConfigs: [] },
@@ -176,15 +188,7 @@ const gatherStateFromSnapshot = (data) => {
     newState.poolStore.pools = poolStorePools
     newState.pools = pools
 
-    const { totalSwaps, totalLogs } = data.pool.reduce(
-        (sum, current) => {
-            return {
-                totalSwaps: [...sum.totalSwaps, ...current.swap],
-                totalLogs: [...sum.totalLogs, ...current.log]
-            }
-        },
-        { totalSwaps: [], totalLogs: [] }
-    )
+    const { totalSwaps, totalLogs } = aggregateTotalSwapsAndLogs(data.pool)
 
     const { logs } = aggregateLogsForStore(totalLogs)
     newState.logStore.logObjs = logs
