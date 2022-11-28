@@ -1,17 +1,24 @@
 import { InvestorDto, InvestorUploadDto } from './Investor.dto'
+import { InvestorBalancesDto } from './InvestorBalances.dto'
 import { LogDto, LogUploadDto } from './Log.dto'
 import { PoolDto, PoolUploadDto } from './Pool.dto'
 import { PoolDataDto, PoolDataUploadDto } from './PoolData.dto'
 import { PosOwnersDto, PosOwnersUploadDto } from './PosOwners.dto'
 import { PositionDto, PositionUploadDto } from './Position.dto'
 import { QuestDto, QuestUploadDto } from './Quest.dto'
-import { SnapshotDto, SnapshotUploadDto } from './Snapshot.dto'
+import { ScenarioDto } from './Scenario.dto'
+import { ScenarioInvestorConfigDto } from './ScenarioInvestorConfig.dto'
+import { ScenarioQuestConfigDto } from './ScenarioQuestConfig.dto'
+import {
+    SnapshotDto,
+    SnapshotUploadDto,
+    SnapshotWithTotalsDto
+} from './Snapshot.dto'
 import {
     SnapshotTotalsDto,
     SnapshotTotalsUploadDto
 } from './SnapshotTotals.dto'
 import { SwapDto, SwapUploadDto } from './Swap.dto'
-import {InvestorBalancesDto} from './InvestorBalances.dto';
 
 export {
     SwapDto,
@@ -33,6 +40,10 @@ export {
     QuestDto,
     SnapshotTotalsDto,
     SnapshotTotalsUploadDto,
+    SnapshotWithTotalsDto,
     QuestUploadDto,
-    InvestorBalancesDto
+    InvestorBalancesDto,
+    ScenarioDto,
+    ScenarioInvestorConfigDto,
+    ScenarioQuestConfigDto
 }
