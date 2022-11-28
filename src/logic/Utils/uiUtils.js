@@ -53,11 +53,12 @@ export const capitalize = (str) => {
 export const calcCrossPoolThickness = (crossPool, citedPool, citingPool) => {
     const thicknessBy = {
         citingUsdcValue: citingPool && Math.log(citingPool.getUSDCValue()),
-        citingMarketCap: Math.log(citingPool.getMarketCap()),
-        citingTokenPrice: Math.log(citingPool.curPrice) * 10,
-        crossPoolUsdcLocked: Math.log(
-            citedPool.getUSDCValue() + citingPool.getUSDCValue()
-        )
+        citingMarketCap: citingPool && Math.log(citingPool.getMarketCap()),
+        citingTokenPrice: citingPool && Math.log(citingPool.curPrice) * 10,
+        crossPoolUsdcLocked:
+            citedPool &&
+            citingPool &&
+            Math.log(citedPool.getUSDCValue() + citingPool.getUSDCValue())
     }
 
     return thicknessBy.crossPoolUsdcLocked

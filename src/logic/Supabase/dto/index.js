@@ -8,7 +8,9 @@ import { PositionDto, PositionUploadDto } from './Position.dto'
 import { QuestDto, QuestUploadDto } from './Quest.dto'
 import { ScenarioDto } from './Scenario.dto'
 import { ScenarioInvestorConfigDto } from './ScenarioInvestorConfig.dto'
+import { ScenarioInvestorConfigUploadDto } from './ScenarioInvestorConfigUpload.dto'
 import { ScenarioQuestConfigDto } from './ScenarioQuestConfig.dto'
+import { ScenarioQuestConfigUploadDto } from './ScenarioQuestConfigUpload.dto'
 import {
     SnapshotDto,
     SnapshotUploadDto,
@@ -44,6 +46,8 @@ export {
     QuestUploadDto,
     InvestorBalancesDto,
     ScenarioDto,
+    ScenarioInvestorConfigUploadDto,
     ScenarioInvestorConfigDto,
-    ScenarioQuestConfigDto
+    ScenarioQuestConfigDto,
+    ScenarioQuestConfigUploadDto
 }

@@ -277,10 +277,46 @@ const StatesTable = (props) => {
     }
 
     const loadFromDb = async (snapshotId) => {
-        const newState = await fetchSnapshotById(snapshotId)
-        console.debug(`New state [${snapshotId}] =`, newState)
+        setLoaderData({
+            active: true,
+            message: `Downloading snapshot [${snapshotId}] from DB`,
+            fileSize: 0
+        })
 
-        return null
+        let newState = null
+        try {
+            newState = await fetchSnapshotById(snapshotId)
+            console.debug(`New state [${snapshotId}] =`, newState)
+        } catch (err) {}
+
+        if (!newState) {
+            toast.current.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: `Couldn't download snapshot from DB`
+            })
+            setLoaderData({ active: false })
+
+            return
+        }
+        overrideInvestors(newState.investorStore)
+        overrideQuests(newState.questStore)
+        overridePools(newState.poolStore)
+        overrideGenerators(newState.generatorStore)
+        overrideLogs(newState.logStore)
+        overrideDayTracker(newState.dayTrackerStore)
+
+        overrideStateBySnapshot(newState)
+
+        toast.current.show({
+            severity: 'success',
+            summary: 'Success',
+            detail: `Current state was overridden by snapshot ${snapshotId}`
+        })
+
+        setLoaderData({ active: false })
+        setNeedScrollUp(true)
+        props.setSidebarVisible(false)
     }
 
     const actionSaveButton = () => {
