@@ -1,37 +1,4 @@
 export class ScenarioInvestorConfigDto {
-    scenario_id
-    global_swap_threshold
-    daily_spawn_probability
-    inv_gen_alias
-    inv_gen_name
-    initial_balance
-    buy_sell_period_days
-    buy_single_perc
-    include_single_name
-    buy_sum_perc
-    buy_quest_perc
-    buy_gainer_perc
-    buy_gainers_frequency
-    exclude_single_name
-    swap_inc_frequency
-    swap_inc_dir
-    swap_inc_sum_perc
-    swap_inc_by_perc
-    swap_dec_frequency
-    swap_dec_dir
-    swap_dec_sum_perc
-    swap_dec_by_perc
-    create_quest
-    keep_creating_quests
-    keep_creating_period_days
-    keep_citing_probability
-    keep_citing_sum_percentage
-    keep_citing_price_higher_than
-    keep_citing_pos_multiplier
-    value_sell_period_days
-    value_sell_amount
-    smart_route_depth
-    
     constructor(data) {
         this.scenario_id = data.scenarioId
         this.global_swap_threshold = data.globalSwapThreshold

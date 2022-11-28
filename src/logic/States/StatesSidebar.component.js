@@ -239,9 +239,6 @@ const StatesTable = (props) => {
 
             console.log('snapshot data: ', data);
 
-            const snapshot = rehydrateState(data)
-
-            console.log(snapshot);
 
             // overrideInvestors(snapshot.investorStore)
             // overrideQuests(snapshot.questStore)
