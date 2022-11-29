@@ -76,8 +76,8 @@ export class LogUploadDto {
         this.investor_id = investorMappings.get(data.investorHash)
         this.action = data.action
         this.day = data.day
-        this.tvl = data.tvl
-        this.mcap = data.mcap
+        this.tvl = data.tvl || 0
+        this.mcap = data.mcap || 0
         this.op_name = data.opName
         this.total_amount_in = data.totalAmountIn
         this.total_amount_out = data.totalAmountOut

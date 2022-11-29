@@ -6,9 +6,11 @@ import {
     InvestorDto,
     LogDto,
     PoolDto,
+    QuestDto,
     ScenarioInvestorConfigDto,
     ScenarioQuestConfigDto,
-    SnapshotWithTotalsDto
+    SnapshotWithTotalsDto,
+    SwapDto
 } from './dto'
 
 export const fetchTotalsById = async (snapshotId) => {
@@ -31,7 +33,6 @@ export const fetchTotalsList = async () => {
         `*, ${TABLE.snapshot_totals}(*)`
     )
 
-    console.debug('fetchTotalsList().data:', data)
     if (error) {
         console.error('fetchTotalsList().error:', error)
     }
@@ -124,6 +125,10 @@ const aggregatePoolsForStore = (data) => {
     }
 }
 
+const aggregateSwapsForStore = (data) => {
+    return data.map((ssSwap) => new SwapDto(ssSwap).toObj())
+}
+
 const aggregateLogsForStore = (data) => {
     const logObjList = data.map((ssLog) => new LogDto(ssLog).toObj())
 
@@ -170,7 +175,7 @@ const gatherStateFromSnapshot = (data) => {
         poolStore: {
             pools: [] /* pool names */,
             swaps: [],
-            active: '' /* active pool*/,
+            active: 'AGORA' /* active pool*/,
             swapMode: 'smart'
         },
         pools: new HashMap(),
@@ -212,6 +217,7 @@ const gatherStateFromSnapshot = (data) => {
 
     const { totalSwaps, totalLogs } = extractTotalSwapsAndLogs(data.pool)
 
+    newState.poolStore.swaps = aggregateSwapsForStore(totalSwaps)
     const { logs } = aggregateLogsForStore(totalLogs)
     newState.logStore.logObjs = logs
 

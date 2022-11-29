@@ -379,19 +379,27 @@ export const createSnapshot = async ({ scenarioId = 1, seed }) => {
 /**
  * @description Saves aggregated quests to DB
  * @param {HashMap<Quest>} quests
+ * @param {Object} questStore
  * @param {HashMap<questName: string, investorId: number>} investorMappings - mapping(questName => investor_id)
  * @param {number} snapshotId
  * @returns {Promise<void>}
  */
 export const aggregateQuestData = async (
     quests,
+    questStore,
     investorMappings,
     snapshotId
 ) => {
     let questNameToQuestId
-    const preparedQuests = quests
-        .values()
-        .map((quest) => new QuestUploadDto(quest, investorMappings).toObj())
+    const preparedQuests = quests.values().map((quest) =>
+        new QuestUploadDto(
+            {
+                ...quest,
+                isHuman: questStore.humanQuests.includes(quest.name)
+            },
+            investorMappings
+        ).toObj()
+    )
 
     const questDbResponse = await SupabaseClient.from(TABLE.quest)
         .insert(preparedQuests)
@@ -491,6 +499,7 @@ export const aggregateAndStoreDataForSnapshot = async ({
 
         const questNameToQuestId = await aggregateQuestData(
             state.quests,
+            state.questStore,
             questNamesToInvestorIdMappings,
             snapshotDbId
         )
