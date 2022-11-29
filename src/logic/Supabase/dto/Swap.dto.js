@@ -12,34 +12,46 @@ export class SwapDto {
     /** @type {number} */
     block
     /** @type {number} */
-    investor_id
+    investorHash
     /** @type {string} */
     path
+    /** @type {string} */
+    pool
     /** @type {number} */
-    pool_id
+    price
 
-    constructor(data) {
+    constructor(data, poolNames, investorHashes) {
+        //     price: '1.440',
+        this.price = data.price
+        //     mcap: 28790,
+        this.mcap = data.mcap
+        this.tvl = data.tvl
+        this.opName = data.op_name
+
+        this.id = data.id
+        this.pool = poolNames.get(data.pool_id)
+        this.investorHash = investorHashes.get(data.investor_id)
         this.action = data.action
-        this.amount_in = data.amount_in
-        this.amount_out = data.amount_out
+        this.totalAmountIn = data.amount_in
+        this.totalAmountOut = data.amount_out
         this.day = data.day
         this.block = data.block
-        this.path = data.path
-        this.investor_id = data.investor_id
-        this.pool_id = data.pool_id
-        this.amount_in = data.amount_in
-        this.amount_out = data.amount_out
-        this.id = data.id
+        this.paths = data.path
     }
 
     toObj() {
         return {
+            pool: this.pool,
+            price: this.price,
+            investorHash: this.investorHash,
             action: this.action,
-            totalAmountIn: this.amount_in,
-            totalAmountOut: this.amount_out,
+            mcap: this.mcap,
+            tvl: this.tvl,
+            totalAmountIn: this.totalAmountIn,
+            totalAmountOut: this.totalAmountOut,
+            paths: this.paths,
             day: this.day,
-            block: this.block,
-            paths: this.path
+            opName: this.opName
         }
     }
 }
@@ -69,9 +81,12 @@ export class SwapUploadDto {
         this.day = data.day || 0
         this.block = data.block || 0
         this.path = data.paths
-        this.investor_id = data.investor_id
         this.pool_id = poolMappings.get(data.pool)
         this.investor_id = investorMappings.get(data.investorHash)
+        this.price = data.price
+        this.mcap = data.mcap
+        this.tvl = data.tvl
+        this.op_name = data.opName
     }
 
     toObj() {
@@ -83,7 +98,11 @@ export class SwapUploadDto {
             block: this.block,
             path: this.path,
             investor_id: this.investor_id,
-            pool_id: this.pool_id
+            pool_id: this.pool_id,
+            price: this.price,
+            mcap: this.mcap,
+            tvl: this.tvl,
+            op_name: this.opName
         }
     }
 }

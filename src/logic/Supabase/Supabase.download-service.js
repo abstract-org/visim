@@ -1,5 +1,6 @@
 import HashMap from 'hashmap'
 
+import { createHashMappings } from '../Utils/logicUtils'
 import { convertArrayToHashMapByKey } from '../Utils/serializer'
 import { SupabaseClient, TABLE } from './SupabaseClient'
 import {
@@ -20,7 +21,6 @@ export const fetchTotalsById = async (snapshotId) => {
         .limit(1)
         .single()
 
-    console.debug('fetchTotalsById().data:', data)
     if (error) {
         console.error('fetchTotalsById().error:', error)
     }
@@ -125,8 +125,13 @@ const aggregatePoolsForStore = (data) => {
     }
 }
 
-const aggregateSwapsForStore = (data) => {
-    return data.map((ssSwap) => new SwapDto(ssSwap).toObj())
+const aggregateSwapsForStore = (data, respData) => {
+    const poolNamesById = createHashMappings(respData.pool, 'id', 'name')
+    const invHashById = createHashMappings(respData.investor, 'id', 'hash')
+
+    return data.map((ssSwap) =>
+        new SwapDto(ssSwap, poolNamesById, invHashById).toObj()
+    )
 }
 
 const aggregateLogsForStore = (data) => {
@@ -217,11 +222,10 @@ const gatherStateFromSnapshot = (data) => {
 
     const { totalSwaps, totalLogs } = extractTotalSwapsAndLogs(data.pool)
 
-    newState.poolStore.swaps = aggregateSwapsForStore(totalSwaps)
+    newState.poolStore.swaps = aggregateSwapsForStore(totalSwaps, data)
+
     const { logs } = aggregateLogsForStore(totalLogs)
     newState.logStore.logObjs = logs
-
-    console.debug(newState)
 
     return newState
 }
