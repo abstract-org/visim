@@ -129,7 +129,10 @@ export const validateState = (
 ) => {
     const validationResult = schema.validate(state, options)
     const { error } = validationResult
-    console.debug(JSON.parse(JSON.stringify(validationResult.error)))
+    console.debug(
+        'Validation errors',
+        JSON.parse(JSON.stringify(validationResult.error))
+    )
     const isValid = !!error
 
     return { isValid, error }
