@@ -47,7 +47,7 @@ export class QuestUploadDto {
         return {
             author_id: this.author_id,
             name: this.name,
-            hash: this.hash,
+            hash: this.hash
         }
     }
 }

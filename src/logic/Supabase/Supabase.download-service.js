@@ -1,15 +1,15 @@
 import HashMap from 'hashmap'
 
 import { convertArrayToHashMapByKey } from '../Utils/serializer'
-import { aggregateSwapsData } from './Supabase.service'
 import { SupabaseClient, TABLE } from './SupabaseClient'
 import {
-    InvestorDto, LogDto,
+    InvestorDto,
+    LogDto,
     PoolDto,
     ScenarioInvestorConfigDto,
     ScenarioQuestConfigDto,
     SnapshotWithTotalsDto
-} from "./dto";
+} from './dto'
 
 export const fetchTotalsById = async (snapshotId) => {
     const { data, error } = await SupabaseClient.from(TABLE.snapshot)
@@ -93,9 +93,7 @@ export const fetchSnapshotById = async (snapshotId) => {
 }
 
 const aggregateInvestorsForStore = (data) => {
-    const investorDtoList = data.map(
-        (ssInv) => new InvestorDto(ssInv)
-    )
+    const investorDtoList = data.map((ssInv) => new InvestorDto(ssInv))
 
     return {
         investorStoreInvestors: investorDtoList.map((invDto) =>
@@ -132,13 +130,13 @@ const aggregateQuestsForStore = () => {}
 
 const aggregateTotalSwapsAndLogs = (data) => {
     return data.reduce(
-      (sum, current) => {
-          return {
-              totalSwaps: [...sum.totalSwaps, ...current.swap],
-              totalLogs: [...sum.totalLogs, ...current.log]
-          }
-      },
-      { totalSwaps: [], totalLogs: [] }
+        (sum, current) => {
+            return {
+                totalSwaps: [...sum.totalSwaps, ...current.swap],
+                totalLogs: [...sum.totalLogs, ...current.log]
+            }
+        },
+        { totalSwaps: [], totalLogs: [] }
     )
 }
 
