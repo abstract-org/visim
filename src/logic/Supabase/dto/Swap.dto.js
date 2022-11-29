@@ -92,8 +92,8 @@ export class SwapUploadDto {
     toObj() {
         return {
             action: this.action,
-            amount_in: Number(this.amount_in),
-            amount_out: Number(this.amount_out),
+            amount_in: this.amount_in,
+            amount_out: this.amount_out,
             day: this.day,
             block: this.block,
             path: this.path,
@@ -102,7 +102,7 @@ export class SwapUploadDto {
             price: this.price,
             mcap: this.mcap,
             tvl: this.tvl,
-            op_name: this.opName
+            op_name: this.op_name
         }
     }
 }
