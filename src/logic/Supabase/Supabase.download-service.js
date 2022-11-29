@@ -69,7 +69,13 @@ const getQuerySnapshotById = ({ T } = { T: TABLE }) => `*,
             ),
             ${T.swap}(*)
         ),
-        ${T.quest}(*)
+        ${T.quest}(
+            *,
+            investor (
+                name,
+                hash
+            )
+        )
         `
 
 export const fetchSnapshotById = async (snapshotId) => {
@@ -126,9 +132,24 @@ const aggregateLogsForStore = (data) => {
     }
 }
 
-const aggregateQuestsForStore = () => {}
+const aggregateQuestsForStore = (data) => {
+    const questDtoList = data.map((ssQuest) => new QuestDto(ssQuest))
 
-const aggregateTotalSwapsAndLogs = (data) => {
+    return {
+        questStore: {
+            quests: questDtoList.map((questDto) => questDto.toName()),
+            humanQuests: questDtoList
+                .filter((questDto) => questDto.is_human)
+                .map((questDto) => questDto.toName())
+        },
+        quests: convertArrayToHashMapByKey(
+            questDtoList.map((questDto) => questDto.toQuest()),
+            'name'
+        )
+    }
+}
+
+const extractTotalSwapsAndLogs = (data) => {
     return data.reduce(
         (sum, current) => {
             return {
@@ -184,7 +205,12 @@ const gatherStateFromSnapshot = (data) => {
     newState.poolStore.pools = poolStorePools
     newState.pools = pools
 
-    const { totalSwaps, totalLogs } = aggregateTotalSwapsAndLogs(data.pool)
+    const { quests, questStore } = aggregateQuestsForStore(data.quest)
+    newState.questStore.quests = questStore.quests
+    newState.questStore.humanQuests = questStore.humanQuests
+    newState.quests = quests
+
+    const { totalSwaps, totalLogs } = extractTotalSwapsAndLogs(data.pool)
 
     const { logs } = aggregateLogsForStore(totalLogs)
     newState.logStore.logObjs = logs
