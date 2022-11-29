@@ -5,13 +5,14 @@ import { convertArrayToHashMapByKey } from '../Utils/serializer'
 import { aggregateSwapsData } from './Supabase.service'
 import { SupabaseClient, TABLE } from './SupabaseClient'
 import {
-    InvestorDto, LogDto,
+    InvestorDto,
+    LogDto,
     PoolDto,
     QuestDto,
     ScenarioInvestorConfigDto,
     ScenarioQuestConfigDto,
     SnapshotWithTotalsDto
-} from "./dto";
+} from './dto'
 
 export const fetchTotalsById = async (snapshotId) => {
     const { data, error } = await SupabaseClient.from(TABLE.snapshot)
@@ -71,7 +72,13 @@ const getQuerySnapshotById = ({ T } = { T: TABLE }) => `*,
             ),
             ${T.swap}(*)
         ),
-        ${T.quest}(*)
+        ${T.quest}(
+            *,
+            investor (
+                name,
+                hash
+            )
+        )
         `
 
 export const fetchSnapshotById = async (snapshotId) => {
@@ -95,9 +102,7 @@ export const fetchSnapshotById = async (snapshotId) => {
 }
 
 const aggregateInvestorsForStore = (data) => {
-    const investorDtoList = data.map(
-        (ssInv) => new InvestorDto(ssInv)
-    )
+    const investorDtoList = data.map((ssInv) => new InvestorDto(ssInv))
 
     return {
         investorStoreInvestors: investorDtoList.map((invDto) =>
@@ -130,17 +135,32 @@ const aggregateLogsForStore = (data) => {
     }
 }
 
-const aggregateQuestsForStore = () => {}
+const aggregateQuestsForStore = (data) => {
+    const questDtoList = data.map((ssQuest) => new QuestDto(ssQuest))
 
-const aggregateTotalSwapsAndLogs = (data) => {
+    return {
+        questStore: {
+            quests: questDtoList.map((questDto) => questDto.toName()),
+            humanQuests: questDtoList
+                .filter((questDto) => questDto.is_human)
+                .map((questDto) => questDto.toName())
+        },
+        quests: convertArrayToHashMapByKey(
+            questDtoList.map((questDto) => questDto.toQuest()),
+            'name'
+        )
+    }
+}
+
+const extractTotalSwapsAndLogs = (data) => {
     return data.reduce(
-      (sum, current) => {
-          return {
-              totalSwaps: [...sum.totalSwaps, ...current.swap],
-              totalLogs: [...sum.totalLogs, ...current.log]
-          }
-      },
-      { totalSwaps: [], totalLogs: [] }
+        (sum, current) => {
+            return {
+                totalSwaps: [...sum.totalSwaps, ...current.swap],
+                totalLogs: [...sum.totalLogs, ...current.log]
+            }
+        },
+        { totalSwaps: [], totalLogs: [] }
     )
 }
 
@@ -158,9 +178,9 @@ const gatherStateFromSnapshot = (data) => {
         },
         pools: new HashMap(),
         questStore: {
-            quests: Array(21),
-            humanQuests: Array(1),
-            selectedQuests: Array(0),
+            quests: [],
+            humanQuests: [],
+            selectedQuests: [],
             active: '',
             proMode: false
         },
@@ -188,7 +208,12 @@ const gatherStateFromSnapshot = (data) => {
     newState.poolStore.pools = poolStorePools
     newState.pools = pools
 
-    const { totalSwaps, totalLogs } = aggregateTotalSwapsAndLogs(data.pool)
+    const {quests, questStore} = aggregateQuestsForStore(data.quest)
+    newState.questStore.quests = questStore.quests
+    newState.questStore.humanQuests = questStore.humanQuests
+    newState.quests = quests
+
+    const { totalSwaps, totalLogs } = extractTotalSwapsAndLogs(data.pool)
 
     const { logs } = aggregateLogsForStore(totalLogs)
     newState.logStore.logObjs = logs

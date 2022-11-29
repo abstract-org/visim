@@ -1,3 +1,6 @@
+import Pool from '../../Quest/Token.class'
+import Token from "../../Quest/Token.class";
+
 export class QuestDto {
     /** @type {number} */
     id
@@ -9,6 +12,8 @@ export class QuestDto {
     hash
     /** @type {Date} */
     created_at
+    /** @type {Boolean} */
+    is_human
 
     constructor(data) {
         this.id = data.id
@@ -16,6 +21,7 @@ export class QuestDto {
         this.name = data.name
         this.hash = data.hash
         this.created_at = data.created_at
+        this.is_human = data.is_human
     }
 
     toObj() {
@@ -26,6 +32,20 @@ export class QuestDto {
             hash: this.hash,
             created_at: this.created_at
         }
+    }
+
+    toName() {
+        return this.name;
+    }
+
+    toQuest() {
+        const quest = new Token()
+        quest.hash = this.hash
+        quest.name = this.name
+        quest.id = this.id
+
+
+        return quest
     }
 }
 
@@ -41,6 +61,7 @@ export class QuestUploadDto {
         this.author_id = investorMappings.get(data.name) // returns investor_id
         this.name = data.name
         this.hash = data.hash || '0x0000'
+        this.is_human = data.isHuman
     }
 
     toObj() {
@@ -48,6 +69,7 @@ export class QuestUploadDto {
             author_id: this.author_id,
             name: this.name,
             hash: this.hash,
+            is_human: this.is_human
         }
     }
 }
