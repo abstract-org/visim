@@ -1,8 +1,6 @@
-import { instanceToPlain } from 'class-transformer'
 import HashMap from 'hashmap'
 
 import { convertArrayToHashMapByKey } from '../Utils/serializer'
-import { aggregateSwapsData } from './Supabase.service'
 import { SupabaseClient, TABLE } from './SupabaseClient'
 import {
     InvestorDto,
@@ -11,7 +9,8 @@ import {
     QuestDto,
     ScenarioInvestorConfigDto,
     ScenarioQuestConfigDto,
-    SnapshotWithTotalsDto
+    SnapshotWithTotalsDto,
+    SwapDto
 } from './dto'
 
 export const fetchTotalsById = async (snapshotId) => {
@@ -34,7 +33,6 @@ export const fetchTotalsList = async () => {
         `*, ${TABLE.snapshot_totals}(*)`
     )
 
-    console.debug('fetchTotalsList().data:', data)
     if (error) {
         console.error('fetchTotalsList().error:', error)
     }
@@ -127,6 +125,10 @@ const aggregatePoolsForStore = (data) => {
     }
 }
 
+const aggregateSwapsForStore = (data) => {
+    return data.map((ssSwap) => new SwapDto(ssSwap).toObj())
+}
+
 const aggregateLogsForStore = (data) => {
     const logObjList = data.map((ssLog) => new LogDto(ssLog).toObj())
 
@@ -173,7 +175,7 @@ const gatherStateFromSnapshot = (data) => {
         poolStore: {
             pools: [] /* pool names */,
             swaps: [],
-            active: '' /* active pool*/,
+            active: 'AGORA' /* active pool*/,
             swapMode: 'smart'
         },
         pools: new HashMap(),
@@ -208,13 +210,14 @@ const gatherStateFromSnapshot = (data) => {
     newState.poolStore.pools = poolStorePools
     newState.pools = pools
 
-    const {quests, questStore} = aggregateQuestsForStore(data.quest)
+    const { quests, questStore } = aggregateQuestsForStore(data.quest)
     newState.questStore.quests = questStore.quests
     newState.questStore.humanQuests = questStore.humanQuests
     newState.quests = quests
 
     const { totalSwaps, totalLogs } = extractTotalSwapsAndLogs(data.pool)
 
+    newState.poolStore.swaps = aggregateSwapsForStore(totalSwaps)
     const { logs } = aggregateLogsForStore(totalLogs)
     newState.logStore.logObjs = logs
 
@@ -225,11 +228,11 @@ const gatherStateFromSnapshot = (data) => {
 
 const transformScenario = (scenario) => {
     return {
-        invConfigs: scenario.scenario_quest_config.map((cfg) =>
-            instanceToPlain(new ScenarioInvestorConfigDto(cfg))
+        invConfigs: scenario.scenario_investor_config.map((cfg) =>
+            new ScenarioInvestorConfigDto(cfg).toObj()
         ),
         questConfigs: scenario.scenario_quest_config.map((cfg) =>
-            instanceToPlain(new ScenarioQuestConfigDto(cfg))
+            new ScenarioQuestConfigDto(cfg).toObj()
         )
     }
 }

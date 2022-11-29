@@ -55,6 +55,7 @@ export class PoolDto {
         pool.curLiq = poolData.current_liquidity
         pool.volumeToken0 = poolData.volume_token0
         pool.volumeToken1 = poolData.volume_token0
+        pool.type = pool.tokenLeft === 'USDC' ? 'QUEST' : 'VALUE_LINK'
         // @TODO: add saving to DB.poo_data following params
         // pool.totalSold = poolData.totalSold
         // pool.FRESH = poolData.FRESH
