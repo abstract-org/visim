@@ -154,9 +154,9 @@ const gatherStateFromSnapshot = (data) => {
         },
         pools: new HashMap(),
         questStore: {
-            quests: Array(21),
-            humanQuests: Array(1),
-            selectedQuests: Array(0),
+            quests: [],
+            humanQuests: [],
+            selectedQuests: [],
             active: '',
             proMode: false
         },
