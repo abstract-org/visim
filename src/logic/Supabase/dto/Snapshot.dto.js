@@ -30,16 +30,19 @@ export class SnapshotUploadDto {
     seed
     /** @type {number} */
     scenario_id
+    current_day
 
     constructor(data) {
         this.seed = data.seed
         this.scenario_id = data.scenarioId
+        this.current_day = data.currentDay
     }
 
     toObj() {
         return {
             seed: this.seed,
-            scenario_id: this.scenario_id
+            scenario_id: this.scenario_id,
+            current_day: this.current_day
         }
     }
 }
