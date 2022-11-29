@@ -2,9 +2,11 @@ import { instanceToPlain } from 'class-transformer'
 import HashMap from 'hashmap'
 
 import { convertArrayToHashMapByKey } from '../Utils/serializer'
+import { aggregateSwapsData } from './Supabase.service'
 import { SupabaseClient, TABLE } from './SupabaseClient'
 import {
     InvestorDto,
+    LogDto,
     PoolDto,
     QuestDto,
     ScenarioInvestorConfigDto,
@@ -47,30 +49,37 @@ const getQuerySnapshotById = ({ T } = { T: TABLE }) => `*,
             ${T.scenario_investor_config}(*),
             ${T.scenario_quest_config}(*)
         ),
-        ${T.snapshot_investor}(
-            ${T.investor}(
-                *,
-                ${T.investor_balances}(
-                    ${T.quest}(name),
-                    balance,
-                    day
-                ),
-                quests:${T.quest}(name)
-            )
+        ${T.investor}(
+            *,
+            ${T.investor_balances}(
+                ${T.quest}(name),
+                balance,
+                day
+            ),
+            quests:${T.quest}(name)
         ),
-        ${T.snapshot_pool}(
-            ${T.pool}(
-                *,
-                left:token0(name),
-                right:token1(name),
-                ${T.pool_data}(*),
-                ${T.position}(*),
-                ${T.position_owner}(*)
-            )
+        ${T.pool} (
+            *,
+            left:token0(name),
+            right:token1(name),
+            ${T.pool_data}(*),
+            ${T.position}(*),
+            ${T.position_owner}(*),
+            ${T.log}(
+                *, 
+                pool (name),
+                investor (hash)
+            ),
+            ${T.swap}(*)
         ),
-        ${T.snapshot_quest}(
-            ${T.quest}(*)
-        )`
+        ${T.quest}(
+            *,
+            investor (
+                name,
+                hash
+            )
+        )
+        `
 
 export const fetchSnapshotById = async (snapshotId) => {
     try {
@@ -92,6 +101,69 @@ export const fetchSnapshotById = async (snapshotId) => {
     }
 }
 
+const aggregateInvestorsForStore = (data) => {
+    const investorDtoList = data.map((ssInv) => new InvestorDto(ssInv))
+
+    return {
+        investorStoreInvestors: investorDtoList.map((invDto) =>
+            invDto.toHash()
+        ),
+        investors: convertArrayToHashMapByKey(
+            investorDtoList.map((invDto) => invDto.toInvestor()),
+            'hash'
+        )
+    }
+}
+
+const aggregatePoolsForStore = (data) => {
+    const poolDtoList = data.map((ssPool) => new PoolDto(ssPool))
+
+    return {
+        poolStorePools: poolDtoList.map((poolDto) => poolDto.toName()),
+        pools: convertArrayToHashMapByKey(
+            poolDtoList.map((poolDto) => poolDto.toPool()),
+            'name'
+        )
+    }
+}
+
+const aggregateLogsForStore = (data) => {
+    const logObjList = data.map((ssLog) => new LogDto(ssLog).toObj())
+
+    return {
+        logs: logObjList
+    }
+}
+
+const aggregateQuestsForStore = (data) => {
+    const questDtoList = data.map((ssQuest) => new QuestDto(ssQuest))
+
+    return {
+        questStore: {
+            quests: questDtoList.map((questDto) => questDto.toName()),
+            humanQuests: questDtoList
+                .filter((questDto) => questDto.is_human)
+                .map((questDto) => questDto.toName())
+        },
+        quests: convertArrayToHashMapByKey(
+            questDtoList.map((questDto) => questDto.toQuest()),
+            'name'
+        )
+    }
+}
+
+const extractTotalSwapsAndLogs = (data) => {
+    return data.reduce(
+        (sum, current) => {
+            return {
+                totalSwaps: [...sum.totalSwaps, ...current.swap],
+                totalLogs: [...sum.totalLogs, ...current.log]
+            }
+        },
+        { totalSwaps: [], totalLogs: [] }
+    )
+}
+
 const gatherStateFromSnapshot = (data) => {
     let newState = {
         generatorStore: { invConfigs: [], questConfigs: [] },
@@ -106,15 +178,15 @@ const gatherStateFromSnapshot = (data) => {
         },
         pools: new HashMap(),
         questStore: {
-            quests: Array(21),
-            humanQuests: Array(1),
-            selectedQuests: Array(0),
+            quests: [],
+            humanQuests: [],
+            selectedQuests: [],
             active: '',
             proMode: false
         },
         quests: new HashMap(),
         /* not ready yet */
-        poolsdayTrackerStore: { currentDay: 0 },
+        dayTrackerStore: { currentDay: 0 },
         moneyDist: {
             citing: [],
             buying: [],
@@ -126,27 +198,25 @@ const gatherStateFromSnapshot = (data) => {
 
     newState.generatorStore = transformScenario(data.scenario)
 
-    const investorDtoList = data.snapshot_investor.map(
-        (ssInv) => new InvestorDto(ssInv.investor)
+    const { investors, investorStoreInvestors } = aggregateInvestorsForStore(
+        data.investor
     )
-    newState.investorStore.investors = investorDtoList.map((invDto) =>
-        invDto.toHash()
-    )
+    newState.investorStore.investors = investorStoreInvestors
+    newState.investors = investors
 
-    newState.investors = convertArrayToHashMapByKey(
-        investorDtoList.map((invDto) => invDto.toInvestor()),
-        'hash'
-    )
+    const { pools, poolStorePools } = aggregatePoolsForStore(data.pool)
+    newState.poolStore.pools = poolStorePools
+    newState.pools = pools
 
-    const poolDtoList = data.snapshot_pool.map(
-        (ssPool) => new PoolDto(ssPool.pool)
-    )
-    newState.poolStore.pools = poolDtoList.map((poolDto) => poolDto.toName())
+    const {quests, questStore} = aggregateQuestsForStore(data.quest)
+    newState.questStore.quests = questStore.quests
+    newState.questStore.humanQuests = questStore.humanQuests
+    newState.quests = quests
 
-    newState.pools = convertArrayToHashMapByKey(
-        poolDtoList.map((poolDto) => poolDto.toPool()),
-        'name'
-    )
+    const { totalSwaps, totalLogs } = extractTotalSwapsAndLogs(data.pool)
+
+    const { logs } = aggregateLogsForStore(totalLogs)
+    newState.logStore.logObjs = logs
 
     console.debug(newState)
 
