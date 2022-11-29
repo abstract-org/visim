@@ -88,7 +88,7 @@ export const TopMenu = (props) => {
                     <Button label="Logout" onClick={onLogoutClick} />
                 </React.Fragment>
             ) : (
-              <React.Fragment>
+                <React.Fragment>
                     <InputText
                         placeholder="Seed"
                         className="w-15rem"
@@ -96,7 +96,7 @@ export const TopMenu = (props) => {
                         onChange={(e) => setEmail(e.target.value)}
                     />
                     <Button label="Login" onClick={onLoginClick} />
-              </React.Fragment>
+                </React.Fragment>
             )}
             <ToggleButton
                 checked={props.isExpert}

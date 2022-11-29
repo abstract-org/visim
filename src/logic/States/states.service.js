@@ -8,6 +8,7 @@ import Token from '../Quest/Token.class'
 import UsdcToken from '../Quest/UsdcToken.class'
 import { fromBase64 } from '../Utils/logicUtils'
 import Serializer from '../Utils/serializer.js'
+import { DEFAULT_SCHEMA } from './validation'
 
 /**
  /**
@@ -85,11 +86,6 @@ export const rehydrateState = (state) => {
         investors.set(key, hydratedItem)
     })
 
-    // logs - array of plain objects - no need to rehydrate
-    // questStore - object with primitive arrays - no need to rehydrate
-
-    // TODO: extend rehydration for additional classes if needed
-
     return state
 }
 
@@ -124,4 +120,17 @@ export const sanitizeSnapshot = (snapshot) => {
     )
 
     return snapshot
+}
+
+export const validateState = (
+    state,
+    schema = DEFAULT_SCHEMA,
+    options = { convert: false, abortEarly: false }
+) => {
+    const validationResult = schema.validate(state, options)
+    const { error } = validationResult
+    console.debug(JSON.parse(JSON.stringify(validationResult.error)))
+    const isValid = !!error
+
+    return { isValid, error }
 }

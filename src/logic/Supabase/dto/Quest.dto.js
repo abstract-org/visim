@@ -1,5 +1,5 @@
 import Pool from '../../Quest/Token.class'
-import Token from "../../Quest/Token.class";
+import Token from '../../Quest/Token.class'
 
 export class QuestDto {
     /** @type {number} */
@@ -35,7 +35,7 @@ export class QuestDto {
     }
 
     toName() {
-        return this.name;
+        return this.name
     }
 
     toQuest() {
@@ -43,7 +43,6 @@ export class QuestDto {
         quest.hash = this.hash
         quest.name = this.name
         quest.id = this.id
-
 
         return quest
     }

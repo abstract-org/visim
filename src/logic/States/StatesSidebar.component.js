@@ -29,7 +29,8 @@ import {
     aggregateSnapshotTotals,
     base64ToState,
     overrideStateBySnapshot,
-    sanitizeSnapshot
+    sanitizeSnapshot,
+    validateState
 } from './states.service'
 import { uploadStateTo } from './upload.service'
 
@@ -276,11 +277,56 @@ const StatesTable = (props) => {
         )
     }
 
-    const loadFromDb = async (snapshotId) => {
-        const newState = await fetchSnapshotById(snapshotId)
-        console.debug(`New state [${snapshotId}] =`, newState)
+    const loadFromDb = async (snapshotId, snapshotName) => {
+        setLoaderData({
+            active: true,
+            message: `Downloading snapshot [${snapshotName}] from DB`,
+            fileSize: 0
+        })
 
-        return null
+        let newState = null
+        try {
+            newState = await fetchSnapshotById(snapshotId)
+            console.debug(`New state [${snapshotId}] =`, newState)
+        } catch (err) {}
+
+        if (!newState) {
+            toast.current.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: `Couldn't download snapshot from DB`
+            })
+            setLoaderData({ active: false })
+
+            return
+        }
+
+        const validationResult = validateState(newState)
+        if (!validationResult.isValid) {
+            console.debug('State is not valid!', validationResult.errors)
+        } else {
+            console.debug('State is valid.')
+        }
+
+        // @TODO: uncomment following lines to check if current state is overridden
+        // overrideInvestors(newState.investorStore)
+        // overrideQuests(newState.questStore)
+        // overridePools(newState.poolStore)
+        // overrideGenerators(newState.generatorStore)
+        // overrideLogs(newState.logStore)
+        // overrideDayTracker(newState.dayTrackerStore)
+        //
+        // overrideStateBySnapshot(newState)
+
+        toast.current.show({
+            severity: 'success',
+            summary: 'Success',
+            detail: `Current state was overridden by snapshot ${snapshotId}`
+        })
+
+        setLoaderData({ active: false })
+        setNeedScrollUp(true)
+        props.setSidebarVisible(false)
     }
 
     const actionSaveButton = () => {
@@ -340,7 +386,7 @@ const StatesTable = (props) => {
                     iconPos="left"
                     label="Load from DB"
                     className="p-button-danger mr-2"
-                    onClick={() => loadFromDb(rowData.id)}
+                    onClick={() => loadFromDb(rowData.id, rowData.seed)}
                 />
             </React.Fragment>
         )
@@ -521,7 +567,7 @@ const Loader = (props) => {
     return (
         <React.Fragment>
             <div className="global-loading">
-                <div className="global-loader flex w-20rem flex-column justify-content-center align-content-center">
+                <div className="global-loader flex w-30rem flex-column justify-content-center align-content-center">
                     <ProgressSpinner className="flex" />
                     <div className="flex align-items-center justify-content-center">
                         <span>

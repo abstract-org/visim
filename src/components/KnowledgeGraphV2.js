@@ -112,7 +112,7 @@ const Graph = (props) => {
             const pool = globalState.pools
                 .values()
                 .find((p) => p.tokenRight === quest)
-            if (!graph.hasNode(quest)) {
+            if (pool && !graph.hasNode(quest)) {
                 graph.addNode(quest, {
                     size: Math.log(pool.getMarketCap()),
                     label: quest,
