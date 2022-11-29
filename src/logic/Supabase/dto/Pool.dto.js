@@ -25,8 +25,8 @@ export class PoolDto {
     constructor(data) {
         this.id = data.id
         this.name = data.name
-        this.token0 = data.token0
-        this.token1 = data.token1
+        this.token0 = data.left.name
+        this.token1 = data.right.name
         this.type = data.type
         this.hash = data.hash
         this.created_at = data.created_at
