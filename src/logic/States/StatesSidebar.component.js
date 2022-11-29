@@ -309,14 +309,14 @@ const StatesTable = (props) => {
         }
 
         // @TODO: uncomment following lines to check if current state is overridden
-        // overrideInvestors(newState.investorStore)
-        // overrideQuests(newState.questStore)
-        // overridePools(newState.poolStore)
-        // overrideGenerators(newState.generatorStore)
-        // overrideLogs(newState.logStore)
-        // overrideDayTracker(newState.dayTrackerStore)
-        //
-        // overrideStateBySnapshot(newState)
+        overrideInvestors(newState.investorStore)
+        overrideQuests(newState.questStore)
+        overridePools(newState.poolStore)
+        overrideGenerators(newState.generatorStore)
+        overrideLogs(newState.logStore)
+        overrideDayTracker(newState.dayTrackerStore)
+
+        overrideStateBySnapshot(newState)
 
         toast.current.show({
             severity: 'success',
