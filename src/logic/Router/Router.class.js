@@ -101,7 +101,7 @@ export default class Router {
                     amountIn,
                     pricedPath.path
                 )
-                console.log(
+                console.debug(
                     'seeking proper amt in',
                     properAmountIn,
                     pricedPath.path

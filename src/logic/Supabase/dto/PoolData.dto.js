@@ -29,6 +29,14 @@ export class PoolDataDto {
     mcap
     /** @type {Date} */
     created_at
+    /** @type {boolean} */
+    is_fresh
+    /** @type {number} */
+    total_sold
+    /** @type {number} */
+    sold_token0
+    /** @type {number} */
+    sold_token1
 
     constructor(data) {
         this.id = data.id
@@ -46,6 +54,10 @@ export class PoolDataDto {
         this.tvl = data.tvl
         this.mcap = data.mcap
         this.created_at = data.created_at
+        this.is_fresh = data.is_fresh
+        this.total_sold = data.total_sold
+        this.sold_token0 = data.sold_token0
+        this.sold_token1 = data.sold_token1
     }
 
     toObj() {
@@ -64,7 +76,11 @@ export class PoolDataDto {
             volume_token1: this.volume_token1,
             tvl: this.tvl,
             mcap: this.mcap,
-            created_at: this.created_at
+            created_at: this.created_at,
+            is_fresh: this.is_fresh,
+            total_sold: this.total_sold,
+            sold_token0: this.sold_token0,
+            sold_token1: this.sold_token1
         }
     }
 }
@@ -98,6 +114,14 @@ export class PoolDataUploadDto {
     mcap
     /** @type {Date} */
     created_at
+    /** @type {boolean} */
+    is_fresh
+    /** @type {number} */
+    total_sold
+    /** @type {number} */
+    sold_token0
+    /** @type {number} */
+    sold_token1
 
     constructor(data, poolMappings) {
         this.pool_id = poolMappings.get(data.name)
@@ -113,6 +137,10 @@ export class PoolDataUploadDto {
         this.tvl = data.tvl || 0
         this.mcap = data.mcap || 0
         this.created_at = data.created_at || new Date()
+        this.is_fresh = data.FRESH
+        this.total_sold = data.totalSold
+        this.sold_token0 = data.soldToken0
+        this.sold_token1 = data.soldToken1
     }
 
     toObj() {
@@ -129,7 +157,11 @@ export class PoolDataUploadDto {
             volume_token1: this.volume_token1,
             tvl: this.tvl,
             mcap: this.mcap,
-            created_at: this.created_at
+            created_at: this.created_at,
+            is_fresh: this.is_fresh,
+            total_sold: this.total_sold,
+            sold_token0: this.sold_token0,
+            sold_token1: this.sold_token1
         }
     }
 }
