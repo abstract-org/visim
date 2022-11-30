@@ -1,5 +1,4 @@
 import Investor from '../../Investor/Investor.class'
-import Pool from '../../Pool/Pool.class'
 
 export class InvestorDto {
     /** @type {number} */
@@ -53,8 +52,14 @@ export class InvestorDto {
 
     toInvestor() {
         const investor = new Investor()
+        const data = this.toObj()
+        investor.name = data.name
+        investor.type = data.type
+        investor.hash = data.hash
+        investor.balances = data.balances
+        investor.questsCreated = data.questsCreated
 
-        return { ...investor, ...this.toObj() }
+        return investor
     }
 }
 
