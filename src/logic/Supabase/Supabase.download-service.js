@@ -16,7 +16,13 @@ import {
 
 export const fetchTotalsById = async (snapshotId) => {
     const { data, error } = await SupabaseClient.from(TABLE.snapshot)
-        .select(`*, ${TABLE.snapshot_totals}(*)`)
+        .select(
+            `
+            *, 
+            ${TABLE.snapshot_totals}(*),
+            creator ( email )
+        `
+        )
         .eq(`${TABLE.snapshot}.id`, snapshotId)
         .limit(1)
         .single()
@@ -29,20 +35,27 @@ export const fetchTotalsById = async (snapshotId) => {
 }
 
 export const fetchTotalsList = async () => {
-    const { data, error } = await SupabaseClient.from(TABLE.snapshot).select(
-        `*, ${TABLE.snapshot_totals}(*)`
-    )
+    const { data, error } = await SupabaseClient.from(TABLE.snapshot).select(`
+            *, 
+            ${TABLE.snapshot_totals}(*),
+            creator: creator_id ( email )
+            `)
+    const creatorsResponse = await SupabaseClient.from(TABLE.user).select('email')
 
     if (error) {
         console.error('fetchTotalsList().error:', error)
     }
 
-    return data.map((snapshotData) =>
-        new SnapshotWithTotalsDto(snapshotData).toObj()
-    )
+    return {
+        snapshots: data.map((snapshotData) =>
+          new SnapshotWithTotalsDto(snapshotData).toObj()
+        ),
+        creators: creatorsResponse.map((creatorData) => creatorData.email)
+    }
 }
 
 const getQuerySnapshotById = ({ T } = { T: TABLE }) => `*,
+        creator ( email ),
         scenario (
             ${T.scenario_investor_config}(*),
             ${T.scenario_quest_config}(*)

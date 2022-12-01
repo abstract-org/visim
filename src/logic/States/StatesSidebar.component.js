@@ -33,6 +33,7 @@ import {
     validateState
 } from './states.service'
 import { uploadStateTo } from './upload.service'
+import { useSupabaseAuth } from "../Supabase/Supabase.components";
 
 const overrideSelector = (state) => state.override
 
@@ -59,6 +60,7 @@ function generateCurrentStateId() {
 }
 
 const StatesTable = (props) => {
+    const { user } = useSupabaseAuth()
     const quests = useQuestStore((state) => state.quests)
     const pools = usePoolStore((state) => state.pools)
     const scenarioId = useGeneratorStore((state) => state.scenarioId)
@@ -71,6 +73,7 @@ const StatesTable = (props) => {
     const setNeedScrollUp = useGeneratorStore((state) => state.setNeedScrollUp)
     const [snapshots, setSnapshots] = useState([])
     const [dbSnapshots, setDbSnapshots] = useState([])
+    const [dbCreators, setDbCreators] = useState([])
     const [currentStateInfo, setCurrentStateInfo] = useState({})
     const isMounted = useRef(null)
     const [loaderData, setLoaderData] = useState({
@@ -88,7 +91,8 @@ const StatesTable = (props) => {
             await aggregateAndStoreDataForSnapshot({
                 stateId,
                 stateName: newStateName,
-                state: globalState
+                state: globalState,
+                creatorId: user.id
             })
 
             await handleDbStatesLoaded()
@@ -210,7 +214,10 @@ const StatesTable = (props) => {
                 console.log(err)
             })
         fetchTotalsList()
-            .then((res) => setDbSnapshots(res))
+            .then((res) => {
+                setDbSnapshots(res.snapshots)
+                setDbCreators(res.creators)
+            })
             .catch((err) => {
                 console.log(err)
             })
@@ -233,7 +240,9 @@ const StatesTable = (props) => {
     }
 
     const handleDbStatesLoaded = async () => {
-        setDbSnapshots(await fetchTotalsList())
+        const {snapshots, creators} = await fetchTotalsList();
+        setDbSnapshots(snapshots)
+        setDbCreators(creators)
     }
 
     const loadState = async ({ stateId, stateLocation }) => {
@@ -339,13 +348,13 @@ const StatesTable = (props) => {
                     className="p-button-success mr-2"
                     onClick={saveCurrentState}
                 />
-                <Button
+                {user && <Button
                     icon="pi pi-save"
                     iconPos="left"
                     label={`Save to DB`}
                     className="p-button-success mr-2"
                     onClick={saveStateToDb}
-                />
+                />}
             </div>
         )
     }
