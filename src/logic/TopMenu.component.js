@@ -48,10 +48,12 @@ export const TopMenu = (props) => {
             } else {
                 toast.current.show({
                     severity: 'error',
-                    detail: `Something went wrong. ${error.message}`,
+                    detail: `Only agora-labs email domains allowed!`,
                     life: 2000
                 })
             }
+
+            setEmail('')
         } catch (error) {
             toast.current.show({
                 severity: 'error',

@@ -34,12 +34,14 @@ export class SnapshotUploadDto {
     constructor(data) {
         this.seed = data.seed
         this.scenario_id = data.scenarioId
+        this.creator_id = data.creatorId
     }
 
     toObj() {
         return {
             seed: this.seed,
-            scenario_id: this.scenario_id
+            scenario_id: this.scenario_id,
+            creator_id: this.creator_id
         }
     }
 }
@@ -57,6 +59,8 @@ export class SnapshotWithTotalsDto extends SnapshotDto {
     mcap
     /** @type {number} */
     usdc
+    /** @type {string} */
+    creator_email
 
     constructor(data) {
         super(data)
@@ -68,6 +72,7 @@ export class SnapshotWithTotalsDto extends SnapshotDto {
             this.tvl = totalsData.tvl
             this.mcap = totalsData.mcap
             this.usdc = totalsData.usdc
+            this.creator_email = data.creator.email
         }
     }
 
