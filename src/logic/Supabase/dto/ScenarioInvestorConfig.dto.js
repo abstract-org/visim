@@ -34,7 +34,7 @@ export class ScenarioInvestorConfigDto {
 
     toObj() {
         return {
-            dailySpawnProbability: this.daily_spawn_probability,
+            dailySpawnProbability: String(this.daily_spawn_probability),
             invGenAlias: this.inv_gen_alias,
             invGenName: this.inv_gen_name,
             initialBalance: this.initial_balance,
