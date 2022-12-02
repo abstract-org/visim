@@ -147,7 +147,9 @@ const aggregateQuestsForStore = (data) => {
 
     return {
         questStore: {
-            quests: questDtoList.map((questDto) => questDto.toName()),
+            quests: questDtoList
+                .filter((questDto) => questDto.name !== 'USDC')
+                .map((questDto) => questDto.toName()),
             humanQuests: questDtoList
                 .filter((questDto) => questDto.is_human)
                 .map((questDto) => questDto.toName())
