@@ -14,6 +14,12 @@ export class QuestDto {
     created_at
     /** @type {Boolean} */
     is_human
+    /** @type {string[]} */
+    pools
+    /** @type {number} */
+    initial_balance_a
+    /** @type {number} */
+    initial_balance_b
 
     constructor(data, pools) {
         this.id = data.id
@@ -22,6 +28,8 @@ export class QuestDto {
         this.hash = data.hash
         this.created_at = data.created_at
         this.is_human = data.is_human
+        this.initial_balance_a = data.initial_balance_a
+        this.initial_balance_b = data.initial_balance_b
         this.pools = pools
     }
 
@@ -32,6 +40,8 @@ export class QuestDto {
             name: this.name,
             hash: this.hash,
             is_human: this.is_human,
+            initial_balance_a: this.data.initial_balance_a,
+            initial_balance_b: this.data.initial_balance_b,
             pools: this.pools,
             created_at: this.created_at
         }
@@ -53,8 +63,8 @@ export class QuestDto {
             quest.id = this.id
             quest.hash = this.hash
             // @TODO: tbd which of this fields should come DB
-            // quest.initialBalanceA = this.initial_balance_a
-            // quest.initialBalanceB = this.initial_balance_b
+            quest.initialBalanceA = this.initial_balance_a
+            quest.initialBalanceB = this.initial_balance_b
             // quest.positions = this.positions
         }
 
@@ -69,12 +79,19 @@ export class QuestUploadDto {
     name
     /** @type {string} */
     hash
+    /** @type {number} */
+    initial_balance_a
+    /** @type {number} */
+    initial_balance_b
 
     constructor(data, investorMappings) {
-        this.author_id = investorMappings.get(data.name) // returns investor_id
         this.name = data.name
+        // fields below should fallback to DB defaults for USDC token
+        this.author_id = investorMappings.get(data.name) // returns investor_id or null
         this.hash = data.hash || '0x0000'
-        this.is_human = data.isHuman
+        this.is_human = !!data.isHuman
+        this.initial_balance_a = data.initialBalanceA || 0
+        this.initial_balance_b = data.initialBalanceB || 0
     }
 
     toObj() {
@@ -82,7 +99,9 @@ export class QuestUploadDto {
             author_id: this.author_id,
             name: this.name,
             hash: this.hash,
-            is_human: this.is_human
+            is_human: this.is_human,
+            initial_balance_a: this.initial_balance_a,
+            initial_balance_b: this.initial_balance_b
         }
     }
 }
