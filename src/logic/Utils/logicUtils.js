@@ -1,3 +1,5 @@
+import HashMap from 'hashmap'
+
 export const pp2p = (pricePoint) => {
     return 2 ** pricePoint
 }
@@ -213,3 +215,46 @@ export const hashmapToObj = (hm) =>
     hm.entries().reduce((o, [k, v]) => ({ ...o, [k]: v }), {})
 
 export const isZero = (num) => num === 0 || isE10Zero(num) || isNearZero(num)
+
+/**
+ * @description Creates hashmap of mappings from array of objects
+ * @param {Object[]} arr
+ * @param {string} linkingKey - field name for mapping key
+ * @param {string} linkingValue - field name for mapping value
+ * @returns {HashMap}
+ */
+export const createHashMappings = (arr, linkingKey, linkingValue) => {
+    const mappingsArray = arr.map((item) => [
+        item[linkingKey],
+        item[linkingValue]
+    ])
+
+    return new HashMap(mappingsArray)
+}
+
+export const addStringToArrayUniq = (arr, str) => {
+    const extendedArray = arr && Array.isArray(arr) ? [...arr, str] : [str]
+
+    return Array.from(new Set(extendedArray))
+}
+
+export const convertNumToFloat8 = (value) => {
+    switch (value) {
+        case Infinity:
+            return 'Infinity'
+        case -Infinity:
+            return '-Infinity'
+        default:
+            return value
+    }
+}
+export const convertFloat8ToNum = (value) => {
+    switch (value) {
+        case 'Infinity':
+            return Infinity
+        case '-Infinity':
+            return -Infinity
+        default:
+            return value
+    }
+}
