@@ -1,4 +1,3 @@
-import { MultiSelect } from 'primereact'
 import { Button } from 'primereact/button'
 import { Column } from 'primereact/column'
 import { DataTable } from 'primereact/datatable'
@@ -420,14 +419,14 @@ const StatesTable = (props) => {
         return <span>{nf.format(rowData[field])}</span>
     }
 
-    const representativeFilterTemplate = (options) => {
+    const creatorEmailFilterTemplate = (options) => {
         return (
             <Dropdown
                 value={{ email: options.value }}
                 options={dbCreators}
                 itemTemplate={(option) => {
                     return (
-                      <div className="p-multiselect-representative-option">
+                      <div className="p-multiselect-creator-email-option">
                           <p>{option.email}</p>
                       </div>
                     )
@@ -519,7 +518,7 @@ const StatesTable = (props) => {
                         sortable
                         filter
                         showFilterMatchModes={false}
-                        filterElement={representativeFilterTemplate}
+                        filterElement={creatorEmailFilterTemplate}
                     />
                     <Column field="scenario_id" header="Scenario" sortable />
                     <Column field="quests" header="Total Quests" />
