@@ -1,11 +1,100 @@
 import { BlockUI } from 'primereact/blockui'
 import { Button } from 'primereact/button'
 import { Message } from 'primereact/message'
-import { useRef } from 'react'
+import React, { useRef, useState } from 'react'
 
+import useExpertModeStore from '../../stores/expertMode.store'
+import { AceEditorWrapped } from './AceEditor'
 import { InPlaceElement } from './InPlaceComponents'
 
 export const InvestorModuleComponent = (props) => {
+    const strDraft = JSON.stringify({ ...props.state }, null, 2)
+    const [draft, saveDraft] = useState(strDraft)
+
+    const isExpert = useExpertModeStore((state) => state.isExpert)
+
+    const aliasAlert = useRef(null)
+    const userMode = <UserModeComponent {...props} />
+    const expertMode = (
+        <ExpertModeComponent {...props} draft={draft} saveDraft={saveDraft} />
+    )
+
+    const CurrentMode = isExpert ? expertMode : userMode
+    return (
+        <React.Fragment>
+            <div className="flex flex-column gen-card">
+                <div className="header flex">
+                    <div className="flex flex-grow-1">
+                        <span className="inplace-static-text">Investor -</span>
+                        <div className="flex flex-grow-none">
+                            <InPlaceElement
+                                id="invGenName"
+                                active={isExpert ? false : true}
+                                display={props.state.invGenName}
+                                type="text"
+                                element="input"
+                                handleChange={props.handleChange}
+                                state={props.state}
+                                style={{ width: '14rem' }}
+                            />
+                        </div>
+                        <div className="flex flex-grow-1 justify-content-end">
+                            <Message
+                                className="alias-alert"
+                                severity="error"
+                                text="Alias is required"
+                                ref={aliasAlert}
+                                style={{ display: 'none' }}
+                            />
+                            <div className="mr-3"></div>
+                            <Button
+                                icon="pi pi-save"
+                                className="w-2rem h-2rem p-button-success mr-2"
+                                onClick={() => props.handleChangeExpert(draft)}
+                            />
+                            <Button
+                                icon="pi pi-trash"
+                                className="w-2rem h-2rem p-button-danger"
+                                onClick={() =>
+                                    props.handleDelete(props.state.invGenAlias)
+                                }
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div id="editorInv">
+                    {isExpert ? (
+                        <div
+                            style={{
+                                color: 'red',
+                                backgroundColor: '#272822',
+                                fontStyle: 'italic',
+                                fontSize: 14
+                            }}
+                        >
+                            Don't change the alias "invGenAlias"
+                        </div>
+                    ) : (
+                        ''
+                    )}
+                    {CurrentMode}
+                </div>
+            </div>
+        </React.Fragment>
+    )
+}
+
+const ExpertModeComponent = (props) => {
+    return (
+        <AceEditorWrapped
+            state={props.draft}
+            onChange={props.saveDraft}
+            onBlur={props.handleChangeExpert}
+        />
+    )
+}
+
+const UserModeComponent = (props) => {
     const quests = props.quests
     const questConfigs = props.questConfigs
 
@@ -41,41 +130,22 @@ export const InvestorModuleComponent = (props) => {
         value: el
     }))
 
-    const aliasAlert = useRef(null)
     return (
-        <div className="flex flex-column gen-card">
-            <div className="header flex">
-                <div className="flex flex-grow-1">
-                    <span className="inplace-static-text">Investor -</span>
-                    <div className="flex flex-grow-none">
-                        <InPlaceElement
-                            id="invGenName"
-                            active={true}
-                            type="text"
-                            element="input"
-                            handleChange={props.handleChange}
-                            state={props.state}
-                            style={{ width: '14rem' }}
-                        />
-                    </div>
-                    <div className="flex flex-grow-1 justify-content-end">
-                        <Message
-                            className="alias-alert"
-                            severity="error"
-                            text="Alias is required"
-                            ref={aliasAlert}
-                            style={{ display: 'none' }}
-                        />
-                        <div className="mr-3"></div>
-                        <Button
-                            icon="pi pi-trash"
-                            className="w-2rem h-2rem p-button-danger"
-                            onClick={() =>
-                                props.handleDelete(props.state.invGenAlias)
-                            }
-                        />
-                    </div>
-                </div>
+        <React.Fragment>
+            <div className="column flex">
+                <span className="inplace-static-text">
+                    Don't execute any buy/sell operation unless higher than $n
+                    value:
+                </span>
+                <InPlaceElement
+                    id="globalSwapThreshold"
+                    active={false}
+                    display={props.state.globalSwapThreshold}
+                    type="number"
+                    element="input"
+                    handleChange={props.handleChange}
+                    state={props.state}
+                />
             </div>
             <div className="column flex">
                 <span className="inplace-static-text">
@@ -335,7 +405,7 @@ export const InvestorModuleComponent = (props) => {
                     className="flex w-full"
                 >
                     <span className="inplace-static-text">
-                        On initialization create Quest
+                        On initialization create quest of type
                     </span>
                     <InPlaceElement
                         id="createQuest"
@@ -414,7 +484,8 @@ export const InvestorModuleComponent = (props) => {
             >
                 <div className="ml-2 flex mt-3">
                     <span className="inplace-static-text">
-                        When bought quest, chance to cite other random quest is
+                        When bought a quest, chance to cite other random quest
+                        is
                     </span>
                     <InPlaceElement
                         id="keepCitingProbability"
@@ -492,6 +563,6 @@ export const InvestorModuleComponent = (props) => {
                     />
                 </BlockUI>
             </div>
-        </div>
+        </React.Fragment>
     )
 }
