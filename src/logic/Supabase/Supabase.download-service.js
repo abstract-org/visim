@@ -1,6 +1,6 @@
 import HashMap from 'hashmap'
 
-import { createHashMappings } from '../Utils/logicUtils'
+import { addStringToArrayUniq, createHashMappings } from '../Utils/logicUtils'
 import { convertArrayToHashMapByKey } from '../Utils/serializer'
 import { SupabaseClient, TABLE } from './SupabaseClient'
 import {
@@ -142,8 +142,20 @@ const aggregateLogsForStore = (data) => {
     }
 }
 
-const aggregateQuestsForStore = (data) => {
-    const questDtoList = data.map((ssQuest) => new QuestDto(ssQuest))
+const gatherPoolNamesByQuestName = (hmPools) =>
+    hmPools.values().reduce(
+        (qMap, p) => ({
+            ...qMap,
+            [p.tokenLeft]: addStringToArrayUniq(qMap[p.tokenLeft], p.name),
+            [p.tokenRight]: addStringToArrayUniq(qMap[p.tokenRight], p.name)
+        }),
+        {}
+    )
+
+const aggregateQuestsForStore = (data, questPoolNames) => {
+    const questDtoList = data.map(
+        (ssQuest) => new QuestDto(ssQuest, questPoolNames[ssQuest.name])
+    )
 
     return {
         questStore: {
@@ -218,7 +230,11 @@ const gatherStateFromSnapshot = (data) => {
     newState.poolStore.pools = poolStorePools
     newState.pools = pools
 
-    const { quests, questStore } = aggregateQuestsForStore(data.quest)
+    const questNamesToPoolNames = gatherPoolNamesByQuestName(pools)
+    const { quests, questStore } = aggregateQuestsForStore(
+        data.quest,
+        questNamesToPoolNames
+    )
     newState.questStore.quests = questStore.quests
     newState.questStore.humanQuests = questStore.humanQuests
     newState.quests = quests

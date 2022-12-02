@@ -231,3 +231,9 @@ export const createHashMappings = (arr, linkingKey, linkingValue) => {
 
     return new HashMap(mappingsArray)
 }
+
+export const addStringToArrayUniq = (arr, str) => {
+    const extendedArray = arr && Array.isArray(arr) ? [...arr, str] : [str]
+
+    return Array.from(new Set(extendedArray))
+}
