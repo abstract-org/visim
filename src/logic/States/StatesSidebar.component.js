@@ -1,3 +1,4 @@
+import { MultiSelect } from 'primereact'
 import { Button } from 'primereact/button'
 import { Column } from 'primereact/column'
 import { DataTable } from 'primereact/datatable'
@@ -18,6 +19,7 @@ import useInvestorStore from '../Investor/investor.store'
 import useLogsStore from '../Logs/logs.store'
 import usePoolStore from '../Pool/pool.store'
 import useQuestStore from '../Quest/quest.store'
+import { useSupabaseAuth } from '../Supabase/Supabase.components'
 import {
     fetchSnapshotById,
     fetchTotalsList
@@ -33,7 +35,8 @@ import {
     validateState
 } from './states.service'
 import { uploadStateTo } from './upload.service'
-import { useSupabaseAuth } from "../Supabase/Supabase.components";
+import { FilterMatchMode } from "primereact/api";
+import { Dropdown } from "primereact/dropdown";
 
 const overrideSelector = (state) => state.override
 
@@ -240,7 +243,7 @@ const StatesTable = (props) => {
     }
 
     const handleDbStatesLoaded = async () => {
-        const {snapshots, creators} = await fetchTotalsList();
+        const { snapshots, creators } = await fetchTotalsList()
         setDbSnapshots(snapshots)
         setDbCreators(creators)
     }
@@ -348,13 +351,15 @@ const StatesTable = (props) => {
                     className="p-button-success mr-2"
                     onClick={saveCurrentState}
                 />
-                {user && <Button
-                    icon="pi pi-save"
-                    iconPos="left"
-                    label={`Save to DB`}
-                    className="p-button-success mr-2"
-                    onClick={saveStateToDb}
-                />}
+                {user && (
+                    <Button
+                        icon="pi pi-save"
+                        iconPos="left"
+                        label={`Save to DB`}
+                        className="p-button-success mr-2"
+                        onClick={saveStateToDb}
+                    />
+                )}
             </div>
         )
     }
@@ -413,6 +418,28 @@ const StatesTable = (props) => {
 
     const numberFormatter = (rowData, { field }) => {
         return <span>{nf.format(rowData[field])}</span>
+    }
+
+    const representativeFilterTemplate = (options) => {
+        return (
+            <Dropdown
+                value={{ email: options.value }}
+                options={dbCreators}
+                itemTemplate={(option) => {
+                    return (
+                      <div className="p-multiselect-representative-option">
+                          <p>{option.email}</p>
+                      </div>
+                    )
+                }}
+                onChange={(e) => {
+                    options.filterCallback(e.value.email)
+                }}
+                optionLabel="email"
+                placeholder="Creator Email"
+                className="p-column-filter"
+            />
+        )
     }
 
     return (
@@ -474,12 +501,25 @@ const StatesTable = (props) => {
                     paginator
                     rows={10}
                     size="small"
+                    globalFilterFields={['creator_email']}
+                    filterDisplay="menu"
+                    filters={{
+                        'creator_email': { value: null, matchMode: FilterMatchMode.EQUALS },
+                    }}
                 >
                     <Column
                         field="seed"
                         header="Name"
                         style={{ width: '18rem' }}
                         sortable
+                    />
+                    <Column
+                        field="creator_email"
+                        header="Creator"
+                        sortable
+                        filter
+                        showFilterMatchModes={false}
+                        filterElement={representativeFilterTemplate}
                     />
                     <Column field="scenario_id" header="Scenario" sortable />
                     <Column field="quests" header="Total Quests" />

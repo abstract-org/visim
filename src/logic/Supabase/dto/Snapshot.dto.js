@@ -72,7 +72,7 @@ export class SnapshotWithTotalsDto extends SnapshotDto {
             this.tvl = totalsData.tvl
             this.mcap = totalsData.mcap
             this.usdc = totalsData.usdc
-            this.creator_email = data.creator.email
+            this.creator_email = data.creator?.email || ''
         }
     }
 
@@ -87,7 +87,8 @@ export class SnapshotWithTotalsDto extends SnapshotDto {
             investors: this.investors,
             tvl: this.tvl,
             mcap: this.mcap,
-            usdc: this.usdc
+            usdc: this.usdc,
+            creator_email: this.creator_email
         }
     }
 }
