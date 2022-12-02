@@ -96,7 +96,7 @@ const convertObjToHashMap = (obj) => {
 export const convertArrayToHashMapByKey = (arr, key) => {
     const resultHashMap = new HashMap()
     for (const item of arr) {
-        if (item[key]) resultHashMap.set(item[key], item)
+        if (item[key] != null) resultHashMap.set(item[key], item)
     }
 
     return resultHashMap

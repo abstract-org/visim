@@ -1,5 +1,5 @@
-import Pool from '../../Quest/Token.class'
 import Token from '../../Quest/Token.class'
+import UsdcToken from '../../Quest/UsdcToken.class'
 
 export class QuestDto {
     /** @type {number} */
@@ -39,10 +39,10 @@ export class QuestDto {
     }
 
     toQuest() {
-        const quest = new Token()
-        quest.hash = this.hash
+        const quest = this.name === 'USDC' ? new UsdcToken() : new Token()
+        if (this.name !== 'USDC') quest.hash = this.hash
         quest.name = this.name
-        quest.id = this.id
+        // quest.id = this.id
 
         return quest
     }

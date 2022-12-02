@@ -54,7 +54,7 @@ export class PoolDto {
         pool.curPP = poolData.current_price_point_lg2
         pool.curLiq = poolData.current_liquidity
         pool.volumeToken0 = poolData.volume_token0
-        pool.volumeToken1 = poolData.volume_token0
+        pool.volumeToken1 = poolData.volume_token1
         pool.type = pool.tokenLeft === 'USDC' ? 'QUEST' : 'VALUE_LINK'
         pool.totalSold = poolData.total_sold
         pool.FRESH = poolData.is_fresh
