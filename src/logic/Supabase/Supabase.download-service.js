@@ -38,24 +38,27 @@ export const fetchTotalsList = async () => {
     const { data, error } = await SupabaseClient.from(TABLE.snapshot).select(`
             *, 
             ${TABLE.snapshot_totals}(*),
+            scenario:scenario_id ( name ),
             creator: creator_id ( email )
             `)
-    const creatorsResponse = await SupabaseClient.from(TABLE.user).select('email')
+    const creatorsResponse = await SupabaseClient.from(TABLE.user).select(
+        'email'
+    )
 
-    if (error) {
+    if (error || creatorsResponse.error) {
         console.error('fetchTotalsList().error:', error)
     }
 
     return {
         snapshots: data.map((snapshotData) =>
-          new SnapshotWithTotalsDto(snapshotData).toObj()
+            new SnapshotWithTotalsDto(snapshotData).toObj()
         ),
-        creators: creatorsResponse.map((creatorData) => creatorData.email)
+        creators: creatorsResponse.data
     }
 }
 
 const getQuerySnapshotById = ({ T } = { T: TABLE }) => `*,
-        creator ( email ),
+        creator: creator_id ( email ),
         scenario (
             ${T.scenario_investor_config}(*),
             ${T.scenario_quest_config}(*)
