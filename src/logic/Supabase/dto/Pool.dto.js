@@ -54,13 +54,12 @@ export class PoolDto {
         pool.curPP = poolData.current_price_point_lg2
         pool.curLiq = poolData.current_liquidity
         pool.volumeToken0 = poolData.volume_token0
-        pool.volumeToken1 = poolData.volume_token0
+        pool.volumeToken1 = poolData.volume_token1
         pool.type = pool.tokenLeft === 'USDC' ? 'QUEST' : 'VALUE_LINK'
-        // @TODO: add saving to DB.poo_data following params
-        // pool.totalSold = poolData.totalSold
-        // pool.FRESH = poolData.FRESH
-        // pool.soldToken0 = poolData.soldToken0
-        // pool.soldToken1 = poolData.soldToken1
+        pool.totalSold = poolData.total_sold
+        pool.FRESH = poolData.is_fresh
+        pool.soldToken0 = poolData.sold_token0
+        pool.soldToken1 = poolData.sold_token1
 
         pool.posOwners = this.posOwners.map((posOwner) => posOwner.toObj())
         const positions = this.pos.map((position) => position.toObj())

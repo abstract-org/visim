@@ -12,6 +12,7 @@ import React, { useEffect, useRef, useState } from 'react'
 
 import { getPresignedUrl } from '../../api/s3'
 import StorageApi from '../../api/states'
+import useExpertModeStore from '../../stores/expertMode.store'
 import useGeneratorStore from '../Generators/generator.store'
 import globalState from '../GlobalState'
 import useInvestorStore from '../Investor/investor.store'
@@ -85,11 +86,16 @@ const StatesTable = (props) => {
     })
     const [newStateName, setNewStateName] = useState('')
     const toast = useRef(null)
+    const isExpert = useExpertModeStore((state) => state.isExpert)
 
     const saveStateToDb = async () => {
         try {
             const stateId = generateCurrentStateId()
 
+            setLoaderData({
+                active: true,
+                message: 'Saving current state to DB'
+            })
             await aggregateAndStoreDataForSnapshot({
                 stateId,
                 stateName: newStateName,
@@ -97,6 +103,13 @@ const StatesTable = (props) => {
                 creatorId: user.id
             })
 
+            toast.current.show({
+                severity: 'success',
+                summary: 'Success',
+                detail: `Current state saved to DB`
+            })
+
+            setLoaderData({ active: false })
             await handleDbStatesLoaded()
         } catch (e) {
             toast.current.show({
@@ -279,12 +292,14 @@ const StatesTable = (props) => {
     }
 
     const stateNameEditor = () => {
-        return (
+        return user || isExpert ? (
             <InputText
                 type="text"
                 value={newStateName}
                 onChange={(e) => setNewStateName(e.target.value)}
             />
+        ) : (
+            <span>{newStateName}</span>
         )
     }
 
@@ -319,7 +334,6 @@ const StatesTable = (props) => {
             console.debug('State is valid.')
         }
 
-        // @TODO: uncomment following lines to check if current state is overridden
         overrideInvestors(newState.investorStore)
         overrideQuests(newState.questStore)
         overridePools(newState.poolStore)
@@ -343,14 +357,16 @@ const StatesTable = (props) => {
     const actionSaveButton = () => {
         return (
             <div className="flex flex-column gap-2">
-                <Button
-                    icon="pi pi-save"
-                    iconPos="left"
-                    label={`Save state`}
-                    className="p-button-success mr-2"
-                    onClick={saveCurrentState}
-                />
-                {user && (
+                {isExpert && (
+                    <Button
+                        icon="pi pi-save"
+                        iconPos="left"
+                        label={`Save state`}
+                        className="p-button-success mr-2"
+                        onClick={saveCurrentState}
+                    />
+                )}
+                {user ? (
                     <Button
                         icon="pi pi-save"
                         iconPos="left"
@@ -358,6 +374,11 @@ const StatesTable = (props) => {
                         className="p-button-success mr-2"
                         onClick={saveStateToDb}
                     />
+                ) : (
+                    <span style={{ fontWeight: 'bold', color: 'red' }}>
+                        Sign-in to enable
+                        <br /> saving to DB
+                    </span>
                 )}
             </div>
         )
@@ -557,52 +578,66 @@ const StatesTable = (props) => {
                 </DataTable>
             </Fieldset>
 
-            <Divider />
-
-            <Fieldset
-                legend="Remote states"
-                toggleable
-                collapsed={true}
-                onExpand={handleStatesLoaded}
-            >
-                <DataTable
-                    value={snapshots}
-                    selectionMode="single"
-                    sortField="executionDate"
-                    sortOrder={-1}
-                    paginator
-                    rows={10}
-                    size="small"
+            {isExpert && (
+                <Fieldset
+                    legend="Remote states"
+                    toggleable
+                    collapsed={true}
+                    onExpand={handleStatesLoaded}
                 >
-                    <Column
-                        field="stateName"
-                        header="Name"
-                        body={stateNameBody}
-                        style={{ width: '18rem' }}
-                        sortable
-                    />
-                    <Column field="scenarioId" header="Scenario" sortable />
-                    <Column field="totalQuests" header="Total Quests" />
-                    <Column field="totalCrossPools" header="Total CrossPools" />
-                    <Column field="totalInvestors" header="Total Investors" />
-                    <Column field="totalTVL" header="Total TVL" sortable />
-                    <Column field="totalMCAP" header="Total MCAP" sortable />
-                    <Column field="totalUSDC" header="Total USDC" sortable />
-                    <Column field="stateLocation" hidden />
-                    <Column
-                        field="executionDate"
-                        header="Execution Date"
-                        body={dateFormatter}
-                        sortable
-                    />
+                    <DataTable
+                        value={snapshots}
+                        selectionMode="single"
+                        sortField="executionDate"
+                        sortOrder={-1}
+                        paginator
+                        rows={10}
+                        size="small"
+                    >
+                        <Column
+                            field="stateName"
+                            header="Name"
+                            body={stateNameBody}
+                            style={{ width: '18rem' }}
+                            sortable
+                        />
+                        <Column field="scenarioId" header="Scenario" sortable />
+                        <Column field="totalQuests" header="Total Quests" />
+                        <Column
+                            field="totalCrossPools"
+                            header="Total CrossPools"
+                        />
+                        <Column
+                            field="totalInvestors"
+                            header="Total Investors"
+                        />
+                        <Column field="totalTVL" header="Total TVL" sortable />
+                        <Column
+                            field="totalMCAP"
+                            header="Total MCAP"
+                            sortable
+                        />
+                        <Column
+                            field="totalUSDC"
+                            header="Total USDC"
+                            sortable
+                        />
+                        <Column field="stateLocation" hidden />
+                        <Column
+                            field="executionDate"
+                            header="Execution Date"
+                            body={dateFormatter}
+                            sortable
+                        />
 
-                    <Column
-                        body={actionLoadButton}
-                        exportable={false}
-                        style={{ minWidth: '8rem' }}
-                    />
-                </DataTable>
-            </Fieldset>
+                        <Column
+                            body={actionLoadButton}
+                            exportable={false}
+                            style={{ minWidth: '8rem' }}
+                        />
+                    </DataTable>
+                </Fieldset>
+            )}
         </React.Fragment>
     )
 }

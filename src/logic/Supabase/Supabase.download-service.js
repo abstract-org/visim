@@ -219,6 +219,7 @@ const gatherStateFromSnapshot = (data) => {
         }
     }
 
+    newState.dayTrackerStore.currentDay = data.current_day
     newState.generatorStore = transformScenario(data.scenario)
 
     const { investors, investorStoreInvestors } = aggregateInvestorsForStore(
