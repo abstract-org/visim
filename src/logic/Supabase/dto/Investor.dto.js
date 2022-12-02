@@ -1,5 +1,4 @@
 import Investor from '../../Investor/Investor.class'
-import Pool from '../../Pool/Pool.class'
 
 export class InvestorDto {
     /** @type {number} */
@@ -10,6 +9,8 @@ export class InvestorDto {
     type
     /** @type {string} */
     hash
+    /** @type {number} */
+    initial_balance
     /** @type {Date} */
     created_at
     /** @type {Object[]} */
@@ -22,6 +23,7 @@ export class InvestorDto {
         this.name = data.name
         this.type = data.type
         this.hash = data.hash
+        this.initial_balance = data.initial_balance
         this.created_at = data.created_at
         this.investor_balances = data.investor_balances
         this.quests = data.quests
@@ -41,6 +43,7 @@ export class InvestorDto {
             name: this.name,
             type: this.type,
             hash: this.hash,
+            initial_balance: this.initial_balance,
             created_at: this.created_at,
             balances,
             questsCreated
@@ -53,8 +56,15 @@ export class InvestorDto {
 
     toInvestor() {
         const investor = new Investor()
+        const data = this.toObj()
+        investor.name = data.name
+        investor.type = data.type
+        investor.hash = data.hash
+        investor.initialBalance = data.initial_balance
+        investor.balances = data.balances
+        investor.questsCreated = data.questsCreated
 
-        return { ...investor, ...this.toObj() }
+        return investor
     }
 }
 
@@ -65,6 +75,8 @@ export class InvestorUploadDto {
     type
     /** @type {string} */
     hash
+    /** @type {number} */
+    initialBalance
     /** @type {Date} */
     created_at
 
@@ -72,6 +84,7 @@ export class InvestorUploadDto {
         this.name = data.name
         this.type = data.type
         this.hash = data.hash
+        this.initial_balance = data.initialBalance
         this.created_at = data.created_at || new Date()
     }
 
@@ -80,6 +93,7 @@ export class InvestorUploadDto {
             name: this.name,
             type: this.type,
             hash: this.hash,
+            initial_balance: this.initial_balance,
             created_at: this.created_at
         }
     }
