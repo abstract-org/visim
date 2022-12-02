@@ -10,6 +10,7 @@ import { useSupabaseAuth } from './Supabase/Supabase.components'
 export const TopMenu = (props) => {
     const { user, signIn, signOut } = useSupabaseAuth()
     const [email, setEmail] = useState('')
+    const [sendingEmail, setSendingEmail] = useState(false)
     const toast = useRef(null)
     const items = [
         {
@@ -37,6 +38,7 @@ export const TopMenu = (props) => {
 
     const onLoginClick = async () => {
         try {
+            setSendingEmail(true)
             const { error } = await signIn({ email: email })
 
             if (!error) {
@@ -58,6 +60,8 @@ export const TopMenu = (props) => {
                 detail: `Something went wrong. ${error.message}`,
                 life: 2000
             })
+        } finally {
+            setSendingEmail(false)
         }
     }
     const onLogoutClick = async () => {
@@ -84,7 +88,9 @@ export const TopMenu = (props) => {
         <div className="flex align-items-center gap-3">
             {user ? (
                 <React.Fragment>
-                    <span>Logged in as {user.email}</span>
+                    <span>
+                        Logged in as <strong>{user.email}</strong>
+                    </span>
                     <Button label="Logout" onClick={onLogoutClick} />
                 </React.Fragment>
             ) : (
@@ -95,7 +101,12 @@ export const TopMenu = (props) => {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                     />
-                    <Button label="Login" onClick={onLoginClick} />
+                    <Button
+                        loading={sendingEmail}
+                        disabled={sendingEmail}
+                        label="Login"
+                        onClick={onLoginClick}
+                    />
                 </React.Fragment>
             )}
             <ToggleButton
