@@ -93,6 +93,15 @@ const convertObjToHashMap = (obj) => {
     return new HashMap(objEntriesConverted)
 }
 
+export const convertArrayToHashMapByKey = (arr, key) => {
+    const resultHashMap = new HashMap()
+    for (const item of arr) {
+        if (item[key] != null) resultHashMap.set(item[key], item)
+    }
+
+    return resultHashMap
+}
+
 const _reviverWithHashMaps = (key, value) => {
     const valueClass = value && value.$class
     if (valueClass === 'HashMap') {

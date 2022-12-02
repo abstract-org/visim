@@ -1,7 +1,9 @@
+import { FilterMatchMode } from 'primereact/api'
 import { Button } from 'primereact/button'
 import { Column } from 'primereact/column'
 import { DataTable } from 'primereact/datatable'
 import { Divider } from 'primereact/divider'
+import { Dropdown } from 'primereact/dropdown'
 import { Fieldset } from 'primereact/fieldset'
 import { InputText } from 'primereact/inputtext'
 import { ProgressSpinner } from 'primereact/progressspinner'
@@ -12,23 +14,33 @@ import React, { useEffect, useRef, useState } from 'react'
 
 import { getPresignedUrl } from '../../api/s3'
 import StorageApi from '../../api/states'
+import useExpertModeStore from '../../stores/expertMode.store'
 import useGeneratorStore from '../Generators/generator.store'
 import globalState from '../GlobalState'
 import useInvestorStore from '../Investor/investor.store'
 import useLogsStore from '../Logs/logs.store'
 import usePoolStore from '../Pool/pool.store'
 import useQuestStore from '../Quest/quest.store'
+import { useSupabaseAuth } from '../Supabase/Supabase.components'
+import {
+    fetchSnapshotById,
+    fetchTotalsList
+} from '../Supabase/Supabase.download-service'
+import { aggregateAndStoreDataForSnapshot } from '../Supabase/Supabase.service'
 import { formatBytes } from '../Utils/logicUtils'
 import { downloadStateFrom, getContentLength } from './download.service'
 import {
     aggregateSnapshotTotals,
     base64ToState,
     overrideStateBySnapshot,
-    sanitizeSnapshot
+    sanitizeSnapshot,
+    validateState
 } from './states.service'
 import { uploadStateTo } from './upload.service'
 
 const overrideSelector = (state) => state.override
+
+const nf = new Intl.NumberFormat('en-US')
 
 export const StatesSidebar = (props) => {
     return (
@@ -51,6 +63,7 @@ function generateCurrentStateId() {
 }
 
 const StatesTable = (props) => {
+    const { user } = useSupabaseAuth()
     const quests = useQuestStore((state) => state.quests)
     const pools = usePoolStore((state) => state.pools)
     const scenarioId = useGeneratorStore((state) => state.scenarioId)
@@ -62,6 +75,8 @@ const StatesTable = (props) => {
     const overrideDayTracker = useInvestorStore(overrideSelector)
     const setNeedScrollUp = useGeneratorStore((state) => state.setNeedScrollUp)
     const [snapshots, setSnapshots] = useState([])
+    const [dbSnapshots, setDbSnapshots] = useState([])
+    const [dbCreators, setDbCreators] = useState([])
     const [currentStateInfo, setCurrentStateInfo] = useState({})
     const isMounted = useRef(null)
     const [loaderData, setLoaderData] = useState({
@@ -71,6 +86,39 @@ const StatesTable = (props) => {
     })
     const [newStateName, setNewStateName] = useState('')
     const toast = useRef(null)
+    const isExpert = useExpertModeStore((state) => state.isExpert)
+
+    const saveStateToDb = async () => {
+        try {
+            const stateId = generateCurrentStateId()
+
+            setLoaderData({
+                active: true,
+                message: 'Saving current state to DB'
+            })
+            await aggregateAndStoreDataForSnapshot({
+                stateId,
+                stateName: newStateName,
+                state: globalState,
+                creatorId: user.id
+            })
+
+            toast.current.show({
+                severity: 'success',
+                summary: 'Success',
+                detail: `Current state saved to DB`
+            })
+
+            setLoaderData({ active: false })
+            await handleDbStatesLoaded()
+        } catch (e) {
+            toast.current.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: e.message
+            })
+        }
+    }
 
     const saveCurrentState = async () => {
         const stateId = generateCurrentStateId()
@@ -180,6 +228,14 @@ const StatesTable = (props) => {
             .catch((err) => {
                 console.log(err)
             })
+        fetchTotalsList()
+            .then((res) => {
+                setDbSnapshots(res.snapshots)
+                setDbCreators(res.creators)
+            })
+            .catch((err) => {
+                console.log(err)
+            })
     }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
@@ -196,6 +252,12 @@ const StatesTable = (props) => {
         const snapshotsLoaded = await StorageApi.getStates()
 
         updateSnapshots(snapshotsLoaded)
+    }
+
+    const handleDbStatesLoaded = async () => {
+        const { snapshots, creators } = await fetchTotalsList()
+        setDbSnapshots(snapshots)
+        setDbCreators(creators)
     }
 
     const loadState = async ({ stateId, stateLocation }) => {
@@ -230,33 +292,102 @@ const StatesTable = (props) => {
     }
 
     const stateNameEditor = () => {
-        return (
+        return user || isExpert ? (
             <InputText
                 type="text"
                 value={newStateName}
                 onChange={(e) => setNewStateName(e.target.value)}
             />
+        ) : (
+            <span>{newStateName}</span>
         )
+    }
+
+    const loadFromDb = async (snapshotId, snapshotName) => {
+        setLoaderData({
+            active: true,
+            message: `Downloading snapshot [${snapshotName}] from DB`,
+            fileSize: 0
+        })
+
+        let newState = null
+        try {
+            newState = await fetchSnapshotById(snapshotId)
+            console.debug(`New state [${snapshotId}] =`, newState)
+        } catch (err) {}
+
+        if (!newState) {
+            toast.current.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: `Couldn't download snapshot from DB`
+            })
+            setLoaderData({ active: false })
+
+            return
+        }
+
+        const validationResult = validateState(newState)
+        if (!validationResult.isValid) {
+            console.debug('State is not valid!', validationResult.errors)
+        } else {
+            console.debug('State is valid.')
+        }
+
+        overrideInvestors(newState.investorStore)
+        overrideQuests(newState.questStore)
+        overridePools(newState.poolStore)
+        overrideGenerators(newState.generatorStore)
+        overrideLogs(newState.logStore)
+        overrideDayTracker(newState.dayTrackerStore)
+
+        overrideStateBySnapshot(newState)
+
+        toast.current.show({
+            severity: 'success',
+            summary: 'Success',
+            detail: `Current state was overridden by snapshot ${snapshotId}`
+        })
+
+        setLoaderData({ active: false })
+        setNeedScrollUp(true)
+        props.setSidebarVisible(false)
     }
 
     const actionSaveButton = () => {
         return (
-            <React.Fragment>
-                <Button
-                    icon="pi pi-save"
-                    iconPos="left"
-                    label={`Save state`}
-                    className="p-button-success mr-2"
-                    onClick={saveCurrentState}
-                />
-            </React.Fragment>
+            <div className="flex flex-column gap-2">
+                {isExpert && (
+                    <Button
+                        icon="pi pi-save"
+                        iconPos="left"
+                        label={`Save state`}
+                        className="p-button-success mr-2"
+                        onClick={saveCurrentState}
+                    />
+                )}
+                {user ? (
+                    <Button
+                        icon="pi pi-save"
+                        iconPos="left"
+                        label={`Save to DB`}
+                        className="p-button-success mr-2"
+                        onClick={saveStateToDb}
+                    />
+                ) : (
+                    <span style={{ fontWeight: 'bold', color: 'red' }}>
+                        Sign-in to enable
+                        <br /> saving to DB
+                    </span>
+                )}
+            </div>
         )
     }
 
-    const stateNameBody = (rowData) => {
+    const stateNameBody = (rowData, { field }) => {
         return (
             <div className="state-name-cell" data-pr-tooltip={rowData.stateId}>
-                {rowData.stateName}
+                {rowData[field]}
                 <Tooltip
                     target=".state-name-cell"
                     position="bottom"
@@ -281,13 +412,53 @@ const StatesTable = (props) => {
         )
     }
 
-    const execDateFormatter = (rowData) => {
+    const actionLoadFromDbButton = (rowData) => {
+        return (
+            <React.Fragment>
+                <Button
+                    icon="pi pi-database"
+                    iconPos="left"
+                    label="Load from DB"
+                    className="p-button-danger mr-2"
+                    onClick={() => loadFromDb(rowData.id, rowData.seed)}
+                />
+            </React.Fragment>
+        )
+    }
+
+    const dateFormatter = (rowData, { field }) => {
         return (
             <span>
-                {new Date(rowData.executionDate).toDateString() +
+                {new Date(rowData[field]).toDateString() +
                     ' ' +
-                    new Date(rowData.executionDate).toLocaleTimeString()}
+                    new Date(rowData[field]).toLocaleTimeString()}
             </span>
+        )
+    }
+
+    const numberFormatter = (rowData, { field }) => {
+        return <span>{nf.format(rowData[field])}</span>
+    }
+
+    const creatorEmailFilterTemplate = (options) => {
+        return (
+            <Dropdown
+                value={{ email: options.value }}
+                options={dbCreators}
+                itemTemplate={(option) => {
+                    return (
+                        <div className="p-multiselect-creator-email-option">
+                            <p>{option.email}</p>
+                        </div>
+                    )
+                }}
+                onChange={(e) => {
+                    options.filterCallback(e.value.email)
+                }}
+                optionLabel="email"
+                placeholder="Creator Email"
+                className="p-column-filter"
+            />
         )
     }
 
@@ -304,7 +475,7 @@ const StatesTable = (props) => {
                     size="small"
                 >
                     <Column
-                        key="stateName"
+                        key="seed"
                         field="stateName"
                         frozen={true}
                         header="Name"
@@ -322,7 +493,7 @@ const StatesTable = (props) => {
                     <Column
                         field="executionDate"
                         header="Execution Date"
-                        body={execDateFormatter}
+                        body={dateFormatter}
                         sortable
                     />
 
@@ -337,49 +508,139 @@ const StatesTable = (props) => {
             <Divider />
 
             <Fieldset
-                legend="Remote states"
+                legend="SQL State"
                 toggleable
                 collapsed={false}
-                onExpand={handleStatesLoaded}
+                onExpand={handleDbStatesLoaded}
             >
                 <DataTable
-                    value={snapshots}
+                    value={dbSnapshots}
                     selectionMode="single"
-                    sortField="executionDate"
+                    sortField="created_at"
                     sortOrder={-1}
                     paginator
                     rows={10}
                     size="small"
+                    globalFilterFields={['creator_email']}
+                    filterDisplay="menu"
+                    filters={{
+                        creator_email: {
+                            value: null,
+                            matchMode: FilterMatchMode.EQUALS
+                        }
+                    }}
                 >
                     <Column
-                        field="stateName"
+                        field="seed"
                         header="Name"
-                        body={stateNameBody}
                         style={{ width: '18rem' }}
                         sortable
                     />
-                    <Column field="scenarioId" header="Scenario" sortable />
-                    <Column field="totalQuests" header="Total Quests" />
-                    <Column field="totalCrossPools" header="Total CrossPools" />
-                    <Column field="totalInvestors" header="Total Investors" />
-                    <Column field="totalTVL" header="Total TVL" sortable />
-                    <Column field="totalMCAP" header="Total MCAP" sortable />
-                    <Column field="totalUSDC" header="Total USDC" sortable />
-                    <Column field="stateLocation" hidden />
                     <Column
-                        field="executionDate"
+                        field="creator_email"
+                        header="Creator"
+                        sortable
+                        filter
+                        showFilterMatchModes={false}
+                        filterElement={creatorEmailFilterTemplate}
+                    />
+                    <Column field="scenario_id" header="Scenario" sortable />
+                    <Column field="quests" header="Total Quests" />
+                    <Column field="cross_pools" header="Total CrossPools" />
+                    <Column field="investors" header="Total Investors" />
+                    <Column
+                        field="tvl"
+                        header="Total TVL"
+                        body={numberFormatter}
+                        sortable
+                    />
+                    <Column
+                        field="mcap"
+                        header="Total MCAP"
+                        body={numberFormatter}
+                        sortable
+                    />
+                    <Column
+                        field="usdc"
+                        header="Total USDC"
+                        body={numberFormatter}
+                        sortable
+                    />
+                    <Column
+                        field="created_at"
                         header="Execution Date"
-                        body={execDateFormatter}
+                        body={dateFormatter}
                         sortable
                     />
 
                     <Column
-                        body={actionLoadButton}
+                        body={actionLoadFromDbButton}
                         exportable={false}
                         style={{ minWidth: '8rem' }}
                     />
                 </DataTable>
             </Fieldset>
+
+            {isExpert && (
+                <Fieldset
+                    legend="Remote states"
+                    toggleable
+                    collapsed={true}
+                    onExpand={handleStatesLoaded}
+                >
+                    <DataTable
+                        value={snapshots}
+                        selectionMode="single"
+                        sortField="executionDate"
+                        sortOrder={-1}
+                        paginator
+                        rows={10}
+                        size="small"
+                    >
+                        <Column
+                            field="stateName"
+                            header="Name"
+                            body={stateNameBody}
+                            style={{ width: '18rem' }}
+                            sortable
+                        />
+                        <Column field="scenarioId" header="Scenario" sortable />
+                        <Column field="totalQuests" header="Total Quests" />
+                        <Column
+                            field="totalCrossPools"
+                            header="Total CrossPools"
+                        />
+                        <Column
+                            field="totalInvestors"
+                            header="Total Investors"
+                        />
+                        <Column field="totalTVL" header="Total TVL" sortable />
+                        <Column
+                            field="totalMCAP"
+                            header="Total MCAP"
+                            sortable
+                        />
+                        <Column
+                            field="totalUSDC"
+                            header="Total USDC"
+                            sortable
+                        />
+                        <Column field="stateLocation" hidden />
+                        <Column
+                            field="executionDate"
+                            header="Execution Date"
+                            body={dateFormatter}
+                            sortable
+                        />
+
+                        <Column
+                            body={actionLoadButton}
+                            exportable={false}
+                            style={{ minWidth: '8rem' }}
+                        />
+                    </DataTable>
+                </Fieldset>
+            )}
         </React.Fragment>
     )
 }
@@ -392,7 +653,7 @@ const Loader = (props) => {
     return (
         <React.Fragment>
             <div className="global-loading">
-                <div className="global-loader flex w-20rem flex-column justify-content-center align-content-center">
+                <div className="global-loader flex w-30rem flex-column justify-content-center align-content-center">
                     <ProgressSpinner className="flex" />
                     <div className="flex align-items-center justify-content-center">
                         <span>
@@ -403,7 +664,7 @@ const Loader = (props) => {
                         </span>
                     </div>
                 </div>
-                <div className="global-shutter"></div>
+                <div className="global-shutter" />
             </div>
         </React.Fragment>
     )
