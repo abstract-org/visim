@@ -360,12 +360,14 @@ export const aggregateLogsData = async (
  * @description Saves snapshot to DB
  * @param {number} scenarioId
  * @param {string} seed
+ * @param {string} creatorId
  * @returns {Promise<number>}
  */
-export const createSnapshot = async ({ scenarioId = 1, seed, currentDay }) => {
+export const createSnapshot = async ({ scenarioId = 1, seed, creatorId, currentDay }) => {
     const preparedSnapshot = new SnapshotUploadDto({
         seed,
         scenarioId,
+        creatorId,
         currentDay
     }).toObj()
     const snapshotDbResponse = await SupabaseClient.from(TABLE.snapshot)
@@ -454,7 +456,8 @@ export const aggregateSnapshotTotals = async (snapshotId, state) => {
 
 export const aggregateAndStoreDataForSnapshot = async ({
     state,
-    stateName
+    stateName,
+    creatorId
 }) => {
     try {
         console.time('[Snapshot Generator]')
@@ -471,6 +474,7 @@ export const aggregateAndStoreDataForSnapshot = async ({
 
         const snapshotDbId = await createSnapshot({
             scenarioId,
+            creatorId,
             seed: stateName,
             currentDay: state.dayTrackerStore.currentDay
         })

@@ -35,6 +35,8 @@ import {
     validateState
 } from './states.service'
 import { uploadStateTo } from './upload.service'
+import { FilterMatchMode } from "primereact/api";
+import { Dropdown } from "primereact/dropdown";
 
 const overrideSelector = (state) => state.override
 
@@ -61,6 +63,7 @@ function generateCurrentStateId() {
 }
 
 const StatesTable = (props) => {
+    const { user } = useSupabaseAuth()
     const quests = useQuestStore((state) => state.quests)
     const pools = usePoolStore((state) => state.pools)
     const scenarioId = useGeneratorStore((state) => state.scenarioId)
@@ -73,6 +76,7 @@ const StatesTable = (props) => {
     const setNeedScrollUp = useGeneratorStore((state) => state.setNeedScrollUp)
     const [snapshots, setSnapshots] = useState([])
     const [dbSnapshots, setDbSnapshots] = useState([])
+    const [dbCreators, setDbCreators] = useState([])
     const [currentStateInfo, setCurrentStateInfo] = useState({})
     const isMounted = useRef(null)
     const [loaderData, setLoaderData] = useState({
@@ -82,7 +86,6 @@ const StatesTable = (props) => {
     })
     const [newStateName, setNewStateName] = useState('')
     const toast = useRef(null)
-    const { user } = useSupabaseAuth()
     const isExpert = useExpertModeStore((state) => state.isExpert)
 
     const saveStateToDb = async () => {
@@ -96,7 +99,8 @@ const StatesTable = (props) => {
             await aggregateAndStoreDataForSnapshot({
                 stateId,
                 stateName: newStateName,
-                state: globalState
+                state: globalState,
+                creatorId: user.id
             })
 
             toast.current.show({
@@ -225,7 +229,10 @@ const StatesTable = (props) => {
                 console.log(err)
             })
         fetchTotalsList()
-            .then((res) => setDbSnapshots(res))
+            .then((res) => {
+                setDbSnapshots(res.snapshots)
+                setDbCreators(res.creators)
+            })
             .catch((err) => {
                 console.log(err)
             })
@@ -248,7 +255,9 @@ const StatesTable = (props) => {
     }
 
     const handleDbStatesLoaded = async () => {
-        setDbSnapshots(await fetchTotalsList())
+        const { snapshots, creators } = await fetchTotalsList()
+        setDbSnapshots(snapshots)
+        setDbCreators(creators)
     }
 
     const loadState = async ({ stateId, stateLocation }) => {
@@ -431,6 +440,28 @@ const StatesTable = (props) => {
         return <span>{nf.format(rowData[field])}</span>
     }
 
+    const creatorEmailFilterTemplate = (options) => {
+        return (
+            <Dropdown
+                value={{ email: options.value }}
+                options={dbCreators}
+                itemTemplate={(option) => {
+                    return (
+                      <div className="p-multiselect-creator-email-option">
+                          <p>{option.email}</p>
+                      </div>
+                    )
+                }}
+                onChange={(e) => {
+                    options.filterCallback(e.value.email)
+                }}
+                optionLabel="email"
+                placeholder="Creator Email"
+                className="p-column-filter"
+            />
+        )
+    }
+
     return (
         <React.Fragment>
             <Loader loaderData={loaderData} />
@@ -490,12 +521,25 @@ const StatesTable = (props) => {
                     paginator
                     rows={10}
                     size="small"
+                    globalFilterFields={['creator_email']}
+                    filterDisplay="menu"
+                    filters={{
+                        'creator_email': { value: null, matchMode: FilterMatchMode.EQUALS },
+                    }}
                 >
                     <Column
                         field="seed"
                         header="Name"
                         style={{ width: '18rem' }}
                         sortable
+                    />
+                    <Column
+                        field="creator_email"
+                        header="Creator"
+                        sortable
+                        filter
+                        showFilterMatchModes={false}
+                        filterElement={creatorEmailFilterTemplate}
                     />
                     <Column field="scenario_id" header="Scenario" sortable />
                     <Column field="quests" header="Total Quests" />

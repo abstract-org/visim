@@ -14,6 +14,7 @@ export const TABLE = {
     swap: 'swap',
     log: 'log',
     snapshot: 'snapshot',
+    user: 'user',
     snapshot_totals: 'snapshot_totals',
     scenario: 'scenario',
     scenario_investor_config: 'scenario_investor_config',
