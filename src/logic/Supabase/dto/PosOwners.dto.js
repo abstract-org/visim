@@ -21,7 +21,7 @@ export class PosOwnersDto {
         this.amt0 = data.amt0
         this.amt1 = data.amt1
         this.hash = data.hash
-        this.native = data.native
+        this.native = data.type !== 'investor'
         this.pmax = data.pmax
         this.pmin = data.pmin
         this.type = data.type
@@ -46,7 +46,7 @@ export class PosOwnersUploadDto {
         this.amt0 = posOwnerData.amt0
         this.amt1 = posOwnerData.amt1
         this.hash = posOwnerData.hash
-        this.native = posOwnerData.native
+        this.native = posOwnerData.type !== 'investor'
         this.pmax = posOwnerData.pmax
         this.pmin = posOwnerData.pmin
         this.type = posOwnerData.type
