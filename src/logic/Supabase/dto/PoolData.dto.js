@@ -1,3 +1,5 @@
+import { convertFloat8ToNum, convertNumToFloat8 } from '../../Utils/logicUtils'
+
 export class PoolDataDto {
     /** @type {number} */
     id
@@ -43,10 +45,12 @@ export class PoolDataDto {
         this.swap_id = data.swap_id
         this.pool_id = data.pool_id
         this.current_liquidity = data.current_liquidity
-        this.current_price = data.current_price
-        this.current_price_point_lg2 = data.current_price_point_lg2
-        this.current_left_lg2 = data.current_left_lg2
-        this.current_right_lg2 = data.current_right_lg2
+        this.current_price = convertFloat8ToNum(data.current_price)
+        this.current_price_point_lg2 = convertFloat8ToNum(
+            data.current_price_point_lg2
+        )
+        this.current_left_lg2 = convertFloat8ToNum(data.current_left_lg2)
+        this.current_right_lg2 = convertFloat8ToNum(data.current_right_lg2)
         this.token0_price = data.token0_price
         this.volume_token0 = data.volume_token0
         this.token1_price = data.token1_price
@@ -126,10 +130,10 @@ export class PoolDataUploadDto {
     constructor(data, poolMappings) {
         this.pool_id = poolMappings.get(data.name)
         this.current_liquidity = data.curLiq
-        this.current_price = data.curPrice
-        this.current_price_point_lg2 = data.curPP
-        this.current_left_lg2 = data.curLeft
-        this.current_right_lg2 = data.curRight
+        this.current_price = convertNumToFloat8(data.curPrice)
+        this.current_price_point_lg2 = convertNumToFloat8(data.curPP)
+        this.current_left_lg2 = convertNumToFloat8(data.curLeft)
+        this.current_right_lg2 = convertNumToFloat8(data.curRight)
         this.token0_price = data.priceToken0
         this.token1_price = data.priceToken1
         this.volume_token0 = data.volumeToken0
