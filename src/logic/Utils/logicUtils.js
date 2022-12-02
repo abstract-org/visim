@@ -237,3 +237,24 @@ export const addStringToArrayUniq = (arr, str) => {
 
     return Array.from(new Set(extendedArray))
 }
+
+export const convertNumToFloat8 = (value) => {
+    switch (value) {
+        case Infinity:
+            return 'Infinity'
+        case -Infinity:
+            return '-Infinity'
+        default:
+            return value
+    }
+}
+export const convertFloat8ToNum = (value) => {
+    switch (value) {
+        case 'Infinity':
+            return Infinity
+        case '-Infinity':
+            return -Infinity
+        default:
+            return value
+    }
+}

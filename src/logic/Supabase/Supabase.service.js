@@ -363,7 +363,12 @@ export const aggregateLogsData = async (
  * @param {string} creatorId
  * @returns {Promise<number>}
  */
-export const createSnapshot = async ({ scenarioId = 1, seed, creatorId, currentDay }) => {
+export const createSnapshot = async ({
+    scenarioId = 1,
+    seed,
+    creatorId,
+    currentDay
+}) => {
     const preparedSnapshot = new SnapshotUploadDto({
         seed,
         scenarioId,
