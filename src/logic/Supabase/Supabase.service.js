@@ -347,8 +347,8 @@ export const aggregateLogsData = async (
     poolMappings,
     investorMappings
 ) => {
-    const preparedLogs = logsArray.map((log) =>
-        new LogUploadDto(log, poolMappings, investorMappings).toObj()
+    const preparedLogs = logsArray.map((log, idx) =>
+        new LogUploadDto(log, poolMappings, investorMappings, idx).toObj()
     )
 
     await SupabaseClient.from(TABLE.log).insert(preparedLogs)

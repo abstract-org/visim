@@ -150,8 +150,13 @@ const aggregateSwapsForStore = (data, respData) => {
     )
 }
 
+const ascBlkComparator = (objA, objB) => objA.blk - objB.blk
+const descBlkComparator = (objA, objB) => objB.blk - objA.blk
+
 const aggregateLogsForStore = (data) => {
-    const logObjList = data.map((ssLog) => new LogDto(ssLog).toObj())
+    const logObjList = data
+        .map((ssLog) => new LogDto(ssLog).toObj())
+        .sort(ascBlkComparator)
 
     return {
         logs: logObjList
