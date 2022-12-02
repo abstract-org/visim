@@ -1,7 +1,9 @@
+import { FilterMatchMode } from 'primereact/api'
 import { Button } from 'primereact/button'
 import { Column } from 'primereact/column'
 import { DataTable } from 'primereact/datatable'
 import { Divider } from 'primereact/divider'
+import { Dropdown } from 'primereact/dropdown'
 import { Fieldset } from 'primereact/fieldset'
 import { InputText } from 'primereact/inputtext'
 import { ProgressSpinner } from 'primereact/progressspinner'
@@ -35,8 +37,6 @@ import {
     validateState
 } from './states.service'
 import { uploadStateTo } from './upload.service'
-import { FilterMatchMode } from "primereact/api";
-import { Dropdown } from "primereact/dropdown";
 
 const overrideSelector = (state) => state.override
 
@@ -447,9 +447,9 @@ const StatesTable = (props) => {
                 options={dbCreators}
                 itemTemplate={(option) => {
                     return (
-                      <div className="p-multiselect-creator-email-option">
-                          <p>{option.email}</p>
-                      </div>
+                        <div className="p-multiselect-creator-email-option">
+                            <p>{option.email}</p>
+                        </div>
                     )
                 }}
                 onChange={(e) => {
@@ -524,7 +524,10 @@ const StatesTable = (props) => {
                     globalFilterFields={['creator_email']}
                     filterDisplay="menu"
                     filters={{
-                        'creator_email': { value: null, matchMode: FilterMatchMode.EQUALS },
+                        creator_email: {
+                            value: null,
+                            matchMode: FilterMatchMode.EQUALS
+                        }
                     }}
                 >
                     <Column
@@ -661,7 +664,7 @@ const Loader = (props) => {
                         </span>
                     </div>
                 </div>
-                <div className="global-shutter"></div>
+                <div className="global-shutter" />
             </div>
         </React.Fragment>
     )
