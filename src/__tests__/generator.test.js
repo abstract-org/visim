@@ -452,5 +452,3 @@ it('Generates pools', () => {})
 it('Generates cross pools', () => {})
 
 it('Generates cites quests', () => {})
-
-it('Runs trading in parallel workers', async () => {})

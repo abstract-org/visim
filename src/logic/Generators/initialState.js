@@ -1,4 +1,6 @@
 export const invGen = {
+    globalSwapThreshold: 100,
+
     dailySpawnProbability: 50,
 
     invGenAlias: 'Type A',

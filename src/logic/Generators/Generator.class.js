@@ -430,6 +430,11 @@ class Generator {
             citingPool,
             questConfig.citeSingleMultiplier
         )
+
+        if (!priceRange) {
+            return
+        }
+
         this._dayData[day].pools.push(crossPool)
 
         const citeAmount0 =
@@ -700,6 +705,11 @@ class Generator {
                 citingPool,
                 citingPosMultiplier
             )
+
+            if (!priceRange) {
+                return
+            }
+
             this._dayData[day].pools.push(crossPool)
 
             const citeAmount0 =
@@ -843,11 +853,19 @@ class Generator {
             console.log(tradePool)
         }
 
-        const [totalIn, totalOut] = router.smartSwap(
+        if (
+            conf.globalSwapThreshold > 0 &&
+            spendAmount < conf.globalSwapThreshold
+        ) {
+            return
+        }
+
+        const [totalIn, totalOut] = this.smartSwap(
             this.#DEFAULT_TOKEN,
             tradePool.tokenRight,
             spendAmount,
-            conf.smartRouteDepth
+            conf.smartRouteDepth,
+            router
         )
 
         // collect pool price movements here and in other calls of router.smart Swap
@@ -903,6 +921,14 @@ class Generator {
             return
         }
 
+        if (
+            conf.globalSwapThreshold > 0 &&
+            perPoolAmt < conf.globalSwapThreshold
+        ) {
+            console.log('skip trade gainer lower than 100')
+            return
+        }
+
         tradePools.forEach((pool) => {
             if (conf.excludeSingleName === pool.tokenRight) {
                 console.log(
@@ -911,11 +937,12 @@ class Generator {
                 console.log(pool)
             }
 
-            const [totalIn, totalOut] = router.smartSwap(
+            const [totalIn, totalOut] = this.smartSwap(
                 this.#DEFAULT_TOKEN,
                 pool.tokenRight,
                 perPoolAmt,
-                conf.smartRouteDepth
+                conf.smartRouteDepth,
+                router
             )
 
             //That would be an edge case, rare, but if happens, need to debug why
@@ -990,18 +1017,11 @@ class Generator {
             conf.swapIncDir
         )
 
-        if (incPools.length) {
+        if (!incPools.length) {
+            return
         }
 
-        this.smartSwapPools(
-            day,
-            investor,
-            router,
-            incPools,
-            conf.smartRouteDepth,
-            conf.excludeSingleName,
-            'inc'
-        )
+        this.smartSwapPools(day, investor, router, incPools, conf, 'inc')
 
         this.measure('tradeIncQuests', true)
     }
@@ -1017,18 +1037,11 @@ class Generator {
             conf.swapDecDir
         )
 
-        if (decPools.length) {
+        if (!decPools.length) {
+            return
         }
 
-        this.smartSwapPools(
-            day,
-            investor,
-            router,
-            decPools,
-            conf.smartRouteDepth,
-            conf.excludeSingleName,
-            'dec'
-        )
+        this.smartSwapPools(day, investor, router, decPools, conf, 'dec')
 
         this.measure('tradeDecQuests', true)
     }
@@ -1094,7 +1107,9 @@ class Generator {
                     //         )
                     //     )
                     // )
-                    this.tradeIncQuests(conf, day, investor, router)
+                    if (conf.swapIncSumPerc && conf.swapIncByPerc) {
+                        this.tradeIncQuests(conf, day, investor, router)
+                    }
 
                     // Tokens that decreased in price
                     // this.tradingHandlers.push(
@@ -1104,7 +1119,9 @@ class Generator {
                     //         )
                     //     )
                     // )
-                    this.tradeDecQuests(conf, day, investor, router)
+                    if (conf.swapDecSumPerc && conf.swapDecByPerc) {
+                        this.tradeDecQuests(conf, day, investor, router)
+                    }
                 })
 
                 // Promise.all(this.tradingHandlers).catch((reason) => {
@@ -1117,20 +1134,16 @@ class Generator {
         this.measure('simulateTrade', true)
     }
 
-    smartSwapPools(
-        day,
-        investor,
-        router,
-        selectedPools,
-        smartRouteDepth,
-        excludeSingleName,
-        debugStr
-    ) {
+    smartSwapPools(day, investor, router, selectedPools, conf, debugStr) {
         this.measure('smartSwapPools')
 
         if (!selectedPools || !selectedPools.length) {
             return
         }
+
+        const excludeSingleName = conf.excludeSingleName
+        const smartRouteDepth = conf.smartRouteDepth
+        const globalSwapThreshold = conf.globalSwapThreshold
 
         selectedPools.forEach((poolData) => {
             const { pool, amount, swapDir } = poolData
@@ -1147,11 +1160,27 @@ class Generator {
                 console.log(selectedPools.length)
             }
 
-            const [totalIn, totalOut] = router.smartSwap(
+            if (globalSwapThreshold > 0) {
+                let spendAmount
+                if (swapDir === 'sell') {
+                    // Selling approximately up to globalThreshold
+                    // For more accuracy need to use drySwap, which is expensive
+                    spendAmount = pool.curPrice * amount
+                } else {
+                    spendAmount = amount
+                }
+
+                if (spendAmount < globalSwapThreshold) {
+                    return
+                }
+            }
+
+            const [totalIn, totalOut] = this.smartSwap(
                 t0,
                 t1,
                 amount,
-                smartRouteDepth
+                smartRouteDepth,
+                router
             )
 
             // collect pool price movements here and in other calls of router.smartSwap
@@ -1233,8 +1262,8 @@ class Generator {
                         author.balances[quest] > 0
                     ) {
                         const sumIn =
-                            author.balances[quest] >= 10
-                                ? 10
+                            author.balances[quest] > conf.globalSwapThreshold
+                                ? conf.globalSwapThreshold
                                 : author.balances[quest]
 
                         if (conf.excludeSingleName) {
@@ -1243,11 +1272,12 @@ class Generator {
                             )
                         }
 
-                        const [totalIn, totalOut] = router.smartSwap(
+                        const [totalIn, totalOut] = this.smartSwap(
                             quest,
                             this.#DEFAULT_TOKEN,
                             sumIn,
-                            conf.smartRouteDepth
+                            conf.smartRouteDepth,
+                            router
                         )
 
                         if (
@@ -1378,7 +1408,6 @@ class Generator {
             })
 
         this.measure('getChangedPriceQuests', true)
-
         return selectedPools
     }
 
@@ -1663,6 +1692,19 @@ class Generator {
 
         this.measure('processSwapData', true)
     }
+
+    smartSwap(token0, token1, amount, depth, router) {
+        const [totalIn, totalOut] = router.smartSwap(
+            token0,
+            token1,
+            amount,
+            depth
+        )
+
+        return [totalIn, totalOut]
+    }
+
+    getSwapSumMin(investor, token, fixedAmount, percentage) {}
 
     sleep(ms) {
         return new Promise((resolve) => setTimeout(resolve, ms))
