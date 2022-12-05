@@ -1,0 +1,265 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model investor {
+  id                Int                 @id @default(autoincrement())
+  name              String              @db.VarChar(255)
+  type              String              @db.VarChar(255)
+  hash              String              @db.VarChar(255)
+  created_at        DateTime            @db.Timestamptz(0)
+  investor_balances investor_balances[]
+  investor_quests   investor_quests[]
+  log               log[]
+  position_owners   position_owners[]
+  quest             quest[]
+  snapshot_data     snapshot_data[]
+  snapshot_investor snapshot_investor[]
+  swap              swap[]
+}
+
+model investor_balances {
+  id          Int      @id @default(autoincrement())
+  investor_id Int
+  quest_id    Int
+  balance     Decimal  @db.Decimal
+  day         Int?
+  investor    investor @relation(fields: [investor_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "investor_balances_investor_id_foreign")
+  quest       quest    @relation(fields: [quest_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "investor_balances_quest_id_foreign")
+}
+
+model investor_navs {
+  id          BigInt    @id @default(autoincrement())
+  investor_id BigInt?
+  day         Int?
+  usdc_nav    Float?
+  token_nav   Float?
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model investor_quests {
+  id          Int      @id
+  investor_id Int
+  quest_id    Int
+  investor    investor @relation(fields: [investor_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "investor_quests_investor_id_foreign")
+  quest       quest    @relation(fields: [quest_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "investor_quests_quest_id_foreign")
+
+  @@index([investor_id], map: "investor_quests_investor_id_index")
+  @@index([quest_id], map: "investor_quests_quest_id_index")
+}
+
+model log {
+  id          Int      @id @default(autoincrement())
+  pool_id     Int?
+  investor_id Int
+  swap_id     Int?
+  action      String   @db.VarChar(255)
+  day         Int?
+  investor    investor @relation(fields: [investor_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "log_investor_id_foreign")
+  pool        pool?    @relation(fields: [pool_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  swap        swap?    @relation(fields: [swap_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([investor_id], map: "log_investor_id_index")
+  @@index([pool_id], map: "log_pool_id_index")
+  @@index([swap_id], map: "log_swap_id_index")
+}
+
+model pool {
+  id            Int             @id @default(autoincrement())
+  name          String          @db.VarChar(255)
+  token0        String          @db.VarChar(255)
+  token1        String          @db.VarChar(255)
+  type          String          @db.VarChar(255)
+  hash          String?         @db.VarChar(255)
+  created_at    DateTime        @db.Timestamptz(0)
+  log           log[]
+  pool_data     pool_data[]
+  position      position[]
+  quest_pools   quest_pools[]
+  snapshot_data snapshot_data[]
+  snapshot_pool snapshot_pool[]
+  swap          swap[]
+}
+
+model pool_data {
+  id                      Int      @id @default(autoincrement())
+  swap_id                 Int?
+  pool_id                 Int
+  current_liquidity       Float
+  current_price           Float
+  current_price_point_lg2 Float?
+  current_left_lg2        Float?
+  current_right_lg2       Float?
+  token0_price            Float
+  volume_token0           Float
+  token1_price            Float
+  volume_token1           Float
+  tvl                     Float
+  mcap                    Float
+  created_at              DateTime @db.Timestamptz(0)
+  pool                    pool     @relation(fields: [pool_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "pool_data_pool_id_foreign")
+  swap                    swap?    @relation(fields: [swap_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([pool_id], map: "pool_data_pool_id_index")
+}
+
+model position {
+  id              Int               @id @default(autoincrement())
+  pool_id         Int
+  liquidity       Float
+  left_point      Float?
+  right_point     Float?
+  price_point     Float?
+  created_at      DateTime          @db.Timestamptz(0)
+  pool            pool              @relation(fields: [pool_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "position_pool_id_foreign")
+  position_owners position_owners[]
+
+  @@index([liquidity], map: "position_owner_id_index")
+  @@index([pool_id], map: "position_pool_id_index")
+}
+
+model position_owners {
+  id          Int      @id
+  owner_id    Int
+  position_id Int
+  owner_type  String   @db.VarChar(255)
+  investor    investor @relation(fields: [owner_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "position_owners_investor_owner_id_foreign")
+  position    position @relation(fields: [position_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "position_owners_position_id_foreign")
+  quest       quest    @relation(fields: [owner_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "position_owners_quest_owner_id_foreign")
+
+  @@index([owner_id], map: "position_owners_owner_id_index")
+}
+
+model quest {
+  id                Int                 @id @default(autoincrement())
+  author_id         Int?
+  name              String              @db.VarChar(255)
+  hash              String              @db.VarChar(255)
+  created_at        DateTime?           @default(now())
+  investor          investor?           @relation(fields: [author_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  investor_balances investor_balances[]
+  investor_quests   investor_quests[]
+  position_owners   position_owners[]
+  quest_pools       quest_pools[]
+  snapshot_data     snapshot_data[]
+  snapshot_quest    snapshot_quest[]
+}
+
+model quest_pools {
+  id       Int   @id
+  quest_id Int
+  pool_id  Int
+  pool     pool  @relation(fields: [pool_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "quest_pools_pool_id_foreign")
+  quest    quest @relation(fields: [quest_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "quest_pools_quest_id_foreign")
+
+  @@index([pool_id], map: "quest_pools_pool_id_index")
+  @@index([quest_id], map: "quest_pools_quest_id_index")
+}
+
+model scenario {
+  id            Int             @id
+  name          String          @db.VarChar(255)
+  created_at    DateTime        @db.Timestamptz(0)
+  scenario_data scenario_data[]
+  snapshot      snapshot[]
+}
+
+model scenario_data {
+  id          Int      @id
+  scenario_id Int
+  module_type String   @db.VarChar(255)
+  key         String   @db.VarChar(255)
+  value       String   @db.VarChar(255)
+  scenario    scenario @relation(fields: [scenario_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "scenario_data_scenario_id_foreign")
+
+  @@index([scenario_id], map: "scenario_data_scenario_id_index")
+}
+
+model snapshot {
+  id                Int                 @id @default(autoincrement())
+  seed              String              @db.VarChar(255)
+  scenario_id       Int
+  created_at        DateTime?           @default(now())
+  scenario          scenario            @relation(fields: [scenario_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "snapshot_scenario_id_foreign")
+  snapshot_data     snapshot_data[]
+  snapshot_investor snapshot_investor[]
+  snapshot_pool     snapshot_pool[]
+  snapshot_quest    snapshot_quest[]
+  snapshot_totals   snapshot_totals[]
+
+  @@index([scenario_id], map: "snapshot_scenario_id_index")
+}
+
+model snapshot_data {
+  id          Int      @id @default(autoincrement())
+  snapshot_id Int
+  entity_type String   @db.VarChar(255)
+  entity_id   Int
+  investor    investor @relation(fields: [entity_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "snapshot_data_investor_entity_id_foreign")
+  pool        pool     @relation(fields: [entity_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "snapshot_data_pool_entity_id_foreign")
+  quest       quest    @relation(fields: [entity_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "snapshot_data_quest_entity_id_foreign")
+  snapshot    snapshot @relation(fields: [snapshot_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "snapshot_data_snapshot_id_foreign")
+}
+
+model snapshot_investor {
+  id          BigInt    @id @default(autoincrement())
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  snapshot_id Int?
+  entity_id   Int?
+  investor    investor? @relation(fields: [entity_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  snapshot    snapshot? @relation(fields: [snapshot_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model snapshot_pool {
+  id          BigInt    @id @default(autoincrement())
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  snapshot_id Int?
+  entity_id   Int?
+  pool        pool?     @relation(fields: [entity_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  snapshot    snapshot? @relation(fields: [snapshot_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model snapshot_quest {
+  id          BigInt    @id @default(autoincrement())
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  snapshot_id Int?
+  entity_id   Int?
+  quest       quest?    @relation(fields: [entity_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  snapshot    snapshot? @relation(fields: [snapshot_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model snapshot_totals {
+  id          BigInt    @id @default(autoincrement())
+  snapshot_id Int
+  quests      Int
+  cross_pools Int
+  investors   Int
+  tvl         Int
+  mcap        Int
+  usdc        Int
+  snapshot    snapshot? @relation(fields: [snapshot_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model swap {
+  id          Int         @id @default(autoincrement())
+  pool_id     Int
+  investor_id Int
+  action      String      @db.VarChar(255)
+  amount_in   Float
+  amount_out  Float
+  day         Int
+  block       Int
+  path        String      @db.VarChar(255)
+  investor    investor    @relation(fields: [investor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  pool        pool        @relation(fields: [pool_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  log         log[]
+  pool_data   pool_data[]
+
+  @@index([investor_id], map: "swap_investor_id_index")
+  @@index([pool_id], map: "swap_pool_id_index")
+}

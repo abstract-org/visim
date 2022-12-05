@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>DATABASE</ID>
+  <OriginalElement>ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.position_owners</OriginalElement>
+  <nodes>
+    <node x="288.0" y="485.0">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.position_owners</node>
+    <node x="0.0" y="474.0">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.quest</node>
+    <node x="34.75" y="259.0">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.investor</node>
+    <node x="322.75" y="0.0">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.pool</node>
+    <node x="322.75" y="237.0">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.position</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.position_owners" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.investor" relationship="REFERENCES">
+      <point x="-45.5" y="-60.5" />
+      <point x="333.5" y="449.0" />
+      <point x="235.75" y="449.0" />
+      <point x="67.0" y="71.5" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.quest" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.investor" relationship="REFERENCES">
+      <point x="0.0" y="-71.5" />
+      <point x="134.0" y="449.0" />
+      <point x="101.75" y="449.0" />
+      <point x="-67.0" y="71.5" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.position" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.pool" relationship="REFERENCES">
+      <point x="0.0" y="-93.5" />
+      <point x="0.0" y="93.5" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.position_owners" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.position" relationship="REFERENCES">
+      <point x="45.5" y="-60.5" />
+      <point x="424.5" y="449.0" />
+      <point x="456.75" y="449.0" />
+      <point x="0.0" y="93.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic" zoom="0.8732893597175029" showDependencies="false" x="253.49475860595703" y="346.4930114746094" />
+  <SelectedNodes>
+    <node>ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.investor</node>
+  </SelectedNodes>
+  <Categories>
+    <Category>Columns</Category>
+    <Category>Comments</Category>
+    <Category>Key columns</Category>
+    <Category>Virtual foreign keys</Category>
+  </Categories>
+</Diagram>
+
