@@ -245,6 +245,7 @@ const gatherStateFromSnapshot = (data) => {
     const { pools, poolStorePools } = aggregatePoolsForStore(data.pool)
     newState.poolStore.pools = poolStorePools
     newState.pools = pools
+    newState.poolStore.active = poolStorePools[0]
 
     const questNamesToPoolNames = gatherPoolNamesByQuestName(pools)
     const { quests, questStore } = aggregateQuestsForStore(

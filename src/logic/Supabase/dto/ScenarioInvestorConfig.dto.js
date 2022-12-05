@@ -30,6 +30,11 @@ export class ScenarioInvestorConfigDto {
         this.value_sell_period_days = data.value_sell_period_days
         this.value_sell_amount = data.value_sell_amount
         this.smart_route_depth = data.smart_route_depth
+        this.buy_single_amount = data.buySingleAmount
+        this.buy_sum_amount = data.buySumAmount
+        this.swap_inc_sum_amount = data.swapIncSumAmount
+        this.swap_dec_sum_amount = data.swapDecSumAmount
+        this.value_sell_perc = data.valueSellPerc
     }
 
     toObj() {
@@ -63,7 +68,12 @@ export class ScenarioInvestorConfigDto {
             keepCitingPosMultiplier: this.keep_citing_pos_multiplier,
             valueSellPeriodDays: this.value_sell_period_days,
             valueSellAmount: this.value_sell_amount,
-            smartRouteDepth: this.smart_route_depth
+            smartRouteDepth: this.smart_route_depth,
+            buySingleAmount: this.buy_single_amount || 0,
+            buySumAmount: this.buy_sum_amount || 0,
+            swapIncSumAmount: this.swap_inc_sum_amount || 0,
+            swapDecSumAmount: this.swap_dec_sum_amount || 0,
+            valueSellPerc: this.value_sell_perc || 0
         }
     }
 }
