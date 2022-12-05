@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>DATABASE</ID>
+  <OriginalElement>ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.investor_balances</OriginalElement>
+  <nodes>
+    <node x="72.25" y="195.0">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.quest</node>
+    <node x="0.0" y="0.0">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.investor</node>
+    <node x="46.5" y="390.0">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.investor_balances</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.quest" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.investor" relationship="REFERENCES">
+      <point x="0.0" y="-71.5" />
+      <point x="206.25" y="169.0" />
+      <point x="201.0" y="169.0" />
+      <point x="67.0" y="71.5" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.investor_balances" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.quest" relationship="REFERENCES">
+      <point x="43.75" y="-71.5" />
+      <point x="177.75" y="364.0" />
+      <point x="206.25" y="364.0" />
+      <point x="0.0" y="71.5" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.investor_balances" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.investor" relationship="REFERENCES">
+      <point x="-43.75" y="-71.5" />
+      <point x="90.25" y="364.0" />
+      <point x="61.75" y="364.0" />
+      <point x="61.75" y="169.0" />
+      <point x="67.0" y="169.0" />
+      <point x="-67.0" y="71.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic" zoom="1.0" showDependencies="false" x="170.5" y="266.5" />
+  <SelectedNodes>
+    <node>ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.investor_balances</node>
+  </SelectedNodes>
+  <Categories>
+    <Category>Columns</Category>
+    <Category>Comments</Category>
+    <Category>Key columns</Category>
+    <Category>Virtual foreign keys</Category>
+  </Categories>
+</Diagram>
+

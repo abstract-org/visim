@@ -30,7 +30,7 @@ export const LogsModule = () => {
         }
 
         return {
-            block: idx,
+            block: log.blk || idx,
             day: dayIter,
             action: log.action.toUpperCase(),
             pool: log.pool,

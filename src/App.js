@@ -28,6 +28,7 @@ import {
 } from './logic/Pool/Pool.components'
 import { QuestCitation, QuestCreation } from './logic/Quest/Quest.components'
 import { StatesSidebar } from './logic/States/StatesSidebar.component'
+import { SupabaseAuthProvider } from './logic/Supabase/Supabase.components'
 import { TopMenu } from './logic/TopMenu.component'
 import useExpertModeStore from './stores/expertMode.store'
 
@@ -49,7 +50,7 @@ export default function Home() {
     }, [needScrollUp, setNeedScrollUp])
 
     return (
-        <div>
+        <SupabaseAuthProvider>
             <div className="grid">
                 <div className="col-12">
                     <TopMenu
@@ -152,6 +153,6 @@ export default function Home() {
                     </Card>
                 </div>
             </div>
-        </div>
+        </SupabaseAuthProvider>
     )
 }
