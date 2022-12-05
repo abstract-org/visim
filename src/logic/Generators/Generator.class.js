@@ -836,11 +836,20 @@ class Generator {
         this.measure('simulateKeepCreatingQuest', true)
     }
 
+    getMinAmount(balance = 0, percentage = 0, amount = 0) {
+        const percAmount = (balance / 100) * percentage
+
+        return percAmount < amount ? percAmount : amount
+    }
+
     tradeSpecificQuest(conf, day, investor, router) {
         this.measure('tradeSpecificQuest')
 
-        const spendAmount =
-            (investor.balances[this.#DEFAULT_TOKEN] / 100) * conf.buySinglePerc
+        const spendAmount = this.getMinAmount(
+            investor.balances[this.#DEFAULT_TOKEN],
+            conf.buySinglePerc,
+            conf.buySingleAmount
+        )
 
         let tradePool = this._cachedPools.get(
             `${this.#DEFAULT_TOKEN}-${conf.includeSingleName}`
@@ -902,8 +911,11 @@ class Generator {
     tradeTopGainers(conf, day, investor, router) {
         this.measure('tradeTopGainers')
 
-        const spendAmount =
-            (investor.balances[this.#DEFAULT_TOKEN] / 100) * conf.buySumPerc
+        const spendAmount = this.getMinAmount(
+            investor.balances[this.#DEFAULT_TOKEN],
+            conf.buySumPerc,
+            conf.buySumAmount
+        )
 
         const tradePools = this.getTradePools(
             conf.buyQuestPerc,
@@ -1013,6 +1025,7 @@ class Generator {
             investor.balances,
             conf.swapIncFrequency,
             conf.swapIncSumPerc,
+            conf.swapIncSumAmount,
             conf.swapIncByPerc,
             conf.swapIncDir
         )
@@ -1033,6 +1046,7 @@ class Generator {
             investor.balances,
             conf.swapDecFrequency,
             conf.swapDecSumPerc,
+            conf.swapDecSumAmount,
             conf.swapDecByPerc,
             conf.swapDecDir
         )
@@ -1107,7 +1121,10 @@ class Generator {
                     //         )
                     //     )
                     // )
-                    if (conf.swapIncSumPerc && conf.swapIncByPerc) {
+                    if (
+                        (conf.swapIncSumPerc || conf.swapIncSumAmount) &&
+                        conf.swapIncByPerc
+                    ) {
                         this.tradeIncQuests(conf, day, investor, router)
                     }
 
@@ -1119,7 +1136,10 @@ class Generator {
                     //         )
                     //     )
                     // )
-                    if (conf.swapDecSumPerc && conf.swapDecByPerc) {
+                    if (
+                        (conf.swapDecSumPerc || conf.swapDecSumAmount) &&
+                        conf.swapDecByPerc
+                    ) {
                         this.tradeDecQuests(conf, day, investor, router)
                     }
                 })
@@ -1330,7 +1350,8 @@ class Generator {
     getChangedPriceQuests(
         invBalances,
         freq,
-        sumOfOwnedTokens,
+        tokensPercentage,
+        amountOfTokens,
         percentageChange,
         swapDir
     ) {
@@ -1386,7 +1407,11 @@ class Generator {
                 const tokenTrade =
                     swapDir === 'sell' ? pool.tokenRight : pool.tokenLeft
                 const tokenBalance = invBalances[tokenTrade]
-                const swapAmount = (tokenBalance / 100) * sumOfOwnedTokens
+                const swapAmount = this.getMinAmount(
+                    tokenBalance,
+                    tokensPercentage,
+                    amountOfTokens
+                )
 
                 balancesLeftover[tokenTrade] -= swapAmount
 
