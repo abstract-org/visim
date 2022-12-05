@@ -30,11 +30,11 @@ export class ScenarioInvestorConfigDto {
         this.value_sell_period_days = data.value_sell_period_days
         this.value_sell_amount = data.value_sell_amount
         this.smart_route_depth = data.smart_route_depth
-        this.buy_single_amount = data.buySingleAmount
-        this.buy_sum_amount = data.buySumAmount
-        this.swap_inc_sum_amount = data.swapIncSumAmount
-        this.swap_dec_sum_amount = data.swapDecSumAmount
-        this.value_sell_perc = data.valueSellPerc
+        this.buy_single_amount = data.buy_single_amount
+        this.buy_sum_amount = data.buy_sum_amount
+        this.swap_inc_sum_amount = data.swap_inc_sum_amount
+        this.swap_dec_sum_amount = data.swap_dec_sum_amount
+        this.value_sell_perc = data.value_sell_perc
     }
 
     toObj() {
