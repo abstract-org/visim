@@ -13,9 +13,19 @@ const useDayTrackerStore = create(
     devtools(
         (set, get) => ({
             ...INITIAL_STATE,
-            setDay: (day) => set(() => ({ currentDay: day })),
+            incrementDay: (day) =>
+                set(
+                    () => ({ currentDay: get().currentDay + 1 }),
+                    false,
+                    'incrementDay'
+                ),
+            setDay: (day) => set(() => ({ currentDay: day }), false, 'setDay'),
             override: (newData) =>
-                set(() => overrideState(get(), newData, INITIAL_STATE))
+                set(
+                    () => overrideState(get(), newData, INITIAL_STATE),
+                    false,
+                    'override'
+                )
         }),
         devToolsOptions
     )
