@@ -146,7 +146,6 @@ export default class Router {
      * @description Calculates max amount could be thrown into swaps chain to have tokens without surplus
      * @param {number} amountIn
      * @param {string[]} path
-     * @param {number} priceLimit
      * @returns {number} max acceptable amount in for the path
      */
     getMaxAmountInForPath(amountIn, path) {
@@ -172,7 +171,6 @@ export default class Router {
     /**
      * @description Fills in pathActions with max in/outs for each pool in path
      * @param {PathAction[]} pathActions
-     * @param {boolean} shouldUseDrySwap - set true if formulas broken
      * @returns {StepWithCaps[]}
      */
     getPathWithActionCaps(pathActions) {
