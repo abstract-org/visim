@@ -3,9 +3,10 @@ import 'primeicons/primeicons.css'
 import { Card } from 'primereact/card'
 import 'primereact/resources/primereact.min.css'
 import 'primereact/resources/themes/lara-light-indigo/theme.css'
-import { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 import { CapTableSidebar } from './components/CapTable'
+import { CurrentDay } from './components/CurrentDay'
 import { KnowledgeGraphV2 } from './components/KnowledgeGraphV2'
 import { MoneyFlowSidebar } from './components/MoneyFlowSidebar'
 import { MoneyLeakBar } from './components/MoneyLeakBar'
@@ -65,9 +66,14 @@ export default function Home() {
                     />
                 </div>
                 {isExpert && (
-                    <div className="col-12">
-                        <MoneyLeakBar />
-                    </div>
+                    <React.Fragment>
+                        <div className="col-11">
+                            <MoneyLeakBar />
+                        </div>
+                        <div className="col-1">
+                            <CurrentDay />
+                        </div>
+                    </React.Fragment>
                 )}
                 <StatesSidebar
                     isVisible={statesVisible}
