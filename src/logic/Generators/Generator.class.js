@@ -839,6 +839,11 @@ class Generator {
     getMinAmount(balance = 0, percentage = 0, amount = 0) {
         const percAmount = (balance / 100) * percentage
 
+        console.assert(
+            isNaN(percAmount) || percAmount <= 0,
+            `getMinAmount invalid amount: ${percAmount}`
+        )
+
         return percAmount < amount ? percAmount : amount
     }
 
@@ -1278,8 +1283,8 @@ class Generator {
                     let alreadyWithdrawn = 0
                     // Get current price of Quest from Pools
                     const questUsdcPool = this._cachedPools
-                      .values()
-                      .find((p) => p.tokenRight === quest)
+                        .values()
+                        .find((p) => p.tokenRight === quest)
 
                     while (
                         alreadyWithdrawn < conf.valueSellAmount &&
@@ -1296,7 +1301,7 @@ class Generator {
                                 conf.valueSellPerc
                             // Calculate USDC total value for current Quest based on percentage of owner
                             const percTokensCost =
-                              valueSellPercTokens * questUsdcPool.curPrice
+                                valueSellPercTokens * questUsdcPool.curPrice
 
                             // If n% of Quest is more than Fixed Sell Amount (subtracting already withdrawn part)
                             // Then we withdraw Fixed value
@@ -1308,7 +1313,8 @@ class Generator {
                                 // Take min between Investor balance and max tokens amount
                                 // Possible to align with valueSellAmount
                                 sumIn = Math.min(
-                                    conf.valueSellAmount / questUsdcPool.curPrice,
+                                    conf.valueSellAmount /
+                                        questUsdcPool.curPrice,
                                     author.balances[quest]
                                 )
                             } else {
@@ -1316,8 +1322,8 @@ class Generator {
                             }
                         } else {
                             sumIn = Math.min(
-                              conf.valueSellAmount / questUsdcPool.curPrice,
-                              author.balances[quest]
+                                conf.valueSellAmount / questUsdcPool.curPrice,
+                                author.balances[quest]
                             )
                         }
 
