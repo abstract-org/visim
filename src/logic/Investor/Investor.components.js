@@ -6,6 +6,11 @@ import { BalanceBar } from '../../components/ExtraUiComponents'
 import globalState from '../GlobalState'
 import useLogsStore from '../Logs/logs.store'
 import usePoolStore from '../Pool/pool.store'
+import {
+    calculateCurrentInvNavs,
+    getTokenPricesInUsdc
+} from '../Utils/tokenCalc'
+import useDayTrackerStore from '../dayTracker.store'
 import { generateDefaultInvestors } from './Investor.generator'
 import useInvestorStore from './investor.store'
 
@@ -14,6 +19,7 @@ const setActiveSelector = (state) => state.setActive
 
 export function InvestorModule({ children }) {
     const addInvestors = useInvestorStore(addInvestorsSelector)
+    const currentDay = useDayTrackerStore((state) => state.currentDay)
 
     useEffect(() => {
         const investors = generateDefaultInvestors()
@@ -25,6 +31,15 @@ export function InvestorModule({ children }) {
             addInvestors(investors.map((investor) => investor.hash))
         })
     })
+
+    useEffect(() => {
+        const pools = globalState.pools.values()
+        const investors = globalState.investors.values()
+        if (currentDay > 0) {
+            globalState.historical.investorNavs[currentDay - 1] =
+                calculateCurrentInvNavs(investors, pools)
+        }
+    }, [currentDay])
 
     return <div>{children}</div>
 }

@@ -1,10 +1,11 @@
 import { instanceToPlain } from 'class-transformer'
 import HashMap from 'hashmap'
 
-import { createHashMappings } from '../Utils/logicUtils'
+import { createHashMappings, inRangeFilter } from '../Utils/logicUtils'
 import { SupabaseClient, TABLE } from './SupabaseClient'
 import {
     InvestorBalancesDto,
+    InvestorNavsUploadDto,
     InvestorUploadDto,
     LogUploadDto,
     PoolDataUploadDto,
@@ -206,6 +207,42 @@ export const aggregateInvestorBalances = async (
         console.log('[SupabaseService] aggregateInvestorBalances completed')
     } catch (e) {
         console.log('aggregateInvestorBalances error: ', e.message)
+        return null
+    }
+}
+/**
+ * @description
+ * @param investorNavsByDay - array of pairs [ day, investorNavsForDay ]
+ * @param investorHashToInvestorId
+ * @return {Promise<null>}
+ */
+export const aggregateInvestorNavs = async (
+    investorNavsByDay,
+    investorHashToInvestorId
+) => {
+    try {
+        const preparedInvestorNavs = []
+
+        for (const [day, invNavs] of investorNavsByDay) {
+            Object.entries(invNavs).forEach(([hash, nav]) => {
+                preparedInvestorNavs.push(
+                    new InvestorNavsUploadDto({
+                        investor_id: investorHashToInvestorId.get(hash),
+                        usdc_nav: nav,
+                        token_nav: nav,
+                        day
+                    })
+                )
+            })
+        }
+
+        await SupabaseClient.from(TABLE.investor_navs).insert(
+            preparedInvestorNavs
+        )
+
+        console.log('[SupabaseService] aggregateInvestorNavs completed')
+    } catch (e) {
+        console.log('aggregateInvestorNavs error: ', e.message)
         return null
     }
 }
@@ -524,6 +561,11 @@ export const aggregateAndStoreDataForSnapshot = async ({
         // Layer 3 creation
         // Inserting data, related on Investors and Pools entities IDs
         console.log('[Snapshot Generator] Launching Layer 3 creation...')
+
+        const investorNavsPartition = Object.entries(
+            state.historical.investorNavs
+        ).filter(([day]) => inRangeFilter({ from: 0 })(day))
+
         await Promise.all([
             aggregateSwapsData(
                 state.poolStore.swaps,
@@ -540,6 +582,10 @@ export const aggregateAndStoreDataForSnapshot = async ({
                 state.investors,
                 investorHashToInvestorId,
                 questNameToQuestId
+            ),
+            aggregateInvestorNavs(
+                investorNavsPartition,
+                investorHashToInvestorId
             )
         ])
 
