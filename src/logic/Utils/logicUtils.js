@@ -258,3 +258,13 @@ export const convertFloat8ToNum = (value) => {
             return value
     }
 }
+
+export const inRangeFilter = (range) => (day) => {
+    const from = parseInt(range.from)
+    const to = parseInt(range.to)
+    const isGreaterOrEqualFrom =
+        !Number.isFinite(from) || Number.isNaN(from) || day >= from
+    const isLessOrEqualTo =
+        !Number.isFinite(to) || Number.isNaN(to) || day <= to
+    return isGreaterOrEqualFrom && isLessOrEqualTo
+}
