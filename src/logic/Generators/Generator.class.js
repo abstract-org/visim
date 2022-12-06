@@ -1281,10 +1281,40 @@ class Generator {
                         alreadyWithdrawn < conf.valueSellAmount &&
                         author.balances[quest] > 0
                     ) {
-                        const sumIn =
-                            author.balances[quest] > conf.globalSwapThreshold
-                                ? conf.globalSwapThreshold
-                                : author.balances[quest]
+                        let sumIn
+
+                        if (author.balances[quest] > conf.globalSwapThreshold) {
+                            sumIn = conf.globalSwapThreshold
+                        } else {
+                            // Calculate tokens amount based on Percentage value and balance
+                            const valueSellPercTokens =
+                                (author.balances[quest] / 100) *
+                                conf.valueSellPerc
+                            // Get current price of Quest from Pools
+                            const usdcPool = this._cachedPools
+                                .values()
+                                .find((p) => p.tokenRight === quest)
+                            // Calculate USDC total value for current Quest based on percentage of owner
+                            const percTokensCost =
+                                valueSellPercTokens * usdcPool.curPrice
+
+                            // If n% of Quest is more than Fixed Sell Amount (subtracting already withdrawn part)
+                            // Then we withdraw Fixed value
+                            // Otherwise we withdraw percentage value
+                            if (
+                                percTokensCost >
+                                conf.valueSellAmount - alreadyWithdrawn
+                            ) {
+                                // Take min between Investor balance and max tokens amount
+                                // Possible to align with valueSellAmount
+                                sumIn = Math.min(
+                                    conf.valueSellAmount / usdcPool.curPrice,
+                                    author.balances[quest]
+                                )
+                            } else {
+                                sumIn = valueSellPercTokens
+                            }
+                        }
 
                         if (conf.excludeSingleName) {
                             console.log(
