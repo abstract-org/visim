@@ -2,10 +2,14 @@ import { FilterMatchMode } from 'primereact/api'
 import { Column } from 'primereact/column'
 import { DataTable } from 'primereact/datatable'
 import { Dropdown } from 'primereact/dropdown'
-import { useState } from 'react'
+import { Slider } from 'primereact/slider'
+import { useEffect, useState } from 'react'
 
+import useExpertModeStore from '../../stores/expertMode.store'
 import globalState from '../GlobalState'
 import useLogsStore from './logs.store'
+
+const MIN_SCROLL_HEIGHT = 300 // pixels
 
 export const LogsModule = () => {
     const logObjs = useLogsStore((state) => state.logObjs)
@@ -14,6 +18,12 @@ export const LogsModule = () => {
         pool: { value: null, matchMode: FilterMatchMode.EQUALS },
         action: { value: null, matchMode: FilterMatchMode.EQUALS }
     })
+    const isExpert = useExpertModeStore((state) => state.isExpert)
+    const [scrollHeight, setScrollHeight] = useState(MIN_SCROLL_HEIGHT)
+
+    useEffect(() => {
+        if (!isExpert) setScrollHeight(MIN_SCROLL_HEIGHT)
+    }, [isExpert])
 
     const pools = new Set()
     const invs = new Set()
@@ -107,6 +117,15 @@ export const LogsModule = () => {
 
     return (
         <div>
+            {isExpert && (
+                <Slider
+                    min={MIN_SCROLL_HEIGHT}
+                    max={MIN_SCROLL_HEIGHT * 10}
+                    step={Math.round(MIN_SCROLL_HEIGHT / 3)}
+                    value={scrollHeight}
+                    onChange={(e) => setScrollHeight(e.value)}
+                />
+            )}
             <DataTable
                 dataKey="id"
                 filters={filters}
@@ -116,13 +135,13 @@ export const LogsModule = () => {
                 size="small"
                 responsiveLayout="scroll"
                 scrollable={true}
-                scrollHeight={300}
+                scrollHeight={isExpert ? scrollHeight : 300}
                 sortField="block"
                 sortOrder={-1}
                 stripedRows
                 resizableColumns
                 paginator
-                rows={100}
+                rows={scrollHeight / 50}
                 className="text-sm"
             >
                 <Column
