@@ -43,7 +43,7 @@ const calculateMoneyLeaked = () => {
     const totalWalletsTokensList = totalWalletsTokensWith0(quests, investors)
 
     const totalMissingTokensList = quests
-        .filter((x) => !(x instanceof UsdcToken))
+        .filter((x) => !(x instanceof UsdcToken || x.name === 'USDC'))
         .map((q) => {
             const byQuestName = (item) => item.name === q.name
             const totalIssuedTokenAmount =
