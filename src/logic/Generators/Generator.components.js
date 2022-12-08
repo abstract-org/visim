@@ -136,7 +136,7 @@ export const GeneratorRunner = () => {
     const addMultipleQuests = useQuestStore((state) => state.addMultipleQuests)
     const addMultipleSwaps = usePoolStore((state) => state.addMultipleSwaps)
     const overrideSwaps = useLogsStore((state) => state.overrideSwaps)
-    const setDay = useDayTrackerStore((state) => state.setDay)
+    const incrementDay = useDayTrackerStore((state) => state.incrementDay)
 
     const addInvConfig = useGeneratorStore((state) => state.addInvConfig)
     const addQuestConfig = useGeneratorStore((state) => state.addQuestConfig)
@@ -336,8 +336,12 @@ export const GeneratorRunner = () => {
             swaps
         )
 
+        let day = currentDay + 1
+        incrementDay()
+        globalState.dayTrackerStore.currentDay++
+        const simulationLastDay = currentDay + genDays
         // Every day
-        for (let day = passedDays + 1; day <= genDays + passedDays; day++) {
+        while (day < simulationLastDay) {
             console.log(`\n\nSimulating day ${day}\n\n`)
             const stepData = await genManager.step(day)
 
@@ -348,15 +352,13 @@ export const GeneratorRunner = () => {
             })
 
             storeStepData(stepData)
+            incrementDay()
+            globalState.dayTrackerStore.currentDay++
+            day++
 
             await genManager.sleep(50)
-            setDay(day)
-            if (!globalState.dayTrackerStore) {
-                globalState.dayTrackerStore = { currentDay: 0 }
-            }
-            globalState.dayTrackerStore.currentDay = day
         }
-        setPassedDays(passedDays + genDays)
+        setPassedDays(simulationLastDay)
         setGenActive(false)
     }
 

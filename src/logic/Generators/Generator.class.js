@@ -222,7 +222,7 @@ class Generator {
         const questConfig = this.#questConfigs.find(
             (quest) => quest.questGenAlias === questType
         )
-
+        if (!questConfig) return
         // Do not create a new quest if not enough USDC for initial investment
         if (investor.balances.USDC < questConfig.initialAuthorInvest) {
             return

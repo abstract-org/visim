@@ -215,7 +215,7 @@ const gatherStateFromSnapshot = (data) => {
         poolStore: {
             pools: [] /* pool names */,
             swaps: [],
-            active: 'AGORA' /* active pool*/,
+            active: '' /* active pool*/,
             swapMode: 'smart'
         },
         pools: new HashMap(),
@@ -238,7 +238,7 @@ const gatherStateFromSnapshot = (data) => {
         }
     }
 
-    newState.dayTrackerStore.currentDay = data.current_day
+    newState.dayTrackerStore.currentDay = data.current_day + 1
     newState.generatorStore = transformScenario(data.scenario)
 
     const { investors, investorStoreInvestors } = aggregateInvestorsForStore(

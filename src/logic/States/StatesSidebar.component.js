@@ -28,6 +28,7 @@ import {
 } from '../Supabase/Supabase.download-service'
 import { aggregateAndStoreDataForSnapshot } from '../Supabase/Supabase.service'
 import { formatBytes } from '../Utils/logicUtils'
+import useDayTrackerStore from '../dayTracker.store'
 import { downloadStateFrom, getContentLength } from './download.service'
 import {
     aggregateSnapshotTotals,
@@ -72,7 +73,7 @@ const StatesTable = (props) => {
     const overridePools = usePoolStore(overrideSelector)
     const overrideGenerators = useGeneratorStore(overrideSelector)
     const overrideInvestors = useInvestorStore(overrideSelector)
-    const overrideDayTracker = useInvestorStore(overrideSelector)
+    const overrideDayTracker = useDayTrackerStore(overrideSelector)
     const setNeedScrollUp = useGeneratorStore((state) => state.setNeedScrollUp)
     const [snapshots, setSnapshots] = useState([])
     const [dbSnapshots, setDbSnapshots] = useState([])
