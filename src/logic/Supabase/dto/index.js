@@ -1,5 +1,6 @@
 import { InvestorDto, InvestorUploadDto } from './Investor.dto'
 import { InvestorBalancesDto } from './InvestorBalances.dto'
+import { InvestorNavsDto, InvestorNavsUploadDto } from './InvestorNavs.dto'
 import { LogDto, LogUploadDto } from './Log.dto'
 import { PoolDto, PoolUploadDto } from './Pool.dto'
 import { PoolDataDto, PoolDataUploadDto } from './PoolData.dto'
@@ -49,5 +50,7 @@ export {
     ScenarioInvestorConfigUploadDto,
     ScenarioInvestorConfigDto,
     ScenarioQuestConfigDto,
-    ScenarioQuestConfigUploadDto
+    ScenarioQuestConfigUploadDto,
+    InvestorNavsDto,
+    InvestorNavsUploadDto
 }

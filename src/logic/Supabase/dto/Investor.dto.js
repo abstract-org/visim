@@ -15,6 +15,8 @@ export class InvestorDto {
     created_at
     /** @type {Object[]} */
     investor_balances
+    /** @type {Object[]} */
+    investor_navs
     /** @type {{name:string}[]} */
     quests
 
@@ -26,6 +28,7 @@ export class InvestorDto {
         this.initial_balance = data.initial_balance
         this.created_at = data.created_at
         this.investor_balances = data.investor_balances
+        this.investor_navs = data.investor_navs
         this.quests = data.quests
     }
 

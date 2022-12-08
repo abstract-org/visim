@@ -70,6 +70,7 @@ const getQuerySnapshotById = ({ T } = { T: TABLE }) => `*,
                 balance,
                 day
             ),
+            ${T.investor_navs}(*),
             quests:${T.quest}(name)
         ),
         ${T.pool} (
@@ -125,7 +126,16 @@ const aggregateInvestorsForStore = (data) => {
         investors: convertArrayToHashMapByKey(
             investorDtoList.map((invDto) => invDto.toInvestor()),
             'hash'
-        )
+        ),
+        investorNavs: investorDtoList.reduce((result, invDto) => {
+            const navDays = Object.keys(invDto.investor_navs)
+            navDays.forEach((day) => {
+                if (!result[day]) result[day] = {}
+                result[day][invDto.hash] = invDto.investor_navs[day].usdc_nav
+            })
+
+            return result
+        }, {})
     }
 }
 
@@ -229,6 +239,9 @@ const gatherStateFromSnapshot = (data) => {
         quests: new HashMap(),
         /* not ready yet */
         dayTrackerStore: { currentDay: 0 },
+        historical: {
+            investorNavs: {}
+        },
         moneyDist: {
             citing: [],
             buying: [],
@@ -241,11 +254,11 @@ const gatherStateFromSnapshot = (data) => {
     newState.dayTrackerStore.currentDay = data.current_day + 1
     newState.generatorStore = transformScenario(data.scenario)
 
-    const { investors, investorStoreInvestors } = aggregateInvestorsForStore(
-        data.investor
-    )
+    const { investors, investorStoreInvestors, investorNavs } =
+        aggregateInvestorsForStore(data.investor)
     newState.investorStore.investors = investorStoreInvestors
     newState.investors = investors
+    newState.historical.investorNavs = investorNavs
 
     const { pools, poolStorePools } = aggregatePoolsForStore(data.pool)
     newState.poolStore.pools = poolStorePools

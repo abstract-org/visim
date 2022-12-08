@@ -4,6 +4,7 @@ export const TABLE = {
     quest: 'quest',
     investor: 'investor',
     investor_balances: 'investor_balances',
+    investor_navs: 'investor_navs',
     pool: 'pool',
     pool_data: 'pool_data',
     position: 'position',
