@@ -98,7 +98,7 @@ export const overrideState = (stateObj, newData = {}, initialState = {}) => {
     let newState = initialState
     if (newData) {
         Object.entries(newData).forEach(([key, newValue]) => {
-            if (stateObj[key] && newData[key]) {
+            if (stateObj.hasOwnProperty(key) && newData[key]) {
                 newState[key] = newValue
             }
         })
