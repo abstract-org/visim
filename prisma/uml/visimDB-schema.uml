@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>DATABASE</ID>
+  <OriginalElement>ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public._prisma_migrations</OriginalElement>
+  <nodes>
+    <node x="524.3913841802994" y="555.887490913014">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.scenario_quest_config</node>
+    <node x="817.8190913096332" y="1606.0021306246463">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.snapshot_quest</node>
+    <node x="506.3913841802994" y="986.3606154485161">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.scenario</node>
+    <node x="446.33333333333337" y="1619.414111057444">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.snapshot</node>
+    <node x="934.4120059542122" y="2067.9785157404876">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.pool_data</node>
+    <node x="107.46561641174549" y="1797.590320950615">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.user</node>
+    <node x="19.669566402386693" y="959.4785470180121">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.auth.users</node>
+    <node x="567.9388111829788" y="1898.5745794104419">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.snapshot_totals</node>
+    <node x="1238.3250405387446" y="1030.962917454624">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.investor</node>
+    <node x="817.8190913096331" y="1749.2353479039227">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.snapshot_pool</node>
+    <node x="1600.536879119277" y="923.2115390572619">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.investor_navs</node>
+    <node x="19.669566402386693" y="694.7208276867023">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.auth.instances</node>
+    <node x="887.1132019582121" y="379.6364093567657">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.scenario_investor_config</node>
+    <node x="1756.0674084270456" y="2049.9270143334033">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.swap</node>
+    <node x="1252.408506681372" y="2228.706824555496">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.position_owner</node>
+    <node x="814.1307638786528" y="1470.1188239526991">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.snapshot_investor</node>
+    <node x="2111.1814874399834" y="698.2115390572619">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public._prisma_migrations</node>
+    <node x="1253.8250405387446" y="1367.751633460474">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.quest</node>
+    <node x="1693.5951408009876" y="1567.920948534464">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.log</node>
+    <node x="1186.908506681372" y="1763.088401222583">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.pool</node>
+    <node x="1564.981064781513" y="1359.566451805783">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.investor_balances</node>
+    <node x="1448.1880765727635" y="2151.70920492659">ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.position</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.snapshot_quest" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.quest" relationship="REFERENCES">
+      <point x="133.63401075895536" y="19.406671133001055" />
+      <point x="1283.4500405387446" y="1685.9088017576473" />
+      <point x="-88.875" y="104.5" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.snapshot_investor" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.investor" relationship="REFERENCES">
+      <point x="-67.0" y="-60.5" />
+      <point x="881.1307638786528" y="1486.102252060996" />
+      <point x="852.950802872214" y="1486.102252060996" />
+      <point x="852.950802872214" y="1320.8962763915197" />
+      <point x="1293.9217598285152" y="1320.8962763915197" />
+      <point x="1293.9217598285152" y="1107.3645881135958" />
+      <point x="1282.9917072054113" y="1107.3645881135958" />
+      <point x="-89.33333333333326" y="82.5" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.swap" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.investor" relationship="REFERENCES">
+      <point x="72.41624662213144" y="-114.27985124504767" />
+      <point x="1902.483655049177" y="2247.658098464212" />
+      <point x="2049.3250405387453" y="2247.658098464212" />
+      <point x="2049.3250405387453" y="1167.8092214522026" />
+      <point x="1487.7672689873878" y="1167.8092214522026" />
+      <point x="1487.7672689873878" y="1195.962917454624" />
+      <point x="89.33333333333326" y="82.5" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.investor_navs" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.investor" relationship="REFERENCES">
+      <point x="0.0" y="-82.5" />
+      <point x="1734.536879119277" y="1132.8536970287516" />
+      <point x="1461.6583738720778" y="1132.8536970287516" />
+      <point x="89.33333333333326" y="82.5" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.snapshot_totals" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.snapshot" relationship="REFERENCES">
+      <point x="78.64876881671256" y="-39.86732078412956" />
+      <point x="520.9768568784159" y="1963.2072586263123" />
+      <point x="-14.35647645491747" y="79.1992415276502" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.scenario_investor_config" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.scenario" relationship="REFERENCES">
+      <point x="-128.32236034801292" y="90.57512970049618" />
+      <point x="844.545799078032" y="915.7115390572618" />
+      <point x="844.545799078032" y="1039.7731942159676" />
+      <point x="774.2214800634562" y="1039.7731942159676" />
+      <point x="133.8300958831568" y="0.5360248904056562" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.swap" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.pool" relationship="REFERENCES">
+      <point x="-73.04103776075681" y="-133.85814378896976" />
+      <point x="1350.2789432150064" y="2075.5688705444336" />
+      <point x="29.370436533634347" y="92.91945616079306" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.position" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.pool" relationship="REFERENCES">
+      <point x="0.0" y="-93.5" />
+      <point x="1582.1880765727635" y="2116.1208593413244" />
+      <point x="1304.4796116686666" y="2116.1208593413244" />
+      <point x="-16.428895012705425" y="92.29596787944865" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.investor_balances" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.quest" relationship="REFERENCES">
+      <point x="-43.75" y="-71.5" />
+      <point x="1608.731064781513" y="1685.9088017576473" />
+      <point x="1461.2000405387446" y="1685.9088017576473" />
+      <point x="88.875" y="104.5" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.snapshot" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.scenario" relationship="REFERENCES">
+      <point x="44.5" y="-82.5" />
+      <point x="579.8333333333334" y="1218.0" />
+      <point x="640.3913841802994" y="1218.0" />
+      <point x="0.0" y="49.5" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.snapshot_investor" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.snapshot" relationship="REFERENCES">
+      <point x="-135.87122277759113" y="-22.396419471045647" />
+      <point x="733.7988640179035" y="1508.2224044816535" />
+      <point x="733.7988640179035" y="1649.2703952537188" />
+      <point x="87.11104495102836" y="-52.64371580372517" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.scenario_quest_config" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.scenario" relationship="REFERENCES">
+      <point x="-0.6083984046323394" y="180.28829292360354" />
+      <point x="640.3913841802994" y="917.6757838366175" />
+      <point x="0.0" y="49.5" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.log" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.investor" relationship="REFERENCES">
+      <point x="41.99999999999977" y="-148.5" />
+      <point x="1819.5951408009873" y="2009.0334584815353" />
+      <point x="1935.2813796916848" y="2009.0334584815353" />
+      <point x="1935.2813796916848" y="1290.3495886034339" />
+      <point x="1474.1144014970469" y="1290.3495886034339" />
+      <point x="101.78936095830227" y="82.43875233082508" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.log" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.pool" relationship="REFERENCES">
+      <point x="-42.00000000000023" y="-148.5" />
+      <point x="1735.5951408009873" y="2009.0334584815353" />
+      <point x="1389.5996750884644" y="2009.0334584815353" />
+      <point x="68.69116840709239" y="92.91945616079306" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.quest" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.investor" relationship="REFERENCES">
+      <point x="0.0" y="-104.5" />
+      <point x="0.0" y="82.5" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.pool_data" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.swap" relationship="REFERENCES">
+      <point x="70.0" y="-225.5" />
+      <point x="1144.4120059542122" y="2270.4863731238634" />
+      <point x="1065.0143742866526" y="2270.4863731238634" />
+      <point x="1065.0143742866526" y="2555.7866090959783" />
+      <point x="1830.0674084270456" y="2555.7866090959783" />
+      <point x="0.0" y="159.5" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.pool" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.quest" relationship="REFERENCES">
+      <point x="18.52791772398291" y="-96.00394672178572" />
+      <point x="1339.436424405355" y="1694.0416774841758" />
+      <point x="1339.564483498225" y="1694.0416774841758" />
+      <point x="1339.564483498225" y="1575.5107421297564" />
+      <point x="11.880684484305903" y="103.25910866928234" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.snapshot_pool" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.pool" relationship="REFERENCES">
+      <point x="132.64497841913806" y="-4.063670658866613" />
+      <point x="1084.4640697287712" y="1797.41023102588" />
+      <point x="1253.908506681372" y="1797.41023102588" />
+      <point x="-67.0" y="93.5" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.snapshot" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.user" relationship="REFERENCES">
+      <point x="-44.5" y="-82.5" />
+      <point x="490.83333333333337" y="2174.6810637019817" />
+      <point x="233.9656164117455" y="2174.6810637019817" />
+      <point x="0.0" y="49.5" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.user" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.auth.users" relationship="REFERENCES">
+      <point x="0.0" y="-49.5" />
+      <point x="233.9656164117455" y="983.5" />
+      <point x="217.1695664023867" y="983.5" />
+      <point x="0.0" y="368.5" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.snapshot_pool" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.snapshot" relationship="REFERENCES">
+      <point x="-136.72893786904672" y="-0.18273904109742034" />
+      <point x="691.3895202887692" y="1809.5526088628253" />
+      <point x="691.3895202887692" y="1748.2639543436735" />
+      <point x="86.93139812222626" y="46.34984328622954" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.snapshot_quest" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.snapshot" relationship="REFERENCES">
+      <point x="-134.76217962258966" y="35.32861968026759" />
+      <point x="779.3870982218081" y="1701.8307503049139" />
+      <point x="779.3870982218081" y="1701.914111057444" />
+      <point x="620.2789182740848" y="1701.914111057444" />
+      <point x="84.94558494075147" y="27.65173516451" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.position_owner" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.pool" relationship="REFERENCES">
+      <point x="-71.95606483258462" y="-109.62366108954893" />
+      <point x="1264.4524418487874" y="1990.8793651407525" />
+      <point x="1264.4668874644663" y="1990.8793651407525" />
+      <point x="-56.44161921690579" y="92.39833404253659" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.auth.users" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.auth.instances" relationship="REFERENCES">
+      <point x="0.0" y="-368.5" />
+      <point x="217.1695664023867" y="811.5372827472643" />
+      <point x="206.6695664023867" y="811.5372827472643" />
+      <point x="0.0" y="71.5" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.pool_data" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.pool" relationship="REFERENCES">
+      <point x="-70.0" y="-225.5" />
+      <point x="1004.4120059542122" y="2021.2119485308322" />
+      <point x="1208.1193741340426" y="2021.2119485308322" />
+      <point x="-112.78913254732947" y="92.16328824014977" />
+    </edge>
+    <edge source="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.investor_balances" target="ee20cf6a-b79e-4b69-994e-23b8aa2d9036.TABLE:postgres.public.investor" relationship="REFERENCES">
+      <point x="43.75" y="-71.5" />
+      <point x="1696.231064781513" y="1320.8962763915197" />
+      <point x="1423.1465692679678" y="1320.8962763915197" />
+      <point x="1423.1465692679678" y="1113.144630861048" />
+      <point x="1506.3250405387446" y="1113.144630861048" />
+      <point x="134.0" y="82.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic" zoom="0.7434156772551069" showDependencies="false" x="1579.0" y="1780.0" />
+  <SelectedNodes />
+  <Categories>
+    <Category>Columns</Category>
+    <Category>Comments</Category>
+    <Category>Key columns</Category>
+    <Category>Virtual foreign keys</Category>
+  </Categories>
+</Diagram>
+
