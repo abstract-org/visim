@@ -39,8 +39,8 @@ const globalState = {
         currentDay: 0
     },
     historical: {
-        investorNavs: {} // { [day:number]: Record<invHash:string,invNav:number> }
-        // investorBalances: {} // { [day]: Record<investorHash,balances:Object>}
+        investorNavs: {}, // { [day:number]: Record<invHash:string,invNav:number> }
+        investorBalances: {} // { [day]: Record<investorHash,balances:Object>}
         // poolData by day
     },
     moneyDist: {
