@@ -74,6 +74,7 @@ const StatesTable = (props) => {
     const overrideGenerators = useGeneratorStore(overrideSelector)
     const overrideInvestors = useInvestorStore(overrideSelector)
     const overrideDayTracker = useDayTrackerStore(overrideSelector)
+    const incrementDay = useDayTrackerStore((state) => state.incrementDay)
     const setNeedScrollUp = useGeneratorStore((state) => state.setNeedScrollUp)
     const [snapshots, setSnapshots] = useState([])
     const [dbSnapshots, setDbSnapshots] = useState([])
@@ -97,12 +98,16 @@ const StatesTable = (props) => {
                 active: true,
                 message: 'Saving current state to DB'
             })
+            incrementDay() // finishing day for UI and trigger creating updates in state.historical
             await aggregateAndStoreDataForSnapshot({
                 stateId,
                 stateName: newStateName,
                 state: globalState,
                 creatorId: user.id
             })
+            // set new day counter in globalState only after saving current state data
+            // so that new empty day not saved in DB yet
+            globalState.dayTrackerStore.currentDay++
 
             toast.current.show({
                 severity: 'success',
