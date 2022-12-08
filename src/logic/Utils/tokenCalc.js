@@ -125,3 +125,59 @@ export const totalSingleMissingToken = (
 
     return currentTokenData ? currentTokenData.total : -0.000000000001 // @FIXME: might be better to return null
 }
+
+/**
+ * @description Makes map of current prices in USDC for each token of quest pools
+ * @param {Pool[]} pools
+ * @returns {Object<string,number>}
+ */
+const getTokenPricesInUsdc = (pools) => {
+    return pools
+        .filter((p) => p.isQuest())
+        .reduce(
+            (result, pool) => ({
+                ...result,
+                [pool.tokenRight]: pool.curPrice
+            }),
+            {}
+        )
+}
+
+/**
+ * @description Having current token prices in USDC calculates NAV for Investor
+ * @param {Investor} investor
+ * @param {Object<string,number>} tokenPrices
+ * @returns {number}
+ */
+const calcInvestorNav = (investor, tokenPrices) => {
+    const invBalances = Object.entries(investor.balances)
+    let nav = 0
+    for (const [token, amount] of invBalances) {
+        nav = parseFloat(nav)
+        if (token === 'USDC') {
+            nav += amount
+        } else if (amount > 0 && tokenPrices[token] > 0) {
+            nav += amount * tokenPrices[token]
+        }
+    }
+
+    return nav
+}
+
+/**
+ * @description Calculates and gathers map of NAV by investor.hash
+ * @param investors
+ * @param pools
+ * @returns {*}
+ */
+export const calculateCurrentInvNavs = (investors, pools) => {
+    const tokenPrices = getTokenPricesInUsdc(pools)
+
+    return investors.reduce(
+        (resultObj, investor) => ({
+            ...resultObj,
+            [investor.hash]: calcInvestorNav(investor, tokenPrices)
+        }),
+        {}
+    )
+}
