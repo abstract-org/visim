@@ -85,7 +85,7 @@ export const getHighlightedText = (
 ) => {
     // Split on highlight term and include term into parts, ignore case
     const hlPattern = escapeRegExp(highlight)
-    const parts = text.split(new RegExp(`(${hlPattern})`, 'gi'))
+    const parts = text?.split(new RegExp(`(${hlPattern})`, 'gi')) || []
     return (
         <span>
             {' '}
