@@ -19,6 +19,8 @@ export class InvestorDto {
     investor_navs
     /** @type {{name:string}[]} */
     quests
+    /** @type {Object[]} */
+    logs
 
     constructor(data) {
         this.id = data.id
@@ -29,6 +31,7 @@ export class InvestorDto {
         this.created_at = data.created_at
         this.investor_balances = data.investor_balances
         this.investor_navs = data.investor_navs
+        this.logs = data.logs
         this.quests = data.quests
     }
 

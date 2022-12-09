@@ -34,9 +34,9 @@ export class LogDto {
         this.id = data.id
         this.blk = data.blk
         this.pool_id = data.pool_id
-        this.pool_name = data.pool.name
+        this.pool_name = data.pool?.name
         this.investor_id = data.investor_id
-        this.investor_hash = data.investor.hash
+        this.investor_hash = data.investor?.hash
         this.swap_id = data.swap_id
         this.action = data.action
         this.day = data.day

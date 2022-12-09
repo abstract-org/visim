@@ -71,6 +71,7 @@ const getQuerySnapshotById = ({ T } = { T: TABLE }) => `*,
                 day
             ),
             ${T.investor_navs}(*),
+            logs:${T.log}(*, pool(name),investor(hash)),
             quests:${T.quest}(name)
         ),
         ${T.pool} (
@@ -135,7 +136,15 @@ const aggregateInvestorsForStore = (data) => {
             })
 
             return result
-        }, {})
+        }, {}),
+        investorSpawnLogs: investorDtoList.reduce((result, invDto) => {
+            const currentInvestorSpawnLogs = invDto.logs.filter(
+                (log) => log.action === 'SPAWNED'
+            )
+            result.push(...currentInvestorSpawnLogs)
+
+            return result
+        }, [])
     }
 }
 
@@ -254,8 +263,12 @@ const gatherStateFromSnapshot = (data) => {
     newState.dayTrackerStore.currentDay = data.current_day + 1
     newState.generatorStore = transformScenario(data.scenario)
 
-    const { investors, investorStoreInvestors, investorNavs } =
-        aggregateInvestorsForStore(data.investor)
+    const {
+        investorSpawnLogs,
+        investors,
+        investorStoreInvestors,
+        investorNavs
+    } = aggregateInvestorsForStore(data.investor)
     newState.investorStore.investors = investorStoreInvestors
     newState.investors = investors
     newState.historical.investorNavs = investorNavs
@@ -277,7 +290,7 @@ const gatherStateFromSnapshot = (data) => {
 
     newState.poolStore.swaps = aggregateSwapsForStore(totalSwaps, data)
 
-    const { logs } = aggregateLogsForStore(totalLogs)
+    const { logs } = aggregateLogsForStore([...totalLogs, ...investorSpawnLogs])
     newState.logStore.logObjs = logs
 
     return newState
