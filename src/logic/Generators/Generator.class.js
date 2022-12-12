@@ -70,6 +70,8 @@ class Generator {
     handlers = []
     tradingHandlers = []
 
+    _cachedTotalLeaks = {}
+
     constructor(
         invConfigs,
         questConfigs,
@@ -105,6 +107,19 @@ class Generator {
                 }
             })
         }
+
+        /** @type {Object<tokenName:string, tokenTotalLeaked: number>} */
+        this._cachedTotalLeaks = totalMissingTokens(
+            globalQuests.values(),
+            globalPools.values(),
+            globalInvestors.values()
+        ).reduce(
+            (tokenMap, tokenData) => ({
+                ...tokenMap,
+                [tokenData.name]: tokenData.total
+            }),
+            {}
+        )
     }
 
     measure(funcName, endMeasure) {
@@ -505,12 +520,13 @@ class Generator {
             this._cachedInvestors.values()
         )
 
-        // @TODO: check current leak against preserved leak data
-        // @TODO: (curTokenMissing - prevTokensLeakData[citingQuest.name].total) > 0
-        if (curTokenMissing > 0 && !isZero(curTokenMissing)) {
+        const leakedDiff = Math.abs(
+            curTokenMissing - this._cachedTotalLeaks[citingQuest.name]
+        )
+        if (!isZero(leakedDiff)) {
             console.warn('### ALERT: CITATION #2 SINGLE [' + day + ']###')
             console.warn(
-                `Despite all the correct actions, token ${citingQuest.name} went missing by ${curTokenMissing}`
+                `Despite all the correct actions, token ${citingQuest.name} went missing by ${leakedDiff}`
             )
             console.warn(investor)
             console.warn(crossPool)
@@ -519,7 +535,7 @@ class Generator {
 
             investor.addBalance(
                 citingQuest.name,
-                curTokenMissing,
+                leakedDiff,
                 'Reimbursement for failed citation of a single quest'
             )
 
@@ -773,12 +789,13 @@ class Generator {
                 this._cachedInvestors.values()
             )
 
-            // @TODO: check current leak against preserved leak data
-            // @TODO: (curTokenMissing - prevTokensLeakData[citingQuest.name].total) > 0
-            if (curTokenMissing > 0 && !isZero(curTokenMissing)) {
+            const leakedDiff = Math.abs(
+                curTokenMissing - this._cachedTotalLeaks[citingQuest.name]
+            )
+            if (!isZero(leakedDiff)) {
                 console.warn('### ALERT: CITATION #2 RANDOM [' + day + ']###')
                 console.warn(
-                    `Despite all the correct actions, token ${citingQuest.name} went missing by ${curTokenMissing}`
+                    `Despite all the correct actions, token ${citingQuest.name} went missing by ${leakedDiff}`
                 )
                 console.warn(investor)
                 console.warn(crossPool)
@@ -787,7 +804,7 @@ class Generator {
 
                 investor.addBalance(
                     citingQuest.name,
-                    curTokenMissing,
+                    leakedDiff,
                     'Reimbursement for failed citation of a random quest'
                 )
 
