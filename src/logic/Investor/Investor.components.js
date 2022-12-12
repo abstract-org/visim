@@ -16,6 +16,15 @@ import useInvestorStore from './investor.store'
 
 const addInvestorsSelector = (state) => state.addInvestors
 const setActiveSelector = (state) => state.setActive
+const getInvestorBalances = (investors) => {
+    return investors.reduce(
+        (result, inv) => ({
+            ...result,
+            [inv.hash]: { ...inv.balances }
+        }),
+        {}
+    )
+}
 
 export function InvestorModule({ children }) {
     const addInvestors = useInvestorStore(addInvestorsSelector)
@@ -38,6 +47,8 @@ export function InvestorModule({ children }) {
         if (currentDay > 0) {
             globalState.historical.investorNavs[currentDay - 1] =
                 calculateCurrentInvNavs(investors, pools)
+            globalState.historical.investorBalances[currentDay - 1] =
+                getInvestorBalances(investors)
         }
     }, [currentDay])
 

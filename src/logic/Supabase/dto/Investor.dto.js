@@ -33,11 +33,14 @@ export class InvestorDto {
     }
 
     toObj() {
-        const balances = this.investor_balances.reduce((resultObj, item) => {
-            resultObj[item.quest.name] = item.balance
+        const balances = this.getLatestDayBalances().reduce(
+            (resultObj, item) => {
+                resultObj[item.quest.name] = item.balance
 
-            return resultObj
-        }, {})
+                return resultObj
+            },
+            {}
+        )
 
         const questsCreated = this.quests.map((q) => q.name)
 
@@ -68,6 +71,15 @@ export class InvestorDto {
         investor.questsCreated = data.questsCreated
 
         return investor
+    }
+
+    getLatestDayBalances() {
+        const allDays = this.investor_balances.map((balance) => balance.day)
+        const latestDay = Math.max(...allDays)
+
+        return this.investor_balances.filter(
+            (invBalance) => invBalance.day === latestDay
+        )
     }
 }
 

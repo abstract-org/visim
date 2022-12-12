@@ -4,7 +4,7 @@ import HashMap from 'hashmap'
 import { createHashMappings, inRangeFilter } from '../Utils/logicUtils'
 import { SupabaseClient, TABLE } from './SupabaseClient'
 import {
-    InvestorBalancesDto,
+    InvestorBalancesUploadDto,
     InvestorNavsUploadDto,
     InvestorUploadDto,
     LogUploadDto,
@@ -169,36 +169,37 @@ export const aggregatePoolsData = async (
 }
 
 /**
- * @description Saves aggregated investors balances to DB
- * @param investorsMap
+ * @description
+ * @param investorBalancesByDay - array of pairs [ day, investorDayBalances ]
  * @param investorHashToInvestorId
  * @param questNameToQuestId
- * @returns {Promise<void>}
+ * @return {Promise<null>}
  */
-export const aggregateInvestorBalances = async (
-    investorsMap,
+export const aggregateInvestorBalancesWithDays = async (
+    investorBalancesByDay,
     investorHashToInvestorId,
     questNameToQuestId
 ) => {
     try {
         const preparedInvestorBalances = []
 
-        investorsMap.forEach((inv) => {
-            for (const [questName, investorBalance] of Object.entries(
-                inv.balances
-            )) {
-                const instance = new InvestorBalancesDto(
-                    inv,
-                    questName,
-                    investorBalance,
-                    0,
-                    investorHashToInvestorId,
-                    questNameToQuestId
-                ).toObj()
-
-                preparedInvestorBalances.push(instance)
-            }
-        })
+        for (const [day, investorDayBalances] of investorBalancesByDay) {
+            Object.entries(investorDayBalances).forEach(
+                ([investorHash, balances]) => {
+                    Object.entries(balances).forEach(([tokenName, balance]) => {
+                        preparedInvestorBalances.push(
+                            new InvestorBalancesUploadDto({
+                                investor_id:
+                                    investorHashToInvestorId.get(investorHash),
+                                quest_id: questNameToQuestId.get(tokenName),
+                                balance,
+                                day
+                            }).toObj()
+                        )
+                    })
+                }
+            )
+        }
 
         await SupabaseClient.from(TABLE.investor_balances).insert(
             preparedInvestorBalances
@@ -210,6 +211,7 @@ export const aggregateInvestorBalances = async (
         return null
     }
 }
+
 /**
  * @description
  * @param investorNavsByDay - array of pairs [ day, investorNavsForDay ]
@@ -566,6 +568,10 @@ export const aggregateAndStoreDataForSnapshot = async ({
             state.historical.investorNavs
         ).filter(([day]) => inRangeFilter({ from: 0 })(day))
 
+        const investorBalancesPartition = Object.entries(
+            state.historical.investorBalances
+        ).filter(([day]) => inRangeFilter({ from: 0 })(day))
+
         await Promise.all([
             aggregateSwapsData(
                 state.poolStore.swaps,
@@ -578,8 +584,8 @@ export const aggregateAndStoreDataForSnapshot = async ({
                 investorHashToInvestorId
             ),
             aggregatePositionsData(state.pools, poolNameToPoolId),
-            aggregateInvestorBalances(
-                state.investors,
+            aggregateInvestorBalancesWithDays(
+                investorBalancesPartition,
                 investorHashToInvestorId,
                 questNameToQuestId
             ),

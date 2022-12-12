@@ -12,7 +12,7 @@ export class InvestorBalancesDto {
         investor,
         questName,
         balance,
-        day = 0,
+        day,
         investorHashToInvestorId,
         questNameToQuestId
     ) {
@@ -20,6 +20,33 @@ export class InvestorBalancesDto {
         this.quest_id = questNameToQuestId.get(questName)
         this.balance = balance
         this.day = day
+    }
+
+    toObj() {
+        return {
+            investor_id: this.investor_id,
+            quest_id: this.quest_id,
+            balance: this.balance,
+            day: this.day
+        }
+    }
+}
+
+export class InvestorBalancesUploadDto {
+    /** @type {number} */
+    investor_id
+    /** @type {number} */
+    quest_id
+    /** @type {number} */
+    balance
+    /** @type {number} */
+    day
+
+    constructor(data) {
+        this.investor_id = data.investor_id //investorHashToInvestorId.get(data.investorHash)
+        this.quest_id = data.quest_id // questNameToQuestId.get(data.questName)
+        this.balance = data.balance
+        this.day = parseInt(data.day)
     }
 
     toObj() {

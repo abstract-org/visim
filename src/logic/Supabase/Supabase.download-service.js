@@ -1,4 +1,5 @@
 import HashMap from 'hashmap'
+import setInto from 'lodash/set'
 
 import { addStringToArrayUniq, createHashMappings } from '../Utils/logicUtils'
 import { convertArrayToHashMapByKey } from '../Utils/serializer'
@@ -116,6 +117,29 @@ export const fetchSnapshotById = async (snapshotId) => {
     }
 }
 
+const gatherHistoricalInvBalances = (invDtoList) => {
+    const allInvBalances = invDtoList.reduce((resultList, invDto) => {
+        const currentInvestorBalanceList = invDto.investor_balances.map(
+            (invBalanceItem) => ({
+                investorHash: invDto.hash,
+                token: invBalanceItem.quest.name,
+                day: invBalanceItem.day,
+                balance: invBalanceItem.balance
+            })
+        )
+        resultList.push(...currentInvestorBalanceList)
+
+        return resultList
+    }, [])
+
+    let result = {}
+    for (const { day, investorHash, token, balance } of allInvBalances) {
+        setInto(result, [day, investorHash, token], balance)
+    }
+
+    return result
+}
+
 const aggregateInvestorsForStore = (data) => {
     const investorDtoList = data.map((ssInv) => new InvestorDto(ssInv))
 
@@ -128,14 +152,13 @@ const aggregateInvestorsForStore = (data) => {
             'hash'
         ),
         investorNavs: investorDtoList.reduce((result, invDto) => {
-            const navDays = Object.keys(invDto.investor_navs)
-            navDays.forEach((day) => {
-                if (!result[day]) result[day] = {}
-                result[day][invDto.hash] = invDto.investor_navs[day].usdc_nav
+            invDto.investor_navs.forEach(({ day, usdc_nav }) => {
+                setInto(result, [day, invDto.hash], usdc_nav)
             })
 
             return result
-        }, {})
+        }, {}),
+        investorBalances: gatherHistoricalInvBalances(investorDtoList)
     }
 }
 
@@ -254,11 +277,16 @@ const gatherStateFromSnapshot = (data) => {
     newState.dayTrackerStore.currentDay = data.current_day + 1
     newState.generatorStore = transformScenario(data.scenario)
 
-    const { investors, investorStoreInvestors, investorNavs } =
-        aggregateInvestorsForStore(data.investor)
+    const {
+        investors,
+        investorStoreInvestors,
+        investorNavs,
+        investorBalances
+    } = aggregateInvestorsForStore(data.investor)
     newState.investorStore.investors = investorStoreInvestors
     newState.investors = investors
     newState.historical.investorNavs = investorNavs
+    newState.historical.investorBalances = investorBalances
 
     const { pools, poolStorePools } = aggregatePoolsForStore(data.pool)
     newState.poolStore.pools = poolStorePools
