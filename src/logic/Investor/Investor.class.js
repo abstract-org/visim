@@ -244,35 +244,25 @@ export default class Investor {
         // If we can move for free towards requested price, set that price as current to calculate position location properly
         if (nativePos && max > crossPool.curPrice && freeMoveSell) {
             crossPool.curPrice = max
-        } else if (!nativePos && min < this.curPrice && freeMoveBuy) {
+        } else if (!nativePos && min < crossPool.curPrice && freeMoveBuy) {
             crossPool.curPrice = min
         }
 
-        if (nativePos && max <= crossPool.curPrice) {
-            min = min / multiplier
-        } else if (nativePos && max > crossPool.curPrice) {
-            max = crossPool.curPrice
-            min = min / multiplier
-        } else if (!nativePos && min >= crossPool.curPrice) {
-            max = max * multiplier
-        } else if (!nativePos && min < crossPool.curPrice) {
-            min = crossPool.curPrice
-            max = max * multiplier
-        }
-
-        // @FIXME: Solve the issue instead of skipping it
-        console.assert(
-            min < max,
-            'priceMin (%s) is higher than priceMax (%s), skipping position opening for %s, unit price %s, direction native=%s',
-            min,
-            max,
-            crossPool.name,
-            unitPrice,
-            nativePos
-        )
-
-        if (min > max) {
-            return null
+        if (nativePos) {
+            if (max <= crossPool.curPrice) {
+                min = min / multiplier
+            } else if (max > crossPool.curPrice) {
+                min = min / multiplier
+                max = crossPool.curPrice
+            }
+        } else {
+            // we have to check not with crossPool.curPrice here if curPrice = 1
+            if (min >= crossPool.curPrice) {
+                max = max * multiplier
+            } else if (min < crossPool.curPrice) {
+                min = crossPool.curPrice
+                max = max * multiplier
+            }
         }
 
         return { min: min, max: max, native: nativePos }
