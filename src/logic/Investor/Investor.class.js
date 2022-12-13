@@ -210,25 +210,32 @@ export default class Investor {
         citingQuestPool,
         multiplier = this.#PRICE_RANGE_MULTIPLIER
     ) {
-        // @TODO:
-        // Replace all citeQuest with calculatePriceRange inside
-        // Determine preferred token to be citing and calculate + cite with proper side accordingly
-        // Replace all tests to comply
         const baseUnitName = crossPool.name
         const baseUnitCompName = `${citedQuestPool.tokenRight}-${citingQuestPool.tokenRight}`
+        const nativePos = baseUnitName !== baseUnitCompName
 
         let min = 0
         let max = 0
+        let unitPrice = 0
 
-        let unitPrice = citingQuestPool.curPrice / citedQuestPool.curPrice
+        if (!nativePos) {
+            unitPrice = citingQuestPool.curPrice / citedQuestPool.curPrice
+        } else {
+            unitPrice = citedQuestPool.curPrice / citingQuestPool.curPrice
+        }
 
-        // position we're planning to open in pool B/A is B for A (native) or "on the left side" of the current price
-        // B for A left position here [0.5...1(curPrice)...2] right position here A for B
-        // right position min cannot be lower than curPrice, adapt if necessary
-        const nativePos = baseUnitName !== baseUnitCompName
+        if (unitPrice <= 0) {
+            min = 0
+            max = 0
+        }
 
-        min = nativePos ? 1 / unitPrice : unitPrice
-        max = nativePos ? 1 / unitPrice : unitPrice
+        if (nativePos) {
+            max = 1 / unitPrice
+            min = 1 / (max / multiplier)
+        } else {
+            min = unitPrice
+            max = min * multiplier
+        }
 
         // Try to correct rounding errors
         if (nativePos) {
@@ -236,12 +243,13 @@ export default class Investor {
             max -= 0.0000000000000000001
         }
 
+        // Dry swap in both directions to determine if we can shift curPrice for "free"
         const dryBuyNonNative = crossPool.dryBuy(Infinity)
         const drySellNative = crossPool.drySell(Infinity)
         const freeMoveBuy = dryBuyNonNative[0] === 0 && dryBuyNonNative[1] === 0
         const freeMoveSell = drySellNative[0] === 0 && drySellNative[1] === 0
 
-        // If we can move for free towards requested price, set that price as current to calculate position location properly
+        // If we can move for free towards requested price, set that price as curPrice
         if (nativePos && max > crossPool.curPrice && freeMoveSell) {
             crossPool.curPrice = max
         } else if (!nativePos && min < crossPool.curPrice && freeMoveBuy) {
@@ -250,30 +258,43 @@ export default class Investor {
 
         if (nativePos) {
             if (max <= crossPool.curPrice) {
-                min = min / multiplier
+                min = max / multiplier
             } else if (max > crossPool.curPrice) {
-                min = min / multiplier
+                min = max / multiplier
                 max = crossPool.curPrice
             }
         } else {
             if (min >= crossPool.curPrice) {
-                max = max * multiplier
+                max = min * multiplier
             } else if (min < crossPool.curPrice) {
-                min = crossPool.curPrice
-                max = max * multiplier
+                // Change the calculation of min and max when nativePos is false and crossPool.curPrice is higher than the calculated min
+                min = crossPool.curPrice / multiplier
+                max = crossPool.curPrice
             }
         }
 
         // Left it here to test if it's still an issue or not
         console.assert(
-          min < max,
-          'priceMin (%s) is higher than priceMax (%s), skipping position opening for %s, unit price %s, direction native=%s',
-          min,
-          max,
-          crossPool.name,
-          unitPrice,
-          nativePos
+            min < max,
+            'priceMin (%s) is higher than priceMax (%s), skipping position opening for %s, unit price %s, direction native=%s',
+            min,
+            max,
+            crossPool.name,
+            unitPrice,
+            nativePos
         )
+
+        if (min > max) {
+            console.warn(crossPool)
+            console.warn(citedQuestPool)
+            console.warn(citingQuestPool)
+            console.warn(dryBuyNonNative, drySellNative)
+            console.warn(nativePos)
+        }
+
+        if (min > max) {
+            return
+        }
 
         return { min: min, max: max, native: nativePos }
     }
