@@ -29,9 +29,18 @@ export function SupabaseAuthProvider({ children }) {
         }
     }, [])
 
+    const redirectOptions = { emailRedirectTo: window.location.origin }
     const value = {
-        signUp: (data) => client.auth.signUp(data),
-        signIn: (data) => client.auth.signInWithOtp(data),
+        signUp: (data) =>
+            client.auth.signUp({
+                ...data,
+                options: data.email && { ...data.options, ...redirectOptions }
+            }),
+        signIn: (data) =>
+            client.auth.signInWithOtp({
+                ...data,
+                options: data.email && { ...data.options, ...redirectOptions }
+            }),
         signOut: () => client.auth.signOut(),
         user: state.user
     }
