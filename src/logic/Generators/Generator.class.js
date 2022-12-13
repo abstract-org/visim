@@ -682,7 +682,7 @@ class Generator {
                 `${citedQuest.name}-${citingQuest.name}`
             )
 
-            if (!crossPool) {
+            if (!crossPool || crossPool.curPrice === 1) {
                 const startingPrice = citingPool.curPrice / citedPool.curPrice
                 crossPool = investor.createPool(
                     citedQuest,
