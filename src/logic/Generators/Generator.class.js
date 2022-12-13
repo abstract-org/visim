@@ -61,6 +61,7 @@ class Generator {
     #DEFAULT_TOKEN = 'USDC'
     #_OPS_TIME = _OPS_TIME_INITIAL
     #_PERFORMANCE = false
+    #_PROMISE_ALL = false
 
     keepCreatingInvs = {}
     tradingInvs = {}
@@ -181,33 +182,44 @@ class Generator {
             } // end of inv spawner if
         })
 
-        // Every X days - keep creating quests
-        this.handlers.push(
-            new Promise((resolve) => {
-                resolve(this.simulateKeepCreatingQuest(day))
-            })
-        )
-        //this.simulateKeepCreatingQuest(day)
+        if (this.#_PROMISE_ALL) {
+            // Every X days - keep creating quests
+            this.handlers.push(
+                new Promise((resolve) => {
+                    resolve(this.simulateKeepCreatingQuest(day))
+                })
+            )
+        } else {
+            this.simulateKeepCreatingQuest(day)
+        }
 
-        // Every X days - buy/sell top gainers/increased or decreased in prices
-        this.handlers.push(
-            new Promise((resolve) => {
-                resolve(this.simulateTrade(day, this.router))
-            })
-        )
-        //this.simulateTrade(day, this.router)
+        if (this.#_PROMISE_ALL) {
+            // Every X days - buy/sell top gainers/increased or decreased in prices
+            this.handlers.push(
+                new Promise((resolve) => {
+                    resolve(this.simulateTrade(day, this.router))
+                })
+            )
+        } else {
+            this.simulateTrade(day, this.router)
+        }
 
         // Every X days - withdraw X in USDC value
-        this.handlers.push(
-            new Promise((resolve) => {
-                resolve(this.simulateWithdraw(day, this.router))
-            })
-        )
-        //this.simulateWithdraw(day, this.router)
+        if (this.#_PROMISE_ALL) {
+            this.handlers.push(
+                new Promise((resolve) => {
+                    resolve(this.simulateWithdraw(day, this.router))
+                })
+            )
+        } else {
+            this.simulateWithdraw(day, this.router)
+        }
 
-        await Promise.all(this.handlers).catch((reason) => {
-            console.log(`Rejected promise: ${reason}`)
-        })
+        if (this.#_PROMISE_ALL) {
+            await Promise.all(this.handlers).catch((reason) => {
+                console.log(`Rejected promise: ${reason}`)
+            })
+        }
 
         return this._dayData[day]
     }
