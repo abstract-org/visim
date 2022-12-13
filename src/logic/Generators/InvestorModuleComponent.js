@@ -47,11 +47,17 @@ export const InvestorModuleComponent = (props) => {
                                 style={{ display: 'none' }}
                             />
                             <div className="mr-3"></div>
-                            <Button
-                                icon="pi pi-save"
-                                className="w-2rem h-2rem p-button-success mr-2"
-                                onClick={() => props.handleChangeExpert(draft)}
-                            />
+                            {isExpert ? (
+                                <Button
+                                    icon="pi pi-save"
+                                    className="w-2rem h-2rem p-button-success mr-2"
+                                    onClick={() =>
+                                        props.handleChangeExpert(draft)
+                                    }
+                                />
+                            ) : (
+                                ''
+                            )}
                             <Button
                                 icon="pi pi-trash"
                                 className="w-2rem h-2rem p-button-danger"
