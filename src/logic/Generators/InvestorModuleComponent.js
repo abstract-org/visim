@@ -311,9 +311,9 @@ const UserModeComponent = (props) => {
                         displayStyle={{ padding: 0 }}
                     />
                     <InPlaceElement
-                        id="swapIncSumPerc"
+                        id="swapDecSumPerc"
                         active={false}
-                        display={`${props.state.swapIncSumPerc}%`}
+                        display={`${props.state.swapDecSumPerc}%`}
                         type="number"
                         element="input"
                         handleChange={props.handleChange}
@@ -323,9 +323,9 @@ const UserModeComponent = (props) => {
                         of owned tokens that decreased in price by
                     </span>
                     <InPlaceElement
-                        id="swapIncByPerc"
+                        id="swapDecByPerc"
                         active={false}
-                        display={`${props.state.swapIncByPerc}%`}
+                        display={`${props.state.swapDecByPerc}%`}
                         type="number"
                         element="input"
                         handleChange={props.handleChange}
@@ -363,9 +363,9 @@ const UserModeComponent = (props) => {
                         displayStyle={{ padding: 0 }}
                     />
                     <InPlaceElement
-                        id="swapDecSumPerc"
+                        id="swapIncSumPerc"
                         active={false}
-                        display={`${props.state.swapDecSumPerc}%`}
+                        display={`${props.state.swapIncSumPerc}%`}
                         type="number"
                         element="input"
                         handleChange={props.handleChange}
@@ -375,9 +375,9 @@ const UserModeComponent = (props) => {
                         of owned tokens that increased in price by
                     </span>
                     <InPlaceElement
-                        id="swapDecByPerc"
+                        id="swapIncByPerc"
                         active={false}
-                        display={`${props.state.swapDecByPerc}%`}
+                        display={`${props.state.swapIncByPerc}%`}
                         type="number"
                         element="input"
                         handleChange={props.handleChange}
