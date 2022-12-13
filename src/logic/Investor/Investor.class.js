@@ -256,7 +256,6 @@ export default class Investor {
                 max = crossPool.curPrice
             }
         } else {
-            // we have to check not with crossPool.curPrice here if curPrice = 1
             if (min >= crossPool.curPrice) {
                 max = max * multiplier
             } else if (min < crossPool.curPrice) {
