@@ -209,20 +209,20 @@ const UserModeComponent = (props) => {
                         element="input"
                         handleChange={props.handleChange}
                         state={props.state}
-                    /> or
+                    />{' '}
+                    or
                     <InPlaceElement
-                      id="buySingleAmount"
-                      active={false}
-                      display={`${props.state.buySingleAmount} ($USDC)`}
-                      type="number"
-                      element="input"
-                      handleChange={props.handleChange}
-                      state={props.state}
+                        id="buySingleAmount"
+                        active={false}
+                        display={`${props.state.buySingleAmount} ($USDC)`}
+                        type="number"
+                        element="input"
+                        handleChange={props.handleChange}
+                        state={props.state}
                     />
                     <span className="inplace-static-text">
                         of their balance in
                     </span>
-
                     <InPlaceElement
                         id="includeSingleName"
                         active={true}
@@ -248,20 +248,20 @@ const UserModeComponent = (props) => {
                         element="input"
                         handleChange={props.handleChange}
                         state={props.state}
-                    /> or
+                    />{' '}
+                    or
                     <InPlaceElement
-                      id="buySumAmount"
-                      active={false}
-                      display={`${props.state.buySumAmount} ($USDC)`}
-                      type="number"
-                      element="input"
-                      handleChange={props.handleChange}
-                      state={props.state}
+                        id="buySumAmount"
+                        active={false}
+                        display={`${props.state.buySumAmount} ($USDC)`}
+                        type="number"
+                        element="input"
+                        handleChange={props.handleChange}
+                        state={props.state}
                     />
                     <span className="inplace-static-text">
                         of their balance in
                     </span>
-
                     <InPlaceElement
                         id="buyQuestPerc"
                         active={false}
@@ -274,7 +274,6 @@ const UserModeComponent = (props) => {
                     <span className="inplace-static-text">
                         quests that are top
                     </span>
-
                     <InPlaceElement
                         id="buyGainerPerc"
                         active={false}
@@ -342,15 +341,16 @@ const UserModeComponent = (props) => {
                         element="input"
                         handleChange={props.handleChange}
                         state={props.state}
-                    /> or
+                    />{' '}
+                    or
                     <InPlaceElement
-                      id="swapIncSumAmount"
-                      active={false}
-                      display={`${props.state.swapIncSumAmount}`}
-                      type="number"
-                      element="input"
-                      handleChange={props.handleChange}
-                      state={props.state}
+                        id="swapIncSumAmount"
+                        active={false}
+                        display={`${props.state.swapIncSumAmount}`}
+                        type="number"
+                        element="input"
+                        handleChange={props.handleChange}
+                        state={props.state}
                     />
                     <span className="inplace-static-text">
                         of owned tokens that decreased in price by
@@ -403,15 +403,16 @@ const UserModeComponent = (props) => {
                         element="input"
                         handleChange={props.handleChange}
                         state={props.state}
-                    /> or
+                    />{' '}
+                    or
                     <InPlaceElement
-                      id="swapDecSumAmount"
-                      active={false}
-                      display={`${props.state.swapDecSumAmount}`}
-                      type="number"
-                      element="input"
-                      handleChange={props.handleChange}
-                      state={props.state}
+                        id="swapDecSumAmount"
+                        active={false}
+                        display={`${props.state.swapDecSumAmount}`}
+                        type="number"
+                        element="input"
+                        handleChange={props.handleChange}
+                        state={props.state}
                     />
                     <span className="inplace-static-text">
                         of owned tokens that increased in price by
@@ -506,14 +507,15 @@ const UserModeComponent = (props) => {
                     />
                     <span className="inplace-static-text">days sells</span>
                     <InPlaceElement
-                      id="valueSellPerc"
-                      active={false}
-                      display={`${props.state.valueSellPerc}%`}
-                      type="number"
-                      element="input"
-                      handleChange={props.handleChange}
-                      state={props.state}
-                    /> or
+                        id="valueSellPerc"
+                        active={false}
+                        display={`${props.state.valueSellPerc}%`}
+                        type="number"
+                        element="input"
+                        handleChange={props.handleChange}
+                        state={props.state}
+                    />{' '}
+                    or
                     <InPlaceElement
                         id="valueSellAmount"
                         active={false}

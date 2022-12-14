@@ -869,7 +869,7 @@ class Generator {
         const percAmount = (balance / 100) * percentage
 
         console.assert(
-          !(isNaN(percAmount) || percAmount <= 0),
+            !(isNaN(percAmount) || percAmount <= 0),
             `getMinAmount invalid amount: ${percAmount}`
         )
 
