@@ -17,6 +17,11 @@ export const invGen = {
     buyGainerPerc: 20,
     buyGainersFrequency: 30,
 
+    buySingleAmount: 0,
+    buySumAmount: 0,
+    swapIncSumAmount: 0,
+    swapDecSumAmount: 0,
+
     excludeSingleName: '',
 
     swapIncFrequency: 7,
@@ -41,6 +46,7 @@ export const invGen = {
 
     valueSellPeriodDays: 0,
     valueSellAmount: 0,
+    valueSellPerc: 0,
 
     smartRouteDepth: 3
 }
