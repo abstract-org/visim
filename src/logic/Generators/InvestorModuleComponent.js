@@ -136,6 +136,16 @@ const UserModeComponent = (props) => {
         value: el
     }))
 
+    const shouldBlockInvestments = () => {
+        // return props.state.buySellPeriodDays <= 0
+        return false
+    }
+
+    const shouldBlockCreation = () => {
+        // return props.state.buySellPeriodDays > 0
+        return false
+    }
+
     return (
         <React.Fragment>
             <div className="column flex">
@@ -197,7 +207,7 @@ const UserModeComponent = (props) => {
             </div>
             <div className="column flex">
                 <BlockUI
-                    blocked={props.state.buySellPeriodDays <= 0}
+                    blocked={shouldBlockInvestments()}
                     className="flex w-full"
                 >
                     <span className="inplace-static-text">Buys using</span>
@@ -236,7 +246,7 @@ const UserModeComponent = (props) => {
             </div>
             <div className="column flex mt-2">
                 <BlockUI
-                    blocked={props.state.buySellPeriodDays <= 0}
+                    blocked={shouldBlockInvestments()}
                     className="flex w-full"
                 >
                     <span className="inplace-static-text">Buys using</span>
@@ -298,7 +308,7 @@ const UserModeComponent = (props) => {
             </div>
             <div className="column flex">
                 <BlockUI
-                    blocked={props.state.buySellPeriodDays <= 0}
+                    blocked={shouldBlockInvestments()}
                     className="flex w-full"
                 >
                     <span className="inplace-static-text">
@@ -317,7 +327,7 @@ const UserModeComponent = (props) => {
             </div>
             <div className="column flex">
                 <BlockUI
-                    blocked={props.state.buySellPeriodDays <= 0}
+                    blocked={shouldBlockInvestments()}
                     className="flex w-full"
                 >
                     <InPlaceElement
@@ -379,7 +389,7 @@ const UserModeComponent = (props) => {
             </div>
             <div className="column flex">
                 <BlockUI
-                    blocked={props.state.buySellPeriodDays <= 0}
+                    blocked={shouldBlockInvestments()}
                     className="flex w-full"
                 >
                     <InPlaceElement
@@ -444,7 +454,7 @@ const UserModeComponent = (props) => {
 
             <div className="column flex">
                 <BlockUI
-                    blocked={props.state.buySellPeriodDays > 0}
+                    blocked={shouldBlockCreation()}
                     className="flex w-full"
                 >
                     <span className="inplace-static-text">
@@ -463,7 +473,7 @@ const UserModeComponent = (props) => {
             </div>
             <div className="column flex">
                 <BlockUI
-                    blocked={props.state.buySellPeriodDays > 0}
+                    blocked={shouldBlockCreation()}
                     className="flex w-full"
                 >
                     <span className="inplace-static-text">Once every</span>
@@ -492,7 +502,7 @@ const UserModeComponent = (props) => {
             </div>
             <div className="column flex mt-3">
                 <BlockUI
-                    blocked={props.state.buySellPeriodDays > 0}
+                    blocked={shouldBlockCreation()}
                     className="flex w-full"
                 >
                     <span className="inplace-static-text">Every</span>
@@ -531,10 +541,7 @@ const UserModeComponent = (props) => {
                 </BlockUI>
             </div>
             <hr className="dashed-divider" />
-            <BlockUI
-                blocked={props.state.buySellPeriodDays <= 0}
-                className="flex w-full"
-            >
+            <BlockUI blocked={shouldBlockInvestments()} className="flex w-full">
                 <div className="ml-2 flex mt-3">
                     <span className="inplace-static-text">
                         When bought a quest, chance to cite other random quest
@@ -565,10 +572,7 @@ const UserModeComponent = (props) => {
                     </span>
                 </div>
             </BlockUI>
-            <BlockUI
-                blocked={props.state.buySellPeriodDays <= 0}
-                className="flex w-full"
-            >
+            <BlockUI blocked={shouldBlockInvestments()} className="flex w-full">
                 <div className="flex ml-2">
                     <span className="inplace-static-text">
                         Cited price is equal or higher by at least
@@ -599,7 +603,7 @@ const UserModeComponent = (props) => {
             <hr className="dashed-divider" />
             <div className="flex column">
                 <BlockUI
-                    blocked={props.state.buySellPeriodDays <= 0}
+                    blocked={shouldBlockInvestments()}
                     className="flex w-full"
                 >
                     <span className="inplace-static-text">
