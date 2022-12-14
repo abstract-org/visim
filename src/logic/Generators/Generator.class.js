@@ -865,11 +865,25 @@ class Generator {
         this.measure('simulateKeepCreatingQuest', true)
     }
 
+    getMinAmount(balance = 0, percentage = 0, amount = 0) {
+        const percAmount = (balance / 100) * percentage
+
+        console.assert(
+          !(isNaN(percAmount) || percAmount <= 0),
+            `getMinAmount invalid amount: ${percAmount}`
+        )
+
+        return percAmount < amount ? percAmount : amount
+    }
+
     tradeSpecificQuest(conf, day, investor, router) {
         this.measure('tradeSpecificQuest')
 
-        const spendAmount =
-            (investor.balances[this.#DEFAULT_TOKEN] / 100) * conf.buySinglePerc
+        const spendAmount = this.getMinAmount(
+            investor.balances[this.#DEFAULT_TOKEN],
+            conf.buySinglePerc,
+            conf.buySingleAmount
+        )
 
         let tradePool = this._cachedPools.get(
             `${this.#DEFAULT_TOKEN}-${conf.includeSingleName}`
@@ -931,8 +945,11 @@ class Generator {
     tradeTopGainers(conf, day, investor, router) {
         this.measure('tradeTopGainers')
 
-        const spendAmount =
-            (investor.balances[this.#DEFAULT_TOKEN] / 100) * conf.buySumPerc
+        const spendAmount = this.getMinAmount(
+            investor.balances[this.#DEFAULT_TOKEN],
+            conf.buySumPerc,
+            conf.buySumAmount
+        )
 
         const tradePools = this.getTradePools(
             conf.buyQuestPerc,
@@ -1042,6 +1059,7 @@ class Generator {
             investor.balances,
             conf.swapIncFrequency,
             conf.swapIncSumPerc,
+            conf.swapIncSumAmount,
             conf.swapIncByPerc,
             conf.swapIncDir
         )
@@ -1062,6 +1080,7 @@ class Generator {
             investor.balances,
             conf.swapDecFrequency,
             conf.swapDecSumPerc,
+            conf.swapDecSumAmount,
             conf.swapDecByPerc,
             conf.swapDecDir
         )
@@ -1136,7 +1155,10 @@ class Generator {
                     //         )
                     //     )
                     // )
-                    if (conf.swapIncSumPerc && conf.swapIncByPerc) {
+                    if (
+                        (conf.swapIncSumPerc || conf.swapIncSumAmount) &&
+                        conf.swapIncByPerc
+                    ) {
                         this.tradeIncQuests(conf, day, investor, router)
                     }
 
@@ -1148,7 +1170,10 @@ class Generator {
                     //         )
                     //     )
                     // )
-                    if (conf.swapDecSumPerc && conf.swapDecByPerc) {
+                    if (
+                        (conf.swapDecSumPerc || conf.swapDecSumAmount) &&
+                        conf.swapDecByPerc
+                    ) {
                         this.tradeDecQuests(conf, day, investor, router)
                     }
                 })
@@ -1285,15 +1310,57 @@ class Generator {
                     }
 
                     let alreadyWithdrawn = 0
+                    // Get current price of Quest from Pools
+                    const questUsdcPool = this._cachedPools
+                        .values()
+                        .find((p) => p.tokenRight === quest)
 
                     while (
                         alreadyWithdrawn < conf.valueSellAmount &&
                         author.balances[quest] > 0
                     ) {
-                        const sumIn =
-                            author.balances[quest] > conf.globalSwapThreshold
-                                ? conf.globalSwapThreshold
-                                : author.balances[quest]
+                        let sumIn
+
+                        if (author.balances[quest] > conf.globalSwapThreshold) {
+                            sumIn = conf.globalSwapThreshold
+                        } else if (conf.valueSellPerc) {
+                            // Calculate tokens amount based on Percentage value and balance
+                            const valueSellPercTokens =
+                                (author.balances[quest] / 100) *
+                                conf.valueSellPerc
+                            // Calculate USDC total value for current Quest based on percentage of owner
+                            const percTokensCost =
+                                valueSellPercTokens * questUsdcPool.curPrice
+
+                            // If n% of Quest is more than Fixed Sell Amount (subtracting already withdrawn part)
+                            // Then we withdraw Fixed value
+                            // Otherwise we withdraw percentage value
+                            if (
+                                percTokensCost >
+                                conf.valueSellAmount - alreadyWithdrawn
+                            ) {
+                                // Take min between Investor balance and max tokens amount
+                                // Possible to align with valueSellAmount
+                                sumIn = Math.min(
+                                    conf.valueSellAmount /
+                                        questUsdcPool.curPrice,
+                                    author.balances[quest]
+                                )
+                            } else {
+                                sumIn = valueSellPercTokens
+                            }
+                        } else {
+                            sumIn = Math.min(
+                                conf.valueSellAmount / questUsdcPool.curPrice,
+                                author.balances[quest]
+                            )
+                        }
+
+                        // console.log('conf.valueSellAmount: ', conf.valueSellAmount);
+                        // console.log('sumIn: ', sumIn);
+                        // console.log('questUsdcPool.curPrice: ', questUsdcPool.curPrice);
+                        // console.log('author.balances[quest]: ',  author.balances[quest]);
+                        // console.log('quest: ', quest);
 
                         if (conf.excludeSingleName) {
                             console.log(
@@ -1359,7 +1426,8 @@ class Generator {
     getChangedPriceQuests(
         invBalances,
         freq,
-        sumOfOwnedTokens,
+        tokensPercentage,
+        amountOfTokens,
         percentageChange,
         swapDir
     ) {
@@ -1415,7 +1483,11 @@ class Generator {
                 const tokenTrade =
                     swapDir === 'sell' ? pool.tokenRight : pool.tokenLeft
                 const tokenBalance = invBalances[tokenTrade]
-                const swapAmount = (tokenBalance / 100) * sumOfOwnedTokens
+                const swapAmount = this.getMinAmount(
+                    tokenBalance,
+                    tokensPercentage,
+                    amountOfTokens
+                )
 
                 balancesLeftover[tokenTrade] -= swapAmount
 
