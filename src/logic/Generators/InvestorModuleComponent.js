@@ -136,6 +136,16 @@ const UserModeComponent = (props) => {
         value: el
     }))
 
+    const shouldBlockInvestments = () => {
+        // return props.state.buySellPeriodDays <= 0
+        return false
+    }
+
+    const shouldBlockCreation = () => {
+        // return props.state.buySellPeriodDays > 0
+        return false
+    }
+
     return (
         <React.Fragment>
             <div className="column flex">
@@ -197,7 +207,7 @@ const UserModeComponent = (props) => {
             </div>
             <div className="column flex">
                 <BlockUI
-                    blocked={props.state.buySellPeriodDays <= 0}
+                    blocked={shouldBlockInvestments()}
                     className="flex w-full"
                 >
                     <span className="inplace-static-text">Buys using</span>
@@ -209,20 +219,20 @@ const UserModeComponent = (props) => {
                         element="input"
                         handleChange={props.handleChange}
                         state={props.state}
-                    /> or
+                    />{' '}
+                    or
                     <InPlaceElement
-                      id="buySingleAmount"
-                      active={false}
-                      display={`${props.state.buySingleAmount} ($USDC)`}
-                      type="number"
-                      element="input"
-                      handleChange={props.handleChange}
-                      state={props.state}
+                        id="buySingleAmount"
+                        active={false}
+                        display={`${props.state.buySingleAmount} ($USDC)`}
+                        type="number"
+                        element="input"
+                        handleChange={props.handleChange}
+                        state={props.state}
                     />
                     <span className="inplace-static-text">
                         of their balance in
                     </span>
-
                     <InPlaceElement
                         id="includeSingleName"
                         active={true}
@@ -236,7 +246,7 @@ const UserModeComponent = (props) => {
             </div>
             <div className="column flex mt-2">
                 <BlockUI
-                    blocked={props.state.buySellPeriodDays <= 0}
+                    blocked={shouldBlockInvestments()}
                     className="flex w-full"
                 >
                     <span className="inplace-static-text">Buys using</span>
@@ -248,20 +258,20 @@ const UserModeComponent = (props) => {
                         element="input"
                         handleChange={props.handleChange}
                         state={props.state}
-                    /> or
+                    />{' '}
+                    or
                     <InPlaceElement
-                      id="buySumAmount"
-                      active={false}
-                      display={`${props.state.buySumAmount} ($USDC)`}
-                      type="number"
-                      element="input"
-                      handleChange={props.handleChange}
-                      state={props.state}
+                        id="buySumAmount"
+                        active={false}
+                        display={`${props.state.buySumAmount} ($USDC)`}
+                        type="number"
+                        element="input"
+                        handleChange={props.handleChange}
+                        state={props.state}
                     />
                     <span className="inplace-static-text">
                         of their balance in
                     </span>
-
                     <InPlaceElement
                         id="buyQuestPerc"
                         active={false}
@@ -274,7 +284,6 @@ const UserModeComponent = (props) => {
                     <span className="inplace-static-text">
                         quests that are top
                     </span>
-
                     <InPlaceElement
                         id="buyGainerPerc"
                         active={false}
@@ -299,7 +308,7 @@ const UserModeComponent = (props) => {
             </div>
             <div className="column flex">
                 <BlockUI
-                    blocked={props.state.buySellPeriodDays <= 0}
+                    blocked={shouldBlockInvestments()}
                     className="flex w-full"
                 >
                     <span className="inplace-static-text">
@@ -318,7 +327,7 @@ const UserModeComponent = (props) => {
             </div>
             <div className="column flex">
                 <BlockUI
-                    blocked={props.state.buySellPeriodDays <= 0}
+                    blocked={shouldBlockInvestments()}
                     className="flex w-full"
                 >
                     <InPlaceElement
@@ -342,15 +351,16 @@ const UserModeComponent = (props) => {
                         element="input"
                         handleChange={props.handleChange}
                         state={props.state}
-                    /> or
+                    />{' '}
+                    or
                     <InPlaceElement
-                      id="swapIncSumAmount"
-                      active={false}
-                      display={`${props.state.swapIncSumAmount}`}
-                      type="number"
-                      element="input"
-                      handleChange={props.handleChange}
-                      state={props.state}
+                        id="swapIncSumAmount"
+                        active={false}
+                        display={`${props.state.swapIncSumAmount}`}
+                        type="number"
+                        element="input"
+                        handleChange={props.handleChange}
+                        state={props.state}
                     />
                     <span className="inplace-static-text">
                         of owned tokens that decreased in price by
@@ -379,7 +389,7 @@ const UserModeComponent = (props) => {
             </div>
             <div className="column flex">
                 <BlockUI
-                    blocked={props.state.buySellPeriodDays <= 0}
+                    blocked={shouldBlockInvestments()}
                     className="flex w-full"
                 >
                     <InPlaceElement
@@ -403,15 +413,16 @@ const UserModeComponent = (props) => {
                         element="input"
                         handleChange={props.handleChange}
                         state={props.state}
-                    /> or
+                    />{' '}
+                    or
                     <InPlaceElement
-                      id="swapDecSumAmount"
-                      active={false}
-                      display={`${props.state.swapDecSumAmount}`}
-                      type="number"
-                      element="input"
-                      handleChange={props.handleChange}
-                      state={props.state}
+                        id="swapDecSumAmount"
+                        active={false}
+                        display={`${props.state.swapDecSumAmount}`}
+                        type="number"
+                        element="input"
+                        handleChange={props.handleChange}
+                        state={props.state}
                     />
                     <span className="inplace-static-text">
                         of owned tokens that increased in price by
@@ -443,7 +454,7 @@ const UserModeComponent = (props) => {
 
             <div className="column flex">
                 <BlockUI
-                    blocked={props.state.buySellPeriodDays > 0}
+                    blocked={shouldBlockCreation()}
                     className="flex w-full"
                 >
                     <span className="inplace-static-text">
@@ -462,7 +473,7 @@ const UserModeComponent = (props) => {
             </div>
             <div className="column flex">
                 <BlockUI
-                    blocked={props.state.buySellPeriodDays > 0}
+                    blocked={shouldBlockCreation()}
                     className="flex w-full"
                 >
                     <span className="inplace-static-text">Once every</span>
@@ -491,7 +502,7 @@ const UserModeComponent = (props) => {
             </div>
             <div className="column flex mt-3">
                 <BlockUI
-                    blocked={props.state.buySellPeriodDays > 0}
+                    blocked={shouldBlockCreation()}
                     className="flex w-full"
                 >
                     <span className="inplace-static-text">Every</span>
@@ -506,14 +517,15 @@ const UserModeComponent = (props) => {
                     />
                     <span className="inplace-static-text">days sells</span>
                     <InPlaceElement
-                      id="valueSellPerc"
-                      active={false}
-                      display={`${props.state.valueSellPerc}%`}
-                      type="number"
-                      element="input"
-                      handleChange={props.handleChange}
-                      state={props.state}
-                    /> or
+                        id="valueSellPerc"
+                        active={false}
+                        display={`${props.state.valueSellPerc}%`}
+                        type="number"
+                        element="input"
+                        handleChange={props.handleChange}
+                        state={props.state}
+                    />{' '}
+                    or
                     <InPlaceElement
                         id="valueSellAmount"
                         active={false}
@@ -529,10 +541,7 @@ const UserModeComponent = (props) => {
                 </BlockUI>
             </div>
             <hr className="dashed-divider" />
-            <BlockUI
-                blocked={props.state.buySellPeriodDays <= 0}
-                className="flex w-full"
-            >
+            <BlockUI blocked={shouldBlockInvestments()} className="flex w-full">
                 <div className="ml-2 flex mt-3">
                     <span className="inplace-static-text">
                         When bought a quest, chance to cite other random quest
@@ -563,10 +572,7 @@ const UserModeComponent = (props) => {
                     </span>
                 </div>
             </BlockUI>
-            <BlockUI
-                blocked={props.state.buySellPeriodDays <= 0}
-                className="flex w-full"
-            >
+            <BlockUI blocked={shouldBlockInvestments()} className="flex w-full">
                 <div className="flex ml-2">
                     <span className="inplace-static-text">
                         Cited price is equal or higher by at least
@@ -597,7 +603,7 @@ const UserModeComponent = (props) => {
             <hr className="dashed-divider" />
             <div className="flex column">
                 <BlockUI
-                    blocked={props.state.buySellPeriodDays <= 0}
+                    blocked={shouldBlockInvestments()}
                     className="flex w-full"
                 >
                     <span className="inplace-static-text">
