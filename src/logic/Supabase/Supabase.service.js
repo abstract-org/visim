@@ -74,10 +74,9 @@ export const createSnapshotDataRelation = async (
  * @param {HashMap<Pool>} poolsMap
  * @param {HashMap<poolName: string, poolId: number>} poolMappings
  * @param {HashMap<hash: string, id: number>} investorMappings
- * @param questMappings
  * @returns {Promise<null|boolean>}
  */
-export const aggregatePositionsData = async (poolsMap, poolMappings, investorMappings, questMappings) => {
+export const aggregatePositionsData = async (poolsMap, poolMappings, investorMappings) => {
     try {
         let preparedPositions = []
         let preparedPosOwners = []
@@ -591,8 +590,7 @@ export const aggregateAndStoreDataForSnapshot = async ({
             aggregatePositionsData(
                 state.pools,
                 poolNameToPoolId,
-                investorHashToInvestorId,
-                questNameToQuestId
+                investorHashToInvestorId
             ),
             aggregateInvestorBalancesWithDays(
                 investorBalancesPartition,
