@@ -76,7 +76,11 @@ export const createSnapshotDataRelation = async (
  * @param {HashMap<hash: string, id: number>} investorMappings
  * @returns {Promise<null|boolean>}
  */
-export const aggregatePositionsData = async (poolsMap, poolMappings, investorMappings) => {
+export const aggregatePositionsData = async (
+    poolsMap,
+    poolMappings,
+    investorMappings
+) => {
     try {
         let preparedPositions = []
         let preparedPosOwners = []
@@ -91,9 +95,12 @@ export const aggregatePositionsData = async (poolsMap, poolMappings, investorMap
             const poolPosOwners = pool.posOwners.map((posOwnerData) => {
                 let investorId = investorMappings.get(posOwnerData.hash)
 
-                return new PosOwnersUploadDto(posOwnerData, poolId, investorId).toObj()
-              }
-            )
+                return new PosOwnersUploadDto(
+                    posOwnerData,
+                    poolId,
+                    investorId
+                ).toObj()
+            })
 
             preparedPosOwners.push(...poolPosOwners)
             preparedPositions.push(...poolPositions)
