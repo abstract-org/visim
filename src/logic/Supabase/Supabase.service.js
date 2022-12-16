@@ -73,9 +73,10 @@ export const createSnapshotDataRelation = async (
  * @description Saves aggregated positions and position owners to DB
  * @param {HashMap<Pool>} poolsMap
  * @param {HashMap<poolName: string, poolId: number>} poolMappings
+ * @param {HashMap<hash: string, id: number>} investorMappings
  * @returns {Promise<null|boolean>}
  */
-export const aggregatePositionsData = async (poolsMap, poolMappings) => {
+export const aggregatePositionsData = async (poolsMap, poolMappings, investorMappings) => {
     try {
         let preparedPositions = []
         let preparedPosOwners = []
@@ -87,8 +88,11 @@ export const aggregatePositionsData = async (poolsMap, poolMappings) => {
                 .map((position) =>
                     new PositionUploadDto(position, poolId).toObj()
                 )
-            const poolPosOwners = pool.posOwners.map((posOwnerData) =>
-                new PosOwnersUploadDto(posOwnerData, poolId).toObj()
+            const poolPosOwners = pool.posOwners.map((posOwnerData) => {
+                let investorId = investorMappings.get(posOwnerData.hash)
+
+                return new PosOwnersUploadDto(posOwnerData, poolId, investorId).toObj()
+              }
             )
 
             preparedPosOwners.push(...poolPosOwners)
@@ -583,7 +587,11 @@ export const aggregateAndStoreDataForSnapshot = async ({
                 poolNameToPoolId,
                 investorHashToInvestorId
             ),
-            aggregatePositionsData(state.pools, poolNameToPoolId),
+            aggregatePositionsData(
+                state.pools,
+                poolNameToPoolId,
+                investorHashToInvestorId
+            ),
             aggregateInvestorBalancesWithDays(
                 investorBalancesPartition,
                 investorHashToInvestorId,
