@@ -532,9 +532,12 @@ class Generator {
             this._cachedInvestors.values()
         )
 
-        const leakedDiff = Math.abs(
-            curTokenMissing - this._cachedTotalLeaks[citingQuest.name]
-        )
+        const prevTokenMissing =
+            isNaN(this._cachedTotalLeaks[citingQuest.name]) ||
+            this._cachedTotalLeaks[citingQuest.name] == null
+                ? 0
+                : this._cachedTotalLeaks[citingQuest.name]
+        const leakedDiff = Math.abs(curTokenMissing - prevTokenMissing)
         if (!isZero(leakedDiff)) {
             console.warn('### ALERT: CITATION #2 SINGLE [' + day + ']###')
             console.warn(
@@ -801,9 +804,12 @@ class Generator {
                 this._cachedInvestors.values()
             )
 
-            const leakedDiff = Math.abs(
-                curTokenMissing - this._cachedTotalLeaks[citingQuest.name]
-            )
+            const prevTokenMissing =
+                isNaN(this._cachedTotalLeaks[citingQuest.name]) ||
+                this._cachedTotalLeaks[citingQuest.name] == null
+                    ? 0
+                    : this._cachedTotalLeaks[citingQuest.name]
+            const leakedDiff = Math.abs(curTokenMissing - prevTokenMissing)
             if (!isZero(leakedDiff)) {
                 console.warn('### ALERT: CITATION #2 RANDOM [' + day + ']###')
                 console.warn(
