@@ -339,7 +339,7 @@ export const GeneratorRunner = () => {
         let day = currentDay + 1
         incrementDay()
         globalState.dayTrackerStore.currentDay++
-        const simulationLastDay = currentDay + genDays
+        const simulationLastDay = day + genDays
         // Every day
         while (day < simulationLastDay) {
             console.log(`\n\nSimulating day ${day}\n\n`)
