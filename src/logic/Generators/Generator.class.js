@@ -1,19 +1,10 @@
+import { LogicUtils, Modules, SimSdk } from '@abstract-org/sdk'
 import Chance from 'chance'
 import HashMap from 'hashmap'
-
-import Investor from '../Investor/Investor.class'
-import UsdcToken from '../Quest/UsdcToken.class'
 import Router from '../Router/Router.class'
-import {
-    calcGrowthRate,
-    formSwapData,
-    getCombinedSwaps,
-    isE10Zero,
-    isNearZero,
-    isZero,
-    priceDiff
-} from '../Utils/logicUtils'
 import { totalMissingTokens, totalSingleMissingToken } from '../Utils/tokenCalc'
+
+const sdk = SimSdk.init('sim', { dbUrl: '', accessToken: '' })
 
 const _OPS_TIME_INITIAL = {
     simulateQuestCreation: { time: 0, ops: 0, timeStarted: 0 },
@@ -532,13 +523,10 @@ class Generator {
             this._cachedInvestors.values()
         )
 
-        const prevTokenMissing =
-            isNaN(this._cachedTotalLeaks[citingQuest.name]) ||
-            this._cachedTotalLeaks[citingQuest.name] == null
-                ? 0
-                : this._cachedTotalLeaks[citingQuest.name]
-        const leakedDiff = Math.abs(curTokenMissing - prevTokenMissing)
-        if (!isZero(leakedDiff)) {
+        const leakedDiff = Math.abs(
+            curTokenMissing - this._cachedTotalLeaks[citingQuest.name]
+        )
+        if (!LogicUtils.isZero(leakedDiff)) {
             console.warn('### ALERT: CITATION #2 SINGLE [' + day + ']###')
             console.warn(
                 `Despite all the correct actions, token ${citingQuest.name} went missing by ${leakedDiff}`
@@ -637,7 +625,7 @@ class Generator {
         const priceMark = conf.keepCitingPriceHigherThan
         const potentialQuestPools = this._cachedPools.values().filter((cp) => {
             if (cp.isQuest() && cp.tokenRight !== quest.name) {
-                const diff = priceDiff(cp.curPrice, pool.curPrice)
+                const diff = LogicUtils.priceDiff(cp.curPrice, pool.curPrice)
 
                 if (diff > priceMark) {
                     return true
@@ -804,13 +792,10 @@ class Generator {
                 this._cachedInvestors.values()
             )
 
-            const prevTokenMissing =
-                isNaN(this._cachedTotalLeaks[citingQuest.name]) ||
-                this._cachedTotalLeaks[citingQuest.name] == null
-                    ? 0
-                    : this._cachedTotalLeaks[citingQuest.name]
-            const leakedDiff = Math.abs(curTokenMissing - prevTokenMissing)
-            if (!isZero(leakedDiff)) {
+            const leakedDiff = Math.abs(
+                curTokenMissing - this._cachedTotalLeaks[citingQuest.name]
+            )
+            if (!LogicUtils.isZero(leakedDiff)) {
                 console.warn('### ALERT: CITATION #2 RANDOM [' + day + ']###')
                 console.warn(
                     `Despite all the correct actions, token ${citingQuest.name} went missing by ${leakedDiff}`
@@ -922,8 +907,8 @@ class Generator {
 
         // That would be an edge case, rare, but if happens, need to debug why
         if (
-            isZero(totalIn) ||
-            isZero(totalOut) ||
+            LogicUtils.isZero(totalIn) ||
+            LogicUtils.isZero(totalOut) ||
             isNaN(totalIn) ||
             isNaN(totalOut)
         ) {
@@ -969,7 +954,7 @@ class Generator {
         }
 
         const perPoolAmt = spendAmount / tradePools.length
-        if (perPoolAmt <= 0 || isZero(perPoolAmt)) {
+        if (perPoolAmt <= 0 || LogicUtils.isZero(perPoolAmt)) {
             return
         }
 
@@ -999,8 +984,8 @@ class Generator {
 
             //That would be an edge case, rare, but if happens, need to debug why
             if (
-                isZero(totalIn) ||
-                isZero(totalOut) ||
+                LogicUtils.isZero(totalIn) ||
+                LogicUtils.isZero(totalOut) ||
                 isNaN(totalIn) ||
                 isNaN(totalOut)
             ) {
@@ -1247,8 +1232,8 @@ class Generator {
             this.storeTradedPool(day, pool)
 
             if (
-                isZero(totalIn) ||
-                isZero(totalOut) ||
+                LogicUtils.isZero(totalIn) ||
+                LogicUtils.isZero(totalOut) ||
                 isNaN(totalIn) ||
                 isNaN(totalOut)
             ) {
@@ -1384,8 +1369,8 @@ class Generator {
 
                         if (
                             isNaN(totalIn) ||
-                            isZero(totalIn) ||
-                            isZero(totalOut)
+                            LogicUtils.isZero(totalIn) ||
+                            LogicUtils.isZero(totalOut)
                         ) {
                             const pool = this._cachedPools.get(
                                 `${this.#DEFAULT_TOKEN}-${quest}`
@@ -1468,7 +1453,10 @@ class Generator {
                         if (id === 0) return 0
 
                         const prevPoint = data[id - 1]
-                        const rate = calcGrowthRate(curr.mcap, prevPoint.mcap)
+                        const rate = LogicUtils.calcGrowthRate(
+                            curr.mcap,
+                            prevPoint.mcap
+                        )
 
                         return rate
                     })
@@ -1572,7 +1560,10 @@ class Generator {
                     if (id === 0) return 0
 
                     const prevPoint = data[id - 1]
-                    const rate = calcGrowthRate(curr.mcap, prevPoint.mcap)
+                    const rate = LogicUtils.calcGrowthRate(
+                        curr.mcap,
+                        prevPoint.mcap
+                    )
 
                     return rate
                 })
@@ -1663,7 +1654,7 @@ class Generator {
     spawnInvestor(type, name, initialBalance) {
         this.measure('spawnInvestor')
 
-        const investor = Investor.create(type, name, initialBalance)
+        const investor = sdk.createInvestor(type, name, initialBalance)
 
         this._cachedInvestors.set(investor.hash, investor)
 
@@ -1685,7 +1676,7 @@ class Generator {
             leftSideQuest.addPool(pool)
             this._cachedQuests.set(leftSideQuest.name, leftSideQuest)
         } else {
-            leftSideQuest = new UsdcToken()
+            leftSideQuest = new Modules.UsdcToken()
             leftSideQuest.addPool(pool)
             this._cachedQuests.set(leftSideQuest.name, leftSideQuest)
         }
@@ -1775,7 +1766,7 @@ class Generator {
     processSwapData(investor, swaps, day, opName = null) {
         this.measure('processSwapData')
 
-        const combSwaps = getCombinedSwaps(swaps, this._cachedPools)
+        const combSwaps = LogicUtils.getCombinedSwaps(swaps, this._cachedPools)
         Object.entries(combSwaps).forEach((ops) => {
             Object.entries(ops[1]).forEach((op) => {
                 if (!this._dayData[day]) {
@@ -1783,7 +1774,7 @@ class Generator {
                 }
 
                 const pool = this._cachedPools.get(ops[0])
-                const swapData = formSwapData(
+                const swapData = LogicUtils.formSwapData(
                     pool,
                     investor,
                     op[0],
