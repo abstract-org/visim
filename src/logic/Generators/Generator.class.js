@@ -1,7 +1,6 @@
 import { LogicUtils, Modules, SimSdk } from '@abstract-org/sdk'
 import Chance from 'chance'
 import HashMap from 'hashmap'
-import Router from '../Router/Router.class'
 import { totalMissingTokens, totalSingleMissingToken } from '../Utils/tokenCalc'
 
 const sdk = SimSdk.init('sim', { dbUrl: '', accessToken: '' })
@@ -87,7 +86,7 @@ class Generator {
             }
         })
 
-        this.router = new Router(this._cachedQuests, this._cachedPools)
+        this.router = new Modules.Router(this._cachedQuests, this._cachedPools)
 
         this.#_PERFORMANCE = performance
 
@@ -148,6 +147,8 @@ class Generator {
             if (invProbs.spawnInv) {
                 for (let i = 1; i <= invProbs.spawnInvQuantity; i++) {
                     const investor = this.initializeInvestor(conf, day)
+
+                    console.log('investor: ', investor);
 
                     const questType = conf.createQuest
 
@@ -523,9 +524,9 @@ class Generator {
             this._cachedInvestors.values()
         )
 
-        const leakedDiff = Math.abs(
-            curTokenMissing - this._cachedTotalLeaks[citingQuest.name]
-        )
+        const cachedLeaks = this._cachedTotalLeaks[citingQuest.name]
+        const leakedDiff = cachedLeaks ? Math.abs(curTokenMissing - cachedLeaks) : curTokenMissing
+
         if (!LogicUtils.isZero(leakedDiff)) {
             console.warn('### ALERT: CITATION #2 SINGLE [' + day + ']###')
             console.warn(
@@ -792,9 +793,9 @@ class Generator {
                 this._cachedInvestors.values()
             )
 
-            const leakedDiff = Math.abs(
-                curTokenMissing - this._cachedTotalLeaks[citingQuest.name]
-            )
+            const cachedLeaks = this._cachedTotalLeaks[citingQuest.name]
+            const leakedDiff = cachedLeaks ? Math.abs(curTokenMissing - cachedLeaks) : curTokenMissing
+
             if (!LogicUtils.isZero(leakedDiff)) {
                 console.warn('### ALERT: CITATION #2 RANDOM [' + day + ']###')
                 console.warn(
