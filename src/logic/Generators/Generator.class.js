@@ -3,7 +3,10 @@ import Chance from 'chance'
 import HashMap from 'hashmap'
 import { totalMissingTokens, totalSingleMissingToken } from '../Utils/tokenCalc'
 
-const sdk = SimSdk.init('sim', { dbUrl: '', accessToken: '' })
+const sdk = SimSdk.init('sim', {
+    dbUrl: process.env.REACT_APP_SUPABASE_URL,
+    accessToken: process.env.REACT_APP_SUPABASE_ANON_KEY
+})
 
 const _OPS_TIME_INITIAL = {
     simulateQuestCreation: { time: 0, ops: 0, timeStarted: 0 },
@@ -523,7 +526,9 @@ class Generator {
         )
 
         const cachedLeaks = this._cachedTotalLeaks[citingQuest.name]
-        const leakedDiff = cachedLeaks ? Math.abs(curTokenMissing - cachedLeaks) : curTokenMissing
+        const leakedDiff = cachedLeaks
+            ? Math.abs(curTokenMissing - cachedLeaks)
+            : curTokenMissing
 
         if (!LogicUtils.isZero(leakedDiff)) {
             console.warn('### ALERT: CITATION #2 SINGLE [' + day + ']###')
@@ -792,7 +797,9 @@ class Generator {
             )
 
             const cachedLeaks = this._cachedTotalLeaks[citingQuest.name]
-            const leakedDiff = cachedLeaks ? Math.abs(curTokenMissing - cachedLeaks) : curTokenMissing
+            const leakedDiff = cachedLeaks
+                ? Math.abs(curTokenMissing - cachedLeaks)
+                : curTokenMissing
 
             if (!LogicUtils.isZero(leakedDiff)) {
                 console.warn('### ALERT: CITATION #2 RANDOM [' + day + ']###')
