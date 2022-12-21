@@ -148,8 +148,6 @@ class Generator {
                 for (let i = 1; i <= invProbs.spawnInvQuantity; i++) {
                     const investor = this.initializeInvestor(conf, day)
 
-                    console.log('investor: ', investor);
-
                     const questType = conf.createQuest
 
                     if (questType) {

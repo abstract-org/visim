@@ -1,16 +1,11 @@
 import HashMap from 'hashmap'
-
-import Investor from '../Investor/Investor.class'
-import Pool from '../Pool/Pool.class'
-import Token from '../Quest/Token.class'
-import UsdcToken from '../Quest/UsdcToken.class'
-import {LogicUtils} from '@abstract-org/sdk'
+import {LogicUtils, Modules} from '@abstract-org/sdk'
 
 const _KNOWN_CLASSES = {
-    Pool: Pool,
-    UsdcToken: UsdcToken,
-    Token: Token,
-    Investor: Investor
+    Pool: Modules.Pool,
+    UsdcToken: Modules.UsdcToken,
+    Token: Modules.Quest,
+    Investor: Modules.Investor
 }
 
 /**
@@ -58,10 +53,10 @@ const _replacer = (key, value) => {
     if (value instanceof HashMap) {
         return hashMapToObject(value)
     } else if (
-        value instanceof Pool ||
-        value instanceof Token ||
-        value instanceof UsdcToken ||
-        value instanceof Investor
+        value instanceof Modules.Pool ||
+        value instanceof Modules.Quest ||
+        value instanceof Modules.UsdcToken ||
+        value instanceof Modules.Investor
     ) {
         console.log('replacer', value.constructor.name, value)
         return Object.assign({ $class: value.constructor.name }, value)
