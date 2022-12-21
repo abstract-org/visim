@@ -1,8 +1,7 @@
 import produce, { setAutoFreeze } from 'immer'
 import create from 'zustand'
 import { devtools } from 'zustand/middleware'
-
-import { overrideState } from '../Utils/logicUtils'
+import {LogicUtils} from '@abstract-org/sdk'
 
 setAutoFreeze(false)
 
@@ -38,7 +37,7 @@ const useLogsStore = create(
                 set((state) => ({ logObjs: [...logObjs] })),
             override: (newData) =>
                 set(
-                    () => overrideState(get(), newData, INITIAL_STATE),
+                    () => LogicUtils.overrideState(get(), newData, INITIAL_STATE),
                     false,
                     'override'
                 )

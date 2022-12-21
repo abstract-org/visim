@@ -1,3 +1,4 @@
+import { LogicUtils, Modules } from '@abstract-org/sdk'
 import { Button } from 'primereact/button'
 import { Chip } from 'primereact/chip'
 import { Dropdown } from 'primereact/dropdown'
@@ -12,13 +13,6 @@ import useInvestorStore from '../Investor/investor.store'
 import useLogsStore from '../Logs/logs.store'
 import { QuestSelector } from '../Quest/Quest.components'
 import useQuestStore from '../Quest/quest.store'
-import Router from '../Router/Router.class'
-import {
-    formSwapData,
-    getCombinedSwaps,
-    isE10Zero,
-    isZero
-} from '../Utils/logicUtils'
 import { appendIfNotExist } from '../Utils/uiUtils'
 import globalConfig from '../config.global.json'
 import useDayTrackerStore from '../dayTracker.store'
@@ -94,7 +88,7 @@ export const PoolChartStats = () => {
                     <span>
                         <h4>
                             {pool.tokenLeft}:{' '}
-                            {isZero(pool.volumeToken0)
+                            {LogicUtils.isZero(pool.volumeToken0)
                                 ? 0
                                 : nf.format(pool.volumeToken0.toFixed(3))}
                         </h4>
@@ -102,7 +96,7 @@ export const PoolChartStats = () => {
                     <span>
                         <h4>
                             {pool.tokenRight}:{' '}
-                            {isZero(pool.volumeToken1)
+                            {LogicUtils.isZero(pool.volumeToken1)
                                 ? 0
                                 : nf.format(pool.volumeToken1.toFixed(3))}
                         </h4>
@@ -167,7 +161,7 @@ export const SwapModule = () => {
     const addLogObj = useLogsStore((state) => state.addLogObj)
     const swapMode = usePoolStore((state) => state.swapMode)
     const day = useDayTrackerStore((state) => state.currentDay)
-    const router = new Router(globalState.quests, globalState.pools)
+    const router = new Modules.Router(globalState.quests, globalState.pools)
 
     const investor = activeInvestor && globalState.investors.get(activeInvestor)
     const pool = activePool && globalState.pools.get(activePool)
@@ -222,7 +216,7 @@ export const SwapModule = () => {
             investor.hash
         )
         if (swapMode === 'direct') {
-            const swapData = formSwapData(
+            const swapData = LogicUtils.formSwapData(
                 pool,
                 investor,
                 'BOUGHT',
@@ -237,12 +231,15 @@ export const SwapModule = () => {
             globalState.logStore.logObjs.push(swapData)
         } else {
             const smSwaps = router.getSwaps()
-            const combSwaps = getCombinedSwaps(smSwaps, globalState.pools)
+            const combSwaps = LogicUtils.getCombinedSwaps(
+                smSwaps,
+                globalState.pools
+            )
 
             Object.entries(combSwaps).forEach((ops) => {
                 Object.entries(ops[1]).forEach((op) => {
                     const pool = globalState.pools.get(ops[0])
-                    const swapData = formSwapData(
+                    const swapData = LogicUtils.formSwapData(
                         pool,
                         investor,
                         op[0],
@@ -301,7 +298,7 @@ export const SwapModule = () => {
             investor.hash
         )
         if (swapMode === 'direct') {
-            const swapData = formSwapData(
+            const swapData = LogicUtils.formSwapData(
                 pool,
                 investor,
                 'SOLD',
@@ -316,12 +313,15 @@ export const SwapModule = () => {
             globalState.logStore.logObjs.push(swapData)
         } else {
             const smSwaps = router.getSwaps()
-            const combSwaps = getCombinedSwaps(smSwaps, globalState.pools)
+            const combSwaps = LogicUtils.getCombinedSwaps(
+                smSwaps,
+                globalState.pools
+            )
 
             Object.entries(combSwaps).forEach((ops) => {
                 Object.entries(ops[1]).forEach((op) => {
                     const pool = globalState.pools.get(ops[0])
-                    const swapData = formSwapData(
+                    const swapData = LogicUtils.formSwapData(
                         pool,
                         investor,
                         op[0],

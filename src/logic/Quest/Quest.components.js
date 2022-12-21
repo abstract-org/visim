@@ -6,13 +6,13 @@ import { Messages } from 'primereact/messages'
 import { ScrollPanel } from 'primereact/scrollpanel'
 import { Slider } from 'primereact/slider'
 import React, { useRef, useState } from 'react'
+import {LogicUtils} from '@abstract-org/sdk'
 
 import useExpertModeStore from '../../stores/expertMode.store'
 import globalState from '../GlobalState'
 import useInvestorStore from '../Investor/investor.store'
 import useLogsStore from '../Logs/logs.store'
 import usePoolStore from '../Pool/pool.store'
-import { isNumericString } from '../Utils/logicUtils'
 import { appendIfNotExist } from '../Utils/uiUtils'
 import UsdcToken from './UsdcToken.class'
 import useQuestStore from './quest.store'
@@ -451,7 +451,7 @@ export const QuestCreation = () => {
             return
         }
 
-        if (isNumericString(questName)) {
+        if (LogicUtils.isNumericString(questName)) {
             console.log('QuestName should not be a number')
             msgs.current.show({
                 severity: 'warn',

@@ -1,12 +1,11 @@
 import { faker } from '@faker-js/faker'
 import HashMap from 'hashmap'
-
+import {LogicUtils} from '@abstract-org/sdk'
 import globalState from '../GlobalState'
 import Investor from '../Investor/Investor.class'
 import Pool from '../Pool/Pool.class'
 import Token from '../Quest/Token.class'
 import UsdcToken from '../Quest/UsdcToken.class'
-import { fromBase64 } from '../Utils/logicUtils'
 import Serializer from '../Utils/serializer.js'
 import { DEFAULT_SCHEMA } from './validation'
 
@@ -106,7 +105,7 @@ export const overrideStateBySnapshot = (state) => {
 }
 
 export const base64ToState = (base64st) => {
-    const deserializedState = Serializer.deserialize(fromBase64(base64st))
+    const deserializedState = Serializer.deserialize(LogicUtils.fromBase64(base64st))
 
     return rehydrateState(deserializedState)
 }

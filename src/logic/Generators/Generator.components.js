@@ -9,6 +9,7 @@ import { ProgressBar } from 'primereact/progressbar'
 import { Skeleton } from 'primereact/skeleton'
 import { Toast } from 'primereact/toast'
 import React, { useEffect, useRef, useState } from 'react'
+import {LogicUtils} from '@abstract-org/sdk'
 
 import { createScenario, getScenarios } from '../../api/scenarios'
 import useExpertModeStore from '../../stores/expertMode.store'
@@ -17,14 +18,6 @@ import useInvestorStore from '../Investor/investor.store'
 import useLogsStore from '../Logs/logs.store'
 import usePoolStore from '../Pool/pool.store'
 import useQuestStore from '../Quest/quest.store'
-import {
-    deleteStateInvestorConfig,
-    deleteStateQuestConfig,
-    getMissingQuestNames,
-    isNumericString,
-    updateStateInvestorConfig,
-    updateStateQuestConfig
-} from '../Utils/logicUtils'
 import useDayTrackerStore from '../dayTracker.store'
 import Generator from './Generator.class'
 import { InvestorModuleComponent } from './InvestorModuleComponent'
@@ -186,7 +179,7 @@ export const GeneratorRunner = () => {
 
     const handleSelectScenario = (scenarioId) => {
         const scenarioObj = scenarios.find((sc) => sc.scenarioId === scenarioId)
-        const missingQuests = getMissingQuestNames(scenarioObj.scenario)
+        const missingQuests = LogicUtils.getMissingQuestNames(scenarioObj.scenario)
 
         if (activeInvestor && missingQuests.length > 0) {
             const investor = globalState.investors.get(activeInvestor)
@@ -514,7 +507,7 @@ export const GenCardInvestor = (props) => {
     const handleChange = (evt) => {
         if (
             evt.target.id === 'invGenName' &&
-            isNumericString(evt.target.value)
+            LogicUtils.isNumericString(evt.target.value)
         ) {
             return
         }
@@ -523,7 +516,7 @@ export const GenCardInvestor = (props) => {
             [evt.target.id]: evt.target.value || evt.target.checked
         }
         props.updateInvConfig(newState)
-        globalState.generatorStore.invConfigs = updateStateInvestorConfig(
+        globalState.generatorStore.invConfigs = LogicUtils.updateStateInvestorConfig(
             globalState.generatorStore.invConfigs,
             newState
         )
@@ -538,7 +531,7 @@ export const GenCardInvestor = (props) => {
         }
 
         props.updateInvConfig(objState)
-        globalState.generatorStore.invConfigs = updateStateInvestorConfig(
+        globalState.generatorStore.invConfigs = LogicUtils.updateStateInvestorConfig(
             globalState.generatorStore.invConfigs,
             objState
         )
@@ -546,7 +539,7 @@ export const GenCardInvestor = (props) => {
 
     const handleDelete = (invGenAlias) => {
         props.deleteInvConfig(invGenAlias)
-        globalState.generatorStore.invConfigs = deleteStateInvestorConfig(
+        globalState.generatorStore.invConfigs = LogicUtils.deleteStateInvestorConfig(
             globalState.generatorStore.invConfigs,
             invGenAlias
         )
@@ -614,7 +607,7 @@ export const GenCardQuest = (props) => {
     const handleChange = (evt) => {
         if (
             evt.target.id === 'questGenName' &&
-            isNumericString(evt.target.value)
+            LogicUtils.isNumericString(evt.target.value)
         ) {
             return
         }
@@ -623,7 +616,7 @@ export const GenCardQuest = (props) => {
             [evt.target.id]: evt.target.value || evt.target.checked
         }
         props.updateQuestConfig(newState)
-        globalState.generatorStore.questConfigs = updateStateQuestConfig(
+        globalState.generatorStore.questConfigs = LogicUtils.updateStateQuestConfig(
             globalState.generatorStore.questConfigs,
             newState
         )
@@ -639,7 +632,7 @@ export const GenCardQuest = (props) => {
         }
 
         props.updateQuestConfig(objState)
-        globalState.generatorStore.questConfigs = updateStateQuestConfig(
+        globalState.generatorStore.questConfigs = LogicUtils.updateStateQuestConfig(
             globalState.generatorStore.questConfigs,
             objState
         )
@@ -647,7 +640,7 @@ export const GenCardQuest = (props) => {
 
     const handleDelete = (id) => {
         props.deleteQuestConfig(id)
-        globalState.generatorStore.questConfigs = deleteStateQuestConfig(
+        globalState.generatorStore.questConfigs = LogicUtils.deleteStateQuestConfig(
             globalState.generatorStore.questConfigs,
             id
         )
