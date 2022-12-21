@@ -1,6 +1,7 @@
+import { LogicUtils, Modules } from '@abstract-org/sdk'
 import { faker } from '@faker-js/faker'
 import HashMap from 'hashmap'
-import {LogicUtils, Modules} from '@abstract-org/sdk'
+
 import globalState from '../GlobalState'
 import Serializer from '../Utils/serializer.js'
 import { DEFAULT_SCHEMA } from './validation'
@@ -101,7 +102,9 @@ export const overrideStateBySnapshot = (state) => {
 }
 
 export const base64ToState = (base64st) => {
-    const deserializedState = Serializer.deserialize(LogicUtils.fromBase64(base64st))
+    const deserializedState = Serializer.deserialize(
+        LogicUtils.fromBase64(base64st)
+    )
 
     return rehydrateState(deserializedState)
 }
