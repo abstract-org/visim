@@ -1,7 +1,6 @@
 import create from 'zustand'
 import { devtools } from 'zustand/middleware'
-
-import { overrideState } from '../Utils/logicUtils'
+import {LogicUtils} from '@abstract-org/sdk'
 
 const INITIAL_STATE = {
     invConfigs: [],
@@ -106,7 +105,7 @@ const useGeneratorStore = create(
                 set(() => ({ needScrollUp }), false, 'setNeedScrollUp'),
             override: (newData) =>
                 set(
-                    () => overrideState(get(), newData, INITIAL_STATE),
+                    () => LogicUtils.overrideState(get(), newData, INITIAL_STATE),
                     false,
                     'override'
                 )

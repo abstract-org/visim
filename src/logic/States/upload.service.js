@@ -1,4 +1,4 @@
-import { toBase64 } from '../Utils/logicUtils'
+import {LogicUtils} from '@abstract-org/sdk'
 import Serializer from '../Utils/serializer'
 
 /**
@@ -11,7 +11,7 @@ export const uploadStateTo = async (presignedUrl, state) => {
 
     const result = await fetch(presignedUrl, {
         method: 'PUT',
-        body: toBase64(serializedState)
+        body: LogicUtils.toBase64(serializedState)
     }).catch((err) => {
         return JSON.stringify(err)
     })

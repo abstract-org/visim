@@ -11,6 +11,7 @@ import { Sidebar } from 'primereact/sidebar'
 import { Toast } from 'primereact/toast'
 import { Tooltip } from 'primereact/tooltip'
 import React, { useEffect, useRef, useState } from 'react'
+import {LogicUtils} from '@abstract-org/sdk'
 
 import { getPresignedUrl } from '../../api/s3'
 import StorageApi from '../../api/states'
@@ -27,7 +28,6 @@ import {
     fetchTotalsList
 } from '../Supabase/Supabase.download-service'
 import { aggregateAndStoreDataForSnapshot } from '../Supabase/Supabase.service'
-import { formatBytes } from '../Utils/logicUtils'
 import useDayTrackerStore from '../dayTracker.store'
 import { downloadStateFrom, getContentLength } from './download.service'
 import {
@@ -665,7 +665,7 @@ const Loader = (props) => {
                         <span>
                             {props.loaderData.message}{' '}
                             {props.loaderData.fileSize
-                                ? formatBytes(props.loaderData.fileSize)
+                                ? LogicUtils.formatBytes(props.loaderData.fileSize)
                                 : ''}
                         </span>
                     </div>
