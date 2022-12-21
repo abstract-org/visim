@@ -1,11 +1,7 @@
 import { faker } from '@faker-js/faker'
 import HashMap from 'hashmap'
-import {LogicUtils} from '@abstract-org/sdk'
+import {LogicUtils, Modules} from '@abstract-org/sdk'
 import globalState from '../GlobalState'
-import Investor from '../Investor/Investor.class'
-import Pool from '../Pool/Pool.class'
-import Token from '../Quest/Token.class'
-import UsdcToken from '../Quest/UsdcToken.class'
 import Serializer from '../Utils/serializer.js'
 import { DEFAULT_SCHEMA } from './validation'
 
@@ -63,7 +59,7 @@ export const rehydrateState = (state) => {
 
     pools.keys().forEach((key) => {
         const item = pools.get(key)
-        const hydratedItem = Serializer.rehydrate(item, Pool)
+        const hydratedItem = Serializer.rehydrate(item, Modules.Pool)
 
         pools.set(key, hydratedItem)
     })
@@ -72,15 +68,15 @@ export const rehydrateState = (state) => {
         const item = quests.get(key)
         const hydratedItem =
             item.$class === 'UsdcToken'
-                ? Serializer.rehydrate(item, UsdcToken)
-                : Serializer.rehydrate(item, Token)
+                ? Serializer.rehydrate(item, Modules.UsdcToken)
+                : Serializer.rehydrate(item, Modules.Quest)
 
         quests.set(key, hydratedItem)
     })
 
     investors.keys().forEach((key) => {
         const item = investors.get(key)
-        const hydratedItem = Serializer.rehydrate(item, Investor)
+        const hydratedItem = Serializer.rehydrate(item, Modules.Investor)
 
         investors.set(key, hydratedItem)
     })

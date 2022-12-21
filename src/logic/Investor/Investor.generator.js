@@ -1,6 +1,4 @@
-import { faker } from '@faker-js/faker'
-
-import Investor from './Investor.class'
+import {Modules} from '@abstract-org/sdk'
 import InvestorTypes from './Investor.types'
 
 export function generateRandomInvestors(amount) {
@@ -18,7 +16,7 @@ export function generateRandomInvestors(amount) {
         )
         let randomInvestorType = InvestorTypes[randomIndex]
 
-        let newInvestor = Investor.create(
+        let newInvestor = Modules.Investor.create(
             randomInvestorType.type,
             randomInvestorType.name,
             randomInvestorType.usdcBalance
@@ -34,7 +32,7 @@ export function generateDefaultInvestors() {
     const investors = []
 
     InvestorTypes.forEach((investorType, i) => {
-        let newInvestor = Investor.create(
+        let newInvestor = Modules.Investor.create(
             investorType.type,
             investorType.name,
             investorType.usdcBalance,

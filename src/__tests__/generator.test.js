@@ -1,10 +1,7 @@
 import HashMap from 'hashmap'
-
+import {Modules} from '@abstract-org/sdk'
 import Generator from '../logic/Generators/Generator.class'
 import { invGen, questGen } from '../logic/Generators/initialState'
-import Investor from '../logic/Investor/Investor.class'
-import UsdcToken from '../logic/Quest/UsdcToken.class'
-import Router from '../logic/Router/Router.class'
 
 let globalState = {
     pools: new HashMap(),
@@ -55,7 +52,7 @@ describe('Trades increased in price quest', () => {
     ]
 
     it('Identifies quests that increased in price over X days', () => {
-        const creator = Investor.create('creator', 'creator', 10000)
+        const creator = Modules.Investor.create('creator', 'creator', 10000)
         globalState.investors.set(creator.hash, creator)
         const qA = creator.createQuest('A')
         const A = qA.createPool({ initialPositions })
@@ -118,7 +115,7 @@ describe('Trades increased in price quest', () => {
     })
 
     xit('Trades provided pool with increased price', () => {
-        const creator = Investor.create('creator', 'creator', 10000)
+        const creator = Modules.Investor.create('creator', 'creator', 10000)
         globalState.investors.set(creator.hash, creator)
 
         const qA = creator.createQuest('A')
@@ -127,7 +124,7 @@ describe('Trades increased in price quest', () => {
         globalState.quests.set(qA.name, qA)
         globalState.pools.set(A.name, A)
 
-        const router = new Router(globalState.quests, globalState.pools)
+        const router = new Modules.Router(globalState.quests, globalState.pools)
 
         A.buy(1000)
 
@@ -211,7 +208,7 @@ describe('Money loss sanity tests', () => {
     const getTotalIssuedTokens = () =>
         globalState.quests
             .values()
-            .filter((x) => !(x instanceof UsdcToken))
+            .filter((x) => !(x instanceof Modules.UsdcToken))
             .map((q) => ({
                 name: q.name,
                 total: q.initialBalanceB
@@ -225,7 +222,7 @@ describe('Money loss sanity tests', () => {
     const getTotalLockedTokens = () =>
         globalState.quests
             .values()
-            .filter((x) => !(x instanceof UsdcToken))
+            .filter((x) => !(x instanceof Modules.UsdcToken))
             .map((q) => {
                 let totalQTokens = 0
 
@@ -248,7 +245,7 @@ describe('Money loss sanity tests', () => {
     const getTotalWalletsTokens = () =>
         globalState.quests
             .values()
-            .filter((x) => !(x instanceof UsdcToken))
+            .filter((x) => !(x instanceof Modules.UsdcToken))
             .map((q) => {
                 let totalQTokens = 0
 
@@ -270,7 +267,7 @@ describe('Money loss sanity tests', () => {
     const getTotalMissingTokens = () =>
         globalState.quests
             .values()
-            .filter((x) => !(x instanceof UsdcToken))
+            .filter((x) => !(x instanceof Modules.UsdcToken))
             .map((q) => {
                 const totalIssuedToken = getTotalIssuedTokens().find(
                     (ti) => ti.name === q.name
@@ -321,7 +318,7 @@ describe('Money loss sanity tests', () => {
             citeSingleName: 'AGORA'
         }
 
-        const creator = Investor.create('creator', 'creator', 10000000, true)
+        const creator = Modules.Investor.create('creator', 'creator', 10000000, true)
         const fndQuest = creator.createQuest('AGORA')
         const fndPool = fndQuest.createPool()
         const [totalIn, totalOut] = fndPool.buy(555555)
