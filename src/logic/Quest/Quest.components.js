@@ -14,13 +14,13 @@ import useInvestorStore from '../Investor/investor.store'
 import useLogsStore from '../Logs/logs.store'
 import usePoolStore from '../Pool/pool.store'
 import { appendIfNotExist } from '../Utils/uiUtils'
-import UsdcToken from './UsdcToken.class'
+import {Modules} from '@abstract-org/sdk'
 import useQuestStore from './quest.store'
 
 const addPoolSelector = (state) => state.addPool
 const addQuestSelector = (state) => state.addQuest
 
-const usdcToken = new UsdcToken()
+const usdcToken = new Modules.UsdcToken()
 if (!globalState.quests.has(usdcToken.name)) {
     globalState.quests.set(usdcToken.name, usdcToken)
 }

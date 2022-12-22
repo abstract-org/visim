@@ -1,4 +1,4 @@
-import UsdcToken from '../Quest/UsdcToken.class'
+import {Modules} from '@abstract-org/sdk'
 import {LogicUtils} from '@abstract-org/sdk'
 
 export const totalIssuedUSDC = (investors) =>
@@ -13,7 +13,7 @@ export const totalIssuedUSDCDynamic = (investors) =>
 
 export const totalIssuedTokens = (quests) =>
     quests
-        .filter((x) => !(x instanceof UsdcToken))
+        .filter((x) => !(x instanceof Modules.UsdcToken))
         .map((q) => ({
             name: q.name,
             total: q.initialBalanceB
@@ -26,7 +26,7 @@ export const totalLockedUSDC = (pools) =>
 
 export const totalLockedTokens = (quests, pools) =>
     quests
-        .filter((x) => !(x instanceof UsdcToken))
+        .filter((x) => !(x instanceof Modules.UsdcToken))
         .map((q) => {
             let totalQTokens = 0
             q.pools.forEach((p) => {
@@ -51,7 +51,7 @@ export const totalWalletsUSDC = (investors) =>
 
 export const totalWalletsTokensWith0 = (quests, investors) =>
     quests
-        .filter((x) => !(x instanceof UsdcToken))
+        .filter((x) => !(x instanceof Modules.UsdcToken))
         .map((q) => {
             const total =
                 investors &&
@@ -79,7 +79,7 @@ export const totalMissingUSDC = (investors, pools) =>
 
 export const totalMissingTokens = (quests, pools, investors) =>
     quests
-        .filter((x) => !(x instanceof UsdcToken))
+        .filter((x) => !(x instanceof Modules.UsdcToken))
         .map((q) => {
             let totalIssuedToken = totalIssuedTokens(quests).find(
                 (ti) => ti.name === q.name

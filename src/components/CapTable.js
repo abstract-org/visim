@@ -5,9 +5,8 @@ import { ProgressBar } from 'primereact/progressbar'
 import { Row } from 'primereact/row'
 import { Sidebar } from 'primereact/sidebar'
 import React, { useEffect, useRef, useState } from 'react'
-
+import {Modules} from '@abstract-org/sdk'
 import globalState from '../logic/GlobalState'
-import UsdcToken from '../logic/Quest/UsdcToken.class'
 
 export const CapTableSidebar = (props) => {
     return (
@@ -27,7 +26,7 @@ export const CapTableSidebar = (props) => {
 
 const totalWalletsTokens = globalState.quests
     .values()
-    .filter((x) => !(x instanceof UsdcToken))
+    .filter((x) => !(x instanceof Modules.UsdcToken))
     .map((q) => {
         let totalQTokens = 0
 
@@ -43,7 +42,7 @@ const aggregateTokenHolders = () => {
     const questList = globalState.quests.values()
 
     const totalIssuedTokens = questList
-        .filter((x) => !(x instanceof UsdcToken))
+        .filter((x) => !(x instanceof Modules.UsdcToken))
         .reduce(
             (resultMap, quest) => ({
                 ...resultMap,

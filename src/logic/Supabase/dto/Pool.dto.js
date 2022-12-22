@@ -1,4 +1,4 @@
-import Pool from '../../Pool/Pool.class'
+import {Modules} from '@abstract-org/sdk'
 import { convertArrayToHashMapByKey } from '../../Utils/serializer'
 import { PoolDataDto } from './PoolData.dto'
 import { PosOwnersDto } from './PosOwners.dto'
@@ -38,7 +38,7 @@ export class PoolDto {
     }
 
     toPool(pos = {}) {
-        const pool = new Pool()
+        const pool = new Modules.Pool()
 
         pool.name = this.name
         pool.tokenLeft = this.token0

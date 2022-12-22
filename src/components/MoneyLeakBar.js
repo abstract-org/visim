@@ -11,7 +11,7 @@ import React, { useEffect, useId, useRef, useState } from 'react'
 import globalState from '../logic/GlobalState'
 import useLogsStore from '../logic/Logs/logs.store'
 import usePoolStore from '../logic/Pool/pool.store'
-import UsdcToken from '../logic/Quest/UsdcToken.class'
+import {Modules} from '@abstract-org/sdk'
 import {
     totalIssuedTokens,
     totalIssuedUSDC,
@@ -43,7 +43,7 @@ const calculateMoneyLeaked = () => {
     const totalWalletsTokensList = totalWalletsTokensWith0(quests, investors)
 
     const totalMissingTokensList = quests
-        .filter((x) => !(x instanceof UsdcToken || x.name === 'USDC'))
+        .filter((x) => !(x instanceof Modules.UsdcToken || x.name === 'USDC'))
         .map((q) => {
             const byQuestName = (item) => item.name === q.name
             const totalIssuedTokenAmount =
