@@ -1,4 +1,7 @@
-import {
+import {MathUtils} from '@abstract-org/sdk'
+import { watcherGetCitations, watcherGetSwaps } from '../logic/Utils/watcher'
+
+const {
     buySameLiqGiveT0GetT1,
     buySameLiqGiveT1GetT0,
     getBuySameLiq,
@@ -8,8 +11,7 @@ import {
     oneShotGetSellCap,
     sellSameLiqGiveT0GetT1,
     sellSameLiqGiveT1GetT0
-} from '../logic/Router/math'
-import { watcherGetCitations, watcherGetSwaps } from '../logic/Utils/watcher'
+} = MathUtils
 
 /**
  * @description Expose internal functions to the browser for interactive debugging

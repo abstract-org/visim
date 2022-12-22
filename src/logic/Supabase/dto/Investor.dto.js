@@ -1,4 +1,4 @@
-import Investor from '../../Investor/Investor.class'
+import {Modules} from '@abstract-org/sdk'
 
 export class InvestorDto {
     /** @type {number} */
@@ -61,7 +61,7 @@ export class InvestorDto {
     }
 
     toInvestor() {
-        const investor = new Investor()
+        const investor = new Modules.Investor()
         const data = this.toObj()
         investor.name = data.name
         investor.type = data.type
