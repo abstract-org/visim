@@ -13,13 +13,12 @@ import {
 import '@react-sigma/core/lib/react-sigma.min.css'
 import { LayoutForceAtlas2Control } from '@react-sigma/layout-forceatlas2'
 import { MultiDirectedGraph } from 'graphology'
-import * as hilbertCurve from 'hilbert-curve'
 import { useEffect, useState } from 'react'
 
-import globalState from '../logic/GlobalState'
-import usePoolStore from '../logic/Pool/pool.store'
-import useQuestStore from '../logic/Quest/quest.store'
-import { calcCrossPoolThickness } from '../logic/Utils/uiUtils'
+import globalState from '../GlobalState'
+import usePoolStore from '../stores/pool.store'
+import useQuestStore from '../stores/quest.store'
+import { calcCrossPoolThickness } from '../utils/uiUtils'
 
 const Graph = (props) => {
     const [clickedNode, setClickNode] = useState(null)

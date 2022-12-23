@@ -6,7 +6,7 @@ import { Row } from 'primereact/row'
 import { Sidebar } from 'primereact/sidebar'
 import React, { useEffect, useRef, useState } from 'react'
 import {Modules} from '@abstract-org/sdk'
-import globalState from '../logic/GlobalState'
+import globalState from '../GlobalState'
 
 export const CapTableSidebar = (props) => {
     return (

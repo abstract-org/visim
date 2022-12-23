@@ -11,14 +11,14 @@ import { KnowledgeGraphV2 } from './components/KnowledgeGraphV2'
 import { MoneyFlowSidebar } from './components/MoneyFlowSidebar'
 import { MoneyLeakBar } from './components/MoneyLeakBar'
 import { PoolChart } from './components/PoolChart'
-import { GeneratorRunner } from './logic/Generators/Generator.components'
-import useGeneratorStore from './logic/Generators/generator.store'
+import { GeneratorRunner } from './components/Generator/Generator'
+import useGeneratorStore from './stores/generator.store'
 import {
     InvestorModule,
     InvestorPoolBalance,
     InvestorSelector
-} from './logic/Investor/Investor.components'
-import { LogsModule } from './logic/Logs/Logs'
+} from './components/Investor/Investor'
+import { LogsModule } from './components/Logs'
 import {
     KnowledgeGraphStats,
     PoolChartStats,
@@ -26,11 +26,11 @@ import {
     PoolSelector,
     SwapMode,
     SwapModule
-} from './logic/Pool/Pool.components'
-import { QuestCitation, QuestCreation } from './logic/Quest/Quest.components'
-import { StatesSidebar } from './logic/States/StatesSidebar.component'
-import { SupabaseAuthProvider } from './logic/Supabase/Supabase.components'
-import { TopMenu } from './logic/TopMenu.component'
+} from './components/Pool'
+import { QuestCitation, QuestCreation } from './components/Quest'
+import { StatesSidebar } from './components/StatesSidebar'
+import { SupabaseAuthProvider } from './contexts/SupabaseAuthContext'
+import { TopMenu } from './components/TopMenu'
 import useExpertModeStore from './stores/expertMode.store'
 
 export default function Home() {

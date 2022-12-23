@@ -8,9 +8,9 @@ import { OverlayPanel } from 'primereact/overlaypanel'
 import { Tooltip } from 'primereact/tooltip'
 import React, { useEffect, useId, useRef, useState } from 'react'
 
-import globalState from '../logic/GlobalState'
-import useLogsStore from '../logic/Logs/logs.store'
-import usePoolStore from '../logic/Pool/pool.store'
+import globalState from '../GlobalState'
+import useLogsStore from '../stores/logs.store'
+import usePoolStore from '../stores/pool.store'
 import {Modules} from '@abstract-org/sdk'
 import {
     totalIssuedTokens,
@@ -20,8 +20,8 @@ import {
     totalLockedUSDC,
     totalWalletsTokensWith0,
     totalWalletsUSDC
-} from '../logic/Utils/tokenCalc'
-import { getHighlightedText } from '../logic/Utils/uiUtils'
+} from '../utils/tokenCalc'
+import { getHighlightedText } from '../utils/uiUtils'
 
 const nf = new Intl.NumberFormat('en-US')
 

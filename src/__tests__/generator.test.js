@@ -1,7 +1,7 @@
 import HashMap from 'hashmap'
 import {Modules} from '@abstract-org/sdk'
-import Generator from '../logic/Generators/Generator.class'
-import { invGen, questGen } from '../logic/Generators/initialState'
+import Generator from '../services/generator/Generator.class'
+import { invGen, questGen } from '../components/Generator/initialState'
 
 let globalState = {
     pools: new HashMap(),
