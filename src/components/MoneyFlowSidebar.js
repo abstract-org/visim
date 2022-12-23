@@ -2,7 +2,7 @@ import { Divider } from 'primereact/divider'
 import { Sidebar } from 'primereact/sidebar'
 import React from 'react'
 
-import globalState from '../logic/GlobalState'
+import globalState from '../GlobalState'
 import {
     totalIssuedTokens,
     totalIssuedUSDC,
@@ -13,7 +13,7 @@ import {
     totalMissingUSDC,
     totalWalletsTokens,
     totalWalletsUSDC
-} from '../logic/Utils/tokenCalc'
+} from '../utils/tokenCalc'
 
 export const MoneyFlowSidebar = (props) => {
     return (
