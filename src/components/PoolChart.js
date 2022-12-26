@@ -1,8 +1,8 @@
 import { Chart } from 'primereact/chart'
 import React from 'react'
 
-import usePoolStore from '../logic/Pool/pool.store'
-import { swapLog } from '../logic/Utils/uiUtils'
+import usePoolStore from '../stores/pool.store'
+import { swapLog } from '../utils/uiUtils'
 
 const alternatePointRotation = (ctx) => {
     return ctx.raw && ctx.raw.action === 'BOUGHT' ? 0 : 180

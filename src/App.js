@@ -7,18 +7,16 @@ import React, { useEffect, useRef, useState } from 'react'
 
 import { CapTableSidebar } from './components/CapTable'
 import { CurrentDay } from './components/CurrentDay'
-import { KnowledgeGraphV2 } from './components/KnowledgeGraphV2'
-import { MoneyFlowSidebar } from './components/MoneyFlowSidebar'
-import { MoneyLeakBar } from './components/MoneyLeakBar'
-import { PoolChart } from './components/PoolChart'
-import { GeneratorRunner } from './logic/Generators/Generator.components'
-import useGeneratorStore from './logic/Generators/generator.store'
+import { GeneratorRunner } from './components/Generator/Generator'
 import {
     InvestorModule,
     InvestorPoolBalance,
     InvestorSelector
-} from './logic/Investor/Investor.components'
-import { LogsModule } from './logic/Logs/Logs'
+} from './components/Investor/Investor'
+import { KnowledgeGraphV2 } from './components/KnowledgeGraphV2'
+import { LogsModule } from './components/Logs'
+import { MoneyFlowSidebar } from './components/MoneyFlowSidebar'
+import { MoneyLeakBar } from './components/MoneyLeakBar'
 import {
     KnowledgeGraphStats,
     PoolChartStats,
@@ -26,12 +24,14 @@ import {
     PoolSelector,
     SwapMode,
     SwapModule
-} from './logic/Pool/Pool.components'
-import { QuestCitation, QuestCreation } from './logic/Quest/Quest.components'
-import { StatesSidebar } from './logic/States/StatesSidebar.component'
-import { SupabaseAuthProvider } from './logic/Supabase/Supabase.components'
-import { TopMenu } from './logic/TopMenu.component'
+} from './components/Pool'
+import { PoolChart } from './components/PoolChart'
+import { QuestCitation, QuestCreation } from './components/Quest'
+import { StatesSidebar } from './components/StatesSidebar'
+import { TopMenu } from './components/TopMenu'
+import { SupabaseAuthProvider } from './contexts/SupabaseAuthContext'
 import useExpertModeStore from './stores/expertMode.store'
+import useGeneratorStore from './stores/generator.store'
 
 export default function Home() {
     const [statesVisible, setStatesVisible] = useState(false)

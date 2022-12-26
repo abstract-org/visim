@@ -1,4 +1,4 @@
-import useDayTrackerStore from '../logic/dayTracker.store'
+import useDayTrackerStore from '../stores/dayTracker.store'
 
 export function CurrentDay() {
     const currentDay = useDayTrackerStore((state) => state.currentDay)
