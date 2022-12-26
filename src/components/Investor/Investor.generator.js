@@ -1,4 +1,5 @@
-import {Modules} from '@abstract-org/sdk'
+import { Modules } from '@abstract-org/sdk'
+
 import InvestorTypes from './Investor.types'
 
 export function generateRandomInvestors(amount) {

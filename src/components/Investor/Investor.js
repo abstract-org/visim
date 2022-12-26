@@ -2,13 +2,13 @@ import { Dropdown } from 'primereact/dropdown'
 import { ProgressBar } from 'primereact/progressbar'
 import React, { useEffect } from 'react'
 
-import { BalanceBar } from '../ExtraUiComponents'
+import globalState from '../../GlobalState'
+import useDayTrackerStore from '../../stores/dayTracker.store'
 import useInvestorStore from '../../stores/investor.store'
 import useLogsStore from '../../stores/logs.store'
 import usePoolStore from '../../stores/pool.store'
-import globalState from '../../GlobalState'
 import { calculateCurrentInvNavs } from '../../utils/tokenCalc'
-import useDayTrackerStore from '../../stores/dayTracker.store'
+import { BalanceBar } from '../ExtraUiComponents'
 import { generateDefaultInvestors } from './Investor.generator'
 
 const addInvestorsSelector = (state) => state.addInvestors

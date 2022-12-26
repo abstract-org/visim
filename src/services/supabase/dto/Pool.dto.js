@@ -1,4 +1,5 @@
-import {Modules} from '@abstract-org/sdk'
+import { Modules } from '@abstract-org/sdk'
+
 import { convertArrayToHashMapByKey } from '../../../utils/serializer'
 import { PoolDataDto } from './PoolData.dto'
 import { PosOwnersDto } from './PosOwners.dto'

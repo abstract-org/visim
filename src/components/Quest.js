@@ -1,3 +1,5 @@
+import { LogicUtils } from '@abstract-org/sdk'
+import { Modules } from '@abstract-org/sdk'
 import { Button } from 'primereact/button'
 import { Checkbox } from 'primereact/checkbox'
 import { Dropdown } from 'primereact/dropdown'
@@ -6,16 +8,14 @@ import { Messages } from 'primereact/messages'
 import { ScrollPanel } from 'primereact/scrollpanel'
 import { Slider } from 'primereact/slider'
 import React, { useRef, useState } from 'react'
-import {LogicUtils} from '@abstract-org/sdk'
 
-import useExpertModeStore from '../stores/expertMode.store'
 import globalState from '../GlobalState'
+import useExpertModeStore from '../stores/expertMode.store'
 import useInvestorStore from '../stores/investor.store'
 import useLogsStore from '../stores/logs.store'
 import usePoolStore from '../stores/pool.store'
-import { appendIfNotExist } from '../utils/uiUtils'
-import {Modules} from '@abstract-org/sdk'
 import useQuestStore from '../stores/quest.store'
+import { appendIfNotExist } from '../utils/uiUtils'
 
 const addPoolSelector = (state) => state.addPool
 const addQuestSelector = (state) => state.addQuest

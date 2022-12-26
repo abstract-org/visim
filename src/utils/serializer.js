@@ -1,5 +1,5 @@
+import { LogicUtils, Modules } from '@abstract-org/sdk'
 import HashMap from 'hashmap'
-import {LogicUtils, Modules} from '@abstract-org/sdk'
 
 const _KNOWN_CLASSES = {
     Pool: Modules.Pool,

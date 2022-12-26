@@ -49,8 +49,12 @@ export class PoolDataDto {
         this.current_price_point_lg2 = LogicUtils.convertFloat8ToNum(
             data.current_price_point_lg2
         )
-        this.current_left_lg2 = LogicUtils.convertFloat8ToNum(data.current_left_lg2)
-        this.current_right_lg2 = LogicUtils.convertFloat8ToNum(data.current_right_lg2)
+        this.current_left_lg2 = LogicUtils.convertFloat8ToNum(
+            data.current_left_lg2
+        )
+        this.current_right_lg2 = LogicUtils.convertFloat8ToNum(
+            data.current_right_lg2
+        )
         this.token0_price = data.token0_price
         this.volume_token0 = data.volume_token0
         this.token1_price = data.token1_price

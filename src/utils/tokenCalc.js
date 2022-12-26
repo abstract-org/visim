@@ -1,5 +1,5 @@
-import {Modules} from '@abstract-org/sdk'
-import {LogicUtils} from '@abstract-org/sdk'
+import { Modules } from '@abstract-org/sdk'
+import { LogicUtils } from '@abstract-org/sdk'
 
 export const totalIssuedUSDC = (investors) =>
     investors

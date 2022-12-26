@@ -1,7 +1,8 @@
+import { Modules } from '@abstract-org/sdk'
 import HashMap from 'hashmap'
-import {Modules} from '@abstract-org/sdk'
-import Generator from '../services/generator/Generator.class'
+
 import { invGen, questGen } from '../components/Generator/initialState'
+import Generator from '../services/generator/Generator.class'
 
 let globalState = {
     pools: new HashMap(),
@@ -318,7 +319,12 @@ describe('Money loss sanity tests', () => {
             citeSingleName: 'AGORA'
         }
 
-        const creator = Modules.Investor.create('creator', 'creator', 10000000, true)
+        const creator = Modules.Investor.create(
+            'creator',
+            'creator',
+            10000000,
+            true
+        )
         const fndQuest = creator.createQuest('AGORA')
         const fndPool = fndQuest.createPool()
         const [totalIn, totalOut] = fndPool.buy(555555)
