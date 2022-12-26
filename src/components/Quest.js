@@ -1,4 +1,3 @@
-import { LogicUtils } from '@abstract-org/sdk'
 import { Modules } from '@abstract-org/sdk'
 import { Button } from 'primereact/button'
 import { Checkbox } from 'primereact/checkbox'
@@ -15,7 +14,7 @@ import useInvestorStore from '../stores/investor.store'
 import useLogsStore from '../stores/logs.store'
 import usePoolStore from '../stores/pool.store'
 import useQuestStore from '../stores/quest.store'
-import { appendIfNotExist } from '../utils/uiUtils'
+import { appendIfNotExist, isNumericString } from '../utils/uiUtils'
 
 const addPoolSelector = (state) => state.addPool
 const addQuestSelector = (state) => state.addQuest
@@ -451,7 +450,7 @@ export const QuestCreation = () => {
             return
         }
 
-        if (LogicUtils.isNumericString(questName)) {
+        if (isNumericString(questName)) {
             console.log('QuestName should not be a number')
             msgs.current.show({
                 severity: 'warn',
