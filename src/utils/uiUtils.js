@@ -4,6 +4,33 @@ import globalState from '../GlobalState'
 
 const nf = new Intl.NumberFormat('en-US')
 
+export const isNumericString = (str) => parseFloat(str) === Number(str)
+export const fromBase64 = (b64) => decodeURIComponent(window.atob(b64))
+export const toBase64 = (str) => window.btoa(encodeURIComponent(str))
+export const getMissingQuestNames = (scenario) => {
+    const quests = new Set()
+
+    if (typeof scenario !== 'object') return
+
+    scenario.invConfigs.forEach((conf) => {
+        if (conf.excludeSingleName.length) {
+            quests.add(conf.excludeSingleName)
+        }
+
+        if (conf.includeSingleName.length) {
+            quests.add(conf.includeSingleName)
+        }
+    })
+
+    scenario.questConfigs.forEach((conf) => {
+        if (conf.citeSingleName.length) {
+            quests.add(conf.citeSingleName)
+        }
+    })
+
+    return Array.from(quests)
+}
+
 export const numericValue = (value) => {
     return <React.Fragment>{value}</React.Fragment>
 }

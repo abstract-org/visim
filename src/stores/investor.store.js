@@ -1,7 +1,8 @@
-import { LogicUtils } from '@abstract-org/sdk'
 import produce, { setAutoFreeze } from 'immer'
 import create from 'zustand'
 import { devtools } from 'zustand/middleware'
+
+import { overrideState } from '../utils/storeUtils'
 
 setAutoFreeze(false)
 
@@ -62,8 +63,7 @@ const useInvestorStore = create(
                 get().investors.find((hash) => hash === investorHash),
             override: (newData) =>
                 set(
-                    () =>
-                        LogicUtils.overrideState(get(), newData, INITIAL_STATE),
+                    () => overrideState(get(), newData, INITIAL_STATE),
                     false,
                     'override'
                 )

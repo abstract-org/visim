@@ -1,5 +1,7 @@
-import { LogicUtils, Modules } from '@abstract-org/sdk'
+import { Modules } from '@abstract-org/sdk'
 import HashMap from 'hashmap'
+
+import { isNumericString } from './uiUtils'
 
 const _KNOWN_CLASSES = {
     Pool: Modules.Pool,
@@ -81,7 +83,7 @@ const serialize = (instance) => {
 const convertObjToHashMap = (obj) => {
     // converting { [string]: value } ==> [ [string1,value1], [string2,value2] ]
     const objEntriesConverted = Object.entries(obj).reduce((Arr2D, [k, v]) => {
-        const newKey = LogicUtils.isNumericString(k) ? parseFloat(k) : k
+        const newKey = isNumericString(k) ? parseFloat(k) : k
 
         return [...Arr2D, [newKey, v]]
     }, [])
