@@ -1,7 +1,7 @@
+import { LogicUtils } from '@abstract-org/sdk'
 import produce, { setAutoFreeze } from 'immer'
 import create from 'zustand'
 import { devtools } from 'zustand/middleware'
-import {LogicUtils} from '@abstract-org/sdk'
 
 setAutoFreeze(false)
 
@@ -58,7 +58,8 @@ const usePoolStore = create(
                 set((state) => ({ swapMode: mode }), false, 'setSwapMode'),
             override: (newData) =>
                 set(
-                    () => LogicUtils.overrideState(get(), newData, INITIAL_STATE),
+                    () =>
+                        LogicUtils.overrideState(get(), newData, INITIAL_STATE),
                     false,
                     'override'
                 )

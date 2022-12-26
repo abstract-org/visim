@@ -1,6 +1,6 @@
+import { LogicUtils } from '@abstract-org/sdk'
 import create from 'zustand'
 import { devtools } from 'zustand/middleware'
-import {LogicUtils} from '@abstract-org/sdk'
 
 const INITIAL_STATE = {
     currentDay: 0
@@ -21,7 +21,8 @@ const useDayTrackerStore = create(
             setDay: (day) => set(() => ({ currentDay: day }), false, 'setDay'),
             override: (newData) =>
                 set(
-                    () => LogicUtils.overrideState(get(), newData, INITIAL_STATE),
+                    () =>
+                        LogicUtils.overrideState(get(), newData, INITIAL_STATE),
                     false,
                     'override'
                 )

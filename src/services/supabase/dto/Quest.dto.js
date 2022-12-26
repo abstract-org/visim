@@ -1,4 +1,4 @@
-import {Modules} from '@abstract-org/sdk'
+import { Modules } from '@abstract-org/sdk'
 
 export class QuestDto {
     /** @type {number} */
@@ -55,7 +55,9 @@ export class QuestDto {
     }
 
     toQuest() {
-        const quest = this.isUSDC ? new Modules.UsdcToken() : new Modules.Quest()
+        const quest = this.isUSDC
+            ? new Modules.UsdcToken()
+            : new Modules.Quest()
         quest.name = this.name
         quest.pools = this.pools
         if (!this.isUSDC) {

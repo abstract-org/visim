@@ -1,4 +1,5 @@
-import {MathUtils} from '@abstract-org/sdk'
+import { MathUtils } from '@abstract-org/sdk'
+
 import { watcherGetCitations, watcherGetSwaps } from '../../utils/watcher'
 
 const {

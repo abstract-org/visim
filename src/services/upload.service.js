@@ -1,4 +1,5 @@
-import {LogicUtils} from '@abstract-org/sdk'
+import { LogicUtils } from '@abstract-org/sdk'
+
 import Serializer from '../utils/serializer'
 
 /**

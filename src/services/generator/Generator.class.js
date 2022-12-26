@@ -1,7 +1,11 @@
 import { LogicUtils, Modules, SimSdk } from '@abstract-org/sdk'
 import Chance from 'chance'
 import HashMap from 'hashmap'
-import { totalMissingTokens, totalSingleMissingToken } from '../../utils/tokenCalc'
+
+import {
+    totalMissingTokens,
+    totalSingleMissingToken
+} from '../../utils/tokenCalc'
 
 const sdk = SimSdk.init('sim', {
     dbUrl: process.env.REACT_APP_SUPABASE_URL,

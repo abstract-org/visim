@@ -1,6 +1,7 @@
+import { LogicUtils } from '@abstract-org/sdk'
 import HashMap from 'hashmap'
 import setInto from 'lodash/set'
-import { LogicUtils } from '@abstract-org/sdk'
+
 import { convertArrayToHashMapByKey } from '../../utils/serializer'
 import { SupabaseClient, TABLE } from './SupabaseClient'
 import {
@@ -174,8 +175,16 @@ const aggregatePoolsForStore = (data) => {
 }
 
 const aggregateSwapsForStore = (data, respData) => {
-    const poolNamesById = LogicUtils.createHashMappings(respData.pool, 'id', 'name')
-    const invHashById = LogicUtils.createHashMappings(respData.investor, 'id', 'hash')
+    const poolNamesById = LogicUtils.createHashMappings(
+        respData.pool,
+        'id',
+        'name'
+    )
+    const invHashById = LogicUtils.createHashMappings(
+        respData.investor,
+        'id',
+        'hash'
+    )
 
     return data.map((ssSwap) =>
         new SwapDto(ssSwap, poolNamesById, invHashById).toObj()
@@ -199,8 +208,14 @@ const gatherPoolNamesByQuestName = (hmPools) =>
     hmPools.values().reduce(
         (qMap, p) => ({
             ...qMap,
-            [p.tokenLeft]: LogicUtils.addStringToArrayUniq(qMap[p.tokenLeft], p.name),
-            [p.tokenRight]: LogicUtils.addStringToArrayUniq(qMap[p.tokenRight], p.name)
+            [p.tokenLeft]: LogicUtils.addStringToArrayUniq(
+                qMap[p.tokenLeft],
+                p.name
+            ),
+            [p.tokenRight]: LogicUtils.addStringToArrayUniq(
+                qMap[p.tokenRight],
+                p.name
+            )
         }),
         {}
     )

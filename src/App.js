@@ -7,18 +7,16 @@ import React, { useEffect, useRef, useState } from 'react'
 
 import { CapTableSidebar } from './components/CapTable'
 import { CurrentDay } from './components/CurrentDay'
-import { KnowledgeGraphV2 } from './components/KnowledgeGraphV2'
-import { MoneyFlowSidebar } from './components/MoneyFlowSidebar'
-import { MoneyLeakBar } from './components/MoneyLeakBar'
-import { PoolChart } from './components/PoolChart'
 import { GeneratorRunner } from './components/Generator/Generator'
-import useGeneratorStore from './stores/generator.store'
 import {
     InvestorModule,
     InvestorPoolBalance,
     InvestorSelector
 } from './components/Investor/Investor'
+import { KnowledgeGraphV2 } from './components/KnowledgeGraphV2'
 import { LogsModule } from './components/Logs'
+import { MoneyFlowSidebar } from './components/MoneyFlowSidebar'
+import { MoneyLeakBar } from './components/MoneyLeakBar'
 import {
     KnowledgeGraphStats,
     PoolChartStats,
@@ -27,11 +25,13 @@ import {
     SwapMode,
     SwapModule
 } from './components/Pool'
+import { PoolChart } from './components/PoolChart'
 import { QuestCitation, QuestCreation } from './components/Quest'
 import { StatesSidebar } from './components/StatesSidebar'
-import { SupabaseAuthProvider } from './contexts/SupabaseAuthContext'
 import { TopMenu } from './components/TopMenu'
+import { SupabaseAuthProvider } from './contexts/SupabaseAuthContext'
 import useExpertModeStore from './stores/expertMode.store'
+import useGeneratorStore from './stores/generator.store'
 
 export default function Home() {
     const [statesVisible, setStatesVisible] = useState(false)

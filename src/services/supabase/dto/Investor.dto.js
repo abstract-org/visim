@@ -1,4 +1,4 @@
-import {Modules} from '@abstract-org/sdk'
+import { Modules } from '@abstract-org/sdk'
 
 export class InvestorDto {
     /** @type {number} */

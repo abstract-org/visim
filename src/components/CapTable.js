@@ -1,3 +1,4 @@
+import { Modules } from '@abstract-org/sdk'
 import { Column } from 'primereact/column'
 import { ColumnGroup } from 'primereact/columngroup'
 import { DataTable } from 'primereact/datatable'
@@ -5,7 +6,7 @@ import { ProgressBar } from 'primereact/progressbar'
 import { Row } from 'primereact/row'
 import { Sidebar } from 'primereact/sidebar'
 import React, { useEffect, useRef, useState } from 'react'
-import {Modules} from '@abstract-org/sdk'
+
 import globalState from '../GlobalState'
 
 export const CapTableSidebar = (props) => {

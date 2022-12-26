@@ -13,13 +13,8 @@ import { Toast } from 'primereact/toast'
 import { Tooltip } from 'primereact/tooltip'
 import React, { useEffect, useRef, useState } from 'react'
 
-import { useSupabaseAuth } from '../contexts/SupabaseAuthContext'
 import globalState from '../GlobalState'
-import {
-    fetchSnapshotById,
-    fetchTotalsList
-} from '../services/supabase/Supabase.download-service'
-import { aggregateAndStoreDataForSnapshot } from '../services/supabase/Supabase.service'
+import { useSupabaseAuth } from '../contexts/SupabaseAuthContext'
 import { getPresignedUrl } from '../services/api/s3'
 import StorageApi from '../services/api/states'
 import {
@@ -33,6 +28,11 @@ import {
     sanitizeSnapshot,
     validateState
 } from '../services/states.service'
+import {
+    fetchSnapshotById,
+    fetchTotalsList
+} from '../services/supabase/Supabase.download-service'
+import { aggregateAndStoreDataForSnapshot } from '../services/supabase/Supabase.service'
 import { uploadStateTo } from '../services/upload.service'
 import useDayTrackerStore from '../stores/dayTracker.store'
 import useExpertModeStore from '../stores/expertMode.store'

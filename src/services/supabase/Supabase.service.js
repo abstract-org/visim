@@ -1,6 +1,7 @@
+import { LogicUtils } from '@abstract-org/sdk'
 import { instanceToPlain } from 'class-transformer'
 import HashMap from 'hashmap'
-import { LogicUtils } from '@abstract-org/sdk'
+
 import { SupabaseClient, TABLE } from './SupabaseClient'
 import {
     InvestorBalancesUploadDto,

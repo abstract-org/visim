@@ -5,8 +5,8 @@ import { Dropdown } from 'primereact/dropdown'
 import { Slider } from 'primereact/slider'
 import { useEffect, useState } from 'react'
 
-import useExpertModeStore from '../stores/expertMode.store'
 import globalState from '../GlobalState'
+import useExpertModeStore from '../stores/expertMode.store'
 import useLogsStore from '../stores/logs.store'
 
 const MIN_SCROLL_HEIGHT = 300 // pixels

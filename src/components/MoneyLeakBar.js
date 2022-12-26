@@ -1,3 +1,4 @@
+import { Modules } from '@abstract-org/sdk'
 import { FilterMatchMode } from 'primereact/api'
 import { Badge } from 'primereact/badge'
 import { Button } from 'primereact/button'
@@ -11,7 +12,6 @@ import React, { useEffect, useId, useRef, useState } from 'react'
 import globalState from '../GlobalState'
 import useLogsStore from '../stores/logs.store'
 import usePoolStore from '../stores/pool.store'
-import {Modules} from '@abstract-org/sdk'
 import {
     totalIssuedTokens,
     totalIssuedUSDC,
