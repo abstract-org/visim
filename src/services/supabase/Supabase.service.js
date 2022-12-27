@@ -118,3 +118,11 @@ export const aggregateAndStoreDataForSnapshot = async ({
         return false
     }
 }
+
+export const fetchTotalsList = async () => {
+    return simSdk.fetchTotalsList()
+}
+
+export const fetchSnapshotById = async (id) => {
+    return simSdk.fetchSnapshotById(id)
+}
