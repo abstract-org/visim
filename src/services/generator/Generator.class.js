@@ -1,16 +1,12 @@
-import { LogicUtils, Modules, SimSdk } from '@abstract-org/sdk'
+import { LogicUtils, Modules } from '@abstract-org/sdk'
 import Chance from 'chance'
 import HashMap from 'hashmap'
 
+import { simSdk } from '../../sdk'
 import {
     totalMissingTokens,
     totalSingleMissingToken
 } from '../../utils/tokenCalc'
-
-const sdk = SimSdk.init('sim', {
-    dbUrl: process.env.REACT_APP_SUPABASE_URL,
-    accessToken: process.env.REACT_APP_SUPABASE_ANON_KEY
-})
 
 const _OPS_TIME_INITIAL = {
     simulateQuestCreation: { time: 0, ops: 0, timeStarted: 0 },
@@ -1664,7 +1660,7 @@ class Generator {
     spawnInvestor(type, name, initialBalance) {
         this.measure('spawnInvestor')
 
-        const investor = sdk.createInvestor(type, name, initialBalance)
+        const investor = simSdk.createInvestor(type, name, initialBalance)
 
         this._cachedInvestors.set(investor.hash, investor)
 
