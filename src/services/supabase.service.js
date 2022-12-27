@@ -1,7 +1,7 @@
 import { LogicUtils } from '@abstract-org/sdk'
 import HashMap from 'hashmap'
 
-import { simSdk } from '../../sdk'
+import { simSdk } from '../sdk'
 
 export const aggregateAndStoreDataForSnapshot = async ({
     state,

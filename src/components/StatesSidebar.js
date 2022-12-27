@@ -32,7 +32,7 @@ import {
     aggregateAndStoreDataForSnapshot,
     fetchSnapshotById,
     fetchTotalsList
-} from '../services/supabase/Supabase.service'
+} from '../services/supabase.service'
 import { uploadStateTo } from '../services/upload.service'
 import useDayTrackerStore from '../stores/dayTracker.store'
 import useExpertModeStore from '../stores/expertMode.store'
