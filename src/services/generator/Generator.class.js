@@ -869,7 +869,12 @@ class Generator {
             !(isNaN(percAmount) || percAmount <= 0),
             `getMinAmount invalid amount: ${percAmount}`
         )
-
+        if (percAmount === 0) {
+            return amount
+        }
+        if (Number(amount) === 0) {
+            return percAmount
+        }
         // Math.min auto cast numeric string argument to a number
         return Math.min(percAmount, amount)
     }
