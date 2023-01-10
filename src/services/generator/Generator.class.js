@@ -870,7 +870,8 @@ class Generator {
             `getMinAmount invalid amount: ${percAmount}`
         )
 
-        return percAmount < amount ? percAmount : amount
+        // Math.min auto cast numeric string argument to a number
+        return Math.min(percAmount, amount)
     }
 
     tradeSpecificQuest(conf, day, investor, router) {
