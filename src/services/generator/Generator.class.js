@@ -1,16 +1,12 @@
-import { LogicUtils, Modules, SimSdk } from '@abstract-org/sdk'
+import { LogicUtils, Modules } from '@abstract-org/sdk'
 import Chance from 'chance'
 import HashMap from 'hashmap'
 
+import { simSdk } from '../../sdk'
 import {
     totalMissingTokens,
     totalSingleMissingToken
 } from '../../utils/tokenCalc'
-
-const sdk = SimSdk.init('sim', {
-    dbUrl: process.env.REACT_APP_SUPABASE_URL,
-    accessToken: process.env.REACT_APP_SUPABASE_ANON_KEY
-})
 
 const _OPS_TIME_INITIAL = {
     simulateQuestCreation: { time: 0, ops: 0, timeStarted: 0 },
@@ -873,8 +869,14 @@ class Generator {
             !(isNaN(percAmount) || percAmount <= 0),
             `getMinAmount invalid amount: ${percAmount}`
         )
-
-        return percAmount < amount ? percAmount : amount
+        if (percAmount === 0) {
+            return amount
+        }
+        if (Number(amount) === 0) {
+            return percAmount
+        }
+        // Math.min auto cast numeric string argument to a number
+        return Math.min(percAmount, amount)
     }
 
     tradeSpecificQuest(conf, day, investor, router) {
@@ -1664,7 +1666,7 @@ class Generator {
     spawnInvestor(type, name, initialBalance) {
         this.measure('spawnInvestor')
 
-        const investor = sdk.createInvestor(type, name, initialBalance)
+        const investor = simSdk.createInvestor(type, name, initialBalance)
 
         this._cachedInvestors.set(investor.hash, investor)
 

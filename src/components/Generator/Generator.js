@@ -14,7 +14,6 @@ import globalState from '../../GlobalState'
 import { createScenario, getScenarios } from '../../services/api/scenarios'
 import Generator from '../../services/generator/Generator.class'
 import useDayTrackerStore from '../../stores/dayTracker.store'
-import useExpertModeStore from '../../stores/expertMode.store'
 import useGeneratorStore from '../../stores/generator.store'
 import useInvestorStore from '../../stores/investor.store'
 import useLogsStore from '../../stores/logs.store'
@@ -179,8 +178,8 @@ export const GeneratorRunner = () => {
         resetQuestConfigs,
         scenario,
         scenarios,
-        setScenarioId,
-        currentDay
+        setScenarioId
+        // currentDay
     ])
 
     const handleSelectScenario = (scenarioId) => {
@@ -517,10 +516,12 @@ export const GenCardInvestor = (props) => {
         ) {
             return
         }
-        const newState = {
-            ...props.state,
-            [evt.target.id]: evt.target.value || evt.target.checked
-        }
+        const targetValue =
+            evt.target.type === 'number'
+                ? Number(evt.target.value)
+                : evt.target.value
+        const newValue = targetValue != null ? targetValue : evt.target.checked
+        const newState = { ...props.state, [evt.target.id]: newValue }
         props.updateInvConfig(newState)
         globalState.generatorStore.invConfigs = updateStateInvestorConfig(
             globalState.generatorStore.invConfigs,
@@ -617,10 +618,12 @@ export const GenCardQuest = (props) => {
         ) {
             return
         }
-        const newState = {
-            ...props.state,
-            [evt.target.id]: evt.target.value || evt.target.checked
-        }
+        const targetValue =
+            evt.target.type === 'number'
+                ? Number(evt.target.value)
+                : evt.target.value
+        const newValue = targetValue != null ? targetValue : evt.target.checked
+        const newState = { ...props.state, [evt.target.id]: newValue }
         props.updateQuestConfig(newState)
         globalState.generatorStore.questConfigs = updateStateQuestConfig(
             globalState.generatorStore.questConfigs,

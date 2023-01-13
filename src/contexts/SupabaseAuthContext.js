@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 
-import { SupabaseClient } from '../services/supabase/SupabaseClient'
+import { simSdk } from '../sdk'
 
 const initialState = {
     session: null,
@@ -12,15 +12,15 @@ const initialState = {
 export const AuthContext = createContext(initialState)
 
 export function SupabaseAuthProvider({ children }) {
-    const client = SupabaseClient
+    const authClient = simSdk.auth
     const [state, setState] = useState(initialState)
 
     useEffect(() => {
-        client.auth.getSession().then(({ data: { session } }) => {
+        authClient.getSession().then(({ data: { session } }) => {
             setState({ session, user: session?.user ?? null })
         })
 
-        const listener = client.auth.onAuthStateChange((_event, session) => {
+        const listener = authClient.onAuthStateChange((_event, session) => {
             setState({ session, user: session?.user ?? null })
         })
 
@@ -32,16 +32,16 @@ export function SupabaseAuthProvider({ children }) {
     const redirectOptions = { emailRedirectTo: window.location.origin }
     const value = {
         signUp: (data) =>
-            client.auth.signUp({
+            authClient.signUp({
                 ...data,
                 options: data.email && { ...data.options, ...redirectOptions }
             }),
         signIn: (data) =>
-            client.auth.signInWithOtp({
+            authClient.signInWithOtp({
                 ...data,
                 options: data.email && { ...data.options, ...redirectOptions }
             }),
-        signOut: () => client.auth.signOut(),
+        signOut: () => authClient.signOut(),
         user: state.user
     }
 
