@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@abstract-org/sdk@^1.5.1":
-  version "1.5.1"
-  resolved "https://registry.yarnpkg.com/@abstract-org/sdk/-/sdk-1.5.1.tgz#21b066c9684d6066d64a274e246c7992d3bc9cbc"
-  integrity sha512-MGBbzqeSIvLypMcm0ejM3SkcEbk91ToDFfhnWG8Lz2Rqa1RqvfrW7y4Yjo0uM2rauqeqTbqSzZCH+OtcjiY5oQ==
+"@abstract-org/sdk@^1.5.6":
+  version "1.5.6"
+  resolved "https://registry.yarnpkg.com/@abstract-org/sdk/-/sdk-1.5.6.tgz#6f6398a1bfe0a9da80d5359fe050ab5041c8e397"
+  integrity sha512-kSZRYg+CW49R+LaTTYcFjtaxQt+v9DGZk6tK4nmxqzRsn/QUSpxyv3oByjHuMXK9WXxIelExfYOZDoJKTYwp0g==
   dependencies:
     "@faker-js/faker" "^7.6.0"
     "@supabase/supabase-js" "^2.2.1"
