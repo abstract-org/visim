@@ -65,6 +65,7 @@ class Generator {
     tradingHandlers = []
 
     _cachedTotalLeaks = {}
+    _cachedInitialPositions = null
 
     constructor(
         invConfigs,
@@ -73,11 +74,12 @@ class Generator {
         globalQuests,
         globalInvestors,
         swaps = [],
+        getEnabledPositions,
         performance,
         performanceOutput
     ) {
         this.#chance = Chance()
-
+        this._cachedInitialPositions = getEnabledPositions()
         this.#invConfigs = invConfigs
         this.#questConfigs = questConfigs
         this._cachedQuests = globalQuests.clone()
@@ -1679,7 +1681,9 @@ class Generator {
         this.measure('spawnQuest')
 
         const quest = investor.createQuest(name)
-        const pool = quest.createPool()
+        const pool = quest.createPool({
+            initialPositions: this._cachedInitialPositions
+        })
 
         this._cachedQuests.set(quest.name, quest)
         let leftSideQuest = this._cachedQuests.get(`${this.#DEFAULT_TOKEN}`)

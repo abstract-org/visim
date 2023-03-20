@@ -1,0 +1,14 @@
+/* ConfigPopover.css */
+.position-row label {
+    margin-right: 5px;
+    margin-left: 10px;
+}
+
+.position-row .p-button {
+    margin-left: 10px;
+}
+
+.popover-input {
+    width: 80px;
+    margin-right: 1rem;
+}
