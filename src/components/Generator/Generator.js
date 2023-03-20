@@ -18,6 +18,7 @@ import useGeneratorStore from '../../stores/generator.store'
 import useInvestorStore from '../../stores/investor.store'
 import useLogsStore from '../../stores/logs.store'
 import usePoolStore from '../../stores/pool.store'
+import usePositionConfigStore from '../../stores/positionConfig.store'
 import useQuestStore from '../../stores/quest.store'
 import {
     deleteStateInvestorConfig,
@@ -38,6 +39,9 @@ const deleteQuestSelector = (state) => state.deleteQuestConfig
 
 const RemoteScenarios = (props) => {
     const [lazyLoading, setLazyLoading] = useState(false)
+    const getEnabledPositions = usePositionConfigStore(
+        (state) => state.getEnabledPositions
+    )
 
     let dropdownScenarios = []
     if (props.scenarios) {
@@ -67,7 +71,9 @@ const RemoteScenarios = (props) => {
             id={props.scenario}
             value={props.scenario}
             options={dropdownScenarios}
-            onChange={(e) => props.handleSelectScenario(e.value)}
+            onChange={(e) =>
+                props.handleSelectScenario(e.value, getEnabledPositions)
+            }
             placeholder="Load Scenario"
             className="w-15rem"
             virtualScrollerOptions={{
@@ -142,6 +148,9 @@ export const GeneratorRunner = () => {
     const resetQuestConfigs = useGeneratorStore(
         (state) => state.resetQuestConfigs
     )
+    const getEnabledPositions = usePositionConfigStore(
+        (state) => state.getEnabledPositions
+    )
 
     const [scenarios, setScenarios] = useState([])
     const [scenario, setScenario] = useState('')
@@ -190,7 +199,9 @@ export const GeneratorRunner = () => {
             const investor = globalState.investors.get(activeInvestor)
             missingQuests.forEach((qName) => {
                 const quest = investor.createQuest(qName)
-                const pool = quest.createPool()
+                const pool = quest.createPool({
+                    initialPositions: getEnabledPositions()
+                })
 
                 const usdcQuest = globalState.quests.get(pool.tokenLeft)
                 usdcQuest.addPool(pool)
@@ -331,7 +342,8 @@ export const GeneratorRunner = () => {
             globalState.pools,
             globalState.quests,
             globalState.investors,
-            swaps
+            swaps,
+            getEnabledPositions
         )
 
         let day = currentDay + 1

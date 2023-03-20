@@ -1,11 +1,9 @@
 {
     "name": "agora-visim",
-    "version": "0.1.0",
+    "version": "1.0.1",
     "private": true,
     "dependencies": {
-        "@abstract-org/sdk": "^1.5.7",
-        "@craco/craco": "7.0.0-alpha.8",
-        "@prisma/client": "4.6.1",
+        "@abstract-org/sdk": "^1.5.8",
         "@react-sigma/core": "3.0.3",
         "@react-sigma/layout-forceatlas2": "3.0.3",
         "@testing-library/jest-dom": "^5.16.5",

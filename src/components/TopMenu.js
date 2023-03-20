@@ -33,6 +33,13 @@ export const TopMenu = (props) => {
             command: () => {
                 props.setMoneyflowVisible(!props.moneyflowVisible)
             }
+        },
+        {
+            label: `Price Bands`,
+            icon: 'pi pi-fw pi-chart-line',
+            command: () => {
+                props.setVisible(!props.isVisible)
+            }
         }
     ]
 

@@ -30,3 +30,4 @@ yarn-error.log*
 .env
 
 database/dumps/**
+.vscode
