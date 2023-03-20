@@ -26,6 +26,7 @@ import {
     SwapModule
 } from './components/Pool'
 import { PoolChart } from './components/PoolChart'
+import PositionConfigPopover from './components/PositionConfigPopover'
 import { QuestCitation, QuestCreation } from './components/Quest'
 import { StatesSidebar } from './components/StatesSidebar'
 import { TopMenu } from './components/TopMenu'
@@ -37,6 +38,7 @@ export default function Home() {
     const [statesVisible, setStatesVisible] = useState(false)
     const [capTableVisible, setCapTableVisible] = useState(false)
     const [moneyflowVisible, setMoneyflowVisible] = useState(false)
+    const [isVisible, setVisible] = useState(false)
     const needScrollUp = useGeneratorStore((state) => state.needScrollUp)
     const setNeedScrollUp = useGeneratorStore((state) => state.setNeedScrollUp)
     const setExpertMode = useExpertModeStore((state) => state.setExpertMode)
@@ -63,6 +65,8 @@ export default function Home() {
                         setMoneyflowVisible={setMoneyflowVisible}
                         isExpert={isExpert}
                         setExpertMode={setExpertMode}
+                        isVisible={isVisible}
+                        setVisible={setVisible}
                     />
                 </div>
                 {isExpert && (
@@ -159,6 +163,10 @@ export default function Home() {
                     </Card>
                 </div>
             </div>
+            <PositionConfigPopover
+                isVisible={isVisible}
+                setVisible={setVisible}
+            />
         </SupabaseAuthProvider>
     )
 }

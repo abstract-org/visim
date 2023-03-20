@@ -6,13 +6,15 @@ import { InputText } from 'primereact/inputtext'
 import { Messages } from 'primereact/messages'
 import { ScrollPanel } from 'primereact/scrollpanel'
 import { Slider } from 'primereact/slider'
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 import globalState from '../GlobalState'
+import { useLocalStorage } from '../hooks/useLocalStorage'
 import useExpertModeStore from '../stores/expertMode.store'
 import useInvestorStore from '../stores/investor.store'
 import useLogsStore from '../stores/logs.store'
 import usePoolStore from '../stores/pool.store'
+import usePositionConfigStore from '../stores/positionConfig.store'
 import useQuestStore from '../stores/quest.store'
 import { appendIfNotExist, isNumericString } from '../utils/uiUtils'
 
@@ -434,7 +436,10 @@ export const QuestCreation = () => {
     const addLogObj = useLogsStore((state) => state.addLogObj)
     const setActiveQuest = useQuestStore((state) => state.setActive)
     const setActivePool = usePoolStore((state) => state.setActive)
-    const setSwapMode = usePoolStore((state) => state.setSwapMode)
+
+    const getEnabledPositions = usePositionConfigStore(
+        (state) => state.getEnabledPositions
+    )
 
     const handleQuestName = (e) => {
         setQuestName(e.target.value)
@@ -471,7 +476,9 @@ export const QuestCreation = () => {
         const investor =
             activeInvestor && globalState.investors.get(activeInvestor)
         const tokenRight = investor.createQuest(questName)
-        const pool = tokenRight.createPool()
+        const pool = tokenRight.createPool({
+            initialPositions: getEnabledPositions()
+        })
 
         // Add new pool to USDC Token
         const exQuest = globalState.quests.get(pool.tokenLeft)
