@@ -1,3 +1,4 @@
+import { positionsDefault } from '@abstract-org/sdk'
 import produce, { setAutoFreeze } from 'immer'
 import create from 'zustand'
 import { devtools } from 'zustand/middleware'
@@ -14,7 +15,18 @@ const usePositionConfigStore = create(
     devtools(
         (set, get) => ({
             ...INITIAL_STATE,
-            getEnabledPositions: () => get().positions.filter((p) => p.enabled),
+            getEnabledPositions: () => {
+                const positions = get().positions
+                const enabledPositions = positions.filter((p) => p.enabled)
+
+                // If there are no enabled positions in the user-defined positions,
+                // return the default positions
+                if (enabledPositions.length === 0) {
+                    return positionsDefault
+                }
+
+                return enabledPositions
+            },
             addPosition: (pos) =>
                 set(
                     produce((state) => {
