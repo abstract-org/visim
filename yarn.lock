@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@abstract-org/sdk@^1.5.7":
-  version "1.5.7"
-  resolved "https://registry.yarnpkg.com/@abstract-org/sdk/-/sdk-1.5.7.tgz#f56465f810c3a3a39a91f1aac20870dbfa0be565"
-  integrity sha512-JpbFbddXtr4jFLMqN8qMrm1XDtM7P6AvkgTzMuagF+aQzvv8fOtpJSl2usGU9IRCAxLZiQg/Wz09C+eNjI7PFw==
+"@abstract-org/sdk@^1.5.8":
+  version "1.5.8"
+  resolved "https://registry.yarnpkg.com/@abstract-org/sdk/-/sdk-1.5.8.tgz#6068b07c8c00f5c073fc40cef9462c2b4603dc70"
+  integrity sha512-HDWfz810Xvuo7VoqhpouymppbVrv0RIFv5bNf+WVLyM9sXMSgveTZalzMpPHRT/1OXs+uIOpFP9ZbPylD6Vkpw==
   dependencies:
     "@faker-js/faker" "^7.6.0"
     "@supabase/supabase-js" "^2.2.1"
@@ -10493,9 +10493,9 @@ webpack-sources@^3.2.3:
   integrity sha512-/DyMEOrDgLKKIG0fmvtz+4dUX/3Ghozwgm6iPp8KRhvn+eQf9+Q7GWxVNMk3+uCPWfdXYC4ExGBckIXdFEfH1w==
 
 webpack@^5.64.4:
-  version "5.74.0"
-  resolved "https://registry.yarnpkg.com/webpack/-/webpack-5.74.0.tgz"
-  integrity sha512-A2InDwnhhGN4LYctJj6M1JEaGL7Luj6LOmyBHjcI8529cm5p6VXiTIW2sn6ffvEAKmveLzvu4jrihwXtPojlAA==
+  version "5.76.2"
+  resolved "https://registry.yarnpkg.com/webpack/-/webpack-5.76.2.tgz#6f80d1c1d1e3bf704db571b2504a0461fac80230"
+  integrity sha512-Th05ggRm23rVzEOlX8y67NkYCHa9nTNcwHPBhdg+lKG+mtiW7XgggjAeeLnADAe7mLjJ6LUNfgHAuRRh+Z6J7w==
   dependencies:
     "@types/eslint-scope" "^3.7.3"
     "@types/estree" "^0.0.51"
