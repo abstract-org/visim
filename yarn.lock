@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@abstract-org/sdk@^1.5.7":
-  version "1.5.7"
-  resolved "https://registry.yarnpkg.com/@abstract-org/sdk/-/sdk-1.5.7.tgz#f56465f810c3a3a39a91f1aac20870dbfa0be565"
-  integrity sha512-JpbFbddXtr4jFLMqN8qMrm1XDtM7P6AvkgTzMuagF+aQzvv8fOtpJSl2usGU9IRCAxLZiQg/Wz09C+eNjI7PFw==
+"@abstract-org/sdk@^1.5.8":
+  version "1.5.8"
+  resolved "https://registry.yarnpkg.com/@abstract-org/sdk/-/sdk-1.5.8.tgz#6068b07c8c00f5c073fc40cef9462c2b4603dc70"
+  integrity sha512-HDWfz810Xvuo7VoqhpouymppbVrv0RIFv5bNf+WVLyM9sXMSgveTZalzMpPHRT/1OXs+uIOpFP9ZbPylD6Vkpw==
   dependencies:
     "@faker-js/faker" "^7.6.0"
     "@supabase/supabase-js" "^2.2.1"
@@ -4580,6 +4580,11 @@ escalade@^3.1.1:
   resolved "https://registry.yarnpkg.com/escalade/-/escalade-3.1.1.tgz"
   integrity sha512-k0er2gUkLf8O0zKJiAhmkTnJlTvINGv7ygDNPbeIsX/TJjGJZHuh9B2UxbsaEkmlEo9MfhrSzmhIlhRlI2GXnw==
 
+escalade@^3.2.0:
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/escalade/-/escalade-3.2.0.tgz#011a3f69856ba189dffa7dc8fcce99d2a87903e5"
+  integrity sha512-WUj2qlxaQtO4g6Pq5c29GTcWGDyd8itL8zTlipgECz3JesAiiOKotd8JU6otB3PACgG6xkJUyVhboMS+bje/jA==
+
 escape-goat@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/escape-goat/-/escape-goat-4.0.0.tgz"
@@ -7894,6 +7899,11 @@ picocolors@^1.0.0:
   resolved "https://registry.yarnpkg.com/picocolors/-/picocolors-1.0.0.tgz"
   integrity sha512-1fygroTLlHu66zi26VoTDv8yRgm0Fccecssto+MhsZ0D/DGW2sm8E8AjW7NU5VVTRt5GxbeZ5qBuJr+HyLYkjQ==
 
+picocolors@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/picocolors/-/picocolors-1.1.1.tgz#3d321af3eab939b083c8f929a1d12cda81c26b6b"
+  integrity sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==
+
 picomatch@^2.0.4, picomatch@^2.2.1, picomatch@^2.2.2, picomatch@^2.2.3, picomatch@^2.3.1:
   version "2.3.1"
   resolved "https://registry.yarnpkg.com/picomatch/-/picomatch-2.3.1.tgz"
@@ -10249,6 +10259,14 @@ update-browserslist-db@^1.0.9:
   dependencies:
     escalade "^3.1.1"
     picocolors "^1.0.0"
+
+update-browserslist-db@^1.1.2:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/update-browserslist-db/-/update-browserslist-db-1.1.2.tgz#97e9c96ab0ae7bcac08e9ae5151d26e6bc6b5580"
+  integrity sha512-PPypAm5qvlD7XMZC3BujecnaOxwhrtoFR+Dqkk5Aa/6DssiH0ibKoketaj9w8LP7Bont1rYeoV5plxD7RTEPRg==
+  dependencies:
+    escalade "^3.2.0"
+    picocolors "^1.1.1"
 
 update-notifier@^6.0.2:
   version "6.0.2"
