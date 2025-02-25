@@ -32,6 +32,7 @@
         "react-dom": "^18.2.0",
         "react-scripts": "5.0.1",
         "sigma": "^2.3.1",
+        "update-browserslist-db": "^1.1.2",
         "workerize-loader": "^2.0.2",
         "zustand": "^4.1.1"
     },
